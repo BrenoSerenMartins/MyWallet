@@ -130,6 +130,21 @@ Esses exemplos usam um terminal Bash. O servidor roda em primeiro plano e pode s
 
 Para disponibilizar publicamente, configure hospedagem, HTTPS, redirects de autenticação e supervisão do processo. O comando de deploy prepara e executa a aplicação na máquina atual. O TLS do banco é independente do HTTPS do site; a instalação da PWA em um domínio público requer HTTPS.
 
+### Hospedagem recomendada: Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/BrenoSerenMartins/MyWallet)
+
+O Blueprint `render.yaml` configura um único serviço Docker na branch `main`, com frontend e API no mesmo domínio, plano gratuito e health check em `/ready`. Não é necessário criar outro banco: os dados continuam no Supabase.
+
+1. Abra o botão acima ou, no Render, escolha **New → Blueprint**, conecte o GitHub e selecione este repositório. Para repositórios privados, permita acesso ao app do Render no GitHub.
+2. Confira o serviço `mywallet-pilot` e forneça `SUPABASE_PUBLISHABLE_KEY` e `RUNTIME_DATABASE_URL` a partir do seu `.env.local`. `SUPABASE_URL` já está definida no Blueprint para o projeto atual.
+3. Use uma conexão restrita `mywallet_runtime` compatível com o host. O Session pooler do Supabase oferece IPv4; se a configuração atual já usa esse pooler, mantenha o valor. Não substitua a credencial restrita pela conexão administrativa `postgres`.
+4. Antes de publicar uma versão com alterações de banco, execute `npm run db:setup` no terminal local com conectividade. O container não aplica migrations automaticamente nem precisa receber a senha administrativa.
+5. Inicie o deploy pelo painel. O Render usa o Dockerfile para construir e executar o serviço; não configure `npx wrangler deploy` ou `npm run deploy` como comando desse serviço Docker.
+6. Quando a URL HTTPS estiver disponível, configure-a como Site URL no Supabase Auth e permita `/auth/callback` e `/reset-password` nesse domínio. Confira `/ready`, faça login e valide leitura/escrita no seu espaço.
+
+O plano gratuito pode adormecer após inatividade; a primeira abertura pode demorar. O worker separado do Cloudflare não é necessário nesse caminho. Se houver um deploy frontend antigo, utilize a URL do Render para acessar a aplicação completa.
+
 ### Docker
 
 Depois de preparar o banco:

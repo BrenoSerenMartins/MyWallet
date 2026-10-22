@@ -9,7 +9,7 @@
 - React/Vite, Nest, Supabase Auth, pg, PDF.js, TanStack Query, Radix Dialog, and Lucide are installed; the workspace lockfile pins resolved versions. OpenAPI types are generated for the frontend. TypeScript 5.9 is selected for compatibility with the OpenAPI type generator.
 
 ## Runtime dependency direction
-The [pilot plan](../architecture/pilot-plan.md) describes the implemented direction. The user verified database provisioning; application hosting remains unconfigured.
+The [pilot plan](../architecture/pilot-plan.md) describes the implemented direction. The user verified database provisioning; Render was selected for combined frontend/API hosting; its Blueprint is prepared, but the hosted service/account connection remains unconfigured.
 
 | Consumer | Dependency | Boundary |
 | --- | --- | --- |
