@@ -1,0 +1,50 @@
+# Routes
+
+The pilot implements the routes below, published in `api/openapi.json`. Generated frontend transport types live in `app/src/shared/api/generated.d.ts`. Transaction details currently open in a dialog from the history screen, rather than a separate frontend detail URL.
+
+## Frontend
+| Route | Feature |
+| --- | --- |
+| `/sign-in`, `/sign-up` | Authentication |
+| `/auth/callback`, `/forgot-password`, `/reset-password` | Verification and account recovery |
+| `/workspaces` | Workspace card selection and creation |
+| `/` | Home/dashboard |
+| `/accounts`, `/accounts/:accountId` | Owned accounts and history |
+| `/transactions` | Filtered history and transaction detail |
+| `/imports`, `/imports/:importId` | Upload, review, confirmation and history |
+| `/settings`, `/settings/categories`, `/settings/data` | Theme, categories and export/restore |
+
+Authenticated routes handle session loading and expiration explicitly; client routing is not an authorization boundary.
+
+## REST
+| Endpoint | Owner and intent |
+| --- | --- |
+| `GET /health`, `GET /ready` | Process liveness and database readiness |
+| `GET/POST /v1/workspaces` | Workspaces: list owned spaces/provision default and create a private space |
+| `GET /v1/me` | Profiles: authenticated user context |
+| `GET/POST /v1/accounts` | Accounts: list/create owned accounts |
+| `GET/PATCH /v1/accounts/:id` | Accounts: detail/update metadata or reviewed opening position |
+| `GET/POST /v1/categories`, `PATCH /v1/categories/:id` | Categories: list/create/update; category type is immutable |
+| `GET/POST /v1/transactions` | Ledger: filtered list/manual entry |
+| `GET/PATCH /v1/transactions/:id` | Ledger: detail/version-checked correction |
+| `POST /v1/transactions/:id/reversals` | Ledger: explicit reversal with impact checks |
+| `POST /v1/transfers` | Ledger: atomic pair of opposing account movements |
+| `GET/POST /v1/imports` | Imports: history/upload and persisted review draft |
+| `GET /v1/imports/:id` | Imports: review state, source/recorded opening positions, mismatch flag and receipt if confirmed |
+| `PATCH /v1/imports/:id/items/:itemId` | Imports: reviewed corrections/selection with draft version check |
+| `POST /v1/imports/:id/classifications` | Imports: user-invoked bulk classification proposal, preserving reserved-money transfers |
+| `POST /v1/imports/:id/confirmations` | Imports: atomic, idempotent confirmation of the reviewed version |
+| `POST /v1/imports/:id/reversals` | Imports: safe reversal of batch-owned movements |
+| `GET /v1/dashboard?from=...&to=...` | Dashboard: period summary and coverage-aware balances |
+| `GET /v1/exports?format=json\|csv` | Data export: versioned full backup or transaction analysis |
+| `POST /v1/restores`, `GET /v1/restores/:id` | Data export: validate backup and preview restore impact |
+| `POST /v1/restores/:id/confirmations` | Data export: reviewed atomic restore with retry protection |
+| `GET /docs`, `GET /openapi.json` | OpenAPI, controlled by deployment configuration |
+
+## Contract rules
+- Financial endpoints require `X-Workspace-Id`; the server verifies ownership before entering the scoped transaction. Workspace listing/creation uses user scope only. Missing selection returns 400; another owner’s space returns 404.
+- All business endpoints require verified user identity. Derive ownership server-side, never from a supplied `userId`.
+- Lists return a consistent collection with continuation metadata. Errors use a safe Problem Details shape with stable machine-readable codes, field errors when appropriate, and a request ID.
+- Require reviewed versions for import/restore confirmation and `If-Match` for financial edits. Persist idempotency keys/receipts for confirmations and atomic transfer creation; reject reuse with different input.
+- Use 401 for absent/invalid identity, non-enumerating 404 for inaccessible owned resources, 409 for state/idempotency conflicts, 412 for stale versions, 413 for oversized uploads, and 422 for recognized but invalid financial input. DTO syntax errors use 400.
+- Multipart upload and export endpoints are authenticated and never cached as public data. Limits, pagination, and date semantics are documented in generated OpenAPI.

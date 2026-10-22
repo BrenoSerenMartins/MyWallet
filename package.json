@@ -1,0 +1,44 @@
+{
+  "name": "my-wallet",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.0",
+    "@playwright/test": "^1.61.0",
+    "@types/node": "^24.0.0",
+    "openapi-typescript": "^7.13.0",
+    "oxlint": "^1.86.0",
+    "prettier": "^3.8.0",
+    "supabase": "^2.121.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0"
+  },
+  "workspaces": [
+    "app",
+    "api"
+  ],
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build -w @mywallet/api && npm run build -w @mywallet/app",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "oxlint app/src api/src scripts",
+    "format:check": "prettier --check app/src api/src scripts",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "verify": "npm run lint && npm run typecheck && npm run arch:boundaries && npm test && npm run build && node scripts/check-secrets.mjs",
+    "arch:boundaries": "node scripts/check-boundaries.mjs",
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "openapi": "npm run openapi -w @mywallet/api",
+    "db:setup": "node --env-file=.env.local scripts/setup-database.mjs",
+    "db:cleanup": "node --env-file=.env.local scripts/cleanup-drafts.mjs",
+    "start": "npm run start -w @mywallet/api",
+    "format": "prettier --write app/src api/src scripts app/test api/test *.ts *.json",
+    "contracts": "npm run openapi && openapi-typescript api/openapi.json -o app/src/shared/api/generated.d.ts && prettier --write api/openapi.json app/src/shared/api/generated.d.ts",
+    "contracts:check": "node scripts/check-contracts.mjs",
+    "deploy": "node scripts/deploy.mjs"
+  },
+  "type": "module"
+}

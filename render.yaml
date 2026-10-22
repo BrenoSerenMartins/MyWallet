@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: mywallet-pilot
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /ready
+    envVars:
+      - key: SUPABASE_URL
+        value: https://hlcrjoqmyohfbajvafhh.supabase.co
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: RUNTIME_DATABASE_URL
+        sync: false
+      - key: DOCS_ENABLED
+        value: "false"

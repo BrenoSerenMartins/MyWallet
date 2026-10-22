@@ -1,0 +1,64 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.env.keys
+*.key
+*.pem
+*.p12
+*.pfx
+/.aws/
+/.codex/
+/.agents/
+/.supabase-cli/
+
+# Dependencies, builds and tool caches
+node_modules/
+dist/
+build/
+.vite/
+.cache/
+*.tsbuildinfo
+.eslintcache
+.prettiercache
+
+# Test output
+coverage/
+playwright-report/
+playwright/.cache/
+test-results/
+
+# Local financial data and database files
+/.local-data/
+/backups/
+/statements/
+/uploads/
+*.pdf
+*.ofx
+*.qfx
+*.qif
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+
+# Supabase local state (keep config.toml and migrations tracked)
+/supabase/.temp/
+/supabase/.branches/
+
+# Logs and temporary files
+*.log
+*.pid
+*.pid.lock
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Operating systems and local editor settings
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/

@@ -1,0 +1,16 @@
+.git
+.agents
+.aws
+.codex
+.env
+.env.*
+node_modules
+**/node_modules
+**/dist
+.supabase-cli
+supabase/.temp
+.local-data
+coverage
+test-results
+playwright-report
+**/*.pdf

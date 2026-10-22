@@ -1,0 +1,1197 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "HealthController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": ["Health"]
+      }
+    },
+    "/ready": {
+      "get": {
+        "operationId": "HealthController_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": ["Health"]
+      }
+    },
+    "/v1/accounts": {
+      "get": {
+        "operationId": "AccountsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccountResourceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Accounts"]
+      },
+      "post": {
+        "operationId": "AccountsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Accounts"]
+      }
+    },
+    "/v1/accounts/{id}": {
+      "get": {
+        "operationId": "AccountsController_find",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Accounts"]
+      },
+      "patch": {
+        "operationId": "AccountsController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Accounts"]
+      }
+    },
+    "/v1/categories": {
+      "get": {
+        "operationId": "CategoriesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryResourceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Categories"]
+      },
+      "post": {
+        "operationId": "CategoriesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Categories"]
+      }
+    },
+    "/v1/categories/{id}": {
+      "patch": {
+        "operationId": "CategoriesController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Categories"]
+      }
+    },
+    "/v1/transactions": {
+      "get": {
+        "operationId": "LedgerController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionCollectionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Transactions"]
+      },
+      "post": {
+        "operationId": "LedgerController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Transactions"]
+      }
+    },
+    "/v1/transactions/{id}": {
+      "get": {
+        "operationId": "LedgerController_find",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Transactions"]
+      },
+      "patch": {
+        "operationId": "LedgerController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Transactions"]
+      }
+    },
+    "/v1/transactions/{id}/reversals": {
+      "post": {
+        "operationId": "LedgerController_reverse",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Transactions"]
+      }
+    },
+    "/v1/transfers": {
+      "post": {
+        "operationId": "LedgerController_transfer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Transactions"]
+      }
+    },
+    "/v1/imports": {
+      "get": {
+        "operationId": "ImportsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      },
+      "post": {
+        "operationId": "ImportsController_upload",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatchResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
+    "/v1/imports/{id}": {
+      "get": {
+        "operationId": "ImportsController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatchResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
+    "/v1/imports/{id}/items/{itemId}": {
+      "patch": {
+        "operationId": "ImportsController_review",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatchResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
+    "/v1/imports/{id}/classifications": {
+      "post": {
+        "operationId": "ImportsController_classify",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmImportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
+    "/v1/imports/{id}/confirmations": {
+      "post": {
+        "operationId": "ImportsController_confirm",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmImportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
+    "/v1/imports/{id}/reversals": {
+      "post": {
+        "operationId": "ImportsController_reverse",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
+    "/v1/dashboard": {
+      "get": {
+        "operationId": "DashboardController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Dashboard"]
+      }
+    },
+    "/v1/exports": {
+      "get": {
+        "operationId": "DataExportController_export",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Data export"]
+      }
+    },
+    "/v1/restores": {
+      "post": {
+        "operationId": "DataExportController_preview",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Data export"]
+      }
+    },
+    "/v1/restores/{id}": {
+      "get": {
+        "operationId": "DataExportController_review",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Data export"]
+      }
+    },
+    "/v1/restores/{id}/confirmations": {
+      "post": {
+        "operationId": "DataExportController_confirm",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Data export"]
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "ProfileController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Profile"]
+      }
+    },
+    "/v1/workspaces": {
+      "get": {
+        "operationId": "WorkspacesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceResourceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspaces"]
+      },
+      "post": {
+        "operationId": "WorkspacesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkspaceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspaces"]
+      }
+    }
+  },
+  "info": {
+    "title": "MyWallet API",
+    "description": "",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "AccountResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "institution": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "openingBalance": {
+            "type": "number"
+          },
+          "openingDate": {
+            "type": "string"
+          },
+          "balance": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "institution",
+          "type",
+          "currency",
+          "openingBalance",
+          "openingDate",
+          "balance",
+          "version",
+          "archived"
+        ]
+      },
+      "CreateAccountDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "institution": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["checking", "savings", "cash", "reserve"]
+          },
+          "openingBalance": {
+            "type": "number"
+          },
+          "openingDate": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "institution", "type", "openingBalance", "openingDate"]
+      },
+      "CategoryResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "type", "color"]
+      },
+      "CategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "color": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "type", "color"]
+      },
+      "TransactionResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "transactionDate": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": ["income", "expense", "transfer", "unclassified"]
+          },
+          "version": {
+            "type": "number"
+          },
+          "importBatchId": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferGroupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true
+          },
+          "installments": {
+            "type": "number",
+            "nullable": true
+          },
+          "installmentNumber": {
+            "type": "number",
+            "nullable": true
+          },
+          "merchant": {
+            "type": "string",
+            "nullable": true
+          },
+          "counterparty": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceOperationId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "categoryId",
+          "transactionDate",
+          "description",
+          "amount",
+          "transactionType",
+          "version",
+          "importBatchId",
+          "transferGroupId",
+          "brand",
+          "installments",
+          "installmentNumber",
+          "merchant",
+          "counterparty",
+          "sourceOperationId"
+        ]
+      },
+      "TransactionCollectionDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionResourceDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["items", "nextCursor"]
+      },
+      "TransactionDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "transactionDate": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          }
+        },
+        "required": ["accountId", "transactionDate", "description", "amount", "transactionType"]
+      },
+      "TransferDto": {
+        "type": "object",
+        "properties": {
+          "fromAccountId": {
+            "type": "string"
+          },
+          "toAccountId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "transactionDate": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["fromAccountId", "toAccountId", "amount", "transactionDate", "description"]
+      },
+      "ImportItemResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sourceRow": {
+            "type": "number"
+          },
+          "transactionDate": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "sourceOperationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": ["income", "expense", "transfer", "unclassified"]
+          },
+          "selected": {
+            "type": "boolean"
+          },
+          "duplicateCandidate": {
+            "type": "boolean"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "sourceRow",
+          "transactionDate",
+          "description",
+          "amount",
+          "sourceOperationId",
+          "transactionType",
+          "selected",
+          "duplicateCandidate",
+          "categoryId"
+        ]
+      },
+      "ImportBatchResourceDto": {
+        "type": "object",
+        "properties": {
+          "recordedOpeningBalance": {
+            "type": "number"
+          },
+          "openingMismatch": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "openingBalance": {
+            "type": "number"
+          },
+          "closingBalance": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportItemResourceDto"
+            }
+          }
+        },
+        "required": [
+          "recordedOpeningBalance",
+          "openingMismatch",
+          "id",
+          "accountId",
+          "fileName",
+          "status",
+          "version",
+          "openingBalance",
+          "closingBalance",
+          "items"
+        ]
+      },
+      "ReviewItemDto": {
+        "type": "object",
+        "properties": {
+          "selected": {
+            "type": "boolean"
+          },
+          "transactionType": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string"
+          }
+        },
+        "required": ["selected", "transactionType"]
+      },
+      "ConfirmImportDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number"
+          }
+        },
+        "required": ["version"]
+      },
+      "DashboardResourceDto": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "number"
+          },
+          "income": {
+            "type": "number"
+          },
+          "expense": {
+            "type": "number"
+          },
+          "unclassified": {
+            "type": "number"
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountResourceDto"
+            }
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "coverage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "balance",
+          "income",
+          "expense",
+          "unclassified",
+          "accounts",
+          "from",
+          "to",
+          "coverage"
+        ]
+      },
+      "WorkspaceResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "name", "description", "color", "isDefault"]
+      },
+      "CreateWorkspaceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "enum": ["emerald", "blue", "violet", "amber", "rose"]
+          }
+        },
+        "required": ["name", "description", "color"]
+      }
+    }
+  }
+}

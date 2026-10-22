@@ -1,0 +1,1 @@
+try{var mode=localStorage.getItem('mywallet-theme')||'system';var dark=mode==='dark'||(mode==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dark?'dark':'light';document.querySelector('meta[name="theme-color"]').content=dark?'#081116':'#f4f7f8';}catch{document.documentElement.dataset.theme='dark';}

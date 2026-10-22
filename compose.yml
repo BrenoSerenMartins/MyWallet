@@ -1,0 +1,17 @@
+services:
+  api:
+    build:
+      context: .
+      args:
+        SUPABASE_URL: ${SUPABASE_URL}
+        SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+    environment:
+      NODE_ENV: production
+      PORT: 8083
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+      RUNTIME_DATABASE_URL: ${RUNTIME_DATABASE_URL}
+      DOCS_ENABLED: "false"
+    ports:
+      - "${MYWALLET_PORT:-8083}:8083"
+    restart: unless-stopped

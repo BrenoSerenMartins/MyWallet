@@ -1,0 +1,10 @@
+import 'reflect-metadata';
+import { NestFactory } from '@nestjs/core';
+import { writeFileSync } from 'node:fs';
+import { AppModule } from '../../app.module.js';
+import { createApiDocument } from './index.js';
+process.env.SUPABASE_URL ??= 'https://example.supabase.co';
+process.env.SUPABASE_PUBLISHABLE_KEY ??= 'schema-generation-public-placeholder';
+const app = await NestFactory.create(AppModule, { logger: false });
+writeFileSync('openapi.json', JSON.stringify(createApiDocument(app), null, 2) + '\n');
+await app.close();
