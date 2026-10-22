@@ -5,6 +5,9 @@ The user approved execution. Application code for phases 1–7 is now present; a
 
 The pilot succeeds when a user can sign in, create an account, import and review the Mercado Pago sample, confirm correct account movements, and view the same saved data on desktop and mobile. A second user cannot access the first user's records.
 
+## Evolution after the pilot
+The user requested a broader portfolio/spending/wealth roadmap and confirmed dedicated credit-card and recurring-commitment areas. The [personal finance roadmap](../domains/personal-finance.md) is the source of truth for proposed releases, rules and acceptance. Cards now precede investment/wealth expansion in the proposed delivery order. This preserves the original pilot scope below; roadmap planning does not authorize implementation of every feature.
+
 ## Scope
 Include authentication, separate user ownership, accounts, categories, manual income/expenses/transfers, Mercado Pago PDF imports, duplicate review, reconciliation, import reversal, a monthly home dashboard, export/restore, responsive navigation, installable PWA, and light/dark/system themes.
 

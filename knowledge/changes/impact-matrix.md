@@ -20,3 +20,5 @@
 | Deployment port conflict handling | Early port availability check and explicit port option; existing servers remain running | None | No schema changes | None | Port may become occupied after preflight; Nest still enforces exclusive bind | Syntax/lint and CLI validation; start command documented for already prepared builds |
 
 | Repository publication documentation | Portuguese README with setup, scope, deployment and maintenance; expanded Git exclusions | Existing services only | None | None | Publishing financial exports or credentials; incorrect startup instructions | Checked local links, documented npm scripts and visible files against ignore rules |
+
+| Extended finance roadmap | Cards, installments, recurring commitments, budgets, investments, assets/debts, reserve/goals, reports and staged automation | No providers selected | Future scoped entities identified; no migration | No endpoint changes | Double counting card settlement/installments/assets, recurrence duplication, misleading projections | Existing features separated from proposals; release acceptance and unresolved financial policies recorded in domain note |
