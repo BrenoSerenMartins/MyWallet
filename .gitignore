@@ -11,6 +11,9 @@
 /.codex/
 /.agents/
 /.supabase-cli/
+.dev.vars
+.dev.vars.*
+.wrangler/
 
 # Dependencies, builds and tool caches
 node_modules/

@@ -146,6 +146,22 @@ MYWALLET_PORT=8084 docker compose --env-file .env.local up --build -d
 
 O container recebe as credenciais restritas da API. O arquivo `render.yaml` oferece um modelo de hospedagem no Render.
 
+### Frontend no Cloudflare Workers
+
+O arquivo `wrangler.jsonc` na raiz define o frontend em `app/dist` e o tratamento das rotas da SPA. Configure o projeto no painel do Cloudflare:
+
+| Configuração       | Valor                                       |
+| ------------------ | ------------------------------------------- |
+| Diretório raiz     | Raiz do repositório                         |
+| Build command      | `npm run build:cloudflare`                  |
+| Deploy command     | `npm run deploy:cloudflare`                 |
+| Versão do Node     | `24.21.0`                                   |
+| Variáveis de build | `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` |
+
+Ajuste `name` em `wrangler.jsonc` se o nome do Worker criado no painel for diferente de `mywallet`. Com as dependências instaladas, `npm run check:cloudflare` valida o empacotamento sem publicar. O comando local `npm run deploy` continua destinado ao servidor Node e não deve ser usado como deploy command do Cloudflare.
+
+Essa configuração publica a interface. A API Nest permanece um serviço Node separado; para o app financeiro funcionar nesse domínio, ainda é necessário hospedar a API e encaminhar `/v1` para ela. O proxy do Vite existe somente no desenvolvimento. Configure também os redirects do Supabase Auth para o domínio publicado. Credenciais PostgreSQL não são necessárias no build do frontend.
+
 ## Arquitetura
 
 ```text

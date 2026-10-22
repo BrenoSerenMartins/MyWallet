@@ -11,7 +11,8 @@
     "prettier": "^3.8.0",
     "supabase": "^2.121.0",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "wrangler": "4.152.0"
   },
   "workspaces": [
     "app",
@@ -38,7 +39,10 @@
     "format": "prettier --write app/src api/src scripts app/test api/test *.ts *.json",
     "contracts": "npm run openapi && openapi-typescript api/openapi.json -o app/src/shared/api/generated.d.ts && prettier --write api/openapi.json app/src/shared/api/generated.d.ts",
     "contracts:check": "node scripts/check-contracts.mjs",
-    "deploy": "node scripts/deploy.mjs"
+    "deploy": "node scripts/deploy.mjs",
+    "build:cloudflare": "npm run build -w @mywallet/app && node scripts/check-secrets.mjs",
+    "deploy:cloudflare": "wrangler deploy --config wrangler.jsonc",
+    "check:cloudflare": "wrangler deploy --config wrangler.jsonc --dry-run"
   },
   "type": "module"
 }
