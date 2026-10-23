@@ -11,7 +11,7 @@ const actions = [
     to: '/imports',
     Icon: Upload,
     title: 'Importar extrato',
-    caption: 'Seu Mercado Pago, organizado',
+    caption: 'PDF, CSV e XLSX do Mercado Pago',
   },
   {
     to: '/planning',

@@ -84,7 +84,7 @@ export function AppShell() {
             >
               <Icon size={19} />
               <span>{label}</span>
-              {to === '/imports' && <span className="nav-new">PDF</span>}
+              {to === '/imports' && <span className="nav-new">ARQUIVO</span>}
             </NavLink>
           ))}
         </nav>

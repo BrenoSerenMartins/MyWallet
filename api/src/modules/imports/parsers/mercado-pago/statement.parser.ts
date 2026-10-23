@@ -1,16 +1,10 @@
 import { UnprocessableEntityException } from '@nestjs/common';
-import { Worker } from 'node:worker_threads';
 import { dateOnly } from '../../../../core/rest/index.js';
 import type { ParsedStatement, StatementRow, TextCell } from '../../contracts/statement.js';
-export function parseAmount(text: string): number {
-  const value = text.replace(/R\$|\s/g, '').replace('−', '-');
-  if (!/^-?(?:\d+|\d{1,3}(?:\.\d{3})*),\d{2}$/.test(value))
-    throw new UnprocessableEntityException('Valor monetário não reconhecido.');
-  const number = BigInt(value.replace(/[.,]/g, ''));
-  if (number > BigInt(Number.MAX_SAFE_INTEGER) || number < BigInt(Number.MIN_SAFE_INTEGER))
-    throw new UnprocessableEntityException('Valor fora do limite.');
-  return Number(number);
-}
+import { parseAmount } from './statement-values.js';
+export { parseAmount } from './statement-values.js';
+import { reconcileStatement } from './reconcile-statement.js';
+import { readStatementWorker } from '../files/worker-reader.js';
 function summary(cells: TextCell[], label: string): number {
   const heading = cells.find((c) => c.text === label);
   if (!heading) throw new UnprocessableEntityException('Resumo do extrato não encontrado.');
@@ -60,43 +54,13 @@ export function parseMercadoPagoPages(pages: TextCell[][]): ParsedStatement {
   const items: StatementRow[] = [];
   for (const [index, cells] of pages.entries())
     items.push(...parsePage(cells, index + 1, items.length));
-  if (!items.length)
-    throw new UnprocessableEntityException('O extrato não contém movimentos legíveis.');
-  let balance = openingBalance;
-  for (const item of items) {
-    balance += item.amount;
-    if (!Number.isSafeInteger(balance) || balance !== item.balanceAfter)
-      throw new UnprocessableEntityException(
-        'O saldo não confere em todas as linhas. Este layout precisa de revisão.',
-      );
-  }
-  if (balance !== closingBalance)
-    throw new UnprocessableEntityException('O saldo final não confere.');
-  return { openingBalance, closingBalance, items };
+  return reconcileStatement({ openingBalance, closingBalance, items, sourceFormat: 'pdf' });
 }
+
 export async function extractStatement(buffer: Buffer): Promise<ParsedStatement> {
-  const pages = await new Promise<TextCell[][]>((resolve, reject) => {
-    let received = false;
-    const worker = new Worker(new URL('./pdf-worker.mjs', import.meta.url), { workerData: buffer });
-    const timer = setTimeout(() => {
-      void worker.terminate();
-      reject(new UnprocessableEntityException('A leitura excedeu o tempo permitido.'));
-    }, 30000);
-    worker.once('message', (result) => {
-      received = true;
-      clearTimeout(timer);
-      void worker.terminate();
-      if (result.error) reject(new UnprocessableEntityException(result.error));
-      else resolve(result.pages);
-    });
-    worker.once('error', () => {
-      clearTimeout(timer);
-      reject(new UnprocessableEntityException('Falha ao ler o arquivo.'));
-    });
-    worker.once('exit', () => {
-      clearTimeout(timer);
-      if (!received) reject(new UnprocessableEntityException('A leitura foi interrompida.'));
-    });
-  });
-  return parseMercadoPagoPages(pages);
+  const result = await readStatementWorker<{ pages: TextCell[][] }>(
+    new URL('./pdf-worker.mjs', import.meta.url),
+    buffer,
+  );
+  return parseMercadoPagoPages(result.pages);
 }

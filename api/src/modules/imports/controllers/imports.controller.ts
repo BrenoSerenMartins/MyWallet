@@ -52,10 +52,9 @@ export class ImportsController {
     @Body('accountId') accountId: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    if (!file || file.buffer.subarray(0, 5).toString() !== '%PDF-')
-      throw new UnprocessableEntityException('Selecione um PDF válido.');
+    if (!file) throw new UnprocessableEntityException('Selecione um extrato em PDF, CSV ou XLSX.');
     requireUuid(accountId);
-    const statement = await this.imports.extract(r.identity.id, file.buffer);
+    const statement = await this.imports.extract(r.identity.id, file.buffer, file.originalname);
     return this.db.forUser(r.identity.id, () =>
       this.imports.upload(accountId, file.buffer, file.originalname, statement),
     );

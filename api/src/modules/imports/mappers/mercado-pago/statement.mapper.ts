@@ -1,5 +1,8 @@
 import type { ImportEntry, ParsedStatement } from '../../contracts/statement.js';
 export const MERCADO_PAGO_MAPPER_VERSION = 'mercado-pago/account-pdf/1';
+export function mercadoPagoMapperVersion(format: 'pdf' | 'csv' | 'xlsx') {
+  return `mercado-pago/account-${format}/1`;
+}
 export function mapMercadoPago(statement: ParsedStatement): ImportEntry[] {
   return statement.items.map((item) => ({
     ...item,

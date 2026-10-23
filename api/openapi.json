@@ -1376,6 +1376,10 @@
       "ImportBatchResourceDto": {
         "type": "object",
         "properties": {
+          "sourceFormat": {
+            "type": "string",
+            "enum": ["pdf", "csv", "xlsx"]
+          },
           "accountOpeningDate": {
             "type": "string"
           },
@@ -1421,6 +1425,7 @@
           }
         },
         "required": [
+          "sourceFormat",
           "accountOpeningDate",
           "statementStartDate",
           "openingDateMismatch",

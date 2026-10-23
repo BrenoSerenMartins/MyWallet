@@ -26,3 +26,6 @@ The [pilot plan](../architecture/pilot-plan.md) describes the implemented direct
 | API repositories | PostgreSQL through restricted runtime role | Owner/workspace-scoped parameterized SQL and verified TLS |
 
 The `core` cannot import business modules. Business modules cannot import one another's implementations or write another module's tables. Composition imports the intentional public exports and wires real integration ports. No source dependency on Tastly is introduced.
+
+## Tabular account-statement readers
+The API uses csv-parse 7.0.3 for quoted CSV, read-excel-file 9.3.12 (universal entry in its worker) for XLSX cell data and unzipper-esm 0.13.3 for archive-directory size checks. These are server runtime dependencies only. fflate is an explicit development dependency for synthetic XLSX test generation. Keep workers and their MJS reader modules included in API builds. No external data provider or browser workbook parser is introduced.

@@ -572,6 +572,8 @@ export interface components {
       categoryId: string | null;
     };
     ImportBatchResourceDto: {
+      /** @enum {string} */
+      sourceFormat: 'pdf' | 'csv' | 'xlsx';
       accountOpeningDate: string;
       statementStartDate: string | null;
       openingDateMismatch: boolean;

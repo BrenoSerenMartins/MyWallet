@@ -56,3 +56,6 @@ Migrations `202610230001_monthly_planning.sql` and `202610230002_statement_histo
 Import status `history` retains normalized statement items without ledger insertion. Active-file uniqueness includes draft/confirmed/history. `history_saved_at` marks previously retained batches: expired draft cleanup excludes them after reopening. Returning to history is allowed after review expiry for an already retained batch; financial confirmation still requires a valid unexpired draft, date/balance reconciliation, classification and duplicate review. No historical account balance is rewritten automatically.
 
 Financial JSON backups export version 2 with monthlyPlans, still accept version 1, remap plan categories and refuse month collisions atomically. Financial JSON backup does not include retained statement history; use operational PostgreSQL backups for that data.
+
+## Multiple statement formats
+PDF/CSV/XLSX use the existing import tables and reviewed movement model. mapper_version records format-specific Mercado Pago versions; sourceFormat is derived for the API. No schema change is needed. Byte-hash uniqueness prevents exact file repetition, while account/date/amount and source reference/description flag financial duplicates across different-format files; no uniqueness is added on source_operation_id.

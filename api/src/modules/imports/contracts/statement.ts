@@ -13,6 +13,7 @@ export interface StatementRow {
   balanceAfter: number;
 }
 export interface ParsedStatement {
+  sourceFormat?: 'pdf' | 'csv' | 'xlsx';
   openingBalance: number;
   closingBalance: number;
   items: StatementRow[];

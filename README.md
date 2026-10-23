@@ -13,7 +13,7 @@ O projeto está em fase de **piloto**. O dashboard mostra os saldos das contas c
 - **Planejamento mensal:** receitas/despesas previstas por categoria, comparação com o realizado, intenção de aporte, notas e cópia revisada do mês anterior.
 - **Movimentações:** receitas, despesas, categorias, filtros, correções e estornos.
 - **Transferências:** lançamento das duas movimentações entre contas na mesma transação.
-- **Extratos:** importação de PDF do Mercado Pago, conferência de saldos, revisão, identificação de possíveis duplicidades e confirmação com proteção contra repetição.
+- **Extratos:** importação de extratos de conta do Mercado Pago em PDF, CSV e XLSX, conferência de saldos, revisão, identificação de possíveis duplicidades e confirmação com proteção contra repetição.
 - **Histórico de extratos:** salve movimentos antigos apenas para consulta e busque dentro do extrato sem alterar saldos ou gastos. Integração financeira posterior exige revisão e conciliação.
 - **Dados:** exportação em CSV, backup financeiro em JSON com planejamentos e restauração com prévia de impacto.
 - **Acesso:** cadastro, login e recuperação de senha pelo Supabase Auth.
@@ -243,9 +243,9 @@ Os testes de banco usam PostgreSQL via PGlite. Os testes de interface usam auten
 
 ## Extratos, backups e privacidade
 
-O importador atual interpreta PDFs de extrato de conta do Mercado Pago. Outros bancos exigem seus próprios parsers e mapeadores para o modelo financeiro comum. Cada importação deve ser revisada antes da confirmação.
+O importador atual interpreta extratos de conta do Mercado Pago em PDF com texto, CSV UTF-8 e XLSX com uma única aba. CSV/XLSX devem conter o resumo de saldos e a tabela de movimentos do modelo de extrato de conta; relatórios de vendas, faturas de cartão, XLS e outros layouts ainda não são aceitos. Todos os formatos conciliam saldos; CSV/XLSX também conferem os totais de créditos/débitos. Os limites são 10 MB por arquivo, 100 páginas no PDF e 10.000 movimentos. Outros bancos exigem seus próprios parsers e mapeadores para o modelo financeiro comum. Cada importação deve ser revisada antes da confirmação.
 
-O PDF original não é armazenado. O histórico conserva o nome e o hash do arquivo, além da origem dos lançamentos. Rascunhos expiram após 24 horas e podem ser removidos com `db:cleanup`. Extratos já salvos como histórico de consulta ficam protegidos dessa limpeza, inclusive se forem reabertos para uma revisão financeira.
+O arquivo original (PDF, CSV ou XLSX) não é armazenado. O histórico conserva o nome e o hash do arquivo, além da origem dos lançamentos. Rascunhos expiram após 24 horas e podem ser removidos com `db:cleanup`. Extratos já salvos como histórico de consulta ficam protegidos dessa limpeza, inclusive se forem reabertos para uma revisão financeira.
 
 O backup JSON versão 2 cobre o espaço selecionado: contas, categorias, movimentações financeiras ativas e planejamentos mensais. Backups versão 1 continuam aceitos. Meses de planejamento já existentes impedem a restauração inteira para preservar os dois conjuntos; use outro espaço para restaurar nesse caso. Ele não inclui PDFs, rascunhos, extratos salvos apenas para consulta nem todo o histórico de auditoria. CSV serve para análise; a restauração usa JSON. Para recuperação completa do histórico, mantenha também backups operacionais do PostgreSQL.
 

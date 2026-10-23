@@ -130,3 +130,76 @@ describe('Older statements and consultation history', () => {
     ).rejects.toThrow('reconciliação');
   });
 });
+
+describe('Overlapping account reports in different formats', () => {
+  it('preserves format provenance and flags existing movements across PDF, CSV and XLSX', async () => {
+    const accountId = (
+      await db.forUser(db.user, () =>
+        accounts.create({
+          name: 'Formats',
+          institution: 'mercado_pago',
+          type: 'checking',
+          openingBalance: 10000,
+          openingDate: '2026-10-01',
+        }),
+      )
+    ).id;
+    const statement = {
+      openingBalance: 10000,
+      closingBalance: 10030,
+      items: [
+        {
+          sourceRow: 1,
+          sourcePage: 1,
+          transactionDate: '2026-10-02',
+          description: 'Rendimentos',
+          sourceOperationId: 'shared-reference',
+          amount: 10,
+          balanceAfter: 10010,
+        },
+        {
+          sourceRow: 2,
+          sourcePage: 1,
+          transactionDate: '2026-10-02',
+          description: 'Rendimentos',
+          sourceOperationId: 'shared-reference',
+          amount: 20,
+          balanceAfter: 10030,
+        },
+      ],
+    };
+    const pdf = await db.forUser(db.user, () =>
+      imports.upload(accountId, Buffer.from('pdf'), 'synthetic.pdf', {
+        ...statement,
+        sourceFormat: 'pdf',
+      }),
+    );
+    await db.forUser(db.user, () => imports.confirm(pdf.id, pdf.version, 'formats-pdf'));
+    for (const format of ['csv', 'xlsx'] as const) {
+      const preview = await db.forUser(db.user, () =>
+        imports.upload(accountId, Buffer.from(format), `synthetic.${format}`, {
+          ...statement,
+          sourceFormat: format,
+        }),
+      );
+      expect(preview.sourceFormat).toBe(format);
+      expect(preview.items).toHaveLength(2);
+      expect(preview.items.every((item) => item.duplicateCandidate && !item.selected)).toBe(true);
+      const stored = await db.forUser(db.user, () => imports.get(preview.id));
+      expect(stored.mapper_version).toBe(`mercado-pago/account-${format}/1`);
+      const repeated = await db.forUser(db.user, () =>
+        imports.upload(accountId, Buffer.from(format), `another-name.${format}`, {
+          ...statement,
+          sourceFormat: format,
+        }),
+      );
+      expect(repeated.id).toBe(preview.id);
+    }
+    expect((await db.forUser(db.user, () => accounts.find(accountId))).balance).toBe(10030);
+    expect(
+      (await db.forUser(db.user, () => ledger.exportRecords())).filter(
+        (t) => t.accountId === accountId,
+      ),
+    ).toHaveLength(2);
+  });
+});

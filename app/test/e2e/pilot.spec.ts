@@ -113,7 +113,7 @@ for (const width of [360, 390, 768, 1440])
     await page.goto('/imports');
     await expect(page.getByRole('heading', { name: /Seu Mercado Pago/ })).toBeVisible();
     await page.getByLabel('Conta de destino').selectOption(account.id);
-    await expect(page.getByRole('button', { name: 'Selecionar PDF' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Selecionar extrato' })).toBeEnabled();
     await page.goto('/settings');
     await expect(page.getByRole('heading', { name: 'Preferências', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -335,4 +335,59 @@ test('old statement can be retained for consultation and searched without confir
   await expect(page.getByText(transaction.description, { exact: true })).toHaveCount(0);
   await page.getByRole('searchbox', { name: 'Buscar no extrato' }).fill('2026-01-01');
   await expect(page.getByText(transaction.description, { exact: true })).toBeVisible();
+});
+
+test('CSV statement upload uses the same review and history workflow', async ({ page }) => {
+  await signedIn(page);
+  const batch = {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    accountId: account.id,
+    fileName: 'synthetic.csv',
+    status: 'draft',
+    sourceFormat: 'csv',
+    version: 1,
+    accountOpeningDate: '2026-01-01',
+    statementStartDate: '2026-10-01',
+    openingDateMismatch: false,
+    openingMismatch: false,
+    recordedOpeningBalance: 10000,
+    openingBalance: 10000,
+    closingBalance: 9000,
+    items: [
+      {
+        ...transaction,
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        sourceRow: 5,
+        amount: -1000,
+        balanceAfter: 9000,
+        selected: true,
+        duplicateCandidate: false,
+        sourceOperationId: '123456',
+      },
+    ],
+  };
+  await page.route('**/v1/imports', async (route) => {
+    if (route.request().method() === 'POST') {
+      expect(route.request().headers()['content-type']).toContain('multipart/form-data');
+      expect(route.request().postData()).toContain('filename="synthetic.csv"');
+      return route.fulfill({ json: batch, status: 201 });
+    }
+    return route.fulfill({ json: [] });
+  });
+  await page.route(`**/v1/imports/${batch.id}`, (route) => route.fulfill({ json: batch }));
+  await page.goto('/imports');
+  await page.getByLabel('Conta de destino').selectOption(account.id);
+  await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.csv.*\.xlsx/);
+  await page
+    .locator('input[type=file]')
+    .setInputFiles({
+      name: 'synthetic.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(
+        'INITIAL_BALANCE;CREDITS;DEBITS;FINAL_BALANCE\n100,00;0,00;-10,00;90,00\n\nRELEASE_DATE;TRANSACTION_TYPE;REFERENCE_ID;TRANSACTION_NET_AMOUNT;PARTIAL_BALANCE\n01-10-2026;Pagamento;123456;-10,00;90,00',
+      ),
+    });
+  await expect(page.getByRole('heading', { name: 'Revise seu extrato' })).toBeVisible();
+  await expect(page.getByText(/Formato: CSV/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Salvar apenas como histórico' })).toBeVisible();
 });

@@ -23,20 +23,20 @@ import { requireVersion } from '../../../core/rest/index.js';
 import { ImportsRepository } from '../repositories/imports.repository.js';
 import {
   mapMercadoPago,
-  MERCADO_PAGO_MAPPER_VERSION,
+  mercadoPagoMapperVersion,
 } from '../mappers/mercado-pago/statement.mapper.js';
-import { extractStatement } from '../parsers/mercado-pago/statement.parser.js';
+import { extractMercadoPagoStatement } from '../parsers/mercado-pago/extract-statement.js';
 import type { ParsedStatement } from '../contracts/statement.js';
 import type { ReviewItemDto } from '../dto/import.dto.js';
 @Injectable()
 export class ImportsService {
   private readonly activeExtractions = new Set<string>();
-  async extract(userId: string, buffer: Buffer) {
+  async extract(userId: string, buffer: Buffer, fileName = 'statement.pdf') {
     if (this.activeExtractions.has(userId))
       throw new ConflictException('Já existe uma leitura em andamento.');
     this.activeExtractions.add(userId);
     try {
-      return await extractStatement(buffer);
+      return await extractMercadoPagoStatement(buffer, fileName);
     } finally {
       this.activeExtractions.delete(userId);
     }
@@ -77,6 +77,11 @@ export class ImportsService {
         ? await this.ledgerReads.balanceBefore(account.id, statementStartDate)
         : 0);
     return {
+      sourceFormat: b.mapper_version.includes('account-csv/')
+        ? 'csv'
+        : b.mapper_version.includes('account-xlsx/')
+          ? 'xlsx'
+          : 'pdf',
       accountOpeningDate: account.openingDate,
       statementStartDate,
       openingDateMismatch: !!statementStartDate && statementStartDate < account.openingDate,
@@ -105,7 +110,7 @@ export class ImportsService {
       accountId,
       hash,
       fileName,
-      MERCADO_PAGO_MAPPER_VERSION,
+      mercadoPagoMapperVersion(statement.sourceFormat ?? 'pdf'),
       statement,
     );
     const signatures = new Set<string>();

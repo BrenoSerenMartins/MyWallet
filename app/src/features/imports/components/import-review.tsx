@@ -34,6 +34,11 @@ export function ImportReview({
   );
   return (
     <>
+      <p className="field-help">
+        Formato: {batch.sourceFormat?.toUpperCase() ?? 'PDF'} · Extrato de conta Mercado Pago.
+        Referências, datas e valores são preservados para revisar possíveis duplicidades entre
+        formatos.
+      </p>
       <section className="review-summary">
         <div className="panel">
           <span>Movimentos no arquivo</span>

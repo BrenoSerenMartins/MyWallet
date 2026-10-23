@@ -4,7 +4,7 @@
 Build a complete personal-finance workspace covering daily spending, commitments, credit, investments and recorded net worth. The user requested this roadmap and confirmed separate credit-card and recurring-expense areas. This is a roadmap; the current foundation and monthly-planning delivery below distinguish implementation from future features. Implementation proceeds in small releases with explicit acceptance, rather than scaffolding every future module now.
 
 ## Current foundation
-The implemented pilot also includes monthly planning and retained consultation-only statements with per-batch search; it does not yet include card billing. The pilot contains private user-owned workspaces, accounts/opening balances, categories, income/expenses, atomic transfers, history/corrections/reversals, Mercado Pago account-statement PDF review and confirmation, monthly summaries, JSON backup/restore, CSV export, Auth and responsive light/dark/system PWA navigation. Hosted acceptance remains separate from code availability; see [overview](../architecture/overview.md).
+The implemented pilot also includes monthly planning and retained consultation-only statements with per-batch search; it does not yet include card billing. The pilot contains private user-owned workspaces, accounts/opening balances, categories, income/expenses, atomic transfers, history/corrections/reversals, Mercado Pago account-statement PDF/CSV/XLSX review and confirmation, monthly summaries, JSON backup/restore, CSV export, Auth and responsive light/dark/system PWA navigation. Hosted acceptance remains separate from code availability; see [overview](../architecture/overview.md).
 
 The dashboard currently reports recorded account balances. It must not label that amount as complete net worth. Private spaces do not imply shared membership.
 
@@ -24,7 +24,7 @@ The dashboard currently reports recorded account balances. It must not label tha
 | Emergency reserve | Essential-expense baseline, months-of-coverage target and eligible asset allocation | Liquidity rules, historical coverage and contribution planning |
 | Goals | Target amount/date, progress and allocations of existing funds | Priorities, contribution schedules and scenario projections |
 | Reports | Expenses by category, recurring costs, card usage, cash flow and export | Net-worth evolution, portfolio allocation and period comparisons with coverage warnings |
-| Imports and reconciliation | Existing Mercado Pago account PDF; explicit source/target and review | Additional bank/card samples, OFX/CSV mapping, classification rules and matching recorded payments |
+| Imports and reconciliation | Mercado Pago account PDF/CSV/XLSX; explicit source/target and review | Additional bank/card samples, OFX/CSV mapping, classification rules and matching recorded payments |
 | Notifications | In-app upcoming/overdue/overspend notices | Opt-in push/email through supported platforms, with scheduled delivery and deduplication |
 | Workspaces | Existing private spaces and isolated data | Rename/archive, workspace preferences; later explicit viewer/editor membership and invitations |
 | Data and operations | Existing financial export/restore; tested operational backup and recovery | Expanded backup schema per domain, retention/export/deletion controls and security review |

@@ -103,8 +103,8 @@ export function ImportsPage() {
                 sem começar do zero.
               </h2>
               <p>
-                Envie o PDF do extrato de conta. Vamos organizar os dados e conferir os saldos para
-                você revisar.
+                Envie o extrato de conta em PDF, CSV ou XLSX. Vamos organizar os dados e conferir os
+                saldos para você revisar.
               </p>
               {accounts.isPending ? (
                 <Loading />
@@ -128,7 +128,7 @@ export function ImportsPage() {
                   <input
                     ref={input}
                     type="file"
-                    accept="application/pdf,.pdf"
+                    accept="application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.pdf,.csv,.xlsx"
                     hidden
                     onChange={(e) => void upload(e)}
                   />
@@ -137,9 +137,11 @@ export function ImportsPage() {
                     onClick={() => input.current?.click()}
                   >
                     <Upload size={18} />
-                    {busy ? 'Lendo e conferindo o extrato…' : 'Selecionar PDF'}
+                    {busy ? 'Lendo e conferindo o extrato…' : 'Selecionar extrato'}
                   </Button>
-                  <span className="field-help">PDF com texto · até 10 MB e 100 páginas</span>
+                  <span className="field-help">
+                    PDF com texto, CSV UTF-8 ou XLSX · até 10 MB, 100 páginas ou 10.000 movimentos
+                  </span>
                 </>
               ) : (
                 <EmptyState
@@ -161,7 +163,7 @@ export function ImportsPage() {
                 {
                   n: '01',
                   title: 'Envie seu extrato',
-                  text: 'Escolha o PDF e a conta à qual ele pertence.',
+                  text: 'Escolha o PDF, CSV ou XLSX e a conta à qual ele pertence.',
                 },
                 {
                   n: '02',
