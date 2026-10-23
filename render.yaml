@@ -9,7 +9,7 @@ services:
     healthCheckPath: /ready
     envVars:
       - key: PORT
-        value: '8083'
+        value: '10000'
       - key: SUPABASE_URL
         value: https://hlcrjoqmyohfbajvafhh.supabase.co
       - key: SUPABASE_PUBLISHABLE_KEY

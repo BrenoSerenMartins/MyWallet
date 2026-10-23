@@ -134,7 +134,7 @@ Para disponibilizar publicamente, configure hospedagem, HTTPS, redirects de aute
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/BrenoSerenMartins/MyWallet)
 
-O Blueprint `render.yaml` configura um único serviço Docker na branch `main`, com frontend e API no mesmo domínio, plano gratuito e health check em `/ready`. Não é necessário criar outro banco: os dados continuam no Supabase.
+O Blueprint `render.yaml` configura um único serviço Docker na branch `main`, com frontend e API no mesmo domínio, plano gratuito, porta interna `10000` e health check em `/ready`. Não é necessário criar outro banco: os dados continuam no Supabase.
 
 1. Abra o botão acima ou, no Render, escolha **New → Blueprint**, conecte o GitHub e selecione este repositório. Para repositórios privados, permita acesso ao app do Render no GitHub.
 2. Confira o serviço `mywallet-pilot` e forneça `SUPABASE_PUBLISHABLE_KEY` e `RUNTIME_DATABASE_URL` a partir do seu `.env.local`. `SUPABASE_URL` já está definida no Blueprint para o projeto atual.
@@ -143,11 +143,13 @@ O Blueprint `render.yaml` configura um único serviço Docker na branch `main`, 
 5. Inicie o deploy pelo painel. O Render usa o Dockerfile para construir e executar o serviço; não configure `npx wrangler deploy` ou `npm run deploy` como comando desse serviço Docker.
 6. Quando a URL HTTPS estiver disponível, configure-a como Site URL no Supabase Auth e permita `/auth/callback` e `/reset-password` nesse domínio. Confira `/ready`, faça login e valide leitura/escrita no seu espaço.
 
+Em um serviço já criado, confira **Environment → PORT = 10000** e **Settings → Health Check Path = /ready**. Se o Blueprint não sincronizar automaticamente, sincronize-o no painel ou atualize essa variável antes do novo deploy. O log de inicialização informa a porta efetivamente usada. Desenvolvimento e Docker Compose local continuam usando `8083`.
+
 O plano gratuito pode adormecer após inatividade; a primeira abertura pode demorar. O worker separado do Cloudflare não é necessário nesse caminho. Se houver um deploy frontend antigo, utilize a URL do Render para acessar a aplicação completa.
 
 #### Diagnosticar deploy que inicia, mas não fica saudável
 
-O log `Nest application successfully started` confirma o servidor HTTP; a liberação do deploy também depende de `/ready`, que verifica o PostgreSQL e o papel restrito. Se essa etapa falhar, procure `Database readiness failed:` nos logs. O app registra somente códigos permitidos, sem mensagens brutas, URLs ou senhas, e evita repetir a mesma falha em cada probe.
+O log `HTTP listening on 0.0.0.0:10000` confirma a porta HTTP no Render; a liberação do deploy também depende de `/ready`, que verifica o PostgreSQL e o papel restrito. Se essa etapa falhar, procure `Database readiness failed:` nos logs. O app registra somente códigos permitidos, sem mensagens brutas, URLs ou senhas, e evita repetir a mesma falha em cada probe.
 
 | Código                                                          | O que conferir                                                                                               |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
