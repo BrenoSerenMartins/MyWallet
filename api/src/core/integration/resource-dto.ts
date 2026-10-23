@@ -12,6 +12,7 @@ export class AccountResourceDto {
   @ApiProperty({ type: Boolean }) archived!: boolean;
 }
 export class CategoryGroupResourceDto {
+  @ApiProperty({ type: Boolean }) isDefault!: boolean;
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) name!: string;
   @ApiProperty({ type: String }) type!: string;
@@ -112,4 +113,13 @@ export class DashboardResourceDto {
 export class TransactionCollectionDto {
   @ApiProperty({ type: () => [TransactionResourceDto] }) items!: TransactionResourceDto[];
   @ApiProperty({ type: String, nullable: true }) nextCursor!: string | null;
+}
+
+export class CategoryGroupDeletionResourceDto {
+  @ApiProperty({ type: String }) id!: string;
+  @ApiProperty({ type: String }) name!: string;
+  @ApiProperty({ type: Number }) categoryCount!: number;
+  @ApiProperty({ type: String }) destinationGroupId!: string;
+  @ApiProperty({ type: String }) destinationGroupName!: string;
+  @ApiProperty({ type: [String] }) conflictingNames!: string[];
 }

@@ -64,3 +64,5 @@ Settlement CSV uses the same import endpoints. Previews add reportType, canInteg
 - Import items add derived duplicateLocked/duplicateReason. Attempts to edit proven duplicates return 409; confirmation automatically skips newly detected copies and returns skippedDuplicates.
 - Financial JSON backup exports version 3 with categoryGroups; restores accept v1/v2/v3.
 - Frontend /categories is the dedicated hierarchy screen; /settings/categories redirects there. Existing account/transaction/import routes remain. Preferences and imports have section switchers; mobile More opens a navigation dialog.
+
+Default groups add isDefault to group resources. GET /v1/category-groups/:id/deletion-preview returns the category count, default destination and conflicting names. DELETE /v1/category-groups/:id atomically moves categories and returns deleted/movedCategories/destinationGroupId; inaccessible groups return 404 and default/conflicting deletions return 409. Existing nullable groupId input now resolves to the real matching default. Deletion always rechecks ownership and conflicts, independent of the preview.

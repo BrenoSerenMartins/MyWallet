@@ -638,8 +638,13 @@ for (const width of [390, 1440])
       page.getByRole('dialog').getByRole('combobox', { name: 'Grupo', exact: true }),
     ).toHaveValue(groups[0].id);
     await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
-    await page.locator('.category-group summary').click();
-    await expect(page.getByText('Luz', { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Editar categoria Luz', exact: true }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Organizar categorias', exact: true }).click();
+    await expect(
+      page.locator('.category-children').getByText('Luz', { exact: true }),
+    ).toBeVisible();
     for (const theme of ['claro', 'escuro']) {
       await page
         .getByRole('button', { name: `Tema ${theme}`, exact: true })
@@ -768,3 +773,79 @@ test('mobile more menu exposes imports and category organization', async ({ page
   ).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
+
+for (const width of [390, 1440])
+  test(`group deletion previews category migration and protects defaults at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    const defaultId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      customId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+    let deleted = false;
+    const groups = [
+      { id: customId, name: 'Casa', type: 'expense', color: '#5ee9b5', isDefault: false },
+      { id: defaultId, name: 'Geral', type: 'expense', color: '#8296a0', isDefault: true },
+    ];
+    const categories = [
+      {
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        name: 'Luz',
+        type: 'expense',
+        color: '#5ee9b5',
+        groupId: customId,
+        groupName: 'Casa',
+      },
+    ];
+    await page.route('**/v1/category-groups', (route) => route.fulfill({ json: groups }));
+    await page.route('**/v1/categories', (route) => route.fulfill({ json: categories }));
+    await page.route(`**/v1/category-groups/${customId}/deletion-preview`, (route) =>
+      route.fulfill({
+        json: {
+          id: customId,
+          name: 'Casa',
+          categoryCount: 1,
+          destinationGroupId: defaultId,
+          destinationGroupName: 'Geral',
+          conflictingNames: [],
+        },
+      }),
+    );
+    await page.route(`**/v1/category-groups/${customId}`, (route) => {
+      expect(route.request().method()).toBe('DELETE');
+      deleted = true;
+      groups.splice(0, 1);
+      categories[0].groupId = defaultId;
+      categories[0].groupName = 'Geral';
+      return route.fulfill({ json: { deleted: true, movedCategories: 1 } });
+    });
+    await page.goto('/categories');
+    await expect(
+      page.getByRole('region', { name: 'Grupo Geral' }).getByText('Padrão', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Excluir grupo Geral', exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole('button', { name: 'Excluir grupo Casa', exact: true }).click();
+    await expect(
+      page.getByRole('dialog').getByText('1 categoria será movida', { exact: true }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+    expect(deleted).toBe(false);
+    await page.getByRole('button', { name: 'Excluir grupo Casa', exact: true }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Excluir grupo', exact: true })
+      .click();
+    await expect(page.getByRole('region', { name: 'Grupo Casa' })).toHaveCount(0);
+    await expect(
+      page
+        .getByRole('region', { name: 'Grupo Geral' })
+        .getByRole('button', { name: 'Editar categoria Luz', exact: true }),
+    ).toBeVisible();
+    expect(deleted).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: `/tmp/mywallet-default-group-${width}.png`, fullPage: true });
+  });

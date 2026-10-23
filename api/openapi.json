@@ -324,6 +324,45 @@
           }
         ],
         "tags": ["Categories"]
+      },
+      "delete": {
+        "operationId": "CategoryGroupsController_deleteGroup",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Categories"]
+      }
+    },
+    "/v1/category-groups/{id}/deletion-preview": {
+      "get": {
+        "operationId": "CategoryGroupsController_deletionPreview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryGroupDeletionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Categories"]
       }
     },
     "/v1/transactions": {
@@ -1112,6 +1151,9 @@
       "CategoryGroupResourceDto": {
         "type": "object",
         "properties": {
+          "isDefault": {
+            "type": "boolean"
+          },
           "id": {
             "type": "string"
           },
@@ -1125,7 +1167,7 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "type", "color"]
+        "required": ["isDefault", "id", "name", "type", "color"]
       },
       "CategoryGroupDto": {
         "type": "object",
@@ -1142,6 +1184,40 @@
           }
         },
         "required": ["name", "type", "color"]
+      },
+      "CategoryGroupDeletionResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "categoryCount": {
+            "type": "number"
+          },
+          "destinationGroupId": {
+            "type": "string"
+          },
+          "destinationGroupName": {
+            "type": "string"
+          },
+          "conflictingNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "categoryCount",
+          "destinationGroupId",
+          "destinationGroupName",
+          "conflictingNames"
+        ]
       },
       "TransactionResourceDto": {
         "type": "object",

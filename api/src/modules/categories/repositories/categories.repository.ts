@@ -14,13 +14,30 @@ export class CategoriesRepository {
   }
   async groups(): Promise<CategoryGroupResource[]> {
     return this.db.query(
-      'SELECT id,name,type,color FROM wallet.category_groups WHERE user_id=$1 ORDER BY name,id',
+      'SELECT id,name,type,color,is_default AS "isDefault" FROM wallet.category_groups WHERE user_id=$1 ORDER BY is_default,name,id',
       [this.db.userId],
     );
   }
+  async lockGroups(ids: string[]) {
+    await this.db.query(
+      'SELECT id FROM wallet.category_groups WHERE user_id=$1 AND id=ANY($2::uuid[]) ORDER BY id FOR UPDATE',
+      [this.db.userId, ids],
+    );
+  }
+  async moveCategoriesAndDeleteGroup(id: string, destinationId: string) {
+    const rows = await this.db.query(
+      'UPDATE wallet.categories SET group_id=$3 WHERE user_id=$1 AND group_id=$2 RETURNING id',
+      [this.db.userId, id, destinationId],
+    );
+    await this.db.query(
+      'DELETE FROM wallet.category_groups WHERE user_id=$1 AND id=$2 AND NOT is_default',
+      [this.db.userId, id],
+    );
+    return rows.length;
+  }
   async saveGroup(input: CategoryGroupDto, id: string = randomUUID()) {
     const [group] = await this.db.query(
-      'INSERT INTO wallet.category_groups(id,user_id,name,type,color) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,color=EXCLUDED.color WHERE category_groups.user_id=$2 RETURNING id,name,type,color',
+      'INSERT INTO wallet.category_groups(id,user_id,name,type,color) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,color=EXCLUDED.color WHERE category_groups.user_id=$2 RETURNING id,name,type,color,is_default AS "isDefault"',
       [id, this.db.userId, input.name.trim(), input.type, input.color],
     );
     return group;

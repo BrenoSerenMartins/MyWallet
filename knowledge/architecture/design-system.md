@@ -41,7 +41,7 @@ Support `light`, `dark`, and `system`. Start with the system preference and pers
 | Transactions | Search, period/account/category/type filters; detail, create, edit, and explicit reversal/removal confirmation |
 | Import | Account selection → upload → extraction summary → review/corrections/automatic duplicate exclusion and ambiguous-match decisions → confirmation receipt |
 | Import history | Status, counts, reconciliation, and batch reversal with a clear impact preview |
-| Categories | Income/expense switcher, searchable expandable groups, category editing/moves and a preserved ungrouped section |
+| Categories | Income/expense switcher, searchable expandable groups, category editing/moves and a protected default group |
 | Settings | Appearance, data/backup and account sections in a view switcher |
 
 ## Components and interaction
@@ -62,3 +62,5 @@ Validate at 360px, 390px, 768px, and 1440px; check both themes plus system theme
 
 ## Information hierarchy update
 Import upload/history use separate views. Review separates all/pending/ready/locked duplicates, keeps source reconciliation and consultation-only retention in disclosures, and exposes grouped category selectors. Mobile review uses stacked rows and full-width 44px selects instead of shrinking the desktop table. Counts and labels remain explicit; confirmed duplicates cannot be selected through either UI or API. Transaction lists show group/category context and have type switchers plus expandable account/category/date filters. Planning groups collapse independently without recalculating financial totals in UI. Existing theme tokens and focused keyboard/native disclosure controls remain authoritative. PWA shell version advances to v4.
+
+Category cards use responsive fixed-minimum grid tracks, visible category chips, a separate expand control and accessible edit/delete icons. Expanded lists expose edit/move actions without repeating the preview chips. Defaults are secondary cards with a Padrão badge and no delete action. The deletion dialog fetches an impact preview, explains the destination, supports cancellation and disables confirmation for name conflicts.

@@ -126,10 +126,26 @@ export interface paths {
     get?: never;
     put?: never;
     post?: never;
-    delete?: never;
+    delete: operations['CategoryGroupsController_deleteGroup'];
     options?: never;
     head?: never;
     patch: operations['CategoryGroupsController_update'];
+    trace?: never;
+  };
+  '/v1/category-groups/{id}/deletion-preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['CategoryGroupsController_deletionPreview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   '/v1/transactions': {
@@ -508,6 +524,7 @@ export interface components {
       groupId?: string | null;
     };
     CategoryGroupResourceDto: {
+      isDefault: boolean;
       id: string;
       name: string;
       type: string;
@@ -518,6 +535,14 @@ export interface components {
       /** @enum {string} */
       type: 'income' | 'expense';
       color: string;
+    };
+    CategoryGroupDeletionResourceDto: {
+      id: string;
+      name: string;
+      categoryCount: number;
+      destinationGroupId: string;
+      destinationGroupName: string;
+      conflictingNames: string[];
     };
     TransactionResourceDto: {
       id: string;
@@ -926,6 +951,23 @@ export interface operations {
       };
     };
   };
+  CategoryGroupsController_deleteGroup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   CategoryGroupsController_update: {
     parameters: {
       query?: never;
@@ -945,6 +987,25 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['CategoryGroupResourceDto'];
+        };
+      };
+    };
+  };
+  CategoryGroupsController_deletionPreview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryGroupDeletionResourceDto'];
         };
       };
     };

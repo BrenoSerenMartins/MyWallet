@@ -1,5 +1,7 @@
+import { CategoryGroupCard } from './components/category-group-card';
+import { DeleteGroupDialog } from './components/delete-group-dialog';
 import { useState } from 'react';
-import { FolderOpen, Plus, Search, Pencil, ChevronDown } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import type { Category, CategoryGroup } from '../../shared/api/resources';
 import { Button, EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
@@ -12,9 +14,10 @@ interface Editor {
   group?: CategoryGroup;
 }
 export function CategoriesPage() {
-  const { categories, groups, save } = useCategories();
+  const { categories, groups, save, deleteGroup } = useCategories();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [search, setSearch] = useState('');
+  const [deleting, setDeleting] = useState<CategoryGroup | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const matching = (categories.data ?? []).filter(
     (c) =>
@@ -30,10 +33,6 @@ export function CategoriesPage() {
         g.name.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR')) ||
         matching.some((c) => c.groupId === g.id)),
   );
-  const sections: (CategoryGroup | null)[] = [
-    ...visibleGroups,
-    ...(matching.some((c) => !c.groupId) ? [null] : []),
-  ];
   return (
     <div className="page-enter">
       <div className="page-heading">
@@ -74,7 +73,7 @@ export function CategoriesPage() {
         <ErrorState error={categories.error ?? groups.error} />
       ) : categories.isPending || groups.isPending ? (
         <Loading />
-      ) : !sections.length ? (
+      ) : !visibleGroups.length ? (
         <EmptyState
           title={search ? 'Nenhum resultado' : 'Comece pelos grandes grupos'}
           action={
@@ -89,64 +88,26 @@ export function CategoriesPage() {
         </EmptyState>
       ) : (
         <div className="category-groups">
-          {sections.map((group) => {
-            const children = matching.filter((c) => (c.groupId ?? null) === (group?.id ?? null));
-            return (
-              <section className="panel category-group" key={group?.id ?? 'ungrouped'}>
-                <details open={search ? true : undefined}>
-                  <summary>
-                    <span className="category-group-icon" style={{ color: group?.color }}>
-                      <FolderOpen size={21} />
-                    </span>
-                    <span>
-                      <strong>{group?.name ?? 'Sem grupo'}</strong>
-                      <small>
-                        {children.length} {children.length === 1 ? 'categoria' : 'categorias'}
-                        {!group ? ' · organize as categorias anteriores' : ''}
-                      </small>
-                    </span>
-                    <ChevronDown className="disclosure-chevron" size={18} />
-                  </summary>
-                  <div className="category-children">
-                    {children.map((category) => (
-                      <div className="category-child" key={category.id}>
-                        <span className="category-color" style={{ background: category.color }} />
-                        <strong>{category.name}</strong>
-                        <button
-                          className="icon-button"
-                          aria-label={`Editar categoria ${category.name}`}
-                          onClick={() => setEditor({ kind: 'category', entry: category })}
-                        >
-                          <Pencil size={16} />
-                        </button>
-                      </div>
-                    ))}
-                    {!children.length && (
-                      <p className="field-help">Este grupo ainda não tem categorias.</p>
-                    )}
-                  </div>
-                </details>
-                <div className="category-group-actions">
-                  <button
-                    className="text-button"
-                    onClick={() => setEditor({ kind: 'category', group: group ?? undefined })}
-                  >
-                    <Plus size={15} />
-                    Adicionar categoria
-                  </button>
-                  {group && (
-                    <button
-                      className="text-button"
-                      onClick={() => setEditor({ kind: 'group', entry: group })}
-                    >
-                      Editar grupo
-                    </button>
-                  )}
-                </div>
-              </section>
-            );
-          })}
+          {visibleGroups.map((group) => (
+            <CategoryGroupCard
+              key={group.id}
+              group={group}
+              categories={matching.filter((category) => category.groupId === group.id)}
+              searching={!!search}
+              onAdd={() => setEditor({ kind: 'category', group })}
+              onEditGroup={() => setEditor({ kind: 'group', entry: group })}
+              onEditCategory={(entry) => setEditor({ kind: 'category', entry })}
+              onDelete={() => setDeleting(group)}
+            />
+          ))}
         </div>
+      )}
+      {deleting && (
+        <DeleteGroupDialog
+          group={deleting}
+          onClose={() => setDeleting(null)}
+          onDelete={() => deleteGroup(deleting.id)}
+        />
       )}
       <Modal
         open={!!editor}

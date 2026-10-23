@@ -11,7 +11,7 @@ O projeto está em fase de **piloto**. O dashboard mostra os saldos das contas c
 - **Espaços financeiros:** seleção em cards, criação com nome, descrição e cor, e dados separados por espaço.
 - **Contas:** instituições, saldo inicial com data de referência e acompanhamento do saldo registrado.
 - **Planejamento mensal:** receitas/despesas previstas por categoria, comparação com o realizado, intenção de aporte, notas e cópia revisada do mês anterior.
-- **Grupos e categorias:** organize Casa → Luz/Água e Alimentação → Mercado/Comer fora; grupos expansíveis, busca, edição e organização das categorias atuais.
+- **Grupos e categorias:** organize Casa → Luz/Água e Alimentação → Mercado/Comer fora; cards com prévia das categorias, busca, edição e exclusão revisada. O grupo padrão Geral recebe categorias ainda não organizadas.
 - **Movimentações:** receitas, despesas, categorias agrupadas, filtros recolhíveis, abas por tipo, correções e estornos.
 - **Transferências:** lançamento das duas movimentações entre contas na mesma transação.
 - **Extratos:** importação de extratos de conta do Mercado Pago em PDF, CSV e XLSX, conferência de saldos, revisão, exclusão automática e bloqueio de duplicatas identificadas, revisão em abas e confirmação com proteção contra repetição.
@@ -245,6 +245,8 @@ Os testes de banco usam PostgreSQL via PGlite. Os testes de interface usam auten
 ## Extratos, backups e privacidade
 
 O importador atual interpreta extratos de conta do Mercado Pago em PDF com texto, CSV UTF-8 e XLSX com uma única aba. CSV/XLSX devem conter o resumo de saldos e a tabela de movimentos do modelo de extrato de conta; faturas de cartão, XLS e outros layouts ainda não são aceitos. Os extratos de conta conciliam saldos; CSV/XLSX também conferem os totais de créditos/débitos. Os limites são 10 MB por arquivo, 100 páginas no PDF e 10.000 movimentos. Outros bancos exigem seus próprios parsers e mapeadores para o modelo financeiro comum. Cada importação deve ser revisada antes da confirmação. Você pode selecionar vários arquivos de uma vez para a mesma conta. O app processa um por vez e mostra sucessos e erros individualmente; ao terminar, abra a revisão de cada extrato. Mantenha a tela aberta enquanto a fila é processada. A opção de parar conclui o arquivo em andamento e deixa os próximos sem enviar; extratos já processados continuam no histórico.
+
+Ao excluir um grupo, a prévia mostra quantas categorias irão para o grupo padrão. A exclusão preserva seus lançamentos e planejamentos; nomes repetidos no destino precisam ser resolvidos antes. O grupo padrão é protegido, existe por tipo em cada espaço e também recebe categorias vindas de backups antigos. A migration `202610230005_default_category_groups.sql` deve ser aplicada com `npm run db:setup` antes de publicar esta versão.
 
 Na revisão, duplicatas identificadas pela referência, data, valor e saldo de origem ficam bloqueadas e são revalidadas antes da confirmação, inclusive entre arquivos enviados antes de confirmar. Coincidências sem origem suficiente aparecem em pendências para conferência; descrições e valores iguais podem representar gastos legítimos. Editar um lançamento importado preserva a identificação do movimento bancário original; estorná-lo permite reimportar.
 

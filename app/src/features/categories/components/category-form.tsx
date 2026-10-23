@@ -25,7 +25,9 @@ export function CategoryForm({
   const [type, setType] = useState(entry?.type ?? initialGroup?.type ?? initialType);
   const [color, setColor] = useState(entry?.color ?? initialGroup?.color ?? '#5ee9b5');
   const [groupId, setGroupId] = useState(
-    (entry && 'groupId' in entry ? entry.groupId : initialGroup?.id) ?? '',
+    (entry && 'groupId' in entry ? entry.groupId : initialGroup?.id) ??
+      groups.find((group) => group.isDefault && group.type === type)?.id ??
+      '',
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -65,7 +67,9 @@ export function CategoryForm({
           disabled={!!entry}
           onChange={(e) => {
             setType(e.target.value);
-            setGroupId('');
+            setGroupId(
+              groups.find((group) => group.isDefault && group.type === e.target.value)?.id ?? '',
+            );
           }}
         >
           <option value="expense">Despesa</option>
@@ -76,7 +80,9 @@ export function CategoryForm({
         <label>
           Grupo
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-            <option value="">Sem grupo</option>
+            {!groups.some((group) => group.isDefault && group.type === type) && (
+              <option value="">Grupo padrão</option>
+            )}
             {groups
               .filter((g) => g.type === type)
               .map((g) => (

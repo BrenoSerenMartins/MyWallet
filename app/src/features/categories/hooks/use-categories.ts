@@ -25,5 +25,9 @@ export function useCategories() {
     });
     await client.invalidateQueries();
   }
-  return { categories, groups, save };
+  async function deleteGroup(id: string) {
+    await request(`/category-groups/${id}`, { method: 'DELETE' });
+    await client.invalidateQueries();
+  }
+  return { categories, groups, save, deleteGroup };
 }

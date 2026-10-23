@@ -10,11 +10,11 @@ export class TestDatabase {
   constructor() {
     this.service = new DatabaseService({ databaseUrl: '', ssl: false } as never);
   }
-  async initialize() {
+  async initialize(throughMigration?: string) {
     await this.engine.exec('CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);');
     await this.engine.query('INSERT INTO auth.users VALUES($1),($2)', [this.user, this.other]);
     for (const file of readdirSync('supabase/migrations')
-      .filter((f) => f.endsWith('.sql'))
+      .filter((f) => f.endsWith('.sql') && (!throughMigration || f <= throughMigration))
       .sort())
       await this.engine.exec(readFileSync('supabase/migrations/' + file, 'utf8'));
     const engine = this.engine;

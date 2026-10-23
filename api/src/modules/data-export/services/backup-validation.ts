@@ -43,9 +43,15 @@ export function validateBackup(raw: unknown): BackupPayload {
   }
   const categoryGroups = b.version === 3 ? b.categoryGroups : [];
   if (!Array.isArray(categoryGroups) || categoryGroups.length > 2000) fail();
+  const defaultTypes = new Set<string>();
   for (const group of categoryGroups!) {
     if (!group || typeof group !== 'object') fail();
     unique(group.id);
+    if (group.isDefault !== undefined && typeof group.isDefault !== 'boolean') fail();
+    if (group.isDefault) {
+      if (defaultTypes.has(group.type)) fail();
+      defaultTypes.add(group.type);
+    }
     if (
       !text(group.name, 80) ||
       !['income', 'expense'].includes(group.type) ||

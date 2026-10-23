@@ -15,6 +15,7 @@ export interface AccountResource {
   archived: boolean;
 }
 export interface CategoryGroupResource {
+  isDefault?: boolean;
   id: string;
   name: string;
   type: string;

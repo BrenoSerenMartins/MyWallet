@@ -11,54 +11,132 @@
 }
 .category-groups {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 20px;
   align-items: start;
 }
-.category-group summary {
+.category-group {
+  overflow: hidden;
+}
+.category-group-heading {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 22px;
-  cursor: pointer;
-  list-style: none;
-  min-height: 84px;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 22px 20px 14px;
 }
-.category-group summary::-webkit-details-marker {
-  display: none;
-}
-.category-group summary > span:nth-child(2) {
+.category-group-heading > div:first-of-type {
   flex: 1;
   min-width: 0;
 }
-.category-group summary strong {
-  display: block;
-  font-size: 16px;
+.category-group-heading h2 {
+  font-size: 18px;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
-.category-group summary small {
-  display: block;
+.category-group-heading p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   color: var(--muted);
-  margin-top: 6px;
+  font-size: 12px;
+  margin-top: 5px;
 }
 .category-group-icon {
   display: grid;
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: 13px;
   background: var(--surface-raised);
   flex-shrink: 0;
 }
-.disclosure-chevron {
+.category-group-menu {
+  display: flex;
+  gap: 2px;
+  margin-top: -6px;
+  margin-right: -8px;
+}
+.category-group-menu .icon-button {
+  min-width: 36px;
+  min-height: 44px;
+}
+.category-group-menu .icon-button:last-child:hover {
+  color: var(--negative);
+}
+.default-label {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 6px;
   color: var(--muted);
+  font-size: 10px;
+}
+.default-group {
+  background: var(--surface-soft);
+  border-style: dashed;
+}
+.default-group-note {
+  padding: 0 20px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.category-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 20px 20px;
+  min-height: 64px;
+  align-items: center;
+}
+.category-preview-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-raised);
+  padding: 8px 10px;
+  min-height: 40px;
+  max-width: 100%;
+  color: var(--text);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.category-preview-chip:hover {
+  border-color: var(--accent);
+}
+.category-preview-more {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px;
+}
+.category-expand {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+  padding: 12px 20px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  min-height: 44px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.category-expand:hover {
+  color: var(--accent);
+}
+.category-expand svg {
   transition: transform 0.18s;
 }
-.category-group details[open] .disclosure-chevron {
+.category-expand .expanded {
   transform: rotate(180deg);
 }
 .category-children {
-  padding: 0 22px 12px;
+  padding: 0 20px 10px;
 }
 .category-child {
   display: flex;
@@ -69,35 +147,45 @@
 }
 .category-child strong {
   flex: 1;
+  min-width: 0;
   overflow-wrap: anywhere;
   font-weight: 500;
+  font-size: 13px;
+}
+.category-child button {
+  min-height: 44px;
+  font-size: 12px;
 }
 .category-color {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 .category-group-actions {
   border-top: 1px solid var(--border);
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 22px;
-  flex-wrap: wrap;
+  padding: 8px 20px;
 }
 .category-group-actions button {
-  min-height: 36px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.delete-group-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 @media (max-width: 700px) {
-  .category-groups {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .category-toolbar {
     gap: 12px;
   }
   .category-toolbar .search-field {
     order: 3;
     flex-basis: 100%;
+  }
+  .category-group-menu .icon-button {
+    min-width: 40px;
   }
 }
