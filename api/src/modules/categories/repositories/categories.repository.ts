@@ -12,6 +12,12 @@ export class CategoriesRepository {
       [this.db.userId, includeArchived],
     );
   }
+  async archive(id: string) {
+    await this.db.query(
+      'UPDATE wallet.categories SET archived_at=coalesce(archived_at,now()) WHERE user_id=$1 AND id=$2',
+      [this.db.userId, id],
+    );
+  }
   async groups(): Promise<CategoryGroupResource[]> {
     return this.db.query(
       'SELECT id,name,type,color,is_default AS "isDefault" FROM wallet.category_groups WHERE user_id=$1 ORDER BY is_default,name,id',

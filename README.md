@@ -11,7 +11,7 @@ O projeto está em fase de **piloto**. O dashboard mostra os saldos das contas c
 - **Espaços financeiros:** seleção em cards, criação com nome, descrição e cor, e dados separados por espaço.
 - **Contas:** instituições, saldo inicial com data de referência e acompanhamento do saldo registrado.
 - **Planejamento mensal:** receitas/despesas previstas por categoria, comparação com o realizado, intenção de aporte, notas e cópia revisada do mês anterior.
-- **Grupos e categorias:** organize Casa → Luz/Água e Alimentação → Mercado/Comer fora; cards com prévia das categorias, busca, edição e exclusão revisada. O grupo padrão Geral recebe categorias ainda não organizadas.
+- **Grupos e categorias:** organize Casa → Luz/Água e Alimentação → Mercado/Comer fora; abas de grupos com Geral primeiro, lista compacta de categorias, busca, edição e exclusão revisada. O grupo padrão Geral recebe categorias ainda não organizadas.
 - **Movimentações:** receitas, despesas, categorias agrupadas, filtros recolhíveis, abas por tipo, correções e estornos.
 - **Transferências:** lançamento das duas movimentações entre contas na mesma transação.
 - **Extratos:** importação de extratos de conta do Mercado Pago em PDF, CSV e XLSX, classificação automática de entradas/saídas, conferência de saldos, revisão, exclusão automática e bloqueio de duplicatas identificadas, revisão em abas e confirmação com proteção contra repetição.
@@ -248,7 +248,7 @@ O importador atual interpreta extratos de conta do Mercado Pago em PDF com texto
 
 Ao excluir um grupo, a prévia mostra quantas categorias irão para o grupo padrão. A exclusão preserva seus lançamentos e planejamentos; nomes repetidos no destino precisam ser resolvidos antes. O grupo padrão é protegido, existe por tipo em cada espaço e também recebe categorias vindas de backups antigos. A migration `202610230005_default_category_groups.sql` deve ser aplicada com `npm run db:setup` antes de publicar esta versão.
 
-A seção Despesas ou Receitas define automaticamente o tipo dos novos grupos e categorias. Indicadores da seção acompanham vermelho ou verde, mantendo a identidade visual nas ações. Grupos e categorias novos começam em vermelho para despesas e verde para receitas. Você pode escolher outra cor ou usar **Restaurar cor padrão**; a mudança só é gravada ao salvar. Cores anteriores são preservadas.
+A seção Despesas ou Receitas define automaticamente o tipo dos novos grupos e categorias. Indicadores da seção acompanham vermelho ou verde, mantendo a identidade visual nas ações. Grupos e categorias novos começam em vermelho para despesas e verde para receitas. Grupos podem ter cor personalizada e **Restaurar cor padrão**; categorias seguem a cor do tipo. As alterações só são gravadas ao salvar. Você pode excluir categorias: elas saem das novas escolhas, preservando seus lançamentos e planejamentos anteriores.
 
 Use **Reprocessar importação** em um rascunho ou histórico para atualizar a análise dos dados salvos ou reler o mesmo arquivo original. O app preserva as escolhas e permite refazer explicitamente os tipos financeiros. A ação não confirma movimentos nem altera lançamentos já confirmados. Movimentos reconhecidos de cofrinhos continuam como transferências; o saldo individual de cada cofrinho ainda não é montado automaticamente.
 

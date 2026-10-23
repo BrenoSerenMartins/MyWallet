@@ -29,5 +29,9 @@ export function useCategories() {
     await request(`/category-groups/${id}`, { method: 'DELETE' });
     await client.invalidateQueries();
   }
-  return { categories, groups, save, deleteGroup };
+  async function deleteCategory(id: string) {
+    await request(`/categories/${id}`, { method: 'DELETE' });
+    await client.invalidateQueries();
+  }
+  return { categories, groups, save, deleteGroup, deleteCategory };
 }

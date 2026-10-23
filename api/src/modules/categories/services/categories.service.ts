@@ -115,6 +115,12 @@ export class CategoriesService implements CategoryReads {
     if (!(await this.exportGroups()).some((g) => g.id === input.groupId && g.type === input.type))
       throw new UnprocessableEntityException('Grupo incompatível ou fora deste espaço.');
   }
+  async archive(id: string) {
+    const category = (await this.list(true)).find((category) => category.id === id);
+    if (!category) throw new NotFoundException('Categoria não encontrada.');
+    await this.repository.archive(id);
+    return { id, archived: true };
+  }
   async validate(id: string, type: string) {
     if (!(await this.list()).some((c) => c.id === id && c.type === type))
       throw new UnprocessableEntityException('Categoria incompatível com o lançamento.');

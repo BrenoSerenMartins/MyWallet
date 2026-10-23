@@ -231,6 +231,21 @@
           }
         ],
         "tags": ["Categories"]
+      },
+      "delete": {
+        "operationId": "CategoriesController_archive",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Categories"]
       }
     },
     "/v1/category-groups": {

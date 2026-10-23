@@ -231,3 +231,36 @@ it('assigns a default group to legacy null-group SQL writes', async () => {
     );
   });
 });
+
+it('excludes archived categories from new choices while preserving existing financial and planning references', async () => {
+  const category = (await db.forUser(db.user, () => categories.list())).find(
+    (category) => category.name === 'Water',
+  )!;
+  await expect(db.forUser(db.other, () => categories.archive(category.id))).rejects.toThrow(
+    'não encontrada',
+  );
+  await db.forUser(db.user, () => categories.archive(category.id));
+  await db.forUser(db.user, () => categories.archive(category.id));
+  expect(
+    (await db.forUser(db.user, () => categories.list())).some((item) => item.id === category.id),
+  ).toBe(false);
+  expect(
+    (await db.forUser(db.user, () => categories.list(true))).find((item) => item.id === category.id)
+      ?.archived,
+  ).toBe(true);
+  await expect(
+    db.forUser(db.user, () => categories.validate(category.id, 'expense')),
+  ).rejects.toThrow('incompatível');
+  await db.forUser(db.user, async () => {
+    const transactions = await db.service.query(
+      'SELECT amount_minor FROM wallet.transactions WHERE category_id=$1',
+      [category.id],
+    );
+    const lines = await db.service.query(
+      'SELECT amount_minor FROM wallet.monthly_plan_lines WHERE category_id=$1',
+      [category.id],
+    );
+    expect(Number(transactions[0].amount_minor)).toBe(-500);
+    expect(Number(lines[0].amount_minor)).toBe(800);
+  });
+});

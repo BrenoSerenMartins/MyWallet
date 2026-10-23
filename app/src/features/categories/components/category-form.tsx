@@ -40,7 +40,7 @@ export function CategoryForm({
       await onSave({
         name: name.trim(),
         type,
-        color,
+        color: kind === 'category' ? defaultColors[type] : color,
         ...(kind === 'category' ? { groupId: groupId || null } : {}),
       });
     } catch (error) {
@@ -83,31 +83,35 @@ export function CategoryForm({
           </select>
         </label>
       )}
-      <label>
-        Cor
-        <input
-          type="color"
-          value={color}
-          onChange={(e) => {
-            setColor(e.target.value);
-          }}
-        />
-      </label>
-      <div className="category-color-actions">
-        <span className="field-help">
-          {type === 'expense' ? 'Padrão de despesa: vermelho.' : 'Padrão de receita: verde.'}
-        </span>
-        <button
-          type="button"
-          className="text-button"
-          disabled={busy || color.toLowerCase() === defaultColors[type]}
-          onClick={() => {
-            setColor(defaultColors[type]);
-          }}
-        >
-          Restaurar cor padrão
-        </button>
-      </div>
+      {kind === 'group' && (
+        <>
+          <label>
+            Cor
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => {
+                setColor(e.target.value);
+              }}
+            />
+          </label>
+          <div className="category-color-actions">
+            <span className="field-help">
+              {type === 'expense' ? 'Padrão de despesa: vermelho.' : 'Padrão de receita: verde.'}
+            </span>
+            <button
+              type="button"
+              className="text-button"
+              disabled={busy || color.toLowerCase() === defaultColors[type]}
+              onClick={() => {
+                setColor(defaultColors[type]);
+              }}
+            >
+              Restaurar cor padrão
+            </button>
+          </div>
+        </>
+      )}
       <p className="field-help">
         {kind === 'group'
           ? 'Agrupe categorias do mesmo tipo. Os lançamentos ficam nas categorias, como Casa → Luz.'

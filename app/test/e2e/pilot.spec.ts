@@ -631,7 +631,9 @@ for (const width of [390, 1440])
     await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
     await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Casa');
     await page.getByRole('button', { name: 'Criar grupo', exact: true }).click();
-    await expect(page.getByText('Casa', { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('tabpanel').getByRole('heading', { name: 'Casa', exact: true }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Adicionar categoria', exact: true }).click();
     await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Luz');
     await expect(
@@ -641,10 +643,7 @@ for (const width of [390, 1440])
     await expect(
       page.getByRole('button', { name: 'Editar categoria Luz', exact: true }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Organizar categorias', exact: true }).click();
-    await expect(
-      page.locator('.category-children').getByText('Luz', { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole('tabpanel').getByText('Luz', { exact: true })).toBeVisible();
     for (const theme of ['claro', 'escuro']) {
       await page
         .getByRole('button', { name: `Tema ${theme}`, exact: true })
@@ -768,9 +767,7 @@ test('mobile more menu exposes imports and category organization', async ({ page
     .getByRole('dialog')
     .getByRole('link', { name: 'Grupos e categorias', exact: true })
     .click();
-  await expect(
-    page.getByRole('heading', { name: 'Grupos e categorias', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Categorias', exact: true })).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
@@ -820,12 +817,11 @@ for (const width of [390, 1440])
       return route.fulfill({ json: { deleted: true, movedCategories: 1 } });
     });
     await page.goto('/categories');
-    await expect(
-      page.getByRole('region', { name: 'Grupo Geral' }).getByText('Padrão', { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole('tabpanel').getByText('Padrão', { exact: true })).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Excluir grupo Geral', exact: true }),
     ).toHaveCount(0);
+    await page.getByRole('tab', { name: /Casa/ }).click();
     await page.getByRole('button', { name: 'Excluir grupo Casa', exact: true }).click();
     await expect(
       page.getByRole('dialog').getByText('1 categoria será movida', { exact: true }),
@@ -837,11 +833,9 @@ for (const width of [390, 1440])
       .getByRole('dialog')
       .getByRole('button', { name: 'Excluir grupo', exact: true })
       .click();
-    await expect(page.getByRole('region', { name: 'Grupo Casa' })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: /Casa/ })).toHaveCount(0);
     await expect(
-      page
-        .getByRole('region', { name: 'Grupo Geral' })
-        .getByRole('button', { name: 'Editar categoria Luz', exact: true }),
+      page.getByRole('tabpanel').getByRole('button', { name: 'Editar categoria Luz', exact: true }),
     ).toBeVisible();
     expect(deleted).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -1079,144 +1073,155 @@ test('confirmed imports do not offer reprocessing that could rewrite financial h
   ).toHaveCount(0);
 });
 
-test('category and group colors follow financial type, allow customization and reset without auto-saving', async ({
-  page,
-}) => {
-  await signedIn(page);
-  const categoryId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    groupId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-  const groups = [
-    { id: groupId, name: 'Casa', type: 'expense', color: '#5ee9b5', isDefault: false },
-  ];
-  const categories = [
-    { id: categoryId, name: 'Luz', type: 'expense', color: '#123456', groupId, groupName: 'Casa' },
-  ];
-  let saves = 0;
-  await page.route('**/v1/category-groups', (route) => route.fulfill({ json: groups }));
-  await page.route('**/v1/categories', (route) => route.fulfill({ json: categories }));
-  await page.route(`**/v1/categories/${categoryId}`, (route) => {
-    expect(route.request().method()).toBe('PATCH');
-    expect(route.request().postDataJSON().color).toBe('#f28a97');
-    categories[0].color = '#f28a97';
-    saves++;
-    return route.fulfill({ json: categories[0] });
-  });
-  await page.goto('/categories');
-  await page.getByRole('button', { name: 'Nova categoria', exact: true }).click();
-  const dialog = page.getByRole('dialog'),
-    color = dialog.locator('input[type=color]');
-  await expect(color).toHaveValue('#f28a97');
-  await expect(dialog.getByRole('combobox', { name: 'Tipo', exact: true })).toHaveCount(0);
-  await expect(dialog.getByText('Despesa', { exact: true })).toBeVisible();
-  await color.fill('#abcdef');
-  await expect(color).toHaveValue('#abcdef');
-  await dialog.getByRole('button', { name: 'Restaurar cor padrão', exact: true }).click();
-  await expect(color).toHaveValue('#f28a97');
-  await expect(
-    dialog.getByRole('button', { name: 'Restaurar cor padrão', exact: true }),
-  ).toBeDisabled();
-  expect(saves).toBe(0);
-  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
-  await page.getByRole('button', { name: 'Editar categoria Luz', exact: true }).click();
-  await expect(color).toHaveValue('#123456');
-  await dialog.getByRole('button', { name: 'Restaurar cor padrão', exact: true }).click();
-  expect(saves).toBe(0);
-  await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
-  expect(saves).toBe(1);
-  await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
-  await expect(color).toHaveValue('#f28a97');
-  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
-  await page.getByRole('button', { name: 'Receitas', exact: true }).click();
-  await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
-  await expect(dialog.getByText('Receita', { exact: true })).toBeVisible();
-  await expect(color).toHaveValue('#5ee9b5');
-});
-
-test('the active category section owns creation type and semantic accents while preserving brand actions', async ({
-  page,
-}) => {
-  await signedIn(page);
-  await page.setViewportSize({ width: 390, height: 1000 });
-  const groups = [
-    {
-      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-      name: 'Casa',
-      type: 'expense',
-      color: '#5ee9b5',
-      isDefault: false,
-    },
-    {
-      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-      name: 'Trabalho',
-      type: 'income',
-      color: '#5ee9b5',
-      isDefault: false,
-    },
-  ];
-  const entries: unknown[] = [];
-  let postedGroup: Record<string, unknown> | undefined,
-    postedCategory: Record<string, unknown> | undefined;
-  await page.route('**/v1/category-groups', (route) => {
-    if (route.request().method() === 'POST') {
-      postedGroup = route.request().postDataJSON();
-      return route.fulfill({
-        json: { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', ...postedGroup },
-      });
-    }
-    return route.fulfill({ json: groups });
-  });
-  await page.route('**/v1/categories', (route) => {
-    if (route.request().method() === 'POST') {
-      postedCategory = route.request().postDataJSON();
-      return route.fulfill({
-        json: { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', ...postedCategory },
-      });
-    }
-    return route.fulfill({ json: entries });
-  });
-  await page.goto('/categories');
-  const icon = page.getByRole('region', { name: 'Grupo Casa' }).locator('.category-group-icon');
-  for (const theme of ['claro', 'escuro']) {
-    await page
-      .getByRole('button', { name: `Tema ${theme}`, exact: true })
-      .first()
-      .click();
-    expect(await icon.evaluate((node) => getComputedStyle(node).color)).toBe(
-      await page
-        .locator('.categories-page')
-        .evaluate((node) => getComputedStyle(node).getPropertyValue('--negative').trim())
-        .then((hex) => (hex === '#c34854' ? 'rgb(195, 72, 84)' : 'rgb(242, 138, 151)')),
-    );
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-      true,
-    );
-    await page.screenshot({
-      path: `/tmp/mywallet-expense-section-${theme}-390.png`,
-      fullPage: true,
+for (const width of [390, 1440])
+  test(`category tabs pin Geral first and restrict custom colors to groups at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    const groups = [
+      {
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        name: 'Casa',
+        type: 'expense',
+        color: '#123456',
+        isDefault: false,
+      },
+      {
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        name: 'Geral',
+        type: 'expense',
+        color: '#5ee9b5',
+        isDefault: true,
+      },
+      {
+        id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        name: 'Geral',
+        type: 'income',
+        color: '#5ee9b5',
+        isDefault: true,
+      },
+    ];
+    const categories = [
+      {
+        id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        name: 'Luz',
+        type: 'expense',
+        color: '#5ee9b5',
+        groupId: groups[0].id,
+        groupName: 'Casa',
+      },
+    ];
+    let saved: Record<string, unknown> | undefined;
+    await page.route('**/v1/category-groups', (route) => route.fulfill({ json: groups }));
+    await page.route('**/v1/categories', (route) => {
+      if (route.request().method() === 'POST') {
+        saved = route.request().postDataJSON();
+        return route.fulfill({ json: { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', ...saved } });
+      }
+      return route.fulfill({ json: categories });
     });
-  }
-  await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
-  await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Transporte');
-  await page.getByRole('button', { name: 'Criar grupo', exact: true }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  expect(postedGroup).toMatchObject({ type: 'expense', color: '#f28a97' });
-  await page
-    .getByRole('region', { name: 'Grupo Casa' })
-    .getByRole('button', { name: 'Adicionar categoria', exact: true })
-    .click();
-  await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Água');
-  await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  expect(postedCategory).toMatchObject({
-    type: 'expense',
-    groupId: groups[0].id,
-    color: '#f28a97',
+    await page.goto('/categories');
+    await expect(page.getByRole('tab').first()).toContainText('Geral');
+    await expect(page.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.category-group-panel .category-row')).toHaveCount(0);
+    await page.getByRole('tab', { name: /Casa/ }).click();
+    await expect(
+      page.getByRole('button', { name: 'Editar categoria Luz', exact: true }),
+    ).toBeVisible();
+    for (const theme of ['claro', 'escuro']) {
+      await page
+        .getByRole('button', { name: `Tema ${theme}`, exact: true })
+        .first()
+        .click();
+      const dot = page
+        .locator('.category-row')
+        .filter({ has: page.getByRole('button', { name: 'Editar categoria Luz', exact: true }) })
+        .locator('.category-type-dot');
+      expect(await dot.evaluate((node) => getComputedStyle(node).backgroundColor)).toBe(
+        theme === 'claro' ? 'rgb(195, 72, 84)' : 'rgb(242, 138, 151)',
+      );
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await page.screenshot({
+        path: `/tmp/mywallet-category-tabs-${theme}-${width}.png`,
+        fullPage: true,
+      });
+    }
+    await page.getByRole('button', { name: 'Editar categoria Luz', exact: true }).click();
+    await expect(page.getByRole('dialog').locator('input[type=color]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.getByRole('button', { name: 'Editar grupo Casa', exact: true }).click();
+    await expect(page.getByRole('dialog').locator('input[type=color]')).toHaveValue('#123456');
+    await page.getByRole('button', { name: 'Restaurar cor padrão', exact: true }).click();
+    await expect(page.getByRole('dialog').locator('input[type=color]')).toHaveValue('#f28a97');
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.getByRole('tab').first().focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: /Casa/ })).toBeFocused();
+    await page.keyboard.press('Home');
+    await expect(page.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true');
+    await page.getByRole('textbox', { name: 'Buscar grupos e categorias' }).fill('Luz');
+    await expect(
+      page.getByRole('button', { name: 'Editar categoria Luz', exact: true }),
+    ).toBeVisible();
+    await page.getByRole('textbox', { name: 'Buscar grupos e categorias' }).fill('');
+    await expect(
+      page.getByRole('button', { name: 'Editar categoria Luz', exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole('tab', { name: /Casa/ }).click();
+    await page.getByRole('button', { name: 'Adicionar categoria', exact: true }).click();
+    await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Água');
+    await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(saved).toMatchObject({ type: 'expense', color: '#f28a97', groupId: groups[0].id });
+    await page.getByRole('button', { name: 'Receitas', exact: true }).click();
+    await expect(page.getByRole('tab').first()).toContainText('Geral');
+    await page.getByRole('button', { name: 'Adicionar categoria', exact: true }).click();
+    await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Salário');
+    await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(saved).toMatchObject({ type: 'income', color: '#5ee9b5', groupId: groups[2].id });
   });
-  await page.getByRole('button', { name: 'Receitas', exact: true }).click();
-  await page.getByRole('button', { name: 'Nova categoria', exact: true }).click();
-  await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Salário');
-  await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
+
+test('category deletion asks for confirmation and removes the option without deleting financial history', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    groupId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const categories = [
+    { id, name: 'Luz', type: 'expense', color: '#5ee9b5', groupId, groupName: 'Geral' },
+  ];
+  let deleted = false;
+  await page.route('**/v1/category-groups', (route) =>
+    route.fulfill({
+      json: [{ id: groupId, name: 'Geral', type: 'expense', color: '#5ee9b5', isDefault: true }],
+    }),
+  );
+  await page.route('**/v1/categories', (route) => route.fulfill({ json: categories }));
+  await page.route(`**/v1/categories/${id}`, (route) => {
+    expect(route.request().method()).toBe('DELETE');
+    deleted = true;
+    categories.splice(0);
+    return route.fulfill({ json: { id, archived: true } });
+  });
+  await page.goto('/categories');
+  await page.getByRole('button', { name: 'Excluir categoria Luz', exact: true }).click();
+  await expect(
+    page.getByRole('dialog').getByText(/Movimentações e planejamentos anteriores/),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  expect(deleted).toBe(false);
+  await page.getByRole('button', { name: 'Excluir categoria Luz', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Excluir categoria', exact: true })
+    .click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  expect(postedCategory).toMatchObject({ type: 'income', color: '#5ee9b5' });
+  await expect(page.getByRole('button', { name: 'Editar categoria Luz', exact: true })).toHaveCount(
+    0,
+  );
+  expect(deleted).toBe(true);
 });
