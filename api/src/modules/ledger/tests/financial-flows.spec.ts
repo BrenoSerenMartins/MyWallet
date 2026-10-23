@@ -22,12 +22,15 @@ const ledger = new LedgerService(
   categories,
   new IdempotencyService(db.service),
 );
+import { PlanningRepository } from '../../planning/repositories/planning.repository.js';
+import { PlanningService } from '../../planning/services/planning.service.js';
 const backups = new DataExportService(
   accounts,
   categories,
   ledger,
   new IdempotencyService(db.service),
   new RestoreRepository(db.service),
+  new PlanningService(new PlanningRepository(db.service), categories, ledger),
 );
 const imports = new ImportsService(
   new ImportsRepository(db.service),

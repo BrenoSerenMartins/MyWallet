@@ -67,10 +67,19 @@ export class ImportsService {
     const b = await this.get(id);
     const items = await this.repository.items(id);
     const account = await this.accounts.find(b.account_id);
+    const statementStartDate = items.reduce<string | null>(
+      (date, item) => (!date || item.transactionDate < date ? item.transactionDate : date),
+      null,
+    );
     const recordedOpeningBalance =
       account.openingBalance +
-      (items[0] ? await this.ledgerReads.balanceBefore(account.id, items[0].transactionDate) : 0);
+      (statementStartDate
+        ? await this.ledgerReads.balanceBefore(account.id, statementStartDate)
+        : 0);
     return {
+      accountOpeningDate: account.openingDate,
+      statementStartDate,
+      openingDateMismatch: !!statementStartDate && statementStartDate < account.openingDate,
       recordedOpeningBalance,
       openingMismatch: recordedOpeningBalance !== Number(b.opening_balance_minor),
       id: b.id,
@@ -92,10 +101,6 @@ export class ImportsService {
     const existing = await this.repository.sameFile(accountId, hash);
     if (existing) return this.preview(existing.id);
 
-    if (statement.items.some((i) => i.transactionDate < account.openingDate))
-      throw new ConflictException(
-        'O extrato começa antes da posição inicial da conta. Revise a conta primeiro.',
-      );
     const id = await this.repository.create(
       accountId,
       hash,
@@ -156,7 +161,8 @@ export class ImportsService {
       if (batch.status === 'confirmed') return { id, status: 'confirmed' };
       this.assertDraft(batch);
       requireVersion(batch.version, version);
-      if ((await this.preview(id)).openingMismatch)
+      const preview = await this.preview(id);
+      if (preview.openingMismatch || preview.openingDateMismatch)
         throw new ConflictException(
           'A posição inicial da conta não confere com o extrato. Corrija a conta ou os movimentos anteriores antes de confirmar.',
         );
@@ -191,6 +197,24 @@ export class ImportsService {
       await this.repository.mark(id, 'confirmed');
       return { id, status: 'confirmed', count: selected.length };
     });
+  }
+  async retainHistory(id: string, version: number) {
+    const batch = await this.get(id, true);
+    if (batch.status === 'history') return this.preview(id);
+    if (batch.status !== 'draft')
+      throw new ConflictException('Somente um extrato em revisão pode ser salvo para consulta.');
+    if (!batch.history_saved_at) this.assertDraft(batch);
+    requireVersion(batch.version, version);
+    await this.repository.retainHistory(id);
+    return this.preview(id);
+  }
+  async reopenHistory(id: string, version: number) {
+    const batch = await this.get(id, true);
+    requireVersion(batch.version, version);
+    if (batch.status !== 'history')
+      throw new ConflictException('Somente um extrato salvo para consulta pode voltar à revisão.');
+    await this.repository.reopenHistory(id);
+    return this.preview(id);
   }
   async reverse(id: string, version: string) {
     const initial = await this.get(id);

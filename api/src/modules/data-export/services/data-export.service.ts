@@ -1,6 +1,8 @@
 import { GoneException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import {
+  PLANNING_BACKUP,
+  type PlanningBackup,
   ACCOUNT_BACKUP,
   CATEGORY_BACKUP,
   LEDGER_BACKUP,
@@ -21,11 +23,13 @@ export class DataExportService {
     @Inject(LEDGER_BACKUP) private readonly ledger: LedgerBackup,
     @Inject(COMMAND_RECEIPTS) private readonly receipts: CommandReceipts,
     @Inject(RestoreRepository) private readonly repository: RestoreRepository,
+    @Inject(PLANNING_BACKUP) private readonly planning: PlanningBackup,
   ) {}
   async backup(): Promise<BackupPayload> {
     return {
       format: 'mywallet',
-      version: 1,
+      version: 2,
+      monthlyPlans: await this.planning.exportRecords(),
       currency: 'BRL',
       exportedAt: new Date().toISOString(),
       accounts: await this.accounts.exportRecords(),
@@ -67,6 +71,7 @@ export class DataExportService {
       accounts: payload.accounts.length,
       categories: payload.categories.length,
       transactions: payload.transactions.length,
+      monthlyPlans: payload.monthlyPlans?.length ?? 0,
     };
   }
   async review(id: string) {
@@ -82,6 +87,7 @@ export class DataExportService {
       accounts: b.accounts.length,
       categories: b.categories.length,
       transactions: b.transactions.length,
+      monthlyPlans: b.monthlyPlans?.length ?? 0,
     };
   }
   async confirm(id: string) {
@@ -99,12 +105,14 @@ export class DataExportService {
       for (const c of payload.categories)
         categories.set(c.id, await this.categories.restoreRecord(c));
       await this.ledger.restoreRecords(payload.transactions, accounts, categories);
+      await this.planning.restoreRecords(payload.monthlyPlans ?? [], categories);
       await this.repository.confirm(id);
       return {
         id,
         status: 'confirmed',
         accounts: accounts.size,
         transactions: payload.transactions.length,
+        monthlyPlans: payload.monthlyPlans?.length ?? 0,
       };
     });
   }

@@ -40,12 +40,12 @@ export class ImportsRepository {
   }
   async sameFile(accountId: string, hash: string) {
     await this.db.query(
-      "DELETE FROM wallet.import_batches WHERE user_id=$1 AND account_id=$2 AND file_hash=$3 AND status='draft' AND expires_at<now()",
+      "DELETE FROM wallet.import_batches WHERE user_id=$1 AND account_id=$2 AND file_hash=$3 AND status='draft' AND history_saved_at IS NULL AND expires_at<now()",
       [this.db.userId, accountId, hash],
     );
 
     const [r] = await this.db.query(
-      "SELECT id FROM wallet.import_batches WHERE user_id=$1 AND account_id=$2 AND file_hash=$3 AND status IN ('draft','confirmed')",
+      "SELECT id FROM wallet.import_batches WHERE user_id=$1 AND account_id=$2 AND file_hash=$3 AND status IN ('draft','confirmed','history')",
       [this.db.userId, accountId, hash],
     );
     return r;
@@ -133,6 +133,18 @@ export class ImportsRepository {
     await this.db.query(
       'UPDATE wallet.import_batches SET version=version+1 WHERE user_id=$1 AND id=$2',
       [this.db.userId, batchId],
+    );
+  }
+  async retainHistory(id: string) {
+    await this.db.query(
+      "UPDATE wallet.import_batches SET status='history',history_saved_at=coalesce(history_saved_at,now()),version=version+1 WHERE user_id=$1 AND id=$2",
+      [this.db.userId, id],
+    );
+  }
+  async reopenHistory(id: string) {
+    await this.db.query(
+      "UPDATE wallet.import_batches SET status='draft',expires_at=now()+interval '24 hours',version=version+1 WHERE user_id=$1 AND id=$2",
+      [this.db.userId, id],
     );
   }
   async mark(id: string, status: 'confirmed' | 'reversed') {

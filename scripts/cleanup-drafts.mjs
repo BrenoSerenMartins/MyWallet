@@ -15,7 +15,7 @@ const pool = new Pool({
 });
 try {
   const result = await pool.query(
-    "DELETE FROM wallet.import_batches WHERE status='draft' AND expires_at<now() RETURNING id",
+    "DELETE FROM wallet.import_batches WHERE status='draft' AND history_saved_at IS NULL AND expires_at<now() RETURNING id",
   );
   const restores = await pool.query(
     "DELETE FROM wallet.restore_batches WHERE status='draft' AND expires_at<now() RETURNING id",

@@ -213,9 +213,11 @@ export function ImportsPage() {
                   <span className={`badge ${item.status === 'confirmed' ? 'success' : ''}`}>
                     {item.status === 'confirmed'
                       ? 'Confirmado'
-                      : item.status === 'reversed'
-                        ? 'Desfeito'
-                        : 'Em revisão'}
+                      : item.status === 'history'
+                        ? 'Só consulta'
+                        : item.status === 'reversed'
+                          ? 'Desfeito'
+                          : 'Em revisão'}
                   </span>
                   <ChevronRight size={16} />
                 </Link>

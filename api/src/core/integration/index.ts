@@ -19,6 +19,7 @@ export interface CategoryResource {
   name: string;
   type: string;
   color: string;
+  archived?: boolean;
 }
 export interface TransactionInput {
   accountId: string;
@@ -37,14 +38,23 @@ export interface AccountReads {
   find(id: string, lock?: boolean): Promise<AccountResource>;
 }
 export interface CategoryReads {
-  list(): Promise<CategoryResource[]>;
+  list(includeArchived?: boolean): Promise<CategoryResource[]>;
   validate(id: string, type: string): Promise<void>;
 }
 export interface LedgerWrites {
   create(input: TransactionInput, imported?: boolean): Promise<unknown>;
   reverseBatch(batchId: string): Promise<void>;
 }
+export interface PlanningActual {
+  categoryId: string | null;
+  type: string;
+  amount: number;
+  count: number;
+  inflow: number;
+  outflow: number;
+}
 export interface LedgerReads {
+  planningActuals(from: string, to: string): Promise<PlanningActual[]>;
   balanceBefore(accountId: string, date: string): Promise<number>;
   summary(
     from: string,
@@ -87,7 +97,8 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'mywallet';
-  version: 1;
+  version: 1 | 2;
+  monthlyPlans?: BackupMonthlyPlan[];
   currency: 'BRL';
   exportedAt: string;
   accounts: BackupAccount[];
@@ -112,3 +123,15 @@ export interface LedgerBackup {
 }
 
 export * from './resource-dto.js';
+
+export interface BackupMonthlyPlan {
+  month: string;
+  contribution: number | null;
+  notes: string;
+  lines: { categoryId: string; amount: number }[];
+}
+export const PLANNING_BACKUP = Symbol('PLANNING_BACKUP');
+export interface PlanningBackup {
+  exportRecords(): Promise<BackupMonthlyPlan[]>;
+  restoreRecords(plans: BackupMonthlyPlan[], categories: Map<string, string>): Promise<void>;
+}

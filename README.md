@@ -10,10 +10,12 @@ O projeto está em fase de **piloto**. O dashboard mostra os saldos das contas c
 
 - **Espaços financeiros:** seleção em cards, criação com nome, descrição e cor, e dados separados por espaço.
 - **Contas:** instituições, saldo inicial com data de referência e acompanhamento do saldo registrado.
+- **Planejamento mensal:** receitas/despesas previstas por categoria, comparação com o realizado, intenção de aporte, notas e cópia revisada do mês anterior.
 - **Movimentações:** receitas, despesas, categorias, filtros, correções e estornos.
 - **Transferências:** lançamento das duas movimentações entre contas na mesma transação.
 - **Extratos:** importação de PDF do Mercado Pago, conferência de saldos, revisão, identificação de possíveis duplicidades e confirmação com proteção contra repetição.
-- **Dados:** exportação em CSV, backup financeiro em JSON e restauração com prévia de impacto.
+- **Histórico de extratos:** salve movimentos antigos apenas para consulta e busque dentro do extrato sem alterar saldos ou gastos. Integração financeira posterior exige revisão e conciliação.
+- **Dados:** exportação em CSV, backup financeiro em JSON com planejamentos e restauração com prévia de impacto.
 - **Acesso:** cadastro, login e recuperação de senha pelo Supabase Auth.
 - **Interface:** navegação adaptada a desktop e celular, alternância de tema e instalação como PWA.
 
@@ -243,15 +245,15 @@ Os testes de banco usam PostgreSQL via PGlite. Os testes de interface usam auten
 
 O importador atual interpreta PDFs de extrato de conta do Mercado Pago. Outros bancos exigem seus próprios parsers e mapeadores para o modelo financeiro comum. Cada importação deve ser revisada antes da confirmação.
 
-O PDF original não é armazenado. O histórico conserva o nome e o hash do arquivo, além da origem dos lançamentos. Rascunhos expiram após 24 horas e podem ser removidos com `db:cleanup`.
+O PDF original não é armazenado. O histórico conserva o nome e o hash do arquivo, além da origem dos lançamentos. Rascunhos expiram após 24 horas e podem ser removidos com `db:cleanup`. Extratos já salvos como histórico de consulta ficam protegidos dessa limpeza, inclusive se forem reabertos para uma revisão financeira.
 
-O backup JSON cobre o espaço selecionado: contas, categorias e movimentações financeiras ativas. Ele não inclui PDFs, rascunhos nem todo o histórico de auditoria. CSV serve para análise; a restauração usa JSON. Para recuperação completa do histórico, mantenha também backups operacionais do PostgreSQL.
+O backup JSON versão 2 cobre o espaço selecionado: contas, categorias, movimentações financeiras ativas e planejamentos mensais. Backups versão 1 continuam aceitos. Meses de planejamento já existentes impedem a restauração inteira para preservar os dois conjuntos; use outro espaço para restaurar nesse caso. Ele não inclui PDFs, rascunhos, extratos salvos apenas para consulta nem todo o histórico de auditoria. CSV serve para análise; a restauração usa JSON. Para recuperação completa do histórico, mantenha também backups operacionais do PostgreSQL.
 
 Guarde extratos e exportações locais em `statements/`, `backups/` ou `.local-data/`, diretórios ignorados pelo Git. O `.gitignore` também exclui arquivos de ambiente, chaves privadas, formatos de extrato, dependências, builds e relatórios locais.
 
 ## Evolução do produto
 
-Investimentos, patrimônio consolidado, reserva de emergência, metas, cartões, compartilhamento de espaços e sincronização offline ainda estão fora do piloto implementado. O escopo e os critérios de entrega estão na base de conhecimento:
+Investimentos, patrimônio consolidado, reserva de emergência, metas, cartões, compartilhamento de espaços e sincronização offline ainda estão fora do piloto implementado. O planejamento mensal compara os lançamentos já registrados; não gera cobranças recorrentes nem identifica automaticamente aportes realizados. O escopo e os critérios de entrega estão na base de conhecimento:
 
 - [Visão da arquitetura](knowledge/architecture/overview.md)
 - [Escopo e regras financeiras](knowledge/domains/personal-finance.md)

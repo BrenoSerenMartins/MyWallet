@@ -1,6 +1,7 @@
 import { UnprocessableEntityException } from '@nestjs/common';
 import type { BackupPayload } from '../../../core/integration/index.js';
 import { dateOnly, exactAmount, requireUuid } from '../../../core/rest/index.js';
+import { validatePlanningBackup } from './validate-planning-backup.js';
 const fail = () => {
   throw new UnprocessableEntityException('O backup está inválido ou usa uma versão não suportada.');
 };
@@ -12,7 +13,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   const b = raw as BackupPayload;
   if (
     b.format !== 'mywallet' ||
-    b.version !== 1 ||
+    ![1, 2].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||
@@ -91,5 +92,9 @@ export function validateBackup(raw: unknown): BackupPayload {
       pair[0].transactionDate !== pair[1].transactionDate
     )
       fail();
-  return b;
+  return {
+    ...b,
+    monthlyPlans:
+      b.version === 2 ? validatePlanningBackup(b.monthlyPlans, new Set(categories.keys())) : [],
+  };
 }

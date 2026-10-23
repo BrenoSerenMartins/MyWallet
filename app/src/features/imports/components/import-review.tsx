@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { OpeningPositionReview } from './opening-position-review';
 import { useImportReview } from '../hooks/use-import-review';
 import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ImportBatch, ImportItem } from '../../../shared/api/resources';
@@ -11,8 +12,26 @@ export function ImportReview({
   batch: ImportBatch;
   refresh: () => Promise<unknown>;
 }) {
-  const { page, setPage, busy, error, selected, unresolved, review, confirm, classify, reverse } =
-    useImportReview(batch, refresh);
+  const {
+    page,
+    setPage,
+    busy,
+    error,
+    selected,
+    unresolved,
+    review,
+    confirm,
+    classify,
+    reverse,
+    retainHistory,
+    reopenHistory,
+  } = useImportReview(batch, refresh);
+  const [search, setSearch] = useState('');
+  const items = batch.items.filter((item) =>
+    `${item.description} ${item.transactionDate} ${item.sourceOperationId ?? ''}`
+      .toLocaleLowerCase('pt-BR')
+      .includes(search.toLocaleLowerCase('pt-BR')),
+  );
   return (
     <>
       <section className="review-summary">
@@ -35,17 +54,43 @@ export function ImportReview({
           </strong>
         </div>
       </section>
-      {batch.status === 'draft' && batch.openingMismatch && (
-        <div className="form-error" role="alert">
-          <strong>A posição inicial da conta precisa de revisão.</strong>
-          <p>
-            Antes deste extrato, a conta registra {money(batch.recordedOpeningBalance)}, mas o
-            arquivo começa em {money(batch.openingBalance)}. Ajuste o saldo inicial em Minhas
-            contas, se ela ainda não tiver movimentos, ou confira os movimentos anteriores.
-          </p>
-          <Link className="text-button" to="/accounts">
-            Revisar minhas contas
-          </Link>
+      {batch.status === 'draft' && (batch.openingMismatch || batch.openingDateMismatch) && (
+        <OpeningPositionReview batch={batch} refresh={refresh} />
+      )}
+      {batch.status === 'draft' && (
+        <div className="review-banner">
+          <div>
+            <strong>Quer manter este extrato apenas para consulta?</strong>
+            <p>
+              Guarda os movimentos do arquivo sem mudar saldos, gastos ou planejamento. O PDF
+              original não é armazenado.
+            </p>
+          </div>
+          <Button
+            className="secondary"
+            disabled={busy || !navigator.onLine}
+            onClick={() => void retainHistory()}
+          >
+            Salvar apenas como histórico
+          </Button>
+        </div>
+      )}
+      {batch.status === 'history' && (
+        <div className="review-banner">
+          <div>
+            <strong>Histórico para consulta · não afeta seus saldos</strong>
+            <p>
+              Estes movimentos ficam separados dos lançamentos financeiros. Confira datas e
+              descrição na busca abaixo.
+            </p>
+          </div>
+          <Button
+            className="secondary"
+            disabled={busy || !navigator.onLine}
+            onClick={() => void reopenHistory()}
+          >
+            Revisar para integrar às contas
+          </Button>
         </div>
       )}
       {batch.status === 'draft' ? (
@@ -70,7 +115,9 @@ export function ImportReview({
           <strong>
             {batch.status === 'confirmed'
               ? 'Importação confirmada. Seus movimentos já estão no saldo.'
-              : 'Importação desfeita.'}
+              : batch.status === 'history'
+                ? 'Extrato salvo apenas para consulta.'
+                : 'Importação desfeita.'}
           </strong>
           {batch.status === 'confirmed' && (
             <Button className="secondary" disabled={busy} onClick={() => void reverse()}>
@@ -84,6 +131,23 @@ export function ImportReview({
           {error}
         </p>
       )}
+      <label className="import-search">
+        Buscar no extrato
+        <input
+          type="search"
+          value={search}
+          placeholder="Descrição, data (AAAA-MM-DD) ou referência"
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+          }}
+        />
+      </label>
+      {!items.length && (
+        <p className="field-help" role="status">
+          Nenhum movimento encontrado para esta busca.
+        </p>
+      )}
       <div className="panel review-table-wrap">
         <table className="review-table">
           <thead>
@@ -95,7 +159,7 @@ export function ImportReview({
             </tr>
           </thead>
           <tbody>
-            {batch.items.slice(page * 25, (page + 1) * 25).map((item) => (
+            {items.slice(page * 25, (page + 1) * 25).map((item) => (
               <tr key={item.id} className={!item.selected ? 'excluded' : ''}>
                 <td>
                   <input
@@ -140,7 +204,7 @@ export function ImportReview({
         </table>
         <div className="review-pagination">
           <span>
-            Página {page + 1} de {Math.ceil(batch.items.length / 25)}
+            Página {page + 1} de {Math.max(1, Math.ceil(items.length / 25))}
           </span>
           <div>
             <button
@@ -154,7 +218,7 @@ export function ImportReview({
             <button
               className="icon-button"
               aria-label="Próxima página"
-              disabled={(page + 1) * 25 >= batch.items.length}
+              disabled={(page + 1) * 25 >= items.length}
               onClick={() => setPage(page + 1)}
             >
               <ChevronRight size={19} />
@@ -171,7 +235,12 @@ export function ImportReview({
           </p>
           <Button
             disabled={
-              busy || !!unresolved || !selected.length || batch.openingMismatch || !navigator.onLine
+              busy ||
+              !!unresolved ||
+              !selected.length ||
+              batch.openingMismatch ||
+              batch.openingDateMismatch ||
+              !navigator.onLine
             }
             onClick={() => void confirm()}
           >

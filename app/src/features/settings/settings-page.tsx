@@ -20,6 +20,7 @@ export function SettingsPage() {
     id: string;
     accounts: number;
     transactions: number;
+    monthlyPlans?: number;
   } | null>(null);
   const categories = useQuery({
     queryKey: [session?.user.id, 'categories'],
@@ -188,8 +189,8 @@ export function SettingsPage() {
           <div>
             <strong>Backup financeiro · JSON</strong>
             <p>
-              Contas, categorias e movimentos ativos. Revisões de importação e arquivos originais
-              não fazem parte deste backup.
+              Contas, categorias, movimentos ativos e planejamentos mensais. Revisões de importação
+              e arquivos originais não fazem parte deste backup.
             </p>
             <Button className="secondary" disabled={busy} onClick={() => void download('json')}>
               <Download size={16} />
@@ -266,8 +267,10 @@ export function SettingsPage() {
         <div className="form-stack">
           <p>
             Este backup contém <strong>{restore?.accounts} contas</strong> e{' '}
-            <strong>{restore?.transactions} movimentos</strong>. Serão adicionados como novas
-            contas. As categorias equivalentes serão reutilizadas.
+            <strong>{restore?.transactions} movimentos</strong>. e{' '}
+            <strong>{restore?.monthlyPlans ?? 0} planejamentos mensais</strong>. As contas serão
+            adicionadas como novas. Planejamentos com meses já existentes bloqueiam a restauração
+            para preservar seus dados. As categorias equivalentes serão reutilizadas.
           </p>
           {error && (
             <p className="form-error" role="alert">

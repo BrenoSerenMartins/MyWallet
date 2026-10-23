@@ -1,10 +1,10 @@
 # Personal finance product roadmap
 
 ## Purpose and status
-Build a complete personal-finance workspace covering daily spending, commitments, credit, investments and recorded net worth. The user requested this roadmap and confirmed separate credit-card and recurring-expense areas. This is a plan; only the existing pilot features below are implemented. Implementation proceeds in small releases with explicit acceptance, rather than scaffolding every future module now.
+Build a complete personal-finance workspace covering daily spending, commitments, credit, investments and recorded net worth. The user requested this roadmap and confirmed separate credit-card and recurring-expense areas. This is a roadmap; the current foundation and monthly-planning delivery below distinguish implementation from future features. Implementation proceeds in small releases with explicit acceptance, rather than scaffolding every future module now.
 
 ## Current foundation
-The pilot contains private user-owned workspaces, accounts/opening balances, categories, income/expenses, atomic transfers, history/corrections/reversals, Mercado Pago account-statement PDF review and confirmation, monthly summaries, JSON backup/restore, CSV export, Auth and responsive light/dark/system PWA navigation. Hosted acceptance remains separate from code availability; see [overview](../architecture/overview.md).
+The implemented pilot also includes monthly planning and retained consultation-only statements with per-batch search; it does not yet include card billing. The pilot contains private user-owned workspaces, accounts/opening balances, categories, income/expenses, atomic transfers, history/corrections/reversals, Mercado Pago account-statement PDF review and confirmation, monthly summaries, JSON backup/restore, CSV export, Auth and responsive light/dark/system PWA navigation. Hosted acceptance remains separate from code availability; see [overview](../architecture/overview.md).
 
 The dashboard currently reports recorded account balances. It must not label that amount as complete net worth. Private spaces do not imply shared membership.
 
@@ -35,6 +35,33 @@ Desktop groups are: Overview; Daily finances (Accounts, Transactions); Planning 
 Mobile keeps five primary destinations: Home, Transactions, Cards, Planning and More. More provides Accounts, Wealth, Reports, Imports, spaces and Settings. Introduce destinations only when their screens work; current pilot navigation stays until the corresponding release.
 
 Cards use bank-like visual cards with issuer/name, `brand`, masked last four digits, current statement, available/used limit and closing/due dates. Store neither full card numbers nor security codes. An empty registered card remains visible with a zero bill and zero usage. Screens distinguish recorded, projected, paid, overdue and estimated values through labels as well as color.
+
+## Spreadsheet-informed monthly planning
+The user supplied the local G-Base.xlsx workbook as workflow inspiration, not a request to reproduce its layout or automatically import its records. Read-only inspection found one Base worksheet with projected/actual income sources, estimated/actual/difference expense groups, section totals, investment contribution planning and projected/actual monthly remainder. No workbook, private financial amounts or extracted transaction records are stored in the repository.
+
+The user authorized and received the initial Monthly planning screen: category budgets, actual comparisons, notes, contribution intent and version-checked prior-month copying. Income sources currently use income categories; restricted benefits, merchant/source matching, recurring forecasts and full portfolio accounting remain future work. The following table preserves the broader target, rather than asserting every row is implemented. It can deliver value before full card/recurrence/portfolio accounting: users enter a monthly plan, while confirmed account transactions populate the actual comparison. Later modules supply their own projections and settlement links without duplicating actuals.
+
+| Surface | Proposed behavior |
+| --- | --- |
+| Month header | Month/year selector, explicit draft/active/reviewed status and copy-previous-month action with preview; no transaction copying |
+| Summary | Expected/received income, planned/actual consumption, planned/actual investment contributions, remaining commitments and projected monthly result, each with source/coverage labels |
+| Income sources | Salary, benefits and additional income as editable sources with expected/received values; distinguish restricted-use benefits from unrestricted cash |
+| Spending groups | User-configurable groups and lines inspired by housing, transport, food, insurance, education, personal care, entertainment, taxes, pets and gifts; show budget, actual and remaining/overrun |
+| Credit and debt commitments | Dedicated card/debt screens feed the cash-commitment view; link to the relevant statement/payment and do not recategorize every card purchase as a generic card expense |
+| Investments and allocations | Plan contributions separately from consumption; later link actual transfers and eligible reserve/goal allocations rather than generating duplicate expenses |
+| Month review | Compare plan with classified actuals, inspect overruns/missing classifications, annotate exceptions and prepare the next month |
+
+Rules and acceptance:
+- Monthly plan figures do not create financial transactions or change account balances. Actuals come from confirmed canonical records; importing an already matched movement does not increase actuals twice.
+- Start with explicit month/category budgets and income-source matching. Recurring commitments later suggest budget amounts with review; one budget and its forecast occurrences are not independent amounts to add together.
+- Separate consumption attribution from cash settlement. Card purchases count by category in spending; paying a bill is a cash/debt settlement. A cash forecast must not count both purchases/installments and their bill payment as separate outflows.
+- Planned contributions reduce cash available for use when paid from tracked cash; transfers into investments do not reduce net worth or become consumption. A mere allocation of existing funds is not another cash outflow.
+- A consumption-period result is recognized period income minus consumption attributed to that period. Available/projected cash instead starts from recorded opening/current cash and counts actual cash settlements plus remaining expected inflows/outflows once, including paid contributions and debt principal. It does not subtract a consumption aggregate and then subtract its card settlement again. Each summary states its reporting basis; a period result is not an account balance.
+- Expense budget difference is planned minus actual; positive means remaining budget, negative means overrun. Income difference is actual minus planned. Do not use one unlabeled difference direction for both.
+- Preserve the distinction between not entered, an explicit zero and incomplete actual history. Unknown/unclassified activity is visible; blank income or a zero baseline never yields a fabricated percentage.
+- Copying a prior month creates an independent plan; settled history and older plans remain unchanged. Monthly boundaries use the selected workspace timezone and date-only financial dates.
+- Entry categories may stay flat initially, with visual grouping added only as needed. Names and groups are customizable per workspace; workbook-specific labels and placeholder rows are not hardcoded as required categories.
+- Verify a synthetic month with multiple income sources, zero-budget spending, overspending, a contribution transfer, an imported paid bill and a prior cash balance. Totals must reconcile under the chosen spending/cash policy and remain isolated by workspace.
 
 ## Credit cards: release contract
 - A card is a credit instrument with an issuer, currency, limit and explicit billing-cycle rules. Creating it does not create an expense. A credit limit is not an asset or income.
@@ -70,10 +97,11 @@ Fixed/variable describes an expense commitment; category describes its purpose. 
 | Release | Scope and dependencies | Acceptance examples |
 | --- | --- | --- |
 | 0. Reliable hosted pilot | Finish actual hosting, redirects, runtime DB readiness, recovery and real-device checks | Real sign-in/import/reload on desktop/mobile; another user/space cannot read the data; recovery verified |
-| 1. Credit overview | Cards, cycle dates, manual single purchases, opening liability, full bill payment; update expense reporting and backup format first | Empty card shows zero; purchase affects liability; payment reduces cash/debt once; percentages use visible denominators; cycle boundary tests |
-| 2. Installments and card reconciliation | Release 1; installment schedule, future bills, refunds, imported payment matching; samples for each supported card statement | Installment sum equals purchase; closing-day/short-month cases work; original/full versus monthly amounts never double count; duplicate imported payment prevented |
+| 1a. Monthly planning foundation (proposed next increment) | Month selector, editable income/expense budgets, planned/actual/difference comparison, classification coverage and copying a prior plan; existing ledger supplies actuals | Plans do not change balances; month copy creates no movements; contributions and consumption are separated; unclassified activity stays visible |
+| 1b. Credit overview | Cards, cycle dates, manual single purchases, opening liability, full bill payment; update expense reporting and backup format first | Empty card shows zero; purchase affects liability; payment reduces cash/debt once; percentages use visible denominators; cycle boundary tests |
+| 2. Installments and card reconciliation | Release 1b; installment schedule, future bills, refunds, imported payment matching; samples for each supported card statement | Installment sum equals purchase; closing-day/short-month cases work; original/full versus monthly amounts never double count; duplicate imported payment prevented |
 | 3. Recurring finances | Payable/receivable occurrences, subscriptions, calendar, variable estimates and settlement matching | Repeated generation creates one occurrence; editing future rules preserves paid history; subscription paid by card affects forecasts once |
-| 4. Budgets and cash flow | Releases 1–3; category budgets, upcoming commitments, spending mix and forecasts | Cash/spending views reconcile by policy; no-income month handles percentages; paid/planned amounts remain distinct |
+| 4. Budgets and cash flow | Extend release 1a with releases 1b–3; category budgets, upcoming commitments, spending mix and forecasts | Cash/spending views reconcile by policy; no-income month handles percentages; paid/planned amounts remain distinct |
 | 5. Complete recorded wealth | Assets/debts and manual investment holdings/valuations; expand export/restore | Linked positions are counted once; stale values are labeled; principal/interest differ; recorded net worth reconciles to components |
 | 6. Reserve and goals | Release 5 plus essential-spending baseline and allocation rules | One asset cannot be overallocated; goal/reserve amounts do not increase wealth; progress/date/coverage are traceable |
 | 7. Analysis and automation | Reliable preceding releases; richer reports, opt-in reminders, additional mappers and classification rules | Metrics explain dates/sources; rules preview changes; notifications deduplicate; unsupported imports fail without creating financial records |
@@ -103,3 +131,6 @@ New entities remain scoped by verified user and workspace, with composite refere
 
 ## External scope
 Open Finance/bank connections, native notification capture, native packaging, automated trading and tax filing require separate feasibility and scope. Additional bank/card import formats require user-provided representative samples, institution-specific mappers and reconciliation tests. No provider, paid infrastructure or external financial integration is selected by this roadmap.
+
+## Historical statement consultation
+Statements predating the account opening may be uploaded and retained in history without entering the ledger. They are searchable within an import batch, survive draft cleanup and never affect cash balances, expense reports or monthly actuals. Integrating later requires reopening the review and reconciling the account opening/date, classification and duplicates. Empty account opening positions may be explicitly revised; accounts with movements retain the existing protection. Raw PDFs are not saved. Financial JSON backups include monthly plans but not import history; operational backups cover retained consultation data.

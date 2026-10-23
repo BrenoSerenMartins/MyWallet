@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Landmark, Plus, Upload } from 'lucide-react';
+import { ArrowUpRight, CalendarDays, Plus, Upload } from 'lucide-react';
 const actions = [
   {
     to: '/transactions?new=1',
@@ -14,10 +14,10 @@ const actions = [
     caption: 'Seu Mercado Pago, organizado',
   },
   {
-    to: '/accounts',
-    Icon: Landmark,
-    title: 'Adicionar conta',
-    caption: 'Complete sua visão financeira',
+    to: '/planning',
+    Icon: CalendarDays,
+    title: 'Planejar meu mês',
+    caption: 'Previsto e realizado, lado a lado',
   },
 ];
 export function QuickActions() {

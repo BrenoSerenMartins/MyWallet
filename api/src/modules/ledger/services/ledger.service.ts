@@ -59,6 +59,9 @@ export class LedgerService implements LedgerWrites, LedgerReads {
   balanceBefore(accountId: string, date: string) {
     return this.repository.balanceBefore(accountId, date);
   }
+  planningActuals(from: string, to: string) {
+    return this.repository.planningActuals(from, to);
+  }
   summary(from: string, to: string) {
     return this.repository.summary(from, to);
   }

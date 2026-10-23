@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../../../core/database/index.js';
-import type { TransactionInput } from '../../../core/integration/index.js';
+import type { PlanningActual, TransactionInput } from '../../../core/integration/index.js';
 import { transactionResource } from '../mappers/transaction.mapper.js';
 export interface LedgerFilter {
   from?: string;
@@ -128,6 +128,26 @@ export class LedgerRepository {
       expense: Number(r.expense),
       unclassified: Number(r.unclassified),
     };
+  }
+  async planningActuals(from: string, to: string): Promise<PlanningActual[]> {
+    const rows = await this.db.query(
+      `SELECT category_id,transaction_type,
+      coalesce(sum(amount_minor),0) AS total,count(*) AS count,
+      coalesce(sum(amount_minor) FILTER(WHERE amount_minor>0),0) AS inflow,
+      coalesce(-sum(amount_minor) FILTER(WHERE amount_minor<0),0) AS outflow
+      FROM wallet.transactions WHERE user_id=$1 AND reversed_at IS NULL
+      AND transaction_date >= $2 AND transaction_date < $3 AND transaction_type <> 'transfer'
+      GROUP BY category_id,transaction_type`,
+      [this.db.userId, from, to],
+    );
+    return rows.map((r) => ({
+      categoryId: r.category_id,
+      type: r.transaction_type,
+      amount: Number(r.total),
+      count: Number(r.count),
+      inflow: Number(r.inflow),
+      outflow: Number(r.outflow),
+    }));
   }
   async batchEntries(id: string) {
     return this.db.query(

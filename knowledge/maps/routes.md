@@ -10,6 +10,7 @@ The pilot implements the routes below, published in `api/openapi.json`. Generate
 | `/workspaces` | Workspace card selection and creation |
 | `/` | Home/dashboard |
 | `/accounts`, `/accounts/:accountId` | Owned accounts and history |
+| `/planning` | Monthly budgets, actual comparison, notes and prior-month copy preview |
 | `/transactions` | Filtered history and transaction detail |
 | `/imports`, `/imports/:importId` | Upload, review, confirmation and history |
 | `/settings`, `/settings/categories`, `/settings/data` | Theme, categories and export/restore |
@@ -29,6 +30,10 @@ Authenticated routes handle session loading and expiration explicitly; client ro
 | `GET/PATCH /v1/transactions/:id` | Ledger: detail/version-checked correction |
 | `POST /v1/transactions/:id/reversals` | Ledger: explicit reversal with impact checks |
 | `POST /v1/transfers` | Ledger: atomic pair of opposing account movements |
+| `GET/PUT /v1/planning/:month` | Planning: month summary and complete version-checked budget replacement |
+| `POST /v1/planning/:month/copies` | Planning: copy preceding month targets with expected source/target versions |
+| `POST /v1/imports/:id/history` | Imports: retain normalized rows solely for consultation, without ledger writes |
+| `POST /v1/imports/:id/reviews` | Imports: reopen retained history for explicit financial review |
 | `GET/POST /v1/imports` | Imports: history/upload and persisted review draft |
 | `GET /v1/imports/:id` | Imports: review state, source/recorded opening positions, mismatch flag and receipt if confirmed |
 | `PATCH /v1/imports/:id/items/:itemId` | Imports: reviewed corrections/selection with draft version check |
@@ -48,3 +53,5 @@ Authenticated routes handle session loading and expiration explicitly; client ro
 - Require reviewed versions for import/restore confirmation and `If-Match` for financial edits. Persist idempotency keys/receipts for confirmations and atomic transfer creation; reject reuse with different input.
 - Use 401 for absent/invalid identity, non-enumerating 404 for inaccessible owned resources, 409 for state/idempotency conflicts, 412 for stale versions, 413 for oversized uploads, and 422 for recognized but invalid financial input. DTO syntax errors use 400.
 - Multipart upload and export endpoints are authenticated and never cached as public data. Limits, pagination, and date semantics are documented in generated OpenAPI.
+
+Planning month keys are YYYY-MM, from 1900-01 through 9998-12. Save/copy bodies carry edit versions; copied targets do not copy transactions or overwrite target notes. GET import previews expose statement start/account opening dates and a date mismatch flag. Historical rows remain separate from `/transactions` and financial summaries until explicit confirmation. These new fields/endpoints preserve the existing health and financial movement contracts.

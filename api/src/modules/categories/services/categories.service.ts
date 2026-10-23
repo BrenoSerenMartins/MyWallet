@@ -12,7 +12,7 @@ import type { CategoryDto } from '../dto/category.dto.js';
 export class CategoriesService implements CategoryReads {
   constructor(@Inject(CategoriesRepository) private readonly repository: CategoriesRepository) {}
   async exportRecords() {
-    return this.repository.list();
+    return this.repository.list(true);
   }
   async restoreRecord(record: import('../../../core/integration/index.js').BackupCategory) {
     const existing = (await this.list()).find(
@@ -20,8 +20,8 @@ export class CategoriesService implements CategoryReads {
     );
     return existing?.id ?? ((await this.repository.save(record)).id as string);
   }
-  list() {
-    return this.repository.list();
+  list(includeArchived = false) {
+    return this.repository.list(includeArchived);
   }
   save(input: CategoryDto) {
     return this.repository.save(input);

@@ -50,6 +50,9 @@ export class ImportItemResourceDto {
   @ApiProperty({ type: String, nullable: true }) categoryId!: string | null;
 }
 export class ImportBatchResourceDto {
+  @ApiProperty({ type: String }) accountOpeningDate!: string;
+  @ApiProperty({ type: String, nullable: true }) statementStartDate!: string | null;
+  @ApiProperty({ type: Boolean }) openingDateMismatch!: boolean;
   @ApiProperty({ type: Number }) recordedOpeningBalance!: number;
   @ApiProperty({ type: Boolean }) openingMismatch!: boolean;
   @ApiProperty({ type: String }) id!: string;

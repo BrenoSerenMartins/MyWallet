@@ -26,6 +26,9 @@ const ImportsPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('../features/settings/settings-page').then((module) => ({ default: module.SettingsPage })),
 );
+const PlanningPage = lazy(() =>
+  import('../features/planning/planning-page').then((module) => ({ default: module.PlanningPage })),
+);
 export function Application() {
   const { session, loading } = useAuth();
   if (loading)
@@ -54,6 +57,7 @@ export function Application() {
                     <Route path="accounts" element={<AccountsPage />} />
                     <Route path="accounts/:accountId" element={<TransactionsPage />} />
                     <Route path="transactions" element={<TransactionsPage />} />
+                    <Route path="planning" element={<PlanningPage />} />
                     <Route path="imports" element={<ImportsPage />} />
                     <Route path="imports/:importId" element={<ImportsPage />} />
                     <Route path="settings/*" element={<SettingsPage />} />

@@ -2,6 +2,7 @@ import { useWorkspace } from '../features/workspaces/workspace-provider';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
+  CalendarDays,
   ArrowDownUp,
   ArrowUpRight,
   ChevronRight,
@@ -20,6 +21,7 @@ const navigation = [
   { to: '/', label: 'Visão geral', mobile: 'Início', Icon: House },
   { to: '/transactions', label: 'Movimentações', mobile: 'Movimentos', Icon: ArrowDownUp },
   { to: '/accounts', label: 'Minhas contas', mobile: 'Contas', Icon: Landmark },
+  { to: '/planning', label: 'Planejamento', mobile: 'Planejar', Icon: CalendarDays },
   { to: '/imports', label: 'Importar extrato', mobile: 'Importar', Icon: Upload },
   { to: '/settings', label: 'Preferências', mobile: 'Mais', Icon: Settings2 },
 ];
@@ -175,12 +177,14 @@ export function AppShell() {
         </footer>
       </div>
       <nav className="bottom-nav" aria-label="Navegação móvel">
-        {navigation.map(({ to, mobile, Icon }) => (
-          <NavLink key={to} to={to} end={to === '/'}>
-            <Icon size={20} />
-            <span>{mobile}</span>
-          </NavLink>
-        ))}
+        {navigation
+          .filter((n) => n.to !== '/imports')
+          .map(({ to, mobile, Icon }) => (
+            <NavLink key={to} to={to} end={to === '/'}>
+              <Icon size={20} />
+              <span>{mobile}</span>
+            </NavLink>
+          ))}
       </nav>
     </div>
   );

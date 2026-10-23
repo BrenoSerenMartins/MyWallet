@@ -16,6 +16,8 @@ Business tables live in the dedicated `wallet` schema. The migration contains th
 | --- | --- | --- |
 | `auth.users` | Supabase Auth | Identity root; `/v1/me` returns verified identity without an extra profile table |
 | `workspaces` | Workspaces | Private owner, display name/description/color, and one default workspace per user |
+| `monthly_plans` | Planning | Workspace/month target, contribution intent, notes and edit version |
+| `monthly_plan_lines` | Planning | Exact category budgets; blank values are absent rows, zero is explicit |
 | `financial_accounts` | Accounts | User, institution code, name, type, BRL currency, opening amount/date, archive state and edit version |
 | `categories` | Categories | User-owned labels, applicable transaction type and archive state |
 | `transactions` | Ledger | Account movement, transaction date, signed amount in minor units, type/direction, description, optional category/payment metadata, provenance and edit/reversal state |
@@ -47,3 +49,10 @@ Business tables live in the dedicated `wallet` schema. The migration contains th
 Use the root `db:setup`/`db:migrate` commands. The explicit runner records filenames in `mywallet_migrations.applied`, with a database advisory lock and atomic migration registration. Do not mix this history with Supabase CLI `db push`; the CLI remains useful for linking and local platform tools. Migration SQL has one source directory.
 
 JSON financial backup/restore operates within the selected workspace and preserves accounts, categories, active transactions and transfer groups with remapped IDs. It excludes raw PDFs, import/audit history and reversed entries; operational database backups are still needed for complete historical recovery. Export reads use a read-only repeatable-read snapshot. Expired draft cleanup is an explicit operational command.
+
+## Planning and consultation history
+Migrations `202610230001_monthly_planning.sql` and `202610230002_statement_history.sql` were applied by the user successfully. One plan per owner/workspace/month; category lines use composite workspace references and a unique plan/category key. Advisory transaction locks serialize edits, copying and restore; expected versions prevent stale overwrites. Read summaries use repeatable-read snapshots.
+
+Import status `history` retains normalized statement items without ledger insertion. Active-file uniqueness includes draft/confirmed/history. `history_saved_at` marks previously retained batches: expired draft cleanup excludes them after reopening. Returning to history is allowed after review expiry for an already retained batch; financial confirmation still requires a valid unexpired draft, date/balance reconciliation, classification and duplicate review. No historical account balance is rewritten automatically.
+
+Financial JSON backups export version 2 with monthlyPlans, still accept version 1, remap plan categories and refuse month collisions atomically. Financial JSON backup does not include retained statement history; use operational PostgreSQL backups for that data.

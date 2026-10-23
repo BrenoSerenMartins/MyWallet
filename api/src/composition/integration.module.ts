@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import {
+  PLANNING_BACKUP,
   ACCOUNT_READS,
   CATEGORY_READS,
   LEDGER_WRITES,
@@ -12,7 +13,9 @@ import {
 import { AccountsModule, AccountsService } from '../modules/accounts/index.js';
 import { CategoriesModule, CategoriesService } from '../modules/categories/index.js';
 import { LedgerModule, LedgerService, IdempotencyService } from '../modules/ledger/index.js';
+import { PlanningModule, PlanningService } from '../modules/planning/index.js';
 const bindings = [
+  { provide: PLANNING_BACKUP, useExisting: PlanningService },
   { provide: ACCOUNT_BACKUP, useExisting: AccountsService },
   { provide: CATEGORY_BACKUP, useExisting: CategoriesService },
   { provide: LEDGER_BACKUP, useExisting: LedgerService },
@@ -24,7 +27,7 @@ const bindings = [
 ];
 @Global()
 @Module({
-  imports: [AccountsModule, CategoriesModule, LedgerModule],
+  imports: [AccountsModule, CategoriesModule, LedgerModule, PlanningModule],
   providers: bindings,
   exports: bindings.map((b) => b.provide),
 })

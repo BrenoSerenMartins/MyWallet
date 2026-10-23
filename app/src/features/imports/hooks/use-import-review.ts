@@ -96,5 +96,44 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
       setBusy(false);
     }
   }
-  return { page, setPage, busy, error, selected, unresolved, review, confirm, classify, reverse };
+  async function changeHistoryMode(path: 'history' | 'reviews', message: string) {
+    if (!window.confirm(message)) return;
+    setBusy(true);
+    setError('');
+    try {
+      await request(`/imports/${batch.id}/${path}`, {
+        method: 'POST',
+        body: jsonBody({ version: batch.version }),
+      });
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível alterar o modo do extrato.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  const retainHistory = () =>
+    changeHistoryMode(
+      'history',
+      'Salvar este extrato para consulta, sem criar lançamentos ou alterar saldos? Todos os movimentos do arquivo serão mantidos, inclusive os desmarcados.',
+    );
+  const reopenHistory = () =>
+    changeHistoryMode(
+      'reviews',
+      'Voltar à revisão para integrar este extrato? Nenhum movimento será lançado até a confirmação. A revisão para integrar expira em 24 horas, mas o histórico será preservado; você pode salvá-lo novamente para consulta.',
+    );
+  return {
+    page,
+    setPage,
+    busy,
+    error,
+    selected,
+    unresolved,
+    review,
+    confirm,
+    classify,
+    reverse,
+    retainHistory,
+    reopenHistory,
+  };
 }

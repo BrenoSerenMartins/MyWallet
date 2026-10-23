@@ -18,6 +18,8 @@ The [pilot plan](../architecture/pilot-plan.md) describes the implemented direct
 | Nest modules | Core auth/config/database/HTTP | Public core exports, verified user/workspace scope |
 | Imports | Account reads and ledger import port | Contracts in core/integration, bindings in composition; shared transaction for commit |
 | Ledger | Account/category validation ports | Owning modules retain metadata writes and access rules |
+| Planning | Category reads and grouped ledger actuals | Monthly read projection; writes only planning tables |
+| Data export | Planning backup port | Version 2 plans with category remapping, month conflict rollback |
 | Dashboard | Account/ledger read ports | Read-only composition; no balance mutations |
 | Data export | Domain export/restore ports | Owning modules validate/write records within the restoration transaction |
 | Institution mapper | Normalized import contract | Institution-specific interpretation; no repository or UI dependency |

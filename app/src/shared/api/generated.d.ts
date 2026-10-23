@@ -164,6 +164,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/planning/{month}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['PlanningController_summary'];
+    put: operations['PlanningController_save'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/planning/{month}/copies': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['PlanningController_copy'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/imports': {
     parameters: {
       query?: never;
@@ -238,6 +270,38 @@ export interface paths {
     get?: never;
     put?: never;
     post: operations['ImportsController_confirm'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/imports/{id}/history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['ImportsController_retainHistory'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/imports/{id}/reviews': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['ImportsController_reopenHistory'];
     delete?: never;
     options?: never;
     head?: never;
@@ -447,6 +511,53 @@ export interface components {
       transactionDate: string;
       description: string;
     };
+    PlanningLineResourceDto: {
+      difference: number | null;
+      categoryId: string | null;
+      name: string;
+      /** @enum {string} */
+      type: 'income' | 'expense';
+      color: string;
+      planned: number | null;
+      actual: number;
+      transactionCount: number;
+      archived: boolean;
+    };
+    PlanningTotalsDto: {
+      plannedIncome: number | null;
+      plannedExpense: number | null;
+      actualIncome: number;
+      actualExpense: number;
+      plannedResult: number | null;
+      actualResult: number;
+      afterContribution: number | null;
+      missingCategoryCount: number;
+      unclassifiedCount: number;
+      unclassifiedInflow: number;
+      unclassifiedOutflow: number;
+    };
+    MonthlyPlanResourceDto: {
+      month: string;
+      version: number;
+      contribution: number | null;
+      notes: string;
+      lines: components['schemas']['PlanningLineResourceDto'][];
+      totals: components['schemas']['PlanningTotalsDto'];
+    };
+    BudgetLineDto: {
+      categoryId: string;
+      amount: number;
+    };
+    SaveMonthlyPlanDto: {
+      version: number;
+      contribution: number | null;
+      notes: string;
+      lines: components['schemas']['BudgetLineDto'][];
+    };
+    CopyMonthlyPlanDto: {
+      version: number;
+      sourceVersion: number;
+    };
     ImportItemResourceDto: {
       id: string;
       sourceRow: number;
@@ -461,6 +572,9 @@ export interface components {
       categoryId: string | null;
     };
     ImportBatchResourceDto: {
+      accountOpeningDate: string;
+      statementStartDate: string | null;
+      openingDateMismatch: boolean;
       recordedOpeningBalance: number;
       openingMismatch: boolean;
       id: string;
@@ -817,6 +931,71 @@ export interface operations {
       };
     };
   };
+  PlanningController_summary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MonthlyPlanResourceDto'];
+        };
+      };
+    };
+  };
+  PlanningController_save: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveMonthlyPlanDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MonthlyPlanResourceDto'];
+        };
+      };
+    };
+  };
+  PlanningController_copy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CopyMonthlyPlanDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MonthlyPlanResourceDto'];
+        };
+      };
+    };
+  };
   ImportsController_list: {
     parameters: {
       query?: never;
@@ -934,6 +1113,52 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  ImportsController_retainHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConfirmImportDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportBatchResourceDto'];
+        };
+      };
+    };
+  };
+  ImportsController_reopenHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConfirmImportDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportBatchResourceDto'];
+        };
       };
     };
   };

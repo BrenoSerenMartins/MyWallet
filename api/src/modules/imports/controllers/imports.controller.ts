@@ -96,6 +96,32 @@ export class ImportsController {
       this.imports.confirm(requireUuid(id), input.version, key),
     );
   }
+  @Post(':id/history')
+  @ApiBody({ type: ConfirmImportDto })
+  @ApiOkResponse({ type: ImportBatchResourceDto })
+  async retainHistory(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: ConfirmImportDto,
+  ) {
+    const input = await validateInput(ConfirmImportDto, body);
+    return this.db.forUser(r.identity.id, () =>
+      this.imports.retainHistory(requireUuid(id), input.version),
+    );
+  }
+  @Post(':id/reviews')
+  @ApiBody({ type: ConfirmImportDto })
+  @ApiOkResponse({ type: ImportBatchResourceDto })
+  async reopenHistory(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: ConfirmImportDto,
+  ) {
+    const input = await validateInput(ConfirmImportDto, body);
+    return this.db.forUser(r.identity.id, () =>
+      this.imports.reopenHistory(requireUuid(id), input.version),
+    );
+  }
   @Post(':id/reversals') reverse(
     @Req() r: AuthenticatedRequest,
     @Param('id') id: string,

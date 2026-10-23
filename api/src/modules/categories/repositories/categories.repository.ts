@@ -6,10 +6,10 @@ import type { CategoryResource } from '../../../core/integration/index.js';
 @Injectable()
 export class CategoriesRepository {
   constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
-  async list(): Promise<CategoryResource[]> {
+  async list(includeArchived = false): Promise<CategoryResource[]> {
     return this.db.query(
-      'SELECT id,name,type,color FROM wallet.categories WHERE user_id=$1 AND archived_at IS NULL ORDER BY name,id',
-      [this.db.userId],
+      'SELECT id,name,type,color,archived_at IS NOT NULL AS archived FROM wallet.categories WHERE user_id=$1 AND (archived_at IS NULL OR $2) ORDER BY name,id',
+      [this.db.userId, includeArchived],
     );
   }
   async save(input: CategoryDto, id: string = randomUUID()) {
