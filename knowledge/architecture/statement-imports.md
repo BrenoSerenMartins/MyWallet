@@ -93,6 +93,6 @@ This report lacks opening, running and closing balances: expose null, never inve
 
 The 218-record, 69-column user sample passed the compiled worker locally without being persisted or added to Git. It contains malformed embedded quotes in optional source metadata; CSV quote relaxation is scoped to the detected settlement header, while column counts and semantic fields remain validated. Account CSV quoting remains strict. CSV column cap is 96; existing input/row/worker limits still apply. Mapper version is mercado-pago/settlement-csv/1.
 
-Migration 202610230003_settlement_reports.sql adds report_type, nullable source balances and object-valued report_metadata. Existing rows default to account_statement and retain non-null batch balance constraints. Import rows permit zero-valued consultation events; ledger nonzero rules are unchanged. Apply before code deployment. Remote application is pending; agent setup failed with EAI_AGAIN.
+Migration 202610230003_settlement_reports.sql adds report_type, nullable source balances and object-valued report_metadata. Existing rows default to account_statement and retain non-null batch balance constraints. Import rows permit zero-valued consultation events; ledger nonzero rules are unchanged. Apply before code deployment. The user confirmed successful remote application through db:setup, including restricted runtime role configuration.
 
 Field definitions: https://www.mercadopago.com.br/developers/pt/docs/checkout-api-orders/resources/reports/account-money/report-fields
