@@ -372,6 +372,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/imports/{id}/reprocess': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['ImportsController_reprocess'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/imports/{id}/reprocess-file': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['ImportsController_reprocessFile'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/dashboard': {
     parameters: {
       query?: never;
@@ -676,6 +708,7 @@ export interface components {
       categoryId: string | null;
     };
     ImportBatchResourceDto: {
+      canReprocess: boolean;
       canAdjustOpeningPosition: boolean;
       openingDifference: number | null;
       previousImports: components['schemas']['PreviousImportResourceDto'][];
@@ -705,6 +738,10 @@ export interface components {
     };
     ConfirmImportDto: {
       version: number;
+    };
+    ReprocessImportDto: {
+      version: number;
+      resetClassification?: boolean;
     };
     DashboardResourceDto: {
       balance: number;
@@ -1389,6 +1426,57 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  ImportsController_reprocess: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReprocessImportDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportBatchResourceDto'];
+        };
+      };
+    };
+  };
+  ImportsController_reprocessFile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          file: string;
+          version: number;
+          resetClassification?: boolean;
+        };
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportBatchResourceDto'];
+        };
       };
     };
   };

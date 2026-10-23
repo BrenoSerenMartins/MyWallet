@@ -935,3 +935,198 @@ test('a later statement points to unfinished history without proposing a new acc
     page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
   ).toBeEnabled();
 });
+
+test('reprocessing preserves the current draft on source errors and supports saved data and original-file rereading', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 1000 });
+  const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const batch = {
+    id,
+    accountId: account.id,
+    fileName: 'original.csv',
+    sourceFormat: 'csv',
+    status: 'draft',
+    version: 1,
+    canIntegrate: true,
+    canReprocess: true,
+    reportType: 'account_statement',
+    accountOpeningDate: '2026-10-01',
+    statementStartDate: '2026-10-01',
+    openingDateMismatch: false,
+    openingMismatch: false,
+    canAdjustOpeningPosition: false,
+    openingBalance: 10000,
+    closingBalance: 9000,
+    recordedOpeningBalance: 10000,
+    previousImports: [],
+    items: [
+      {
+        ...transaction,
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        description: 'Dinheiro reservado Cofrinho',
+        sourceRow: 1,
+        selected: true,
+        duplicateLocked: false,
+        duplicateCandidate: false,
+        transactionType: 'expense',
+        amount: -1000,
+      },
+    ],
+  };
+  let saved = 0,
+    reread = 0,
+    reads = 0;
+  await page.route(`**/v1/imports/${id}`, (route) => {
+    reads++;
+    return route.fulfill({ json: batch });
+  });
+  await page.route(`**/v1/imports/${id}/reprocess`, (route) => {
+    expect(route.request().postDataJSON()).toEqual({ version: 1, resetClassification: true });
+    expect(route.request().headers()['x-workspace-id']).toBe(workspace.id);
+    batch.version++;
+    batch.items[0].transactionType = 'transfer';
+    saved++;
+    return route.fulfill({ json: batch });
+  });
+  await page.route(`**/v1/imports/${id}/reprocess-file`, (route) => {
+    expect(route.request().headers()['content-type']).toContain('multipart/form-data');
+    const data = route.request().postData()!;
+    if (data.includes('wrong.csv'))
+      return route.fulfill({
+        status: 422,
+        json: { title: 'Selecione o mesmo arquivo original desta importação.' },
+      });
+    expect(data).toContain('original.csv');
+    expect(data).toContain('name="version"\r\n\r\n2');
+    expect(data).toContain('name="resetClassification"\r\n\r\nfalse');
+    batch.version++;
+    reread++;
+    return route.fulfill({ json: batch });
+  });
+  await page.goto(`/imports/${id}`);
+  await page.getByRole('button', { name: 'Reprocessar importação', exact: true }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('checkbox', { name: 'Refazer também os tipos financeiros' }),
+  ).not.toBeChecked();
+  await page
+    .getByRole('dialog')
+    .getByRole('checkbox', { name: 'Refazer também os tipos financeiros' })
+    .check();
+  await page.getByRole('button', { name: 'Reprocessar dados salvos', exact: true }).click();
+  await expect(
+    page.getByText('Importação reprocessada. Confira o resultado antes de confirmar.', {
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(saved).toBe(1);
+  await expect(page.getByLabel('Tipo do movimento 1')).toHaveValue('transfer');
+  await page.getByRole('button', { name: 'Reprocessar importação', exact: true }).click();
+  const beforeError = reads;
+  await page
+    .getByRole('dialog')
+    .locator('input[type=file]')
+    .setInputFiles({ name: 'wrong.csv', mimeType: 'text/csv', buffer: Buffer.from('synthetic') });
+  await expect(page.getByRole('dialog').getByRole('alert')).toHaveText(
+    'Selecione o mesmo arquivo original desta importação.',
+  );
+  expect(batch.version).toBe(2);
+  expect(reads).toBe(beforeError);
+  await page.screenshot({ path: '/tmp/mywallet-reprocess-390.png', fullPage: true });
+  await page
+    .getByRole('dialog')
+    .locator('input[type=file]')
+    .setInputFiles({
+      name: 'original.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('synthetic'),
+    });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(reread).toBe(1);
+  expect(batch.version).toBe(3);
+});
+
+test('confirmed imports do not offer reprocessing that could rewrite financial history', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+  await page.route(`**/v1/imports/${id}`, (route) =>
+    route.fulfill({
+      json: {
+        id,
+        accountId: account.id,
+        status: 'confirmed',
+        version: 2,
+        canIntegrate: true,
+        canReprocess: false,
+        sourceFormat: 'pdf',
+        fileName: 'confirmed.pdf',
+        openingBalance: 10000,
+        closingBalance: 10000,
+        recordedOpeningBalance: 10000,
+        items: [],
+      },
+    }),
+  );
+  await page.goto(`/imports/${id}`);
+  await expect(
+    page.getByRole('button', { name: 'Desfazer importação', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Reprocessar importação', exact: true }),
+  ).toHaveCount(0);
+});
+
+test('category and group colors follow financial type, allow customization and reset without auto-saving', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const categoryId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    groupId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const groups = [
+    { id: groupId, name: 'Casa', type: 'expense', color: '#5ee9b5', isDefault: false },
+  ];
+  const categories = [
+    { id: categoryId, name: 'Luz', type: 'expense', color: '#123456', groupId, groupName: 'Casa' },
+  ];
+  let saves = 0;
+  await page.route('**/v1/category-groups', (route) => route.fulfill({ json: groups }));
+  await page.route('**/v1/categories', (route) => route.fulfill({ json: categories }));
+  await page.route(`**/v1/categories/${categoryId}`, (route) => {
+    expect(route.request().method()).toBe('PATCH');
+    expect(route.request().postDataJSON().color).toBe('#f28a97');
+    categories[0].color = '#f28a97';
+    saves++;
+    return route.fulfill({ json: categories[0] });
+  });
+  await page.goto('/categories');
+  await page.getByRole('button', { name: 'Nova categoria', exact: true }).click();
+  const dialog = page.getByRole('dialog'),
+    color = dialog.locator('input[type=color]');
+  await expect(color).toHaveValue('#f28a97');
+  await dialog.getByRole('combobox', { name: 'Tipo', exact: true }).selectOption('income');
+  await expect(color).toHaveValue('#5ee9b5');
+  await color.fill('#abcdef');
+  await dialog.getByRole('combobox', { name: 'Tipo', exact: true }).selectOption('expense');
+  await expect(color).toHaveValue('#abcdef');
+  await dialog.getByRole('button', { name: 'Restaurar cor padrão', exact: true }).click();
+  await expect(color).toHaveValue('#f28a97');
+  await expect(
+    dialog.getByRole('button', { name: 'Restaurar cor padrão', exact: true }),
+  ).toBeDisabled();
+  expect(saves).toBe(0);
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+  await page.getByRole('button', { name: 'Editar categoria Luz', exact: true }).click();
+  await expect(color).toHaveValue('#123456');
+  await dialog.getByRole('button', { name: 'Restaurar cor padrão', exact: true }).click();
+  expect(saves).toBe(0);
+  await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(saves).toBe(1);
+  await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
+  await expect(color).toHaveValue('#f28a97');
+  await dialog.getByRole('combobox', { name: 'Tipo', exact: true }).selectOption('income');
+  await expect(color).toHaveValue('#5ee9b5');
+});

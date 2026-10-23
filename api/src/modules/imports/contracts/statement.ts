@@ -41,3 +41,18 @@ export interface SettlementMetadata {
   installmentNumber: number | null;
   lastFourDigits: string | null;
 }
+
+export interface SavedImportItem extends Omit<StatementRow, 'sourcePage' | 'metadata'> {
+  id: string;
+  metadata: SettlementMetadata | null;
+  transactionType: ImportEntry['transactionType'];
+  selected: boolean;
+  duplicateCandidate: boolean;
+  categoryId: string | null;
+}
+export interface ReprocessedImportEntry extends ImportEntry {
+  id: string;
+  selected: boolean;
+  duplicateCandidate: boolean;
+  categoryId: string | null;
+}

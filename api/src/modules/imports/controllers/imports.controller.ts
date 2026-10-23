@@ -1,3 +1,4 @@
+import { ImportReprocessingService } from '../services/import-reprocessing.service.js';
 import { ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
 import { ImportBatchResourceDto } from '../../../core/integration/index.js';
 import {
@@ -5,6 +6,7 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
   Inject,
   Param,
   Patch,
@@ -22,7 +24,7 @@ import { DatabaseService } from '../../../core/database/index.js';
 import { validateInput } from '../../../core/http/index.js';
 import { requireUuid } from '../../../core/rest/index.js';
 import { ImportsService } from '../services/imports.service.js';
-import { ReviewItemDto, ConfirmImportDto } from '../dto/import.dto.js';
+import { ReviewItemDto, ConfirmImportDto, ReprocessImportDto } from '../dto/import.dto.js';
 @ApiTags('Imports')
 @ApiBearerAuth()
 @UseGuards(AuthenticatedUserGuard)
@@ -31,6 +33,7 @@ export class ImportsController {
   constructor(
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(ImportsService) private readonly imports: ImportsService,
+    @Inject(ImportReprocessingService) private readonly reprocessing: ImportReprocessingService,
   ) {}
   @Get() list(@Req() r: AuthenticatedRequest) {
     return this.db.forUser(r.identity.id, () => this.imports.list());
@@ -127,5 +130,68 @@ export class ImportsController {
     @Headers('if-match') version: string,
   ) {
     return this.db.forUser(r.identity.id, () => this.imports.reverse(requireUuid(id), version));
+  }
+  @Post(':id/reprocess')
+  @HttpCode(200)
+  @ApiBody({ type: ReprocessImportDto })
+  @ApiOkResponse({ type: ImportBatchResourceDto })
+  async reprocess(@Req() r: AuthenticatedRequest, @Param('id') id: string, @Body() body: unknown) {
+    const input = await validateInput(ReprocessImportDto, body);
+    return this.db.forUser(r.identity.id, () =>
+      this.reprocessing.reprocess(requireUuid(id), input.version, {
+        resetClassification: input.resetClassification,
+      }),
+    );
+  }
+  @Post(':id/reprocess-file')
+  @HttpCode(200)
+  @ApiConsumes('multipart/form-data')
+  @ApiOkResponse({ type: ImportBatchResourceDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'version'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        version: { type: 'integer', minimum: 1 },
+        resetClassification: { type: 'boolean' },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 2 } }),
+  )
+  async reprocessFile(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body('version') version: string,
+    @Body('resetClassification') resetClassification: string | undefined,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new UnprocessableEntityException('Selecione o arquivo original.');
+    requireUuid(id);
+    const input = await validateInput(ReprocessImportDto, {
+      version: Number(version),
+      ...(resetClassification === undefined
+        ? {}
+        : {
+            resetClassification:
+              resetClassification === 'true'
+                ? true
+                : resetClassification === 'false'
+                  ? false
+                  : resetClassification,
+          }),
+    });
+    await this.db.forUser(r.identity.id, () =>
+      this.reprocessing.validateSource(id, input.version, file.buffer),
+    );
+    const statement = await this.imports.extract(r.identity.id, file.buffer, file.originalname);
+    return this.db.forUser(r.identity.id, () =>
+      this.reprocessing.reprocess(id, input.version, {
+        source: { buffer: file.buffer, statement },
+        resetClassification: input.resetClassification,
+      }),
+    );
   }
 }

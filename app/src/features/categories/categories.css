@@ -189,3 +189,16 @@
     min-width: 40px;
   }
 }
+
+.category-color-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: -8px;
+}
+.category-color-actions button {
+  min-height: 44px;
+  font-size: 12px;
+}

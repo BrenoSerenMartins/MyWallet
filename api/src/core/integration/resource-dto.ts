@@ -89,6 +89,7 @@ export class PreviousImportResourceDto {
   @ApiProperty({ type: String }) lastDate!: string;
 }
 export class ImportBatchResourceDto {
+  @ApiProperty({ type: Boolean }) canReprocess!: boolean;
   @ApiProperty({ type: Boolean }) canAdjustOpeningPosition!: boolean;
   @ApiProperty({ type: Number, nullable: true }) openingDifference!: number | null;
   @ApiProperty({ type: () => [PreviousImportResourceDto] })

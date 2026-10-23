@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { Category, CategoryGroup } from '../../../shared/api/resources';
 import { Button } from '../../../shared/ui/primitives';
+const defaultColors: Record<string, string> = { expense: '#f28a97', income: '#5ee9b5' };
 export function CategoryForm({
   kind,
   entry,
@@ -23,7 +24,10 @@ export function CategoryForm({
 }) {
   const [name, setName] = useState(entry?.name ?? '');
   const [type, setType] = useState(entry?.type ?? initialGroup?.type ?? initialType);
-  const [color, setColor] = useState(entry?.color ?? initialGroup?.color ?? '#5ee9b5');
+  const [color, setColor] = useState(entry?.color ?? defaultColors[type]);
+  const [customColor, setCustomColor] = useState(
+    !!entry && entry.color.toLowerCase() !== defaultColors[type],
+  );
   const [groupId, setGroupId] = useState(
     (entry && 'groupId' in entry ? entry.groupId : initialGroup?.id) ??
       groups.find((group) => group.isDefault && group.type === type)?.id ??
@@ -66,6 +70,7 @@ export function CategoryForm({
           value={type}
           disabled={!!entry}
           onChange={(e) => {
+            if (!customColor) setColor(defaultColors[e.target.value]);
             setType(e.target.value);
             setGroupId(
               groups.find((group) => group.isDefault && group.type === e.target.value)?.id ?? '',
@@ -95,8 +100,31 @@ export function CategoryForm({
       )}
       <label>
         Cor
-        <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
+        <input
+          type="color"
+          value={color}
+          onChange={(e) => {
+            setColor(e.target.value);
+            setCustomColor(true);
+          }}
+        />
       </label>
+      <div className="category-color-actions">
+        <span className="field-help">
+          {type === 'expense' ? 'Padrão de despesa: vermelho.' : 'Padrão de receita: verde.'}
+        </span>
+        <button
+          type="button"
+          className="text-button"
+          disabled={busy || color.toLowerCase() === defaultColors[type]}
+          onClick={() => {
+            setColor(defaultColors[type]);
+            setCustomColor(false);
+          }}
+        >
+          Restaurar cor padrão
+        </button>
+      </div>
       <p className="field-help">
         {kind === 'group'
           ? 'Agrupe categorias do mesmo tipo. Os lançamentos ficam nas categorias, como Casa → Luz.'

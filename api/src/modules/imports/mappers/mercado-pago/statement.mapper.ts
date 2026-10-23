@@ -24,3 +24,11 @@ export function mapMercadoPago(statement: ParsedStatement): ImportEntry[] {
       statement.reportType === 'settlement' ? 'unclassified' : classifyMercadoPagoMovement(item),
   }));
 }
+
+export function mercadoPagoSourceFormat(mapperVersion: string): 'pdf' | 'csv' | 'xlsx' {
+  return mapperVersion.includes('-csv/')
+    ? 'csv'
+    : mapperVersion.includes('-xlsx/')
+      ? 'xlsx'
+      : 'pdf';
+}

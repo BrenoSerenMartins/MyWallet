@@ -847,6 +847,88 @@
         "tags": ["Imports"]
       }
     },
+    "/v1/imports/{id}/reprocess": {
+      "post": {
+        "operationId": "ImportsController_reprocess",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReprocessImportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatchResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
+    "/v1/imports/{id}/reprocess-file": {
+      "post": {
+        "operationId": "ImportsController_reprocessFile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "version"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "resetClassification": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatchResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
     "/v1/dashboard": {
       "get": {
         "operationId": "DashboardController_summary",
@@ -1723,6 +1805,9 @@
       "ImportBatchResourceDto": {
         "type": "object",
         "properties": {
+          "canReprocess": {
+            "type": "boolean"
+          },
           "canAdjustOpeningPosition": {
             "type": "boolean"
           },
@@ -1794,6 +1879,7 @@
           }
         },
         "required": [
+          "canReprocess",
           "canAdjustOpeningPosition",
           "openingDifference",
           "previousImports",
@@ -1835,6 +1921,18 @@
         "properties": {
           "version": {
             "type": "number"
+          }
+        },
+        "required": ["version"]
+      },
+      "ReprocessImportDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number"
+          },
+          "resetClassification": {
+            "type": "boolean"
           }
         },
         "required": ["version"]

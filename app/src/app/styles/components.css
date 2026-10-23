@@ -1681,3 +1681,34 @@ button.transaction-row:hover {
     flex-wrap: wrap;
   }
 }
+.reprocess-import {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+.reprocess-import .form-success {
+  flex-basis: 100%;
+}
+.reprocess-option {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--surface-soft);
+}
+.reprocess-option p {
+  margin: 8px 0 12px;
+}
+.reprocess-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.reprocess-choice input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}

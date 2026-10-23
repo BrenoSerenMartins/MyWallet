@@ -10,3 +10,7 @@ export class ReviewItemDto {
 export class ConfirmImportDto {
   @ApiProperty({ type: Number }) @IsInt() @Min(1) version!: number;
 }
+
+export class ReprocessImportDto extends ConfirmImportDto {
+  @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() resetClassification?: boolean;
+}

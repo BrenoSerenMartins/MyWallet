@@ -2,7 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../../../core/database/index.js';
 import { isoDate } from '../../../core/rest/index.js';
-import type { ParsedStatement, ImportEntry } from '../contracts/statement.js';
+import type {
+  ParsedStatement,
+  ImportEntry,
+  SavedImportItem,
+  ReprocessedImportEntry,
+} from '../contracts/statement.js';
 @Injectable()
 export class ImportsRepository {
   constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
@@ -19,7 +24,7 @@ export class ImportsRepository {
     );
     return batch;
   }
-  async items(id: string) {
+  async items(id: string): Promise<SavedImportItem[]> {
     const rows = await this.db.query(
       'SELECT * FROM wallet.import_items WHERE user_id=$1 AND batch_id=$2 ORDER BY source_row',
       [this.db.userId, id],
@@ -126,6 +131,42 @@ export class ImportsRepository {
         !duplicate,
         JSON.stringify(item.metadata ?? {}),
       ],
+    );
+  }
+  async replaceUnconfirmedSource(
+    id: string,
+    statement: ParsedStatement,
+    items: ReprocessedImportEntry[],
+    mapperVersion: string,
+  ) {
+    const rows = items.map((item) => ({
+      id: item.id,
+      source_row: item.sourceRow,
+      transaction_date: item.transactionDate,
+      description: item.description,
+      amount_minor: item.amount,
+      balance_after_minor: item.balanceAfter,
+      source_operation_id: item.sourceOperationId,
+      transaction_type: item.transactionType,
+      selected: item.selected,
+      category_id: item.categoryId,
+      duplicate_candidate: item.duplicateCandidate,
+      report_metadata: item.metadata ?? {},
+    }));
+    await this.db.query('DELETE FROM wallet.import_items WHERE user_id=$1 AND batch_id=$2', [
+      this.db.userId,
+      id,
+    ]);
+    await this.db.query(
+      `INSERT INTO wallet.import_items(id,user_id,batch_id,source_row,transaction_date,description,amount_minor,balance_after_minor,source_operation_id,transaction_type,selected,category_id,duplicate_candidate,report_metadata)
+      SELECT r.id,$1,$2,r.source_row,r.transaction_date,r.description,r.amount_minor,r.balance_after_minor,r.source_operation_id,r.transaction_type,r.selected,r.category_id,r.duplicate_candidate,r.report_metadata
+      FROM jsonb_to_recordset($3::jsonb) AS r(id uuid,source_row integer,transaction_date date,description text,amount_minor bigint,balance_after_minor bigint,source_operation_id text,transaction_type text,selected boolean,category_id uuid,duplicate_candidate boolean,report_metadata jsonb)`,
+      [this.db.userId, id, JSON.stringify(rows)],
+    );
+    await this.db.query(
+      `UPDATE wallet.import_batches SET mapper_version=$3,opening_balance_minor=$4,closing_balance_minor=$5,version=version+1,
+      expires_at=CASE WHEN status='draft' THEN now()+interval '24 hours' ELSE expires_at END WHERE user_id=$1 AND id=$2 AND status IN ('draft','history')`,
+      [this.db.userId, id, mapperVersion, statement.openingBalance, statement.closingBalance],
     );
   }
   async applyAutomaticTypes(batchId: string, items: { id: string; transactionType: string }[]) {

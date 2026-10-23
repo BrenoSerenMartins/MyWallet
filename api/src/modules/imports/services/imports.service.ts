@@ -26,6 +26,7 @@ import {
   mapMercadoPago,
   classifyMercadoPagoMovement,
   mercadoPagoMapperVersion,
+  mercadoPagoSourceFormat,
 } from '../mappers/mercado-pago/statement.mapper.js';
 import { extractMercadoPagoStatement } from '../parsers/mercado-pago/extract-statement.js';
 import type { ParsedStatement } from '../contracts/statement.js';
@@ -120,11 +121,8 @@ export class ImportsService {
           ? null
           : Number(b.opening_balance_minor) - recordedOpeningBalance,
       previousImports,
-      sourceFormat: b.mapper_version.includes('-csv/')
-        ? 'csv'
-        : b.mapper_version.includes('account-xlsx/')
-          ? 'xlsx'
-          : 'pdf',
+      canReprocess: ['draft', 'history'].includes(b.status),
+      sourceFormat: mercadoPagoSourceFormat(b.mapper_version),
       reportType: b.report_type,
       canIntegrate: b.report_type === 'account_statement',
       accountOpeningDate: account.openingDate,

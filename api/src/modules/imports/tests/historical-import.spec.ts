@@ -1,3 +1,6 @@
+import { ImportReprocessingService } from '../services/import-reprocessing.service.js';
+import { csvFixture, sampleRows } from './tabular-fixture.js';
+import { extractMercadoPagoStatement } from '../parsers/mercado-pago/extract-statement.js';
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TestDatabase } from '../../../../test/database-harness.js';
@@ -445,4 +448,191 @@ it('preserves explicit financial reviews while applying direction defaults to re
       (item) => item.transactionType,
     ),
   ).toEqual(['transfer', 'expense']);
+});
+
+const reprocessing = new ImportReprocessingService(
+  new ImportsRepository(db.service),
+  imports,
+  accounts,
+);
+it('reprocesses expired drafts while preserving choices, then explicitly resets reserve classifications without financial writes', async () => {
+  const accountId = (
+    await db.forUser(db.user, () =>
+      accounts.create({
+        name: 'Reprocessing',
+        institution: 'mercado_pago',
+        type: 'checking',
+        openingBalance: 5000,
+        openingDate: '2026-10-01',
+      }),
+    )
+  ).id;
+  const category = (
+    await db.forUser(db.user, () =>
+      categories.save({ name: 'Reprocessing expense', type: 'expense', color: '#5ee9b5' }),
+    )
+  ).id;
+  const statement = {
+    openingBalance: 5000,
+    closingBalance: 3500,
+    items: [
+      {
+        sourceRow: 1,
+        sourcePage: 1,
+        transactionDate: '2026-10-01',
+        description: 'Dinheiro reservado Emergency',
+        amount: -1000,
+        balanceAfter: 4000,
+        sourceOperationId: 'reserve-reprocess',
+      },
+      {
+        sourceRow: 2,
+        sourcePage: 1,
+        transactionDate: '2026-10-01',
+        description: 'Purchase',
+        amount: -500,
+        balanceAfter: 3500,
+        sourceOperationId: 'payment-reprocess',
+      },
+    ],
+  };
+  const draft = await db.forUser(db.user, () =>
+    imports.upload(accountId, Buffer.from('reprocess-saved'), 'saved.pdf', statement),
+  );
+  const reviewed = await db.forUser(db.user, () =>
+    imports.review(
+      draft.id,
+      draft.items[0].id,
+      { transactionType: 'expense', selected: false, categoryId: category },
+      String(draft.version),
+    ),
+  );
+  await db.forUser(db.user, async () => {
+    await db.service.query(
+      "UPDATE wallet.import_items SET transaction_type='unclassified' WHERE batch_id=$1 AND source_row=2",
+      [draft.id],
+    );
+    await db.service.query(
+      "UPDATE wallet.import_batches SET expires_at=now()-interval '1 hour' WHERE id=$1",
+      [draft.id],
+    );
+  });
+  const preserved = await db.forUser(db.user, () =>
+    reprocessing.reprocess(draft.id, reviewed.version),
+  );
+  expect(preserved.version).toBe(reviewed.version + 1);
+  expect(new Date(preserved.expiresAt).getTime()).toBeGreaterThan(Date.now());
+  expect(preserved.items[0]).toMatchObject({
+    id: draft.items[0].id,
+    transactionType: 'expense',
+    selected: false,
+    categoryId: category,
+  });
+  expect(preserved.items[1]).toMatchObject({ id: draft.items[1].id, transactionType: 'expense' });
+  const reset = await db.forUser(db.user, () =>
+    reprocessing.reprocess(draft.id, preserved.version, { resetClassification: true }),
+  );
+  expect(reset.items[0]).toMatchObject({
+    id: draft.items[0].id,
+    transactionType: 'transfer',
+    categoryId: null,
+    selected: false,
+  });
+  expect((await db.forUser(db.user, () => accounts.find(accountId))).balance).toBe(5000);
+  expect(
+    (await db.forUser(db.user, () => ledger.exportRecords())).filter(
+      (item) => item.accountId === accountId,
+    ),
+  ).toEqual([]);
+});
+it('rereads only the same source file and rejects stale versions, foreign scopes and confirmed receipts', async () => {
+  const accountId = (
+    await db.forUser(db.user, () =>
+      accounts.create({
+        name: 'Reread',
+        institution: 'mercado_pago',
+        type: 'checking',
+        openingBalance: 10000,
+        openingDate: '2026-10-01',
+      }),
+    )
+  ).id;
+  const buffer = csvFixture(sampleRows),
+    statement = await extractMercadoPagoStatement(buffer, 'reread.csv');
+  const draft = await db.forUser(db.user, () =>
+    imports.upload(accountId, buffer, 'reread.csv', statement),
+  );
+  await expect(
+    db.forUser(db.other, () => reprocessing.reprocess(draft.id, draft.version)),
+  ).rejects.toThrow('não encontrada');
+  await expect(
+    db.forUser(db.user, () =>
+      reprocessing.validateSource(draft.id, draft.version, Buffer.from('different')),
+    ),
+  ).rejects.toThrow('mesmo arquivo');
+  await expect(
+    db.forUser(db.user, () => reprocessing.reprocess(draft.id, draft.version + 1)),
+  ).rejects.toThrow();
+  const reread = await db.forUser(db.user, () =>
+    reprocessing.reprocess(draft.id, draft.version, { source: { buffer, statement } }),
+  );
+  expect(reread.items.map((item) => item.id)).toEqual(draft.items.map((item) => item.id));
+  await db.forUser(db.user, () => imports.confirm(draft.id, reread.version, 'reprocess-confirmed'));
+  const receipt = await db.forUser(db.user, () => imports.preview(draft.id));
+  expect(receipt.canReprocess).toBe(false);
+  const balance = (await db.forUser(db.user, () => accounts.find(accountId))).balance;
+  await expect(
+    db.forUser(db.user, () => reprocessing.reprocess(draft.id, receipt.version)),
+  ).rejects.toThrow('já confirmados');
+  expect((await db.forUser(db.user, () => accounts.find(accountId))).balance).toBe(balance);
+  expect((await db.forUser(db.user, () => imports.preview(draft.id))).version).toBe(
+    receipt.version,
+  );
+  await db.forUser(db.user, () => imports.reverse(draft.id, String(receipt.version)));
+  const reversed = await db.forUser(db.user, () => imports.preview(draft.id));
+  await expect(
+    db.forUser(db.user, () => reprocessing.reprocess(draft.id, reversed.version)),
+  ).rejects.toThrow('já confirmados');
+});
+it('recalculates duplicate locks when another draft is confirmed before reprocessing', async () => {
+  const accountId = (
+    await db.forUser(db.user, () =>
+      accounts.create({
+        name: 'Duplicate reprocessing',
+        institution: 'mercado_pago',
+        type: 'checking',
+        openingBalance: 10000,
+        openingDate: '2026-10-01',
+      }),
+    )
+  ).id;
+  const statement = {
+    openingBalance: 10000,
+    closingBalance: 9900,
+    items: [
+      {
+        sourceRow: 1,
+        sourcePage: 1,
+        transactionDate: '2026-10-01',
+        description: 'Purchase',
+        amount: -100,
+        balanceAfter: 9900,
+        sourceOperationId: 'reprocess-duplicate',
+      },
+    ],
+  };
+  const first = await db.forUser(db.user, () =>
+    imports.upload(accountId, Buffer.from('dedup-reprocess-first'), 'first.pdf', statement),
+  );
+  const second = await db.forUser(db.user, () =>
+    imports.upload(accountId, Buffer.from('dedup-reprocess-second'), 'second.pdf', statement),
+  );
+  await db.forUser(db.user, () => imports.confirm(first.id, first.version, 'dedup-reprocess'));
+  const result = await db.forUser(db.user, () => reprocessing.reprocess(second.id, second.version));
+  expect(result.items[0]).toMatchObject({
+    selected: false,
+    duplicateLocked: true,
+    duplicateReason: 'recorded',
+  });
+  expect((await db.forUser(db.user, () => accounts.find(accountId))).balance).toBe(9900);
 });

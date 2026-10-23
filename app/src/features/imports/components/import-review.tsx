@@ -1,3 +1,4 @@
+import { ReprocessImport } from './reprocess-import';
 import { ImportSourceSummary } from './import-source-summary';
 import { ViewSwitcher } from '../../../shared/ui/view-switcher';
 import { ImportReviewRow } from './import-review-row';
@@ -58,6 +59,15 @@ export function ImportReview({
     );
   return (
     <>
+      <ReprocessImport
+        batch={batch}
+        onProcessed={async () => {
+          await refresh();
+          setPage(0);
+          setView('all');
+          setSearch('');
+        }}
+      />
       <ImportSourceSummary batch={batch} />
       {batch.status === 'draft' &&
         canIntegrate &&

@@ -134,3 +134,6 @@ Open Finance/bank connections, native notification capture, native packaging, au
 
 ## Historical statement consultation
 Statements predating the account opening may be uploaded and retained in history without entering the ledger. They are searchable within an import batch, survive draft cleanup and never affect cash balances, expense reports or monthly actuals. Integrating later requires reopening the review and reconciling the account opening/date, classification and duplicates. Empty account opening positions may be explicitly revised; accounts with movements retain the existing protection. Raw PDFs are not saved. Financial JSON backups include monthly plans but not import history; operational backups cover retained consultation data.
+
+## Cofrinhos and account reserves
+Moving owned cash into a bank cofrinho reduces spendable account cash but is an internal transfer, not consumption; withdrawal reverses that direction and yield is a separate income event when explicitly identified. Consolidated owned wealth must count the account and tracked reserve once each. The current Mercado Pago mapper recognizes reserve movements as unmatched transfers; it does not automatically create or value individual cofrinhos. Real paired destination matching must avoid duplicating an independently imported reserve movement and requires explicit source evidence.

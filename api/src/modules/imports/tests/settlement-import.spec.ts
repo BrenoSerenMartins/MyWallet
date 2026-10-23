@@ -1,3 +1,4 @@
+import { ImportReprocessingService } from '../services/import-reprocessing.service.js';
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TestDatabase } from '../../../../test/database-harness.js';
@@ -132,7 +133,7 @@ describe('Settlement v2 consultation report', () => {
     const history = await db.forUser(db.user, () =>
       imports.retainHistory(preview.id, preview.version),
     );
-    expect(history.items[0].metadata.netAmount).toBe(9700);
+    expect(history.items[0].metadata?.netAmount).toBe(9700);
     expect(history.status).toBe('history');
     await expect(
       db.forUser(db.user, () => imports.reopenHistory(preview.id, history.version)),
@@ -143,4 +144,35 @@ describe('Settlement v2 consultation report', () => {
       'não encontrada',
     );
   });
+});
+
+it('reprocesses retained settlement data while preserving consultation status and no-ledger semantics', async () => {
+  const fixture = settlementFixture();
+  const parsed = await extractMercadoPagoStatement(fixture.buffer, 'settlement.csv');
+  const draft = await db.forUser(db.user, () =>
+    imports.upload(
+      accountId,
+      Buffer.concat([fixture.buffer, Buffer.from('\n')]),
+      'settlement.csv',
+      parsed,
+    ),
+  );
+  const history = await db.forUser(db.user, () => imports.retainHistory(draft.id, draft.version));
+  const service = new ImportReprocessingService(
+    new ImportsRepository(db.service),
+    imports,
+    accounts,
+  );
+  const result = await db.forUser(db.user, () =>
+    service.reprocess(history.id, history.version, { resetClassification: true }),
+  );
+  expect(result.status).toBe('history');
+  expect(result.canIntegrate).toBe(false);
+  expect(result.openingBalance).toBeNull();
+  expect(result.items[0]).toMatchObject({
+    transactionType: 'unclassified',
+    metadata: { netAmount: 9700 },
+  });
+  expect((await db.forUser(db.user, () => imports.get(result.id))).history_saved_at).not.toBeNull();
+  expect(await db.forUser(db.user, () => ledger.exportRecords())).toEqual([]);
 });

@@ -248,6 +248,10 @@ O importador atual interpreta extratos de conta do Mercado Pago em PDF com texto
 
 Ao excluir um grupo, a prévia mostra quantas categorias irão para o grupo padrão. A exclusão preserva seus lançamentos e planejamentos; nomes repetidos no destino precisam ser resolvidos antes. O grupo padrão é protegido, existe por tipo em cada espaço e também recebe categorias vindas de backups antigos. A migration `202610230005_default_category_groups.sql` deve ser aplicada com `npm run db:setup` antes de publicar esta versão.
 
+Grupos e categorias novos começam em vermelho para despesas e verde para receitas. Você pode escolher outra cor ou usar **Restaurar cor padrão**; a mudança só é gravada ao salvar. Cores anteriores são preservadas.
+
+Use **Reprocessar importação** em um rascunho ou histórico para atualizar a análise dos dados salvos ou reler o mesmo arquivo original. O app preserva as escolhas e permite refazer explicitamente os tipos financeiros. A ação não confirma movimentos nem altera lançamentos já confirmados. Movimentos reconhecidos de cofrinhos continuam como transferências; o saldo individual de cada cofrinho ainda não é montado automaticamente.
+
 Entradas são classificadas automaticamente como receitas e saídas como despesas, mantendo reservas reconhecidas como transferências. Você pode corrigir os tipos e escolher categorias antes de confirmar. Rascunhos antigos também recebem esses padrões sem reenviar o arquivo. Extratos anteriores precisam ser confirmados para compor o saldo: se um mês ainda estiver em revisão ou apenas como histórico, o app orienta a concluí-lo e mantém a abertura da conta.
 
 Na revisão, duplicatas identificadas pela referência, data, valor e saldo de origem ficam bloqueadas e são revalidadas antes da confirmação, inclusive entre arquivos enviados antes de confirmar. Coincidências sem origem suficiente aparecem em pendências para conferência; descrições e valores iguais podem representar gastos legítimos. Editar um lançamento importado preserva a identificação do movimento bancário original; estorná-lo permite reimportar.
