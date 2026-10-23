@@ -145,6 +145,23 @@ O Blueprint `render.yaml` configura um único serviço Docker na branch `main`, 
 
 O plano gratuito pode adormecer após inatividade; a primeira abertura pode demorar. O worker separado do Cloudflare não é necessário nesse caminho. Se houver um deploy frontend antigo, utilize a URL do Render para acessar a aplicação completa.
 
+#### Diagnosticar deploy que inicia, mas não fica saudável
+
+O log `Nest application successfully started` confirma o servidor HTTP; a liberação do deploy também depende de `/ready`, que verifica o PostgreSQL e o papel restrito. Se essa etapa falhar, procure `Database readiness failed:` nos logs. O app registra somente códigos permitidos, sem mensagens brutas, URLs ou senhas, e evita repetir a mesma falha em cada probe.
+
+| Código                                                          | O que conferir                                                                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `RUNTIME_DATABASE_URL_MISSING`                                  | A variável deve conter a conexão restrita completa, sem o prefixo `RUNTIME_DATABASE_URL=` no valor do painel |
+| `RUNTIME_ROLE_INVALID`                                          | Use a credencial `mywallet_runtime`, não a administrativa `postgres`                                         |
+| `28P01` / `28000`                                               | Usuário/senha e sufixo do projeto no usuário do pooler; copie a conexão restrita gerada pelo setup           |
+| `ENETUNREACH` / `EHOSTUNREACH`                                  | Compatibilidade de rede; confira a conexão de Session pooler IPv4                                            |
+| `ENOTFOUND` / `EAI_AGAIN`                                       | Host da conexão e resolução DNS                                                                              |
+| `SELF_SIGNED_CERT_IN_CHAIN` / `UNABLE_TO_VERIFY_LEAF_SIGNATURE` | CA usada e parâmetros SSL da conexão; mantenha a verificação TLS ativada                                     |
+| `TIMEOUT` / `ETIMEDOUT`                                         | Conectividade, restrições de rede, disponibilidade e capacidade do banco/pooler                              |
+| `CONNECTION_FAILED`                                             | Falha não classificada; verifique os eventos do provedor e a configuração sem publicar credenciais           |
+
+A recuperação registra `Database readiness: READY.`. O corpo público de `/ready` mantém apenas o estado geral. Envie o código do diagnóstico para investigar uma falha, sem colar a URL PostgreSQL ou senhas. Aumentar o prazo do deploy não corrige uma conexão inválida.
+
 ### Docker
 
 Depois de preparar o banco:

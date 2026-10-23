@@ -1,9 +1,10 @@
-import { Global, Inject, Injectable, Module, type OnModuleDestroy } from '@nestjs/common';
+import { Global, Inject, Injectable, Logger, Module, type OnModuleDestroy } from '@nestjs/common';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Pool, type QueryResultRow } from 'pg';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { requireUuid } from '../rest/index.js';
 import { Configuration } from '../config/index.js';
+import { databaseReadinessFailure } from './readiness-failure.js';
 export interface SqlConnection {
   query<T extends QueryResultRow = QueryResultRow>(
     sql: string,
@@ -19,6 +20,8 @@ interface UserTransaction {
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {
   private readonly pool: Pool | null;
+  private readonly logger = new Logger(DatabaseService.name);
+  private readinessState: string | undefined;
   private readonly requestedWorkspace = new AsyncLocalStorage<string | undefined>();
   withWorkspace(id: string | undefined, next: () => void) {
     this.requestedWorkspace.run(id, next);
@@ -112,17 +115,28 @@ export class DatabaseService implements OnModuleDestroy {
     }
   }
   async ready(): Promise<boolean> {
-    if (!this.pool) return false;
+    if (!this.pool) return this.recordReadiness('RUNTIME_DATABASE_URL_MISSING');
     try {
       const r = await this.pool.query(
         'SELECT rolname,rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user',
       );
-      return (
-        r.rows[0]?.rolname === 'mywallet_runtime' && !r.rows[0].rolsuper && !r.rows[0].rolbypassrls
+      const role = r.rows[0];
+      return this.recordReadiness(
+        role?.rolname === 'mywallet_runtime' && !role.rolsuper && !role.rolbypassrls
+          ? 'READY'
+          : 'RUNTIME_ROLE_INVALID',
       );
-    } catch {
-      return false;
+    } catch (error) {
+      return this.recordReadiness(databaseReadinessFailure(error));
     }
+  }
+  private recordReadiness(state: string): boolean {
+    if (state !== this.readinessState) {
+      if (state === 'READY') this.logger.log('Database readiness: READY.');
+      else this.logger.warn(`Database readiness failed: ${state}.`);
+      this.readinessState = state;
+    }
+    return state === 'READY';
   }
   async onModuleDestroy() {
     await this.pool?.end();
