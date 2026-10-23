@@ -25,6 +25,8 @@ export function planningSummary(
           ? null
           : exactAmount(c.type === 'income' ? amount - planned : planned - amount),
       categoryId: c.id,
+      groupId: c.groupId ?? null,
+      groupName: c.groupName ?? null,
       name: c.name,
       type: c.type as 'income' | 'expense',
       color: c.color,
@@ -41,6 +43,8 @@ export function planningSummary(
     if (unmatched.length)
       lines.push({
         categoryId: null,
+        groupId: null,
+        groupName: null,
         difference: null,
         name: 'Sem categoria',
         type,

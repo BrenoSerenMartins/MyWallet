@@ -13,7 +13,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   const b = raw as BackupPayload;
   if (
     b.format !== 'mywallet' ||
-    ![1, 2].includes(b.version) ||
+    ![1, 2, 3].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||
@@ -41,9 +41,22 @@ export function validateBackup(raw: unknown): BackupPayload {
     dateOnly(a.openingDate);
     exactAmount(a.openingBalance);
   }
+  const categoryGroups = b.version === 3 ? b.categoryGroups : [];
+  if (!Array.isArray(categoryGroups) || categoryGroups.length > 2000) fail();
+  for (const group of categoryGroups!) {
+    if (!group || typeof group !== 'object') fail();
+    unique(group.id);
+    if (
+      !text(group.name, 80) ||
+      !['income', 'expense'].includes(group.type) ||
+      !/^#[0-9a-f]{6}$/i.test(group.color)
+    )
+      fail();
+  }
   for (const c of b.categories) {
     if (!c || typeof c !== 'object') fail();
     unique(c.id);
+    if (c.groupId && !categoryGroups!.some((g) => g.id === c.groupId && g.type === c.type)) fail();
     if (
       !text(c.name, 80) ||
       !['income', 'expense'].includes(c.type) ||
@@ -94,7 +107,8 @@ export function validateBackup(raw: unknown): BackupPayload {
       fail();
   return {
     ...b,
+    categoryGroups,
     monthlyPlans:
-      b.version === 2 ? validatePlanningBackup(b.monthlyPlans, new Set(categories.keys())) : [],
+      b.version >= 2 ? validatePlanningBackup(b.monthlyPlans, new Set(categories.keys())) : [],
   };
 }

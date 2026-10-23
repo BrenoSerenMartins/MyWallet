@@ -1,3 +1,4 @@
+import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { CheckCircle2 } from 'lucide-react';
 import { ImportReview } from './components/import-review';
 import { useRef, useState } from 'react';
@@ -17,6 +18,7 @@ export function ImportsPage() {
   const client = useQueryClient();
   const input = useRef<HTMLInputElement>(null);
   const [account, setAccount] = useState('');
+  const [view, setView] = useState('upload');
   const uploads = useStatementUploads((rows) => {
     void client.invalidateQueries({ queryKey: [session?.user.id, 'imports'] });
     if (rows.length === 1 && rows[0].result) navigate('/imports/' + rows[0].result.id);
@@ -70,126 +72,137 @@ export function ImportsPage() {
         )
       ) : (
         <>
-          <div className="import-grid">
-            <section className="panel upload-panel">
-              <span className="file-icon">
-                <FileText size={28} />
-              </span>
-              <h2>
-                Seu Mercado Pago,
-                <br />
-                sem começar do zero.
-              </h2>
-              <p>
-                Envie um ou vários extratos de conta em PDF, CSV ou XLSX. Vamos organizar os dados e
-                conferir os saldos para você revisar. Relatórios settlement_v2 em CSV também são
-                aceitos, apenas para consulta.
-              </p>
-              {accounts.isPending ? (
-                <Loading />
-              ) : accounts.isError ? (
-                <ErrorState error={accounts.error} />
-              ) : accounts.data.some((a) => a.institution === 'mercado_pago') ? (
-                <>
-                  <label>
-                    Conta de destino
-                    <select
-                      value={account}
-                      disabled={busy}
-                      onChange={(e) => setAccount(e.target.value)}
-                    >
-                      <option value="">Selecione sua conta Mercado Pago</option>
-                      {accounts.data
-                        .filter((a) => a.institution === 'mercado_pago')
-                        .map((a) => (
-                          <option value={a.id} key={a.id}>
-                            {a.name}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
-                  <input
-                    ref={input}
-                    type="file"
-                    multiple
-                    disabled={busy}
-                    accept="application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.pdf,.csv,.xlsx"
-                    hidden
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files ?? []);
-                      e.target.value = '';
-                      void uploads.upload(files, account);
-                    }}
-                  />
-                  <Button
-                    disabled={!account || busy || !navigator.onLine}
-                    onClick={() => input.current?.click()}
-                  >
-                    <Upload size={18} />
-                    {busy ? 'Processando arquivos…' : 'Selecionar extratos'}
-                  </Button>
-                  <span className="field-help">
-                    Selecione vários arquivos de uma vez. PDF com texto, CSV UTF-8 ou XLSX · até 10
-                    MB por arquivo, 100 páginas ou 10.000 movimentos
-                  </span>
-                </>
-              ) : (
-                <EmptyState
-                  title="Primeiro, adicione sua conta"
-                  action={
-                    <Link className="button" to="/accounts">
-                      Adicionar conta <ArrowRight size={16} />
-                    </Link>
-                  }
-                >
-                  Cadastre o Mercado Pago com o saldo e a data inicial do seu extrato.
-                </EmptyState>
-              )}
-            </section>
-            <aside className="panel import-guide">
-              <span className="eyebrow">VOCÊ NO CONTROLE</span>
-              <h2>Do arquivo à sua visão financeira.</h2>
-              {[
-                {
-                  n: '01',
-                  title: 'Envie seu extrato',
-                  text: 'Escolha o PDF, CSV ou XLSX e a conta à qual ele pertence.',
-                },
-                {
-                  n: '02',
-                  title: 'Confira os movimentos',
-                  text: 'Revise receitas, despesas e transferências. Possíveis duplicidades ficam sinalizadas.',
-                },
-                {
-                  n: '03',
-                  title: 'Confirme quando estiver pronto',
-                  text: 'Os lançamentos só entram no seu saldo depois da sua confirmação.',
-                },
-              ].map((step) => (
-                <div className="guide-step" key={step.n}>
-                  <span>{step.n}</span>
-                  <div>
-                    <h3>{step.title}</h3>
-                    <p>{step.text}</p>
-                  </div>
-                </div>
-              ))}
-              <div className="guide-note">
-                <CheckCircle2 size={18} />
-                <p>
-                  O arquivo original não fica armazenado. Mantemos os movimentos que você confirmar
-                  e a referência da importação.
-                </p>
-              </div>
-            </aside>
-          </div>
-          <UploadResults
-            rows={uploads.rows}
-            busy={busy}
-            stopping={uploads.stopping}
-            onStop={uploads.stop}
+          <ViewSwitcher
+            label="Seções de importação"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: 'upload', label: 'Enviar arquivos' },
+              { value: 'history', label: 'Histórico', count: history.data?.length },
+            ]}
           />
-          <section className="panel history-panel">
+          <div hidden={view !== 'upload'} className="view-content">
+            <div className="import-grid">
+              <section className="panel upload-panel">
+                <span className="file-icon">
+                  <FileText size={28} />
+                </span>
+                <h2>
+                  Seu Mercado Pago,
+                  <br />
+                  sem começar do zero.
+                </h2>
+                <p>
+                  Envie um ou vários extratos de conta em PDF, CSV ou XLSX. Vamos organizar os dados
+                  e conferir os saldos para você revisar. Relatórios settlement_v2 em CSV também são
+                  aceitos, apenas para consulta.
+                </p>
+                {accounts.isPending ? (
+                  <Loading />
+                ) : accounts.isError ? (
+                  <ErrorState error={accounts.error} />
+                ) : accounts.data.some((a) => a.institution === 'mercado_pago') ? (
+                  <>
+                    <label>
+                      Conta de destino
+                      <select
+                        value={account}
+                        disabled={busy}
+                        onChange={(e) => setAccount(e.target.value)}
+                      >
+                        <option value="">Selecione sua conta Mercado Pago</option>
+                        {accounts.data
+                          .filter((a) => a.institution === 'mercado_pago')
+                          .map((a) => (
+                            <option value={a.id} key={a.id}>
+                              {a.name}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                    <input
+                      ref={input}
+                      type="file"
+                      multiple
+                      disabled={busy}
+                      accept="application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.pdf,.csv,.xlsx"
+                      hidden
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files ?? []);
+                        e.target.value = '';
+                        void uploads.upload(files, account);
+                      }}
+                    />
+                    <Button
+                      disabled={!account || busy || !navigator.onLine}
+                      onClick={() => input.current?.click()}
+                    >
+                      <Upload size={18} />
+                      {busy ? 'Processando arquivos…' : 'Selecionar extratos'}
+                    </Button>
+                    <span className="field-help">
+                      Selecione vários arquivos de uma vez. PDF com texto, CSV UTF-8 ou XLSX · até
+                      10 MB por arquivo, 100 páginas ou 10.000 movimentos
+                    </span>
+                  </>
+                ) : (
+                  <EmptyState
+                    title="Primeiro, adicione sua conta"
+                    action={
+                      <Link className="button" to="/accounts">
+                        Adicionar conta <ArrowRight size={16} />
+                      </Link>
+                    }
+                  >
+                    Cadastre o Mercado Pago com o saldo e a data inicial do seu extrato.
+                  </EmptyState>
+                )}
+              </section>
+              <aside className="panel import-guide">
+                <span className="eyebrow">VOCÊ NO CONTROLE</span>
+                <h2>Do arquivo à sua visão financeira.</h2>
+                {[
+                  {
+                    n: '01',
+                    title: 'Envie seu extrato',
+                    text: 'Escolha o PDF, CSV ou XLSX e a conta à qual ele pertence.',
+                  },
+                  {
+                    n: '02',
+                    title: 'Confira os movimentos',
+                    text: 'Revise receitas, despesas e transferências. Possíveis duplicidades ficam sinalizadas.',
+                  },
+                  {
+                    n: '03',
+                    title: 'Confirme quando estiver pronto',
+                    text: 'Os lançamentos só entram no seu saldo depois da sua confirmação.',
+                  },
+                ].map((step) => (
+                  <div className="guide-step" key={step.n}>
+                    <span>{step.n}</span>
+                    <div>
+                      <h3>{step.title}</h3>
+                      <p>{step.text}</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="guide-note">
+                  <CheckCircle2 size={18} />
+                  <p>
+                    O arquivo original não fica armazenado. Mantemos os movimentos que você
+                    confirmar e a referência da importação.
+                  </p>
+                </div>
+              </aside>
+            </div>
+            <UploadResults
+              rows={uploads.rows}
+              busy={busy}
+              stopping={uploads.stopping}
+              onStop={uploads.stop}
+            />
+          </div>
+          <section hidden={view !== 'history'} className="panel history-panel">
             <div className="section-heading">
               <div>
                 <h2>Suas importações</h2>

@@ -326,7 +326,7 @@ test('old statement can be retained for consultation and searched without confir
   });
   await page.goto(`/imports/${id}`);
   await expect(page.getByText('A posição inicial da conta precisa de revisão.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Confirmar 1 movimentos' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Confirmar 1 movimento' })).toBeDisabled();
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Salvar apenas como histórico' }).click();
   await expect(page.getByText('Histórico para consulta · não afeta seus saldos')).toBeVisible();
@@ -386,7 +386,8 @@ test('CSV statement upload uses the same review and history workflow', async ({ 
     ),
   });
   await expect(page.getByRole('heading', { name: 'Revise seu extrato' })).toBeVisible();
-  await expect(page.getByText(/Formato: CSV/)).toBeVisible();
+  await expect(page.getByText(/Arquivo e conciliação · CSV/)).toBeVisible();
+  await page.getByText('Guardar apenas para consulta', { exact: true }).click();
   await expect(page.getByRole('button', { name: 'Salvar apenas como histórico' })).toBeVisible();
 });
 
@@ -587,4 +588,183 @@ test('settlement reports retain payment details without offering financial confi
   await expect(page.getByRole('button', { name: 'Revisar para integrar às contas' })).toHaveCount(
     0,
   );
+});
+
+for (const width of [390, 1440])
+  test(`category groups create, organize and select nested categories at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    const groups: { id: string; name: string; type: string; color: string }[] = [];
+    const categories: {
+      id: string;
+      name: string;
+      type: string;
+      color: string;
+      groupId: string | null;
+      groupName: string | null;
+    }[] = [];
+    await page.route('**/v1/category-groups', async (route) => {
+      if (route.request().method() === 'POST') {
+        groups.push({
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          ...route.request().postDataJSON(),
+        });
+        return route.fulfill({ status: 201, json: groups[0] });
+      }
+      return route.fulfill({ json: groups });
+    });
+    await page.route('**/v1/categories', async (route) => {
+      if (route.request().method() === 'POST') {
+        const input = route.request().postDataJSON();
+        categories.push({
+          ...input,
+          id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          groupName: groups.find((g) => g.id === input.groupId)?.name ?? null,
+        });
+        return route.fulfill({ status: 201, json: categories[0] });
+      }
+      return route.fulfill({ json: categories });
+    });
+    await page.goto('/categories');
+    await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
+    await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Casa');
+    await page.getByRole('button', { name: 'Criar grupo', exact: true }).click();
+    await expect(page.getByText('Casa', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Adicionar categoria', exact: true }).click();
+    await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Luz');
+    await expect(
+      page.getByRole('dialog').getByRole('combobox', { name: 'Grupo', exact: true }),
+    ).toHaveValue(groups[0].id);
+    await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
+    await page.locator('.category-group summary').click();
+    await expect(page.getByText('Luz', { exact: true })).toBeVisible();
+    for (const theme of ['claro', 'escuro']) {
+      await page
+        .getByRole('button', { name: `Tema ${theme}`, exact: true })
+        .first()
+        .click();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await page.screenshot({
+        path: `/tmp/mywallet-categories-${theme}-${width}.png`,
+        fullPage: true,
+      });
+    }
+    await page.goto('/transactions?new=1');
+    await expect(
+      page
+        .getByRole('dialog')
+        .getByRole('combobox', { name: 'Categoria', exact: true })
+        .locator('optgroup[label="Casa"] option'),
+    ).toHaveText('Luz');
+    await page
+      .getByRole('dialog')
+      .getByRole('combobox', { name: 'Categoria', exact: true })
+      .selectOption(categories[0].id);
+    await expect(
+      page.getByRole('dialog').getByRole('combobox', { name: 'Categoria', exact: true }),
+    ).toHaveValue(categories[0].id);
+  });
+
+test('import review separates locked duplicates and supports grouped categories on mobile', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 1000 });
+  const id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+  const categoryId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const batch = {
+    id,
+    accountId: account.id,
+    fileName: 'review.csv',
+    sourceFormat: 'csv',
+    status: 'draft',
+    version: 1,
+    canIntegrate: true,
+    reportType: 'account_statement',
+    openingBalance: 10000,
+    closingBalance: 8000,
+    accountOpeningDate: '2026-01-01',
+    statementStartDate: '2026-10-01',
+    openingMismatch: false,
+    openingDateMismatch: false,
+    recordedOpeningBalance: 10000,
+    items: [
+      {
+        ...transaction,
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        description: 'Already recorded',
+        sourceRow: 1,
+        selected: false,
+        duplicateCandidate: true,
+        duplicateLocked: true,
+        duplicateReason: 'recorded',
+        sourceOperationId: 'ref-1',
+      },
+      {
+        ...transaction,
+        description: 'New bill',
+        sourceRow: 2,
+        selected: true,
+        duplicateCandidate: false,
+        duplicateLocked: false,
+        duplicateReason: null,
+        sourceOperationId: 'ref-2',
+      },
+    ],
+  };
+  await page.route('**/v1/categories', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: categoryId,
+          name: 'Luz',
+          type: 'expense',
+          color: '#5ee9b5',
+          groupId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+          groupName: 'Casa',
+        },
+      ],
+    }),
+  );
+  await page.route(`**/v1/imports/${id}**`, async (route) => {
+    if (route.request().method() === 'PATCH') {
+      const patch = route.request().postDataJSON();
+      expect(patch.categoryId).toBe(categoryId);
+      expect(route.request().url()).toContain(transaction.id);
+      batch.items[1].categoryId = patch.categoryId;
+      batch.version++;
+    }
+    return route.fulfill({ json: batch });
+  });
+  await page.goto(`/imports/${id}`);
+  await expect(page.getByLabel('Selecionar movimento 1')).toBeDisabled();
+  await expect(page.getByText('1 duplicata excluída automaticamente')).toBeVisible();
+  await page.getByRole('button', { name: /Duplicatas/ }).click();
+  await expect(page.getByText('New bill', { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('Selecionar movimento 1')).toBeDisabled();
+  await page.getByRole('button', { name: /Prontos/ }).click();
+  await expect(page.getByText('Already recorded', { exact: true })).toHaveCount(0);
+  await page.getByLabel('Categoria do movimento 2').selectOption(categoryId);
+  await expect(page.getByLabel('Categoria do movimento 2')).toHaveValue(categoryId);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '/tmp/mywallet-review-390.png', fullPage: true });
+});
+
+test('mobile more menu exposes imports and category organization', async ({ page }) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 1000 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Mais', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('link', { name: 'Grupos e categorias', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Grupos e categorias', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });

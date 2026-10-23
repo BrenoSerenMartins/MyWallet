@@ -1,3 +1,5 @@
+import { ViewSwitcher } from '../../shared/ui/view-switcher';
+import { CategorySelect } from '../../shared/ui/category-select';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +20,7 @@ export function TransactionsPage() {
   const [search, setSearch] = useState('');
   const [account, setAccount] = useState(accountId ?? '');
   const [kind, setKind] = useState(params.get('type') ?? '');
+  const [category, setCategory] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   useEffect(() => {
@@ -41,6 +44,7 @@ export function TransactionsPage() {
     limit: '50',
     ...(account ? { accountId: account } : {}),
     ...(kind ? { type: kind } : {}),
+    ...(category ? { categoryId: category } : {}),
     ...(search ? { search } : {}),
     ...(from ? { from } : {}),
     ...(to
@@ -98,43 +102,76 @@ export function TransactionsPage() {
               placeholder="Buscar por descrição…"
             />
           </label>
-          <label className="filter-select">
-            <SlidersHorizontal size={15} />
-            <select
-              aria-label="Tipo de movimento"
-              value={kind}
-              onChange={(e) => setKind(e.target.value)}
+        </div>
+        <ViewSwitcher
+          label="Tipos de movimentos"
+          value={kind}
+          onChange={(value) => {
+            setKind(value);
+            setCategory('');
+          }}
+          options={[
+            { value: '', label: 'Todos' },
+            { value: 'expense', label: 'Despesas' },
+            { value: 'income', label: 'Receitas' },
+            { value: 'transfer', label: 'Transferências' },
+            { value: 'unclassified', label: 'A revisar' },
+          ]}
+        />
+        <details className="filter-disclosure">
+          <summary>
+            <SlidersHorizontal size={17} />
+            Filtros de conta, categoria e período
+            {(account || category || from || to) && <span className="badge">Ativos</span>}
+          </summary>
+          <div className="expanded-filters">
+            <label>
+              Conta
+              <select
+                aria-label="Filtrar conta"
+                value={account}
+                onChange={(e) => setAccount(e.target.value)}
+              >
+                <option value="">Todas as contas</option>
+                {accounts.data?.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Categoria
+              <CategorySelect
+                aria-label="Filtrar categoria"
+                emptyLabel="Todas as categorias"
+                categories={categories.data ?? []}
+                type={kind || undefined}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              />
+            </label>
+            <label>
+              De
+              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            </label>
+            <label>
+              Até
+              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            </label>
+            <button
+              className="text-button"
+              onClick={() => {
+                setAccount(accountId ?? '');
+                setCategory('');
+                setFrom('');
+                setTo('');
+              }}
             >
-              <option value="">Todos os tipos</option>
-              <option value="income">Receitas</option>
-              <option value="expense">Despesas</option>
-              <option value="transfer">Transferências</option>
-              <option value="unclassified">A revisar</option>
-            </select>
-          </label>
-          <select
-            aria-label="Filtrar conta"
-            value={account}
-            onChange={(e) => setAccount(e.target.value)}
-          >
-            <option value="">Todas as contas</option>
-            {accounts.data?.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="date-filters">
-          <label>
-            De
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-          </label>
-          <label>
-            Até
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-          </label>
-        </div>
+              Limpar filtros
+            </button>
+          </div>
+        </details>
         {entries.isPending ? (
           <Loading />
         ) : entries.isError ? (
@@ -146,6 +183,11 @@ export function TransactionsPage() {
                 <TransactionRow
                   key={t.id}
                   transaction={t}
+                  categoryLabel={
+                    categories.data
+                      ?.filter((c) => c.id === t.categoryId)
+                      .map((c) => (c.groupName ? `${c.groupName} → ${c.name}` : c.name))[0]
+                  }
                   onClick={() => {
                     setSelected(t);
                     setOpen(true);
@@ -183,8 +225,8 @@ export function TransactionsPage() {
         onOpenChange={(v) => (v ? setOpen(true) : close())}
         title={selected ? 'Detalhes do movimento' : 'Novo lançamento'}
       >
-        {accounts.isError ? (
-          <ErrorState error={accounts.error} />
+        {accounts.isError || categories.isError ? (
+          <ErrorState error={accounts.error ?? categories.error} />
         ) : accounts.isPending || categories.isPending ? (
           <Loading />
         ) : (

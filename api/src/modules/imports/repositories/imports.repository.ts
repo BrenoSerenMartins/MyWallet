@@ -51,27 +51,20 @@ export class ImportsRepository {
     );
     return r;
   }
-  async duplicate(
-    accountId: string,
-    item: {
-      transactionDate: string;
-      amount: number;
-      description: string;
-      sourceOperationId: string | null;
-    },
-  ) {
+  async duplicateSources(accountId: string, from: string, to: string, excludeBatchId: string) {
     const rows = await this.db.query(
-      `SELECT id FROM wallet.transactions WHERE user_id=$1 AND account_id=$2 AND transaction_date=$3 AND amount_minor=$4 AND reversed_at IS NULL AND (description=$5 OR ($6::text IS NOT NULL AND source_operation_id=$6)) LIMIT 1`,
-      [
-        this.db.userId,
-        accountId,
-        item.transactionDate,
-        item.amount,
-        item.description,
-        item.sourceOperationId,
-      ],
+      `SELECT coalesce(i.transaction_date,t.transaction_date) AS transaction_date,coalesce(i.amount_minor,t.amount_minor) AS amount_minor,coalesce(i.description,t.description) AS description,coalesce(i.source_operation_id,t.source_operation_id) AS source_operation_id,i.balance_after_minor
+       FROM wallet.transactions t LEFT JOIN wallet.import_items i ON i.batch_id=t.import_batch_id AND i.source_row=t.source_row
+       WHERE t.user_id=$1 AND t.account_id=$2 AND coalesce(i.transaction_date,t.transaction_date) BETWEEN $3 AND $4 AND t.reversed_at IS NULL AND t.import_batch_id IS DISTINCT FROM $5`,
+      [this.db.userId, accountId, from, to, excludeBatchId],
     );
-    return rows.length > 0;
+    return rows.map((r) => ({
+      transactionDate: isoDate(r.transaction_date),
+      amount: Number(r.amount_minor),
+      description: r.description,
+      sourceOperationId: r.source_operation_id,
+      balanceAfter: r.balance_after_minor == null ? null : Number(r.balance_after_minor),
+    }));
   }
   async create(
     accountId: string,

@@ -57,3 +57,10 @@ Authenticated routes handle session loading and expiration explicitly; client ro
 Planning month keys are YYYY-MM, from 1900-01 through 9998-12. Save/copy bodies carry edit versions; copied targets do not copy transactions or overwrite target notes. GET import previews expose statement start/account opening dates, sourceFormat and a date mismatch flag. Historical rows remain separate from `/transactions` and financial summaries until explicit confirmation. These new fields/endpoints preserve the existing health and financial movement contracts.
 
 Settlement CSV uses the same import endpoints. Previews add reportType, canIntegrate and nullable balances; items add typed nullable payment metadata. Settlement reports support draft/history consultation only: classification/item edits, confirmation and reviews for integration return conflicts. Account-statement workflows are preserved.
+
+## Category hierarchy and review UX
+- GET/POST /v1/category-groups and PATCH /v1/category-groups/:id operate in the Categories module with existing verified workspace scope. Group type is immutable.
+- Categories accept optional nullable groupId (omitting it on update preserves the existing group) and return groupId/groupName. Planning lines include the same presentation metadata. Existing category IDs remain stable.
+- Import items add derived duplicateLocked/duplicateReason. Attempts to edit proven duplicates return 409; confirmation automatically skips newly detected copies and returns skippedDuplicates.
+- Financial JSON backup exports version 3 with categoryGroups; restores accept v1/v2/v3.
+- Frontend /categories is the dedicated hierarchy screen; /settings/categories redirects there. Existing account/transaction/import routes remain. Preferences and imports have section switchers; mobile More opens a navigation dialog.

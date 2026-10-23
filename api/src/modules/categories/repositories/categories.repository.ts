@@ -1,21 +1,34 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../../../core/database/index.js';
-import type { CategoryDto } from '../dto/category.dto.js';
-import type { CategoryResource } from '../../../core/integration/index.js';
+import type { CategoryDto, CategoryGroupDto } from '../dto/category.dto.js';
+import type { CategoryResource, CategoryGroupResource } from '../../../core/integration/index.js';
 @Injectable()
 export class CategoriesRepository {
   constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
   async list(includeArchived = false): Promise<CategoryResource[]> {
     return this.db.query(
-      'SELECT id,name,type,color,archived_at IS NOT NULL AS archived FROM wallet.categories WHERE user_id=$1 AND (archived_at IS NULL OR $2) ORDER BY name,id',
+      `SELECT c.id,c.name,c.type,c.color,c.archived_at IS NOT NULL AS archived,c.group_id AS "groupId",g.name AS "groupName" FROM wallet.categories c LEFT JOIN wallet.category_groups g ON g.id=c.group_id WHERE c.user_id=$1 AND (c.archived_at IS NULL OR $2) ORDER BY g.name NULLS LAST,c.name,c.id`,
       [this.db.userId, includeArchived],
     );
   }
+  async groups(): Promise<CategoryGroupResource[]> {
+    return this.db.query(
+      'SELECT id,name,type,color FROM wallet.category_groups WHERE user_id=$1 ORDER BY name,id',
+      [this.db.userId],
+    );
+  }
+  async saveGroup(input: CategoryGroupDto, id: string = randomUUID()) {
+    const [group] = await this.db.query(
+      'INSERT INTO wallet.category_groups(id,user_id,name,type,color) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,color=EXCLUDED.color WHERE category_groups.user_id=$2 RETURNING id,name,type,color',
+      [id, this.db.userId, input.name.trim(), input.type, input.color],
+    );
+    return group;
+  }
   async save(input: CategoryDto, id: string = randomUUID()) {
     const rows = await this.db.query(
-      'INSERT INTO wallet.categories(id,user_id,name,type,color) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,color=EXCLUDED.color WHERE categories.user_id=$2 RETURNING id,name,type,color',
-      [id, this.db.userId, input.name.trim(), input.type, input.color],
+      `INSERT INTO wallet.categories(id,user_id,name,type,color,group_id) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,color=EXCLUDED.color,group_id=EXCLUDED.group_id WHERE categories.user_id=$2 RETURNING id,name,type,color,group_id AS "groupId"`,
+      [id, this.db.userId, input.name.trim(), input.type, input.color, input.groupId ?? null],
     );
     return rows[0];
   }

@@ -5,9 +5,11 @@ export function TransactionRow({
   transaction: t,
   hidden = false,
   onClick,
+  categoryLabel,
 }: {
   transaction: Transaction;
   hidden?: boolean;
+  categoryLabel?: string;
   onClick?: () => void;
 }) {
   const Icon =
@@ -35,6 +37,7 @@ export function TransactionRow({
           {labels[t.transactionType]} · {shortDate(t.transactionDate)}
           {t.importBatchId ? ' · Importado' : ''}
         </span>
+        {categoryLabel && <span className="transaction-category">{categoryLabel}</span>}
       </div>
       <strong
         className={`transaction-amount ${t.transactionType === 'income' ? 'positive-text' : ''}`}

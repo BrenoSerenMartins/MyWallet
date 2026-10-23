@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   CalendarDays,
+  FolderTree,
+  Menu,
   ArrowDownUp,
   ArrowUpRight,
   ChevronRight,
@@ -16,13 +18,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../features/auth/auth-provider';
 import { authClient } from '../shared/api/auth-client';
-import { Logo, ThemeSwitcher, Button } from '../shared/ui/primitives';
+import { Logo, ThemeSwitcher, Button, Modal } from '../shared/ui/primitives';
 const navigation = [
   { to: '/', label: 'Visão geral', mobile: 'Início', Icon: House },
   { to: '/transactions', label: 'Movimentações', mobile: 'Movimentos', Icon: ArrowDownUp },
   { to: '/accounts', label: 'Minhas contas', mobile: 'Contas', Icon: Landmark },
   { to: '/planning', label: 'Planejamento', mobile: 'Planejar', Icon: CalendarDays },
   { to: '/imports', label: 'Importar extrato', mobile: 'Importar', Icon: Upload },
+  { to: '/categories', label: 'Grupos e categorias', mobile: 'Categorias', Icon: FolderTree },
   { to: '/settings', label: 'Preferências', mobile: 'Mais', Icon: Settings2 },
 ];
 export function AppShell() {
@@ -30,6 +33,7 @@ export function AppShell() {
   const { active } = useWorkspace();
   const location = useLocation();
   const navigate = useNavigate();
+  const [more, setMore] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const [update, setUpdate] = useState<ServiceWorker | null>(null);
   useEffect(() => {
@@ -73,19 +77,31 @@ export function AppShell() {
           </div>
           <ChevronRight size={15} />
         </NavLink>
-        <span className="nav-section-label">SEU DIA A DIA</span>
         <nav aria-label="Navegação principal">
-          {navigation.map(({ to, label, Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            >
-              <Icon size={19} />
-              <span>{label}</span>
-              {to === '/imports' && <span className="nav-new">ARQUIVO</span>}
-            </NavLink>
+          {['Seu dinheiro', 'Organização'].map((section, index) => (
+            <details className="nav-group" open key={section}>
+              <summary>
+                {section}
+                <ChevronRight size={14} />
+              </summary>
+              {navigation
+                .filter((item) =>
+                  index === 0
+                    ? ['/', '/transactions', '/accounts'].includes(item.to)
+                    : !['/', '/transactions', '/accounts'].includes(item.to),
+                )
+                .map(({ to, label, Icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={to === '/'}
+                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon size={19} />
+                    <span>{label}</span>
+                  </NavLink>
+                ))}
+            </details>
           ))}
         </nav>
         <div className="sidebar-note">
@@ -178,14 +194,47 @@ export function AppShell() {
       </div>
       <nav className="bottom-nav" aria-label="Navegação móvel">
         {navigation
-          .filter((n) => n.to !== '/imports')
+          .filter((n) => ['/', '/transactions', '/accounts', '/planning'].includes(n.to))
           .map(({ to, mobile, Icon }) => (
             <NavLink key={to} to={to} end={to === '/'}>
               <Icon size={20} />
               <span>{mobile}</span>
             </NavLink>
           ))}
+        <button
+          type="button"
+          onClick={() => setMore(true)}
+          aria-haspopup="dialog"
+          className={
+            ['/categories', '/imports', '/settings'].some((path) =>
+              location.pathname.startsWith(path),
+            )
+              ? 'active'
+              : ''
+          }
+        >
+          <Menu size={20} />
+          <span>Mais</span>
+        </button>
       </nav>
+      <Modal open={more} onOpenChange={setMore} title="Explorar seu espaço">
+        <nav className="more-menu" aria-label="Mais funções">
+          {navigation
+            .filter((n) => ['/imports', '/categories', '/settings'].includes(n.to))
+            .map(({ to, label, Icon }) => (
+              <NavLink to={to} key={to} onClick={() => setMore(false)}>
+                <Icon size={21} />
+                <span>{label}</span>
+                <ChevronRight size={17} />
+              </NavLink>
+            ))}
+          <NavLink to="/workspaces" onClick={() => setMore(false)}>
+            <FolderTree size={21} />
+            <span>Trocar de espaço</span>
+            <ChevronRight size={17} />
+          </NavLink>
+        </nav>
+      </Modal>
     </div>
   );
 }

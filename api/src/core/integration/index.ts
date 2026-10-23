@@ -14,7 +14,15 @@ export interface AccountResource {
   version: number;
   archived: boolean;
 }
+export interface CategoryGroupResource {
+  id: string;
+  name: string;
+  type: string;
+  color: string;
+}
 export interface CategoryResource {
+  groupId?: string | null;
+  groupName?: string | null;
   id: string;
   name: string;
   type: string;
@@ -79,6 +87,7 @@ export interface BackupAccount {
   openingDate: string;
 }
 export interface BackupCategory {
+  groupId?: string | null;
   id: string;
   name: string;
   type: string;
@@ -97,7 +106,8 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'mywallet';
-  version: 1 | 2;
+  version: 1 | 2 | 3;
+  categoryGroups?: CategoryGroupResource[];
   monthlyPlans?: BackupMonthlyPlan[];
   currency: 'BRL';
   exportedAt: string;
@@ -110,6 +120,8 @@ export interface AccountBackup {
   restoreRecord(record: BackupAccount): Promise<string>;
 }
 export interface CategoryBackup {
+  exportGroups(): Promise<CategoryGroupResource[]>;
+  restoreGroupRecord(record: CategoryGroupResource): Promise<string>;
   exportRecords(): Promise<BackupCategory[]>;
   restoreRecord(record: BackupCategory): Promise<string>;
 }

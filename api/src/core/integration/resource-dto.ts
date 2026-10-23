@@ -11,7 +11,15 @@ export class AccountResourceDto {
   @ApiProperty({ type: Number }) version!: number;
   @ApiProperty({ type: Boolean }) archived!: boolean;
 }
+export class CategoryGroupResourceDto {
+  @ApiProperty({ type: String }) id!: string;
+  @ApiProperty({ type: String }) name!: string;
+  @ApiProperty({ type: String }) type!: string;
+  @ApiProperty({ type: String }) color!: string;
+}
 export class CategoryResourceDto {
+  @ApiProperty({ type: String, nullable: true }) groupId!: string | null;
+  @ApiProperty({ type: String, nullable: true }) groupName!: string | null;
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) name!: string;
   @ApiProperty({ type: String }) type!: string;
@@ -54,6 +62,9 @@ export class SettlementMetadataResourceDto {
   @ApiProperty({ type: String, nullable: true }) lastFourDigits!: string | null;
 }
 export class ImportItemResourceDto {
+  @ApiProperty({ type: Boolean }) duplicateLocked!: boolean;
+  @ApiProperty({ type: String, nullable: true, enum: ['recorded', 'same_statement', 'similar'] })
+  duplicateReason!: 'recorded' | 'same_statement' | 'similar' | null;
   @ApiProperty({ type: () => SettlementMetadataResourceDto, nullable: true })
   metadata!: SettlementMetadataResourceDto | null;
   @ApiProperty({ type: String }) id!: string;

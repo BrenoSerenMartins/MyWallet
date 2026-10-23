@@ -37,6 +37,8 @@ export class CopyMonthlyPlanDto {
   @ApiProperty({ type: Number }) @IsInt() @Min(1) sourceVersion!: number;
 }
 export class PlanningLineResourceDto {
+  @ApiProperty({ type: String, nullable: true }) groupId!: string | null;
+  @ApiProperty({ type: String, nullable: true }) groupName!: string | null;
   @ApiProperty({ type: Number, nullable: true }) difference!: number | null;
   @ApiProperty({ type: String, nullable: true }) categoryId!: string | null;
   @ApiProperty({ type: String }) name!: string;

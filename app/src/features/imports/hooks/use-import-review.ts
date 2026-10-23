@@ -1,7 +1,15 @@
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../auth/auth-provider';
+import type { Category } from '../../../shared/api/resources';
 import { useState } from 'react';
 import { jsonBody, request } from '../../../shared/api/client';
 import type { ImportBatch, ImportItem } from '../../../shared/api/resources';
 export function useImportReview(batch: ImportBatch, refresh: () => Promise<unknown>) {
+  const { session } = useAuth();
+  const categories = useQuery({
+    queryKey: [session?.user.id, 'categories'],
+    queryFn: () => request<Category[]>('/categories'),
+  });
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -10,7 +18,7 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
   const unresolved = selected.filter((i) => i.transactionType === 'unclassified').length;
   async function review(
     item: ImportItem,
-    change: Partial<Pick<ImportItem, 'selected' | 'transactionType'>>,
+    change: Partial<Pick<ImportItem, 'selected' | 'transactionType' | 'categoryId'>>,
   ) {
     setBusy(true);
     setError('');
@@ -35,7 +43,9 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
   async function confirm() {
     if (
       !window.confirm(
-        `Adicionar ${selected.length} movimentos à conta? Revise transferências entre suas próprias contas antes de continuar.`,
+        selected.length
+          ? `Adicionar ${selected.length} movimentos à conta? As duplicatas identificadas serão excluídas automaticamente. Confira transferências entre suas contas.`
+          : 'Concluir esta revisão sem criar lançamentos? As duplicatas identificadas já estão registradas.',
       )
     )
       return;
@@ -123,6 +133,7 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
       'Voltar à revisão para integrar este extrato? Nenhum movimento será lançado até a confirmação. A revisão para integrar expira em 24 horas, mas o histórico será preservado; você pode salvá-lo novamente para consulta.',
     );
   return {
+    categories,
     page,
     setPage,
     busy,

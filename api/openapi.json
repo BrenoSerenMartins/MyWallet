@@ -233,6 +233,99 @@
         "tags": ["Categories"]
       }
     },
+    "/v1/category-groups": {
+      "get": {
+        "operationId": "CategoryGroupsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryGroupResourceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Categories"]
+      },
+      "post": {
+        "operationId": "CategoryGroupsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryGroupResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Categories"]
+      }
+    },
+    "/v1/category-groups/{id}": {
+      "patch": {
+        "operationId": "CategoryGroupsController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryGroupResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Categories"]
+      }
+    },
     "/v1/transactions": {
       "get": {
         "operationId": "LedgerController_list",
@@ -973,6 +1066,52 @@
       "CategoryResourceDto": {
         "type": "object",
         "properties": {
+          "groupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupName": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          }
+        },
+        "required": ["groupId", "groupName", "id", "name", "type", "color"]
+      },
+      "CategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "color": {
+            "type": "string"
+          },
+          "groupId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["name", "type", "color"]
+      },
+      "CategoryGroupResourceDto": {
+        "type": "object",
+        "properties": {
           "id": {
             "type": "string"
           },
@@ -988,7 +1127,7 @@
         },
         "required": ["id", "name", "type", "color"]
       },
-      "CategoryDto": {
+      "CategoryGroupDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -1150,6 +1289,14 @@
       "PlanningLineResourceDto": {
         "type": "object",
         "properties": {
+          "groupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupName": {
+            "type": "string",
+            "nullable": true
+          },
           "difference": {
             "type": "number",
             "nullable": true
@@ -1183,6 +1330,8 @@
           }
         },
         "required": [
+          "groupId",
+          "groupName",
           "difference",
           "categoryId",
           "name",
@@ -1402,6 +1551,14 @@
       "ImportItemResourceDto": {
         "type": "object",
         "properties": {
+          "duplicateLocked": {
+            "type": "boolean"
+          },
+          "duplicateReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["recorded", "same_statement", "similar"]
+          },
           "metadata": {
             "nullable": true,
             "type": "object",
@@ -1446,6 +1603,8 @@
           }
         },
         "required": [
+          "duplicateLocked",
+          "duplicateReason",
           "metadata",
           "id",
           "sourceRow",

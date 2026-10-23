@@ -57,7 +57,7 @@ export function PlanForm({
             .filter((l) => l.categoryId && l.type === type)
             .map((line) => (
               <label key={line.categoryId}>
-                {line.name}
+                {line.groupName ? `${line.groupName} → ${line.name}` : line.name}
                 {line.archived ? ' (arquivada)' : ''}
                 <input
                   aria-label={`Previsto · ${line.name}`}

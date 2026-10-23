@@ -203,3 +203,91 @@ describe('Overlapping account reports in different formats', () => {
     ).toHaveLength(2);
   });
 });
+
+it('automatically locks overlapping drafts after confirmation and preserves legitimate repeated references', async () => {
+  const accountId = (
+    await db.forUser(db.user, () =>
+      accounts.create({
+        name: 'Dedup account',
+        institution: 'mercado_pago',
+        type: 'checking',
+        openingBalance: 10000,
+        openingDate: '2026-10-23',
+      }),
+    )
+  ).id;
+  const firstRow = {
+    sourceRow: 1,
+    sourcePage: 1,
+    transactionDate: '2026-10-23',
+    description: 'Same purchase',
+    sourceOperationId: 'repeated-ref',
+    amount: -1000,
+    balanceAfter: 9000,
+  };
+  const parsed = {
+    openingBalance: 10000,
+    closingBalance: 8000,
+    items: [firstRow, { ...firstRow, sourceRow: 2, balanceAfter: 8000 }],
+  };
+  const first = await db.forUser(db.user, () =>
+    imports.upload(accountId, Buffer.from('dedup-first'), 'first.pdf', parsed),
+  );
+  const second = await db.forUser(db.user, () =>
+    imports.upload(accountId, Buffer.from('dedup-second'), 'second.csv', {
+      ...parsed,
+      sourceFormat: 'csv',
+    }),
+  );
+  expect(first.items.every((i) => !i.duplicateLocked)).toBe(true);
+  expect(second.items.every((i) => !i.duplicateLocked)).toBe(true);
+  const classified = await db.forUser(db.user, () => imports.classify(first.id, first.version));
+  await db.forUser(db.user, () =>
+    imports.confirm(first.id, classified.version, 'dedup-first-confirm'),
+  );
+  expect(
+    (await db.forUser(db.user, () => imports.preview(first.id))).items.every(
+      (i) => !i.duplicateLocked,
+    ),
+  ).toBe(true);
+  const refreshed = await db.forUser(db.user, () => imports.preview(second.id));
+  expect(refreshed.items.every((i) => i.duplicateLocked && !i.selected)).toBe(true);
+  await expect(
+    db.forUser(db.user, () =>
+      imports.review(
+        second.id,
+        refreshed.items[0].id,
+        { selected: true, transactionType: 'expense' },
+        String(refreshed.version),
+      ),
+    ),
+  ).rejects.toThrow('duplicata');
+  const receipt = await db.forUser(db.user, () =>
+    imports.confirm(second.id, refreshed.version, 'dedup-second-confirm'),
+  );
+  expect(receipt).toMatchObject({ count: 0, skippedDuplicates: 2 });
+  expect((await db.forUser(db.user, () => accounts.find(accountId))).balance).toBe(8000);
+  const transactions = await db.forUser(db.user, () => ledger.list({ limit: 50, accountId }));
+  expect(transactions.items).toHaveLength(2);
+  const entry = transactions.items[0];
+  await db.forUser(db.user, () =>
+    ledger.update(
+      entry.id,
+      {
+        accountId,
+        amount: -1200,
+        description: 'Corrected',
+        transactionDate: '2026-10-24',
+        transactionType: 'expense',
+      },
+      String(entry.version),
+    ),
+  );
+  const afterEdit = await db.forUser(db.user, () =>
+    imports.upload(accountId, Buffer.from('dedup-third'), 'third.pdf', parsed),
+  );
+  expect(afterEdit.items.every((i) => i.duplicateLocked)).toBe(true);
+  await db.forUser(db.user, () => ledger.reverse(entry.id, String(entry.version + 1)));
+  const afterReversal = await db.forUser(db.user, () => imports.preview(afterEdit.id));
+  expect(afterReversal.items.filter((i) => i.duplicateLocked)).toHaveLength(1);
+});

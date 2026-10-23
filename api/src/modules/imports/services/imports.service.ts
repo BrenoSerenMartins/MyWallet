@@ -1,3 +1,4 @@
+import { detectDuplicates } from './duplicate-detection.js';
 import {
   ConflictException,
   GoneException,
@@ -63,9 +64,29 @@ export class ImportsService {
     if (new Date(batch.expires_at).getTime() <= Date.now())
       throw new GoneException('A revisão expirou. Envie o arquivo novamente.');
   }
+  private async reviewItems(id: string, accountId: string) {
+    const items = await this.repository.items(id);
+    const dates = items.map((i) => i.transactionDate).sort();
+    const recorded = dates.length
+      ? await this.repository.duplicateSources(accountId, dates[0], dates.at(-1)!, id)
+      : [];
+    const reasons = detectDuplicates(items, recorded);
+    return items.map((item, index) => {
+      const duplicateReason = reasons[index];
+      const duplicateLocked =
+        duplicateReason === 'recorded' || duplicateReason === 'same_statement';
+      return {
+        ...item,
+        duplicateReason,
+        duplicateLocked,
+        duplicateCandidate: !!duplicateReason,
+        selected: item.selected && !duplicateLocked,
+      };
+    });
+  }
   async preview(id: string) {
     const b = await this.get(id);
-    const items = await this.repository.items(id);
+    const items = await this.reviewItems(id, b.account_id);
     const account = await this.accounts.find(b.account_id);
     const statementStartDate = items.reduce<string | null>(
       (date, item) => (!date || item.transactionDate < date ? item.transactionDate : date),
@@ -117,19 +138,14 @@ export class ImportsService {
       mercadoPagoMapperVersion(statement.sourceFormat ?? 'pdf', statement.reportType),
       statement,
     );
-    const signatures = new Set<string>();
-    for (const entry of mapMercadoPago(statement)) {
-      const signature = JSON.stringify([
-        entry.transactionDate,
-        entry.amount,
-        entry.description,
-        entry.sourceOperationId,
-      ]);
-      const duplicate =
-        signatures.has(signature) || (await this.repository.duplicate(accountId, entry));
-      signatures.add(signature);
-      await this.repository.addItem(id, entry, duplicate);
-    }
+    const entries = mapMercadoPago(statement);
+    const dates = entries.map((i) => i.transactionDate).sort();
+    const recorded = dates.length
+      ? await this.repository.duplicateSources(accountId, dates[0], dates.at(-1)!, id)
+      : [];
+    const reasons = detectDuplicates(entries, recorded);
+    for (const [index, entry] of entries.entries())
+      await this.repository.addItem(id, entry, !!reasons[index]);
     return this.preview(id);
   }
   async review(id: string, itemId: string, input: ReviewItemDto, version: string) {
@@ -137,9 +153,13 @@ export class ImportsService {
     this.assertDraft(batch);
     this.assertAccountStatement(batch.report_type);
     requireVersion(batch.version, version);
-    const items = await this.repository.items(id);
+    const items = await this.reviewItems(id, batch.account_id);
     const item = items.find((i) => i.id === itemId);
     if (!item) throw new NotFoundException('Linha não encontrada.');
+    if (item.duplicateLocked)
+      throw new ConflictException(
+        'Esta duplicata foi excluída automaticamente e não pode ser selecionada.',
+      );
     if (
       (input.transactionType === 'income' && item.amount < 0) ||
       (input.transactionType === 'expense' && item.amount > 0)
@@ -154,8 +174,8 @@ export class ImportsService {
     this.assertDraft(batch);
     this.assertAccountStatement(batch.report_type);
     requireVersion(batch.version, version);
-    for (const item of await this.repository.items(id)) {
-      if (item.transactionType === 'unclassified')
+    for (const item of await this.reviewItems(id, batch.account_id)) {
+      if (!item.duplicateLocked && item.transactionType === 'unclassified')
         await this.repository.updateItem(id, item.id, {
           selected: item.selected,
           transactionType: item.amount > 0 ? 'income' : 'expense',
@@ -174,23 +194,19 @@ export class ImportsService {
       this.assertAccountStatement(batch.report_type);
       requireVersion(batch.version, version);
       const preview = await this.preview(id);
-      if (preview.openingMismatch || preview.openingDateMismatch)
+      const selected = preview.items.filter((i) => i.selected);
+      const skippedDuplicates = preview.items.filter((i) => i.duplicateLocked).length;
+      if (selected.length && (preview.openingMismatch || preview.openingDateMismatch))
         throw new ConflictException(
           'A posição inicial da conta não confere com o extrato. Corrija a conta ou os movimentos anteriores antes de confirmar.',
         );
-      const selected = (await this.repository.items(id)).filter((i) => i.selected);
-      if (!selected.length)
+      if (!selected.length && !skippedDuplicates)
         throw new UnprocessableEntityException('Selecione ao menos um movimento.');
       if (selected.some((i) => i.transactionType === 'unclassified'))
         throw new UnprocessableEntityException(
           'Classifique os movimentos selecionados antes de confirmar.',
         );
       for (const item of selected) {
-        const duplicate = await this.repository.duplicate(batch.account_id, item);
-        if (duplicate && !item.duplicateCandidate)
-          throw new ConflictException(
-            'Novas possíveis duplicidades foram encontradas. Reenvie e revise o extrato.',
-          );
         await this.ledger.create(
           {
             accountId: batch.account_id,
@@ -207,7 +223,7 @@ export class ImportsService {
         );
       }
       await this.repository.mark(id, 'confirmed');
-      return { id, status: 'confirmed', count: selected.length };
+      return { id, status: 'confirmed', count: selected.length, skippedDuplicates };
     });
   }
   private assertAccountStatement(reportType: string) {

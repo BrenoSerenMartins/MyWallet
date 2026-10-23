@@ -28,7 +28,8 @@ export class DataExportService {
   async backup(): Promise<BackupPayload> {
     return {
       format: 'mywallet',
-      version: 2,
+      version: 3,
+      categoryGroups: await this.categories.exportGroups(),
       monthlyPlans: await this.planning.exportRecords(),
       currency: 'BRL',
       exportedAt: new Date().toISOString(),
@@ -102,8 +103,17 @@ export class DataExportService {
       const accounts = new Map<string, string>();
       const categories = new Map<string, string>();
       for (const a of payload.accounts) accounts.set(a.id, await this.accounts.restoreRecord(a));
+      const groups = new Map<string, string>();
+      for (const group of payload.categoryGroups ?? [])
+        groups.set(group.id, await this.categories.restoreGroupRecord(group));
       for (const c of payload.categories)
-        categories.set(c.id, await this.categories.restoreRecord(c));
+        categories.set(
+          c.id,
+          await this.categories.restoreRecord({
+            ...c,
+            groupId: c.groupId ? groups.get(c.groupId)! : null,
+          }),
+        );
       await this.ledger.restoreRecords(payload.transactions, accounts, categories);
       await this.planning.restoreRecords(payload.monthlyPlans ?? [], categories);
       await this.repository.confirm(id);

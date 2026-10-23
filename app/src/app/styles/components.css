@@ -1193,42 +1193,6 @@ button.transaction-row:hover {
   .review-banner > .button {
     width: 100%;
   }
-  .review-table {
-    font-size: 10px;
-  }
-  .review-table th {
-    font-size: 8px;
-    padding: 11px 7px;
-  }
-  .review-table td {
-    padding: 12px 7px;
-  }
-  .review-table td:nth-child(2) {
-    max-width: 150px;
-  }
-  .review-table td strong {
-    font-size: 9px;
-  }
-  .review-table select {
-    font-size: 9px;
-    padding: 6px;
-    min-width: 85px;
-    max-width: 100px;
-    min-height: 38px;
-  }
-  .review-table .numeric {
-    font-size: 10px;
-    letter-spacing: -0.2px;
-  }
-  .review-table .badge {
-    font-size: 7px;
-    white-space: normal;
-  }
-  .review-table input[type='checkbox'] {
-    width: 17px;
-    height: 17px;
-    min-height: 17px;
-  }
   .review-confirm {
     flex-direction: column;
     align-items: stretch;
@@ -1396,4 +1360,284 @@ button.transaction-row:hover {
   margin: 3px 0;
   overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
+}
+
+/* Shared progressive disclosure and compact view controls. */
+.view-switcher {
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  max-width: 100%;
+  overflow-x: auto;
+}
+.view-switcher button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  min-height: 44px;
+  padding: 9px 15px;
+  border-radius: 9px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+.view-switcher button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.view-switcher button span {
+  font-size: 11px;
+  background: var(--surface-raised);
+  color: var(--text);
+  border-radius: 7px;
+  padding: 2px 6px;
+}
+.view-content {
+  margin-top: 22px;
+}
+.settings-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+  padding: 24px;
+}
+.settings-shortcut > span {
+  flex: 1;
+}
+.settings-shortcut small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+.settings-info > .button {
+  margin: 12px 10px 0 0;
+}
+.filter-disclosure {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-top: 16px;
+}
+.filter-disclosure summary,
+.secondary-disclosure > summary,
+.source-details > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+}
+.filter-disclosure summary {
+  padding: 12px 24px;
+}
+.expanded-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 0 24px 20px;
+}
+.expanded-filters label {
+  min-width: 0;
+}
+.filters + .view-switcher {
+  margin: 0 20px;
+}
+.source-details {
+  margin-bottom: 18px;
+}
+.secondary-disclosure {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.review-banner.duplicate-banner {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.review-table td strong {
+  overflow-wrap: anywhere;
+}
+.review-table td select + select {
+  margin-top: 8px;
+}
+.review-table .duplicate-row {
+  background: var(--surface-raised);
+}
+.movement-details {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.movement-details summary {
+  cursor: pointer;
+  min-height: 32px;
+}
+.movement-details p {
+  overflow-wrap: anywhere;
+}
+.budget-group > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  cursor: pointer;
+  background: var(--surface-raised);
+  font-weight: 600;
+}
+.budget-group > summary span {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 11px;
+}
+.budget-group + .budget-group {
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 700px) {
+  .view-switcher button {
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+  .expanded-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 16px 18px;
+  }
+  .review-table {
+    min-width: 0;
+    display: block;
+  }
+  .review-table thead {
+    display: none;
+  }
+  .review-table tbody {
+    display: grid;
+    gap: 0;
+  }
+  .review-table tr {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    padding: 16px;
+    gap: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .review-table td {
+    display: block;
+    border: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .review-table td:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+    padding-top: 3px;
+  }
+  .review-table td:nth-child(2) {
+    grid-column: 2;
+  }
+  .review-table td:nth-child(3) {
+    grid-column: 2;
+    padding-top: 8px;
+  }
+  .review-table td:nth-child(4) {
+    grid-column: 2;
+    padding-top: 10px;
+    text-align: left;
+    font-size: 18px;
+  }
+  .review-table td:nth-child(3)::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+  .review-table input[type='checkbox'] {
+    width: 22px;
+    height: 22px;
+  }
+  .review-table-wrap {
+    overflow: visible;
+  }
+  .review-pagination {
+    flex-wrap: wrap;
+  }
+}
+
+[hidden] {
+  display: none !important;
+}
+.page-heading p,
+.section-heading p,
+.field-help {
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.review-views {
+  margin-bottom: 12px;
+}
+.source-details > summary::after,
+.secondary-disclosure > summary::after {
+  content: '⌄';
+  margin-left: auto;
+  font-size: 18px;
+}
+@media (max-width: 700px) {
+  .review-views .view-switcher {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+  }
+  .review-views .view-switcher button {
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 3px;
+    font-size: 11px;
+  }
+  .review-table td:nth-child(2) {
+    max-width: none;
+  }
+  .review-table td strong {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .review-date {
+    font-size: 11px;
+  }
+  .review-table select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 44px;
+    font-size: 14px;
+    padding: 10px;
+  }
+  .review-table .badge {
+    white-space: normal;
+    font-size: 11px;
+  }
+  .review-table td:nth-child(3)::before,
+  .review-pagination {
+    font-size: 12px;
+  }
+  .review-banner p,
+  .review-confirm p {
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .movement-details summary {
+    min-height: 40px;
+    font-size: 12px;
+  }
 }

@@ -1,3 +1,4 @@
+import { CategorySelect } from '../../../shared/ui/category-select';
 import { useState, type FormEvent } from 'react';
 import type { Account, Category, Transaction } from '../../../shared/api/resources';
 import { jsonBody, request } from '../../../shared/api/client';
@@ -170,16 +171,12 @@ export function TransactionForm({
       ) : (
         <label>
           Categoria
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="">Sem categoria</option>
-            {categories
-              .filter((c) => c.type === kind)
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-          </select>
+          <CategorySelect
+            categories={categories}
+            type={kind}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          />
         </label>
       )}
       {error && (

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { PlanningLine } from '../../../shared/api/resources';
-import { money } from '../../../shared/formatting/money';
+import { BudgetLine } from './budget-line';
 export function BudgetSection({
   type,
   lines,
@@ -27,41 +27,18 @@ export function BudgetSection({
         </div>
       ) : (
         <div className="budget-lines" role="list">
-          {lines.map((line) => {
-            const difference = line.difference;
+          {[...new Set(lines.map((line) => line.groupId ?? ''))].map((id) => {
+            const children = lines.filter((line) => (line.groupId ?? '') === id);
             return (
-              <article
-                className="budget-line"
-                role="listitem"
-                key={line.categoryId ?? 'uncategorized'}
-              >
-                <div className="budget-identity">
-                  <span style={{ background: line.color }} />
-                  <div>
-                    <strong>{line.name}</strong>
-                    <small>
-                      {line.archived ? 'Arquivada · ' : ''}
-                      {line.transactionCount} lançamentos
-                    </small>
-                  </div>
-                </div>
-                <dl>
-                  <div>
-                    <dt>Previsto</dt>
-                    <dd>{line.planned === null ? 'Não definido' : money(line.planned)}</dd>
-                  </div>
-                  <div>
-                    <dt>Realizado</dt>
-                    <dd>{money(line.actual)}</dd>
-                  </div>
-                  <div>
-                    <dt>{type === 'income' ? 'Acima / abaixo' : 'Disponível / excedido'}</dt>
-                    <dd className={difference !== null && difference < 0 ? 'negative-text' : ''}>
-                      {difference === null ? '—' : money(difference)}
-                    </dd>
-                  </div>
-                </dl>
-              </article>
+              <details className="budget-group" key={id} open={!id || undefined}>
+                <summary>
+                  {children[0].groupName ?? 'Sem grupo'}
+                  <span>{children.length} categorias</span>
+                </summary>
+                {children.map((line) => (
+                  <BudgetLine key={line.categoryId ?? 'uncategorized'} line={line} type={type} />
+                ))}
+              </details>
             );
           })}
         </div>

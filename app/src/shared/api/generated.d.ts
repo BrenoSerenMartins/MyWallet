@@ -100,6 +100,38 @@ export interface paths {
     patch: operations['CategoriesController_update'];
     trace?: never;
   };
+  '/v1/category-groups': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['CategoryGroupsController_list'];
+    put?: never;
+    post: operations['CategoryGroupsController_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/category-groups/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['CategoryGroupsController_update'];
+    trace?: never;
+  };
   '/v1/transactions': {
     parameters: {
       query?: never;
@@ -461,12 +493,27 @@ export interface components {
       openingDate: string;
     };
     CategoryResourceDto: {
+      groupId: string | null;
+      groupName: string | null;
       id: string;
       name: string;
       type: string;
       color: string;
     };
     CategoryDto: {
+      name: string;
+      /** @enum {string} */
+      type: 'income' | 'expense';
+      color: string;
+      groupId?: string | null;
+    };
+    CategoryGroupResourceDto: {
+      id: string;
+      name: string;
+      type: string;
+      color: string;
+    };
+    CategoryGroupDto: {
       name: string;
       /** @enum {string} */
       type: 'income' | 'expense';
@@ -512,6 +559,8 @@ export interface components {
       description: string;
     };
     PlanningLineResourceDto: {
+      groupId: string | null;
+      groupName: string | null;
       difference: number | null;
       categoryId: string | null;
       name: string;
@@ -576,6 +625,9 @@ export interface components {
       lastFourDigits: string | null;
     };
     ImportItemResourceDto: {
+      duplicateLocked: boolean;
+      /** @enum {string|null} */
+      duplicateReason: 'recorded' | 'same_statement' | 'similar' | null;
       metadata: components['schemas']['SettlementMetadataResourceDto'] | null;
       id: string;
       sourceRow: number;
@@ -828,6 +880,71 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['CategoryResourceDto'];
+        };
+      };
+    };
+  };
+  CategoryGroupsController_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryGroupResourceDto'][];
+        };
+      };
+    };
+  };
+  CategoryGroupsController_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CategoryGroupDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryGroupResourceDto'];
+        };
+      };
+    };
+  };
+  CategoryGroupsController_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CategoryGroupDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryGroupResourceDto'];
         };
       };
     };

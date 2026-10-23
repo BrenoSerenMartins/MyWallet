@@ -207,8 +207,24 @@ describe('Monthly planning financial invariants', () => {
     ).rejects.toThrow();
   });
   it('exports/restores plans with remapped categories and blocks month conflicts atomically', async () => {
+    const group = await db.forUser(db.user, async () => {
+      const created = await categories.saveGroup({
+        name: 'Casa',
+        type: 'expense',
+        color: '#5ee9b5',
+      });
+      const category = (await categories.list()).find((c) => c.id === expense)!;
+      await categories.update(expense, {
+        name: category.name,
+        type: category.type,
+        color: category.color,
+        groupId: created.id,
+      });
+      return created;
+    });
     const backup = await db.forUser(db.user, () => backups.backup(), true);
-    expect(backup.version).toBe(2);
+    expect(backup.version).toBe(3);
+    expect(backup.categoryGroups?.[0].id).toBe(group.id);
     expect(backup.monthlyPlans).toHaveLength(2);
     await db.forUser(db.other, async () => {
       const draft = await backups.preview(backup);
@@ -216,6 +232,9 @@ describe('Monthly planning financial invariants', () => {
       const restored = await planning.summary('2026-02');
       expect(restored.totals.plannedIncome).toBe(120000);
       expect(restored.lines.some((l) => l.categoryId === income)).toBe(false);
+      const grouped = restored.lines.find((l) => l.groupName === 'Casa');
+      expect(grouped).toBeDefined();
+      expect(grouped?.groupId).not.toBe(group.id);
     });
     const count = (await db.forUser(db.other, () => accounts.list())).length;
     const modified = { ...backup, exportedAt: '2026-05-01T00:00:00Z' };
@@ -224,9 +243,16 @@ describe('Monthly planning financial invariants', () => {
       'Já existe um planejamento',
     );
     expect((await db.forUser(db.other, () => accounts.list())).length).toBe(count);
-    expect(validateBackup({ ...backup, version: 1, monthlyPlans: undefined }).monthlyPlans).toEqual(
+    const legacy = {
+      ...backup,
+      categoryGroups: undefined,
+      categories: backup.categories.map(({ groupId: _group, ...category }) => category),
+    };
+    expect(validateBackup({ ...legacy, version: 1, monthlyPlans: undefined }).monthlyPlans).toEqual(
       [],
     );
+    expect(validateBackup({ ...legacy, version: 2 }).monthlyPlans).toHaveLength(2);
+    expect(() => validateBackup({ ...backup, categoryGroups: [] })).toThrow();
     expect(() =>
       validateBackup({
         ...backup,

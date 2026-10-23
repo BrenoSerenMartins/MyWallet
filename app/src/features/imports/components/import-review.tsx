@@ -1,10 +1,11 @@
+import { ImportSourceSummary } from './import-source-summary';
+import { ViewSwitcher } from '../../../shared/ui/view-switcher';
+import { ImportReviewRow } from './import-review-row';
 import { useState } from 'react';
-import { SettlementDetails } from './settlement-details';
 import { OpeningPositionReview } from './opening-position-review';
 import { useImportReview } from '../hooks/use-import-review';
-import { CheckCircle2, ChevronLeft, ChevronRight, Info } from 'lucide-react';
-import type { ImportBatch, ImportItem } from '../../../shared/api/resources';
-import { money, shortDate } from '../../../shared/formatting/money';
+import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { ImportBatch } from '../../../shared/api/resources';
 import { Button } from '../../../shared/ui/primitives';
 export function ImportReview({
   batch,
@@ -14,6 +15,7 @@ export function ImportReview({
   refresh: () => Promise<unknown>;
 }) {
   const {
+    categories,
     page,
     setPage,
     busy,
@@ -29,49 +31,55 @@ export function ImportReview({
   } = useImportReview(batch, refresh);
   const canIntegrate = batch.canIntegrate !== false;
   const [search, setSearch] = useState('');
-  const items = batch.items.filter((item) =>
-    `${item.description} ${item.transactionDate} ${item.sourceOperationId ?? ''}`
-      .toLocaleLowerCase('pt-BR')
-      .includes(search.toLocaleLowerCase('pt-BR')),
+  const [view, setView] = useState('all');
+  const duplicates = batch.items.filter((item) => item.duplicateLocked);
+  const pending = batch.items.filter(
+    (item) =>
+      !item.duplicateLocked &&
+      (item.transactionType === 'unclassified' || (item.duplicateCandidate && !item.selected)),
   );
+  const ready = batch.items.filter(
+    (item) => item.selected && item.transactionType !== 'unclassified' && !item.duplicateLocked,
+  );
+  const items = batch.items
+    .filter(
+      (item) =>
+        view === 'all' ||
+        (view === 'duplicates'
+          ? item.duplicateLocked
+          : view === 'pending'
+            ? pending.includes(item)
+            : ready.includes(item)),
+    )
+    .filter((item) =>
+      `${item.description} ${item.transactionDate} ${item.sourceOperationId ?? ''}`
+        .toLocaleLowerCase('pt-BR')
+        .includes(search.toLocaleLowerCase('pt-BR')),
+    );
   return (
     <>
-      <p className="field-help">
-        Formato: {batch.sourceFormat?.toUpperCase() ?? 'PDF'} ·{' '}
-        {canIntegrate ? 'Extrato de conta Mercado Pago.' : 'Relatório de liquidações Mercado Pago.'}{' '}
-        Referências, datas e valores são preservados para revisar possíveis duplicidades entre
-        formatos.
-      </p>
-      <section className="review-summary">
-        <div className="panel">
-          <span>Movimentos no arquivo</span>
-          <strong>{batch.items.length}</strong>
-        </div>
-        <div className="panel">
-          <span>Saldo inicial do extrato</span>
-          <strong>
-            {batch.openingBalance === null ? 'Não informado' : money(batch.openingBalance)}
-          </strong>
-        </div>
-        <div className="panel">
-          <span>Saldo final do extrato</span>
-          <strong>
-            {batch.closingBalance === null ? 'Não informado' : money(batch.closingBalance)}
-          </strong>
-        </div>
-        <div className="panel">
-          <span>Conferência do arquivo</span>
-          <strong className={canIntegrate ? 'positive-text' : 'muted'}>
-            {canIntegrate ? <CheckCircle2 size={18} /> : <Info size={18} />}{' '}
-            {canIntegrate ? 'Saldos conferidos' : 'Sem saldos no relatório'}
-          </strong>
-        </div>
-      </section>
+      <ImportSourceSummary batch={batch} />
       {batch.status === 'draft' &&
         canIntegrate &&
         (batch.openingMismatch || batch.openingDateMismatch) && (
           <OpeningPositionReview batch={batch} refresh={refresh} />
         )}
+      {canIntegrate && duplicates.length > 0 && (
+        <div className="review-banner duplicate-banner" role="status">
+          <div>
+            <strong>
+              {duplicates.length}{' '}
+              {duplicates.length === 1
+                ? 'duplicata excluída automaticamente'
+                : 'duplicatas excluídas automaticamente'}
+            </strong>
+            <p>
+              Não entram no saldo e não podem ser selecionadas. A verificação será repetida antes de
+              salvar, inclusive entre arquivos do mesmo lote.
+            </p>
+          </div>
+        </div>
+      )}
       {!canIntegrate && (
         <div className="review-banner">
           <div>
@@ -85,22 +93,28 @@ export function ImportReview({
         </div>
       )}
       {batch.status === 'draft' && (
-        <div className="review-banner">
-          <div>
-            <strong>Quer manter este extrato apenas para consulta?</strong>
-            <p>
-              Guarda os movimentos do arquivo sem mudar saldos, gastos ou planejamento. O arquivo
-              original não é armazenado.
-            </p>
+        <details
+          className="secondary-disclosure"
+          open={!canIntegrate || batch.openingMismatch || batch.openingDateMismatch || undefined}
+        >
+          <summary>Guardar apenas para consulta</summary>
+          <div className="review-banner">
+            <div>
+              <strong>Quer manter este extrato apenas para consulta?</strong>
+              <p>
+                Guarda os movimentos do arquivo sem mudar saldos, gastos ou planejamento. O arquivo
+                original não é armazenado.
+              </p>
+            </div>
+            <Button
+              className="secondary"
+              disabled={busy || !navigator.onLine}
+              onClick={() => void retainHistory()}
+            >
+              Salvar apenas como histórico
+            </Button>
           </div>
-          <Button
-            className="secondary"
-            disabled={busy || !navigator.onLine}
-            onClick={() => void retainHistory()}
-          >
-            Salvar apenas como histórico
-          </Button>
-        </div>
+        </details>
       )}
       {batch.status === 'history' && (
         <div className="review-banner">
@@ -126,11 +140,12 @@ export function ImportReview({
         <div className="review-banner">
           <div>
             <strong>
-              {selected.length} selecionados · {unresolved} a classificar
+              {selected.length} {selected.length === 1 ? 'selecionado' : 'selecionados'} ·{' '}
+              {unresolved} a classificar
             </strong>
             <p>
-              Reservas são transferências. Desmarque movimentos já registrados e confira a
-              classificação.
+              Reservas são transferências. Confira a classificação e as categorias. As duplicatas
+              identificadas ficam de fora automaticamente.
             </p>
           </div>
           {unresolved > 0 && (
@@ -143,7 +158,7 @@ export function ImportReview({
         <div className="review-banner">
           <strong>
             {batch.status === 'confirmed'
-              ? 'Importação confirmada. Seus movimentos já estão no saldo.'
+              ? 'Revisão concluída. Somente movimentos novos foram adicionados.'
               : batch.status === 'history'
                 ? 'Extrato salvo apenas para consulta.'
                 : 'Importação desfeita.'}
@@ -159,6 +174,29 @@ export function ImportReview({
         <p className="form-error" role="alert">
           {error}
         </p>
+      )}
+      {categories.isError && (
+        <p className="field-help" role="alert">
+          Não foi possível carregar suas categorias. Tente atualizar a página antes de categorizar.
+        </p>
+      )}
+      {canIntegrate && (
+        <div className="review-views">
+          <ViewSwitcher
+            label="Revisar movimentos"
+            value={view}
+            onChange={(value) => {
+              setView(value);
+              setPage(0);
+            }}
+            options={[
+              { value: 'all', label: 'Todos', count: batch.items.length },
+              { value: 'pending', label: 'Pendências', count: pending.length },
+              { value: 'ready', label: 'Prontos', count: ready.length },
+              { value: 'duplicates', label: 'Duplicatas', count: duplicates.length },
+            ]}
+          />
+        </div>
       )}
       <label className="import-search">
         Buscar no extrato
@@ -189,46 +227,13 @@ export function ImportReview({
           </thead>
           <tbody>
             {items.slice(page * 25, (page + 1) * 25).map((item) => (
-              <tr key={item.id} className={!item.selected ? 'excluded' : ''}>
-                <td>
-                  <input
-                    aria-label={`Selecionar movimento ${item.sourceRow}`}
-                    type="checkbox"
-                    checked={item.selected}
-                    disabled={busy || batch.status !== 'draft' || !canIntegrate}
-                    onChange={(e) => void review(item, { selected: e.target.checked })}
-                  />
-                </td>
-                <td>
-                  <span className="review-date">{shortDate(item.transactionDate)}</span>
-                  <strong>{item.description}</strong>
-                  <SettlementDetails metadata={item.metadata} />
-                  {item.duplicateCandidate && (
-                    <span className="badge warning">Possível duplicidade</span>
-                  )}
-                </td>
-                <td>
-                  <select
-                    aria-label={`Tipo do movimento ${item.sourceRow}`}
-                    value={item.transactionType}
-                    disabled={busy || batch.status !== 'draft' || !canIntegrate}
-                    onChange={(e) =>
-                      void review(item, {
-                        transactionType: e.target.value as ImportItem['transactionType'],
-                      })
-                    }
-                  >
-                    <option value="unclassified">A revisar</option>
-                    {item.amount > 0 ? (
-                      <option value="income">Receita</option>
-                    ) : (
-                      <option value="expense">Despesa</option>
-                    )}
-                    <option value="transfer">Transferência</option>
-                  </select>
-                </td>
-                <td className="numeric">{money(item.amount)}</td>
-              </tr>
+              <ImportReviewRow
+                key={item.id}
+                item={item}
+                disabled={busy || batch.status !== 'draft' || !canIntegrate}
+                categories={categories.data ?? []}
+                onReview={review}
+              />
             ))}
           </tbody>
         </table>
@@ -259,22 +264,25 @@ export function ImportReview({
       {batch.status === 'draft' && canIntegrate && (
         <div className="review-confirm">
           <p>
-            {selected.length !== batch.items.length
-              ? 'O saldo da conta pode diferir do extrato quando você exclui movimentos.'
-              : 'Confira a posição inicial da conta e os movimentos antes de confirmar.'}
+            {batch.items.some((item) => !item.selected && !item.duplicateLocked)
+              ? 'Movimentos desmarcados não serão adicionados. Confira suas escolhas antes de confirmar.'
+              : 'Confira a classificação e as categorias. As duplicatas identificadas não serão adicionadas.'}
           </p>
           <Button
             disabled={
               busy ||
               !!unresolved ||
-              !selected.length ||
-              batch.openingMismatch ||
-              batch.openingDateMismatch ||
+              (!selected.length && !duplicates.length) ||
+              (!!selected.length && (batch.openingMismatch || batch.openingDateMismatch)) ||
               !navigator.onLine
             }
             onClick={() => void confirm()}
           >
-            {busy ? 'Aguarde…' : `Confirmar ${selected.length} movimentos`}
+            {busy
+              ? 'Aguarde…'
+              : selected.length
+                ? `Confirmar ${selected.length} ${selected.length === 1 ? 'movimento' : 'movimentos'}`
+                : 'Concluir sem novos lançamentos'}
             <CheckCircle2 size={18} />
           </Button>
         </div>

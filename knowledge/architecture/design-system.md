@@ -26,8 +26,8 @@ Support `light`, `dark`, and `system`. Start with the system preference and pers
 ## Navigation and layout
 - Desktop: sidebar around 240px, top bar with active period/profile/theme controls, and a bounded content area. Home uses a balance hero, quick actions, monthly summary, recent movements, and an account overview.
 - Tablet: compact navigation and a two-column layout where space permits.
-- Mobile: five bottom destinations: Home, Transactions, Accounts, Import, and More. Respect safe areas and the on-screen keyboard. Keep the primary create action reachable without covering content.
-- More contains categories and settings in the pilot. Future areas join navigation only when functional.
+- Mobile: five bottom destinations: Home, Transactions, Accounts, Planning, and More. Respect safe areas and the on-screen keyboard. Keep the primary create action reachable without covering content.
+- More opens an accessible dialog containing imports, groups/categories, preferences and workspace switching. Desktop navigation has expandable money/organization sections. Future areas join navigation only when functional.
 - Detailed views drill into accounts, transaction details, and import batches. Carry period and account filters into the detail view and support browser Back.
 - Use tables for desktop transaction review and compact transaction rows on mobile. Show direction/type, description, date, amount, and review state without horizontal scrolling for the main workflow.
 
@@ -39,9 +39,10 @@ Support `light`, `dark`, and `system`. Start with the system preference and pers
 | Home | Tracked balances with coverage label, selected-period income/expenses, shortcuts, recent transactions |
 | Accounts | Institution, account type, recorded balance, statement coverage and transaction history |
 | Transactions | Search, period/account/category/type filters; detail, create, edit, and explicit reversal/removal confirmation |
-| Import | Account selection → upload → extraction summary → review/corrections/duplicate decisions → confirmation receipt |
+| Import | Account selection → upload → extraction summary → review/corrections/automatic duplicate exclusion and ambiguous-match decisions → confirmation receipt |
 | Import history | Status, counts, reconciliation, and batch reversal with a clear impact preview |
-| Settings | Light/dark/system theme, categories, export/restore entry points, and sign out |
+| Categories | Income/expense switcher, searchable expandable groups, category editing/moves and a preserved ungrouped section |
+| Settings | Appearance, data/backup and account sections in a view switcher |
 
 ## Components and interaction
 - Shared UI: Button, IconButton, Field, MoneyInput, DateField, Select, Dialog, Sheet, Tabs, Badge, Toast, Skeleton, EmptyState, and ErrorState. Create components when a real screen needs them.
@@ -58,3 +59,6 @@ Home initially reports tracked account balances, not complete net worth. Investm
 
 ## Visual acceptance
 Validate at 360px, 390px, 768px, and 1440px; check both themes plus system theme changes, long descriptions, large/negative amounts, keyboard interaction, and reduced motion. No clipped main actions, overlapping bottom navigation, or loss of form state during theme switching.
+
+## Information hierarchy update
+Import upload/history use separate views. Review separates all/pending/ready/locked duplicates, keeps source reconciliation and consultation-only retention in disclosures, and exposes grouped category selectors. Mobile review uses stacked rows and full-width 44px selects instead of shrinking the desktop table. Counts and labels remain explicit; confirmed duplicates cannot be selected through either UI or API. Transaction lists show group/category context and have type switchers plus expandable account/category/date filters. Planning groups collapse independently without recalculating financial totals in UI. Existing theme tokens and focused keyboard/native disclosure controls remain authoritative. PWA shell version advances to v4.
