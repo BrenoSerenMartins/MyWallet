@@ -489,6 +489,7 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     AccountResourceDto: {
+      canEditOpeningPosition: boolean;
       id: string;
       name: string;
       institution: string;
@@ -632,6 +633,14 @@ export interface components {
       version: number;
       sourceVersion: number;
     };
+    PreviousImportResourceDto: {
+      id: string;
+      fileName: string;
+      /** @enum {string} */
+      status: 'draft' | 'history';
+      firstDate: string;
+      lastDate: string;
+    };
     SettlementMetadataResourceDto: {
       eventType: string;
       transactionTimestamp: string;
@@ -667,6 +676,9 @@ export interface components {
       categoryId: string | null;
     };
     ImportBatchResourceDto: {
+      canAdjustOpeningPosition: boolean;
+      openingDifference: number | null;
+      previousImports: components['schemas']['PreviousImportResourceDto'][];
       /** @enum {string} */
       reportType: 'account_statement' | 'settlement';
       canIntegrate: boolean;

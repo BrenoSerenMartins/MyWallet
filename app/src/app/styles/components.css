@@ -1641,3 +1641,43 @@ button.transaction-row:hover {
     font-size: 12px;
   }
 }
+.reconciliation-gap p + p {
+  margin-top: 10px;
+}
+.reconciliation-gap > .button {
+  margin-top: 16px;
+}
+.previous-imports {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--text);
+}
+.previous-imports > a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.previous-imports > a > span:first-child {
+  min-width: 0;
+}
+.previous-imports small {
+  display: block;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.previous-imports > a > span:last-child {
+  font-size: 12px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+@media (max-width: 700px) {
+  .previous-imports > a {
+    flex-wrap: wrap;
+  }
+}

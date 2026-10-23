@@ -3,6 +3,7 @@ export const CATEGORY_READS = Symbol('CATEGORY_READS');
 export const LEDGER_WRITES = Symbol('LEDGER_WRITES');
 export const LEDGER_READS = Symbol('LEDGER_READS');
 export interface AccountResource {
+  canEditOpeningPosition?: boolean;
   id: string;
   name: string;
   institution: string;

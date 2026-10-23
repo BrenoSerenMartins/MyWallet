@@ -1036,6 +1036,9 @@
       "AccountResourceDto": {
         "type": "object",
         "properties": {
+          "canEditOpeningPosition": {
+            "type": "boolean"
+          },
           "id": {
             "type": "string"
           },
@@ -1068,6 +1071,7 @@
           }
         },
         "required": [
+          "canEditOpeningPosition",
           "id",
           "name",
           "institution",
@@ -1548,6 +1552,28 @@
         },
         "required": ["version", "sourceVersion"]
       },
+      "PreviousImportResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "history"]
+          },
+          "firstDate": {
+            "type": "string"
+          },
+          "lastDate": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "fileName", "status", "firstDate", "lastDate"]
+      },
       "SettlementMetadataResourceDto": {
         "type": "object",
         "properties": {
@@ -1697,6 +1723,19 @@
       "ImportBatchResourceDto": {
         "type": "object",
         "properties": {
+          "canAdjustOpeningPosition": {
+            "type": "boolean"
+          },
+          "openingDifference": {
+            "type": "number",
+            "nullable": true
+          },
+          "previousImports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreviousImportResourceDto"
+            }
+          },
           "reportType": {
             "type": "string",
             "enum": ["account_statement", "settlement"]
@@ -1755,6 +1794,9 @@
           }
         },
         "required": [
+          "canAdjustOpeningPosition",
+          "openingDifference",
+          "previousImports",
           "reportType",
           "canIntegrate",
           "sourceFormat",

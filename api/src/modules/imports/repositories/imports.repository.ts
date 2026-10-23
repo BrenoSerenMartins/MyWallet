@@ -39,6 +39,24 @@ export class ImportsRepository {
       categoryId: r.category_id,
     }));
   }
+  async previousImports(accountId: string, date: string, excludeBatchId: string) {
+    const rows = await this.db.query(
+      `SELECT b.id,b.file_name,b.status,min(i.transaction_date) AS first_date,max(i.transaction_date) AS last_date
+       FROM wallet.import_batches b JOIN wallet.import_items i ON i.batch_id=b.id
+       WHERE b.user_id=$1 AND b.account_id=$2 AND b.id<>$3 AND b.report_type='account_statement'
+       AND (b.status='history' OR (b.status='draft' AND b.expires_at>now()))
+       GROUP BY b.id,b.file_name,b.status HAVING min(i.transaction_date)<$4
+       ORDER BY max(i.transaction_date) DESC,b.id LIMIT 5`,
+      [this.db.userId, accountId, excludeBatchId, date],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      fileName: row.file_name,
+      status: row.status,
+      firstDate: isoDate(row.first_date),
+      lastDate: isoDate(row.last_date),
+    }));
+  }
   async sameFile(accountId: string, hash: string) {
     await this.db.query(
       "DELETE FROM wallet.import_batches WHERE user_id=$1 AND account_id=$2 AND file_hash=$3 AND status='draft' AND history_saved_at IS NULL AND expires_at<now()",
@@ -108,6 +126,26 @@ export class ImportsRepository {
         !duplicate,
         JSON.stringify(item.metadata ?? {}),
       ],
+    );
+  }
+  async applyAutomaticTypes(batchId: string, items: { id: string; transactionType: string }[]) {
+    if (!items.length) return;
+    await this.db.query(
+      `UPDATE wallet.import_items i SET transaction_type=source.type
+       FROM unnest($3::uuid[],$4::text[]) source(id,type)
+       WHERE i.user_id=$1 AND i.batch_id=$2 AND i.id=source.id AND i.transaction_type='unclassified'`,
+      [
+        this.db.userId,
+        batchId,
+        items.map((item) => item.id),
+        items.map((item) => item.transactionType),
+      ],
+    );
+  }
+  async advanceVersion(id: string) {
+    await this.db.query(
+      'UPDATE wallet.import_batches SET version=version+1 WHERE user_id=$1 AND id=$2',
+      [this.db.userId, id],
     );
   }
   async updateItem(

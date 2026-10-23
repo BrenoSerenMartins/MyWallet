@@ -144,8 +144,8 @@ export function ImportReview({
               {unresolved} a classificar
             </strong>
             <p>
-              Reservas são transferências. Confira a classificação e as categorias. As duplicatas
-              identificadas ficam de fora automaticamente.
+              Entradas e saídas já foram classificadas pelo valor. Reservas reconhecidas são
+              transferências. Confira as categorias e transferências entre suas próprias contas.
             </p>
           </div>
           {unresolved > 0 && (

@@ -1,22 +1,26 @@
 import type { ImportEntry, ParsedStatement } from '../../contracts/statement.js';
-export const MERCADO_PAGO_MAPPER_VERSION = 'mercado-pago/account-pdf/1';
+export const MERCADO_PAGO_MAPPER_VERSION = 'mercado-pago/account-pdf/2';
 export function mercadoPagoMapperVersion(
   format: 'pdf' | 'csv' | 'xlsx',
   reportType = 'account_statement',
 ) {
   if (reportType === 'settlement') return 'mercado-pago/settlement-csv/1';
-  return `mercado-pago/account-${format}/1`;
+  return `mercado-pago/account-${format}/2`;
+}
+export function classifyMercadoPagoMovement(item: {
+  description: string;
+  amount: number;
+}): ImportEntry['transactionType'] {
+  if (/^(?:Dinheiro (?:reservado|retirado)|Reserva por gastos(?:\s|$))/i.test(item.description))
+    return 'transfer';
+  if (item.amount > 0) return 'income';
+  if (item.amount < 0) return 'expense';
+  return 'unclassified';
 }
 export function mapMercadoPago(statement: ParsedStatement): ImportEntry[] {
   return statement.items.map((item) => ({
     ...item,
     transactionType:
-      statement.reportType === 'settlement'
-        ? 'unclassified'
-        : /^Dinheiro (reservado|retirado)/i.test(item.description)
-          ? 'transfer'
-          : /^Rendimentos/i.test(item.description) && item.amount > 0
-            ? 'income'
-            : 'unclassified',
+      statement.reportType === 'settlement' ? 'unclassified' : classifyMercadoPagoMovement(item),
   }));
 }

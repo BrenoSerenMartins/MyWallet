@@ -849,3 +849,89 @@ for (const width of [390, 1440])
     );
     await page.screenshot({ path: `/tmp/mywallet-default-group-${width}.png`, fullPage: true });
   });
+
+test('a later statement points to unfinished history without proposing a new account opening', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 1000 });
+  const currentId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    priorId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const current = {
+    id: currentId,
+    accountId: account.id,
+    fileName: 'october.pdf',
+    sourceFormat: 'pdf',
+    status: 'draft',
+    version: 1,
+    canIntegrate: true,
+    reportType: 'account_statement',
+    accountOpeningDate: '2026-08-01',
+    statementStartDate: '2026-10-01',
+    openingDateMismatch: false,
+    openingMismatch: true,
+    canAdjustOpeningPosition: false,
+    openingDifference: 1000,
+    recordedOpeningBalance: 12000,
+    openingBalance: 13000,
+    closingBalance: 12000,
+    previousImports: [
+      {
+        id: priorId,
+        fileName: 'september.pdf',
+        status: 'draft',
+        firstDate: '2026-09-01',
+        lastDate: '2026-09-30',
+      },
+    ],
+    items: [
+      {
+        ...transaction,
+        id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        sourceRow: 1,
+        selected: true,
+        duplicateLocked: false,
+        duplicateCandidate: false,
+        transactionType: 'expense',
+        amount: -1000,
+      },
+    ],
+  };
+  const prior = {
+    ...current,
+    id: priorId,
+    fileName: 'september.pdf',
+    statementStartDate: '2026-09-01',
+    openingBalance: 12000,
+    closingBalance: 13000,
+    openingMismatch: false,
+    openingDifference: 0,
+    previousImports: [],
+    items: [{ ...current.items[0], amount: 1000, transactionType: 'income' }],
+  };
+  await page.route(`**/v1/imports/${currentId}`, (route) => route.fulfill({ json: current }));
+  await page.route(`**/v1/imports/${priorId}`, (route) => route.fulfill({ json: prior }));
+  await page.goto(`/imports/${currentId}`);
+  await expect(
+    page.getByText('Falta conciliar o período anterior a este extrato.', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Revisar posição inicial', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole('link', { name: 'Conferir movimentações da conta', exact: true }),
+  ).toHaveAttribute('href', `/accounts/${account.id}`);
+  await page.screenshot({ path: '/tmp/mywallet-reconciliation-gap-390.png', fullPage: true });
+  await page.getByRole('link', { name: /september.pdf/ }).click();
+  await expect(page).toHaveURL(`/imports/${priorId}`);
+  await expect(page.getByLabel('Tipo do movimento 1')).toHaveValue('income');
+  await expect(
+    page.getByRole('button', { name: 'Classificar entradas e saídas', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
+  ).toBeEnabled();
+});

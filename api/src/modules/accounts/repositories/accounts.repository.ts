@@ -9,7 +9,7 @@ export class AccountsRepository {
   constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
   async list(): Promise<AccountResource[]> {
     const rows = await this.db.query(
-      `SELECT a.*, a.opening_balance_minor+coalesce((SELECT sum(t.amount_minor) FROM wallet.transactions t WHERE t.user_id=a.user_id AND t.account_id=a.id AND t.reversed_at IS NULL),0) AS balance FROM wallet.financial_accounts a WHERE a.user_id=$1 ORDER BY a.created_at,a.id`,
+      `SELECT a.*, NOT EXISTS(SELECT 1 FROM wallet.transactions existing WHERE existing.user_id=a.user_id AND existing.account_id=a.id) AS opening_position_editable, a.opening_balance_minor+coalesce((SELECT sum(t.amount_minor) FROM wallet.transactions t WHERE t.user_id=a.user_id AND t.account_id=a.id AND t.reversed_at IS NULL),0) AS balance FROM wallet.financial_accounts a WHERE a.user_id=$1 ORDER BY a.created_at,a.id`,
       [this.db.userId],
     );
     return rows.map((r) => ({
@@ -19,6 +19,7 @@ export class AccountsRepository {
       type: r.type,
       currency: r.currency,
       openingBalance: Number(r.opening_balance_minor),
+      canEditOpeningPosition: r.opening_position_editable,
       openingDate: isoDate(r.opening_date),
       balance: Number(r.balance),
       version: r.version,

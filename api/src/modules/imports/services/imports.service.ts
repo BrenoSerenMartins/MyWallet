@@ -24,6 +24,7 @@ import { requireVersion } from '../../../core/rest/index.js';
 import { ImportsRepository } from '../repositories/imports.repository.js';
 import {
   mapMercadoPago,
+  classifyMercadoPagoMovement,
   mercadoPagoMapperVersion,
 } from '../mappers/mercado-pago/statement.mapper.js';
 import { extractMercadoPagoStatement } from '../parsers/mercado-pago/extract-statement.js';
@@ -64,7 +65,7 @@ export class ImportsService {
     if (new Date(batch.expires_at).getTime() <= Date.now())
       throw new GoneException('A revisão expirou. Envie o arquivo novamente.');
   }
-  private async reviewItems(id: string, accountId: string) {
+  private async reviewItems(id: string, accountId: string, automaticClassification = false) {
     const items = await this.repository.items(id);
     const dates = items.map((i) => i.transactionDate).sort();
     const recorded = dates.length
@@ -77,6 +78,10 @@ export class ImportsService {
         duplicateReason === 'recorded' || duplicateReason === 'same_statement';
       return {
         ...item,
+        transactionType:
+          automaticClassification && item.transactionType === 'unclassified'
+            ? classifyMercadoPagoMovement(item)
+            : item.transactionType,
         duplicateReason,
         duplicateLocked,
         duplicateCandidate: !!duplicateReason,
@@ -86,7 +91,11 @@ export class ImportsService {
   }
   async preview(id: string) {
     const b = await this.get(id);
-    const items = await this.reviewItems(id, b.account_id);
+    const items = await this.reviewItems(
+      id,
+      b.account_id,
+      b.report_type === 'account_statement' && b.status === 'draft',
+    );
     const account = await this.accounts.find(b.account_id);
     const statementStartDate = items.reduce<string | null>(
       (date, item) => (!date || item.transactionDate < date ? item.transactionDate : date),
@@ -97,7 +106,20 @@ export class ImportsService {
       (statementStartDate
         ? await this.ledgerReads.balanceBefore(account.id, statementStartDate)
         : 0);
+    const openingMismatch =
+      b.opening_balance_minor !== null &&
+      recordedOpeningBalance !== Number(b.opening_balance_minor);
+    const previousImports =
+      openingMismatch && statementStartDate
+        ? await this.repository.previousImports(account.id, statementStartDate, id)
+        : [];
     return {
+      canAdjustOpeningPosition: !!account.canEditOpeningPosition && !account.archived,
+      openingDifference:
+        b.opening_balance_minor === null
+          ? null
+          : Number(b.opening_balance_minor) - recordedOpeningBalance,
+      previousImports,
       sourceFormat: b.mapper_version.includes('-csv/')
         ? 'csv'
         : b.mapper_version.includes('account-xlsx/')
@@ -109,9 +131,7 @@ export class ImportsService {
       statementStartDate,
       openingDateMismatch: !!statementStartDate && statementStartDate < account.openingDate,
       recordedOpeningBalance,
-      openingMismatch:
-        b.opening_balance_minor !== null &&
-        recordedOpeningBalance !== Number(b.opening_balance_minor),
+      openingMismatch,
       id: b.id,
       accountId: b.account_id,
       fileName: b.file_name,
@@ -153,7 +173,7 @@ export class ImportsService {
     this.assertDraft(batch);
     this.assertAccountStatement(batch.report_type);
     requireVersion(batch.version, version);
-    const items = await this.reviewItems(id, batch.account_id);
+    const items = await this.reviewItems(id, batch.account_id, true);
     const item = items.find((i) => i.id === itemId);
     if (!item) throw new NotFoundException('Linha não encontrada.');
     if (item.duplicateLocked)
@@ -174,14 +194,11 @@ export class ImportsService {
     this.assertDraft(batch);
     this.assertAccountStatement(batch.report_type);
     requireVersion(batch.version, version);
-    for (const item of await this.reviewItems(id, batch.account_id)) {
-      if (!item.duplicateLocked && item.transactionType === 'unclassified')
-        await this.repository.updateItem(id, item.id, {
-          selected: item.selected,
-          transactionType: item.amount > 0 ? 'income' : 'expense',
-          categoryId: null,
-        });
-    }
+    await this.repository.applyAutomaticTypes(
+      id,
+      await this.reviewItems(id, batch.account_id, true),
+    );
+    await this.repository.advanceVersion(id);
     return this.preview(id);
   }
   async confirm(id: string, version: number, key: string) {
@@ -198,7 +215,9 @@ export class ImportsService {
       const skippedDuplicates = preview.items.filter((i) => i.duplicateLocked).length;
       if (selected.length && (preview.openingMismatch || preview.openingDateMismatch))
         throw new ConflictException(
-          'A posição inicial da conta não confere com o extrato. Corrija a conta ou os movimentos anteriores antes de confirmar.',
+          preview.canAdjustOpeningPosition
+            ? 'A posição inicial da conta não confere com o extrato. Revise o cadastro inicial antes de confirmar.'
+            : 'O saldo registrado antes deste extrato não confere. Confirme os extratos anteriores ou confira as movimentações faltantes; o saldo de abertura da conta será preservado.',
         );
       if (!selected.length && !skippedDuplicates)
         throw new UnprocessableEntityException('Selecione ao menos um movimento.');
@@ -206,6 +225,7 @@ export class ImportsService {
         throw new UnprocessableEntityException(
           'Classifique os movimentos selecionados antes de confirmar.',
         );
+      await this.repository.applyAutomaticTypes(id, preview.items);
       for (const item of selected) {
         await this.ledger.create(
           {

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 export class AccountResourceDto {
+  @ApiProperty({ type: Boolean }) canEditOpeningPosition!: boolean;
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) name!: string;
   @ApiProperty({ type: String }) institution!: string;
@@ -80,7 +81,18 @@ export class ImportItemResourceDto {
   @ApiProperty({ type: Boolean }) duplicateCandidate!: boolean;
   @ApiProperty({ type: String, nullable: true }) categoryId!: string | null;
 }
+export class PreviousImportResourceDto {
+  @ApiProperty({ type: String }) id!: string;
+  @ApiProperty({ type: String }) fileName!: string;
+  @ApiProperty({ type: String, enum: ['draft', 'history'] }) status!: 'draft' | 'history';
+  @ApiProperty({ type: String }) firstDate!: string;
+  @ApiProperty({ type: String }) lastDate!: string;
+}
 export class ImportBatchResourceDto {
+  @ApiProperty({ type: Boolean }) canAdjustOpeningPosition!: boolean;
+  @ApiProperty({ type: Number, nullable: true }) openingDifference!: number | null;
+  @ApiProperty({ type: () => [PreviousImportResourceDto] })
+  previousImports!: PreviousImportResourceDto[];
   @ApiProperty({ type: String, enum: ['account_statement', 'settlement'] }) reportType!:
     'account_statement' | 'settlement';
   @ApiProperty({ type: Boolean }) canIntegrate!: boolean;

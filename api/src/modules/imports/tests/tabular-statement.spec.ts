@@ -26,7 +26,7 @@ describe('Mercado Pago account CSV and XLSX reports', () => {
     expect(statement.items[0].sourceRow).toBe(5);
     expect(mapMercadoPago(statement).map((item) => item.transactionType)).toEqual([
       'transfer',
-      'unclassified',
+      'income',
     ]);
   });
   it('supports comma-delimited CSV with quoted Brazilian amounts', async () => {

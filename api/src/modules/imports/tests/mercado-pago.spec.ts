@@ -31,16 +31,15 @@ describe('Mercado Pago source contract', () => {
     expect(statement.items).toHaveLength(2);
     expect(statement.items[0].description).toBe('Pagamento com descrição em outra linha');
     expect(statement.items[0].sourceOperationId).toBe(statement.items[1].sourceOperationId);
-    expect(mapMercadoPago(statement).map((i) => i.transactionType)).toEqual([
-      'unclassified',
-      'income',
-    ]);
+    expect(mapMercadoPago(statement).map((i) => i.transactionType)).toEqual(['expense', 'income']);
   });
   it('treats reserve deposits and withdrawals as transfers', () => {
     const statement = parseMercadoPagoPages([first]);
     statement.items[0].description = 'Dinheiro reservado Emergências';
     expect(mapMercadoPago(statement)[0].transactionType).toBe('transfer');
     statement.items[0].description = 'Dinheiro retirado Emergências';
+    expect(mapMercadoPago(statement)[0].transactionType).toBe('transfer');
+    statement.items[0].description = 'Reserva por gastos Emergências';
     expect(mapMercadoPago(statement)[0].transactionType).toBe('transfer');
   });
   it('refuses unrecognized or non-reconciling layouts', () => {

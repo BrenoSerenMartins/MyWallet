@@ -61,7 +61,9 @@ export function ImportReviewRow({
             })
           }
         >
-          <option value="unclassified">A revisar</option>
+          {item.transactionType === 'unclassified' && (
+            <option value="unclassified">A revisar</option>
+          )}
           {item.amount > 0 ? (
             <option value="income">Receita</option>
           ) : (

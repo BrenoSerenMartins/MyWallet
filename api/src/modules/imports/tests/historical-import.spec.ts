@@ -186,7 +186,7 @@ describe('Overlapping account reports in different formats', () => {
       expect(preview.items).toHaveLength(2);
       expect(preview.items.every((item) => item.duplicateCandidate && !item.selected)).toBe(true);
       const stored = await db.forUser(db.user, () => imports.get(preview.id));
-      expect(stored.mapper_version).toBe(`mercado-pago/account-${format}/1`);
+      expect(stored.mapper_version).toBe(`mercado-pago/account-${format}/2`);
       const repeated = await db.forUser(db.user, () =>
         imports.upload(accountId, Buffer.from(format), `another-name.${format}`, {
           ...statement,
@@ -290,4 +290,159 @@ it('automatically locks overlapping drafts after confirmation and preserves legi
   await db.forUser(db.user, () => ledger.reverse(entry.id, String(entry.version + 1)));
   const afterReversal = await db.forUser(db.user, () => imports.preview(afterEdit.id));
   expect(afterReversal.items.filter((i) => i.duplicateLocked)).toHaveLength(1);
+});
+
+it('classifies old drafts automatically and guides later statements to unfinished prior periods without rewriting account opening', async () => {
+  const accountId = (
+    await db.forUser(db.user, () =>
+      accounts.create({
+        name: 'Monthly sequence',
+        institution: 'mercado_pago',
+        type: 'checking',
+        openingBalance: 10000,
+        openingDate: '2026-08-01',
+      }),
+    )
+  ).id;
+  const source = (date: string, opening: number, amount: number, description: string) => ({
+    openingBalance: opening,
+    closingBalance: opening + amount,
+    items: [
+      {
+        sourceRow: 1,
+        sourcePage: 1,
+        transactionDate: date,
+        sourceOperationId: date,
+        description,
+        amount,
+        balanceAfter: opening + amount,
+      },
+    ],
+  });
+  const august = await db.forUser(db.user, () =>
+    imports.upload(
+      accountId,
+      Buffer.from('sequence-august'),
+      'august.pdf',
+      source('2026-08-01', 10000, 2000, 'Received payment'),
+    ),
+  );
+  expect(august.items[0].transactionType).toBe('income');
+  await db.forUser(db.user, () => imports.confirm(august.id, august.version, 'sequence-august'));
+  const september = await db.forUser(db.user, () =>
+    imports.upload(
+      accountId,
+      Buffer.from('sequence-september'),
+      'september.pdf',
+      source('2026-09-01', 12000, 1000, 'Received payment'),
+    ),
+  );
+  // Emulate a draft created by mapper v1 before automatic direction classification.
+  await db.forUser(db.user, () =>
+    db.service.query(
+      "UPDATE wallet.import_items SET transaction_type='unclassified' WHERE batch_id=$1",
+      [september.id],
+    ),
+  );
+  const oldDraft = await db.forUser(db.user, () => imports.preview(september.id));
+  expect(oldDraft.items[0].transactionType).toBe('income');
+  const october = await db.forUser(db.user, () =>
+    imports.upload(
+      accountId,
+      Buffer.from('sequence-october'),
+      'october.pdf',
+      source('2026-10-01', 13000, -100, 'Purchase'),
+    ),
+  );
+  expect(october.openingMismatch).toBe(true);
+  expect(october.openingDifference).toBe(1000);
+  expect(october.canAdjustOpeningPosition).toBe(false);
+  expect(october.previousImports).toEqual([
+    expect.objectContaining({ id: september.id, status: 'draft' }),
+  ]);
+  await expect(
+    db.forUser(db.user, () =>
+      imports.confirm(october.id, october.version, 'sequence-early-october'),
+    ),
+  ).rejects.toThrow('Confirme os extratos anteriores');
+  const history = await db.forUser(db.user, () =>
+    imports.retainHistory(september.id, september.version),
+  );
+  expect(
+    (await db.forUser(db.user, () => imports.preview(october.id))).previousImports[0].status,
+  ).toBe('history');
+  const reopened = await db.forUser(db.user, () =>
+    imports.reopenHistory(september.id, history.version),
+  );
+  await db.forUser(db.user, () =>
+    imports.confirm(september.id, reopened.version, 'sequence-september'),
+  );
+  const receipt = await db.forUser(db.user, () => imports.preview(september.id));
+  expect(receipt.items[0].transactionType).toBe('income');
+  const refreshed = await db.forUser(db.user, () => imports.preview(october.id));
+  expect(refreshed.openingMismatch).toBe(false);
+  expect(refreshed.previousImports).toEqual([]);
+  expect(refreshed.items[0].transactionType).toBe('expense');
+  await db.forUser(db.user, () =>
+    imports.confirm(october.id, refreshed.version, 'sequence-october'),
+  );
+  const account = await db.forUser(db.user, () => accounts.find(accountId));
+  expect(account.openingBalance).toBe(10000);
+  expect(account.openingDate).toBe('2026-08-01');
+  expect(account.balance).toBe(12900);
+});
+it('preserves explicit financial reviews while applying direction defaults to remaining legacy draft items', async () => {
+  const accountId = (
+    await db.forUser(db.user, () =>
+      accounts.create({
+        name: 'Legacy classifications',
+        institution: 'mercado_pago',
+        type: 'checking',
+        openingBalance: 10000,
+        openingDate: '2026-10-01',
+      }),
+    )
+  ).id;
+  const preview = await db.forUser(db.user, () =>
+    imports.upload(accountId, Buffer.from('legacy-classifications'), 'legacy.pdf', {
+      openingBalance: 10000,
+      closingBalance: 9800,
+      items: [
+        {
+          sourceRow: 1,
+          sourcePage: 1,
+          transactionDate: '2026-10-01',
+          description: 'Own transfer',
+          sourceOperationId: 'legacy-one',
+          amount: -100,
+          balanceAfter: 9900,
+        },
+        {
+          sourceRow: 2,
+          sourcePage: 1,
+          transactionDate: '2026-10-01',
+          description: 'Purchase',
+          sourceOperationId: 'legacy-two',
+          amount: -100,
+          balanceAfter: 9800,
+        },
+      ],
+    }),
+  );
+  await db.forUser(db.user, async () => {
+    await db.service.query(
+      "UPDATE wallet.import_items SET transaction_type=CASE WHEN source_row=1 THEN 'transfer' ELSE 'unclassified' END WHERE batch_id=$1",
+      [preview.id],
+    );
+  });
+  const refreshed = await db.forUser(db.user, () => imports.preview(preview.id));
+  expect(refreshed.items.map((item) => item.transactionType)).toEqual(['transfer', 'expense']);
+  await db.forUser(db.user, () =>
+    imports.confirm(preview.id, refreshed.version, 'legacy-classifications'),
+  );
+  expect(
+    (await db.forUser(db.user, () => imports.preview(preview.id))).items.map(
+      (item) => item.transactionType,
+    ),
+  ).toEqual(['transfer', 'expense']);
 });

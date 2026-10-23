@@ -1,3 +1,4 @@
+import { ReconciliationGap } from './reconciliation-gap';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Account, ImportBatch } from '../../../shared/api/resources';
@@ -18,6 +19,7 @@ export function OpeningPositionReview({
     queryFn: () => request<Account>(`/accounts/${batch.accountId}`),
     enabled: open,
   });
+  if (batch.canAdjustOpeningPosition === false) return <ReconciliationGap batch={batch} />;
   return (
     <div className="form-error" role="alert">
       <strong>A posição inicial da conta precisa de revisão.</strong>
