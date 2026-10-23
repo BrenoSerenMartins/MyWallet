@@ -202,3 +202,68 @@
   min-height: 44px;
   font-size: 12px;
 }
+
+.categories-page,
+.category-type-context {
+  --category-tone: var(--positive);
+  --category-tone-soft: color-mix(in srgb, var(--positive) 10%, var(--surface));
+}
+.categories-page[data-financial-type='expense'],
+.category-type-context[data-financial-type='expense'] {
+  --category-tone: var(--negative);
+  --category-tone-soft: color-mix(in srgb, var(--negative) 10%, var(--surface));
+}
+.categories-page .category-toolbar .view-switcher button[aria-pressed='true'] {
+  color: var(--category-tone);
+  background: var(--category-tone-soft);
+}
+.categories-page .category-group {
+  border-top: 2px solid color-mix(in srgb, var(--category-tone) 35%, var(--border));
+}
+.categories-page .category-group-icon {
+  color: var(--category-tone);
+  background: var(--category-tone-soft);
+}
+.category-group-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.category-group-heading h2 .category-color {
+  width: 6px;
+  height: 6px;
+}
+.categories-page .category-preview-chip {
+  background: var(--category-tone-soft);
+}
+.categories-page .category-preview-chip:hover {
+  border-color: var(--category-tone);
+}
+.categories-page .category-expand:hover,
+.categories-page .category-child button {
+  color: var(--category-tone);
+}
+.category-type-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--category-tone-soft);
+}
+.category-type-context strong {
+  color: var(--category-tone);
+}
+.category-type-context > span:last-child {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: auto;
+}
+.category-type-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--category-tone);
+}

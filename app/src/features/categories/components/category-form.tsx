@@ -23,11 +23,8 @@ export function CategoryForm({
   }) => Promise<void>;
 }) {
   const [name, setName] = useState(entry?.name ?? '');
-  const [type, setType] = useState(entry?.type ?? initialGroup?.type ?? initialType);
+  const type = entry?.type ?? initialGroup?.type ?? initialType;
   const [color, setColor] = useState(entry?.color ?? defaultColors[type]);
-  const [customColor, setCustomColor] = useState(
-    !!entry && entry.color.toLowerCase() !== defaultColors[type],
-  );
   const [groupId, setGroupId] = useState(
     (entry && 'groupId' in entry ? entry.groupId : initialGroup?.id) ??
       groups.find((group) => group.isDefault && group.type === type)?.id ??
@@ -64,23 +61,11 @@ export function CategoryForm({
           placeholder={kind === 'group' ? 'Ex.: Casa ou Alimentação' : 'Ex.: Luz ou Mercado'}
         />
       </label>
-      <label>
-        Tipo
-        <select
-          value={type}
-          disabled={!!entry}
-          onChange={(e) => {
-            if (!customColor) setColor(defaultColors[e.target.value]);
-            setType(e.target.value);
-            setGroupId(
-              groups.find((group) => group.isDefault && group.type === e.target.value)?.id ?? '',
-            );
-          }}
-        >
-          <option value="expense">Despesa</option>
-          <option value="income">Receita</option>
-        </select>
-      </label>
+      <div className="category-type-context" data-financial-type={type}>
+        <span className="category-type-dot" />
+        <strong>{type === 'expense' ? 'Despesa' : 'Receita'}</strong>
+        <span>{entry ? 'Tipo do cadastro' : 'Definido pela seção selecionada'}</span>
+      </div>
       {kind === 'category' && (
         <label>
           Grupo
@@ -105,7 +90,6 @@ export function CategoryForm({
           value={color}
           onChange={(e) => {
             setColor(e.target.value);
-            setCustomColor(true);
           }}
         />
       </label>
@@ -119,7 +103,6 @@ export function CategoryForm({
           disabled={busy || color.toLowerCase() === defaultColors[type]}
           onClick={() => {
             setColor(defaultColors[type]);
-            setCustomColor(false);
           }}
         >
           Restaurar cor padrão

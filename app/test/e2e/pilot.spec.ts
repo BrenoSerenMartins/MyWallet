@@ -1106,10 +1106,9 @@ test('category and group colors follow financial type, allow customization and r
   const dialog = page.getByRole('dialog'),
     color = dialog.locator('input[type=color]');
   await expect(color).toHaveValue('#f28a97');
-  await dialog.getByRole('combobox', { name: 'Tipo', exact: true }).selectOption('income');
-  await expect(color).toHaveValue('#5ee9b5');
+  await expect(dialog.getByRole('combobox', { name: 'Tipo', exact: true })).toHaveCount(0);
+  await expect(dialog.getByText('Despesa', { exact: true })).toBeVisible();
   await color.fill('#abcdef');
-  await dialog.getByRole('combobox', { name: 'Tipo', exact: true }).selectOption('expense');
   await expect(color).toHaveValue('#abcdef');
   await dialog.getByRole('button', { name: 'Restaurar cor padrão', exact: true }).click();
   await expect(color).toHaveValue('#f28a97');
@@ -1127,6 +1126,97 @@ test('category and group colors follow financial type, allow customization and r
   expect(saves).toBe(1);
   await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
   await expect(color).toHaveValue('#f28a97');
-  await dialog.getByRole('combobox', { name: 'Tipo', exact: true }).selectOption('income');
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+  await page.getByRole('button', { name: 'Receitas', exact: true }).click();
+  await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
+  await expect(dialog.getByText('Receita', { exact: true })).toBeVisible();
   await expect(color).toHaveValue('#5ee9b5');
+});
+
+test('the active category section owns creation type and semantic accents while preserving brand actions', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 1000 });
+  const groups = [
+    {
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      name: 'Casa',
+      type: 'expense',
+      color: '#5ee9b5',
+      isDefault: false,
+    },
+    {
+      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      name: 'Trabalho',
+      type: 'income',
+      color: '#5ee9b5',
+      isDefault: false,
+    },
+  ];
+  const entries: unknown[] = [];
+  let postedGroup: Record<string, unknown> | undefined,
+    postedCategory: Record<string, unknown> | undefined;
+  await page.route('**/v1/category-groups', (route) => {
+    if (route.request().method() === 'POST') {
+      postedGroup = route.request().postDataJSON();
+      return route.fulfill({
+        json: { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', ...postedGroup },
+      });
+    }
+    return route.fulfill({ json: groups });
+  });
+  await page.route('**/v1/categories', (route) => {
+    if (route.request().method() === 'POST') {
+      postedCategory = route.request().postDataJSON();
+      return route.fulfill({
+        json: { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', ...postedCategory },
+      });
+    }
+    return route.fulfill({ json: entries });
+  });
+  await page.goto('/categories');
+  const icon = page.getByRole('region', { name: 'Grupo Casa' }).locator('.category-group-icon');
+  for (const theme of ['claro', 'escuro']) {
+    await page
+      .getByRole('button', { name: `Tema ${theme}`, exact: true })
+      .first()
+      .click();
+    expect(await icon.evaluate((node) => getComputedStyle(node).color)).toBe(
+      await page
+        .locator('.categories-page')
+        .evaluate((node) => getComputedStyle(node).getPropertyValue('--negative').trim())
+        .then((hex) => (hex === '#c34854' ? 'rgb(195, 72, 84)' : 'rgb(242, 138, 151)')),
+    );
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({
+      path: `/tmp/mywallet-expense-section-${theme}-390.png`,
+      fullPage: true,
+    });
+  }
+  await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
+  await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Transporte');
+  await page.getByRole('button', { name: 'Criar grupo', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(postedGroup).toMatchObject({ type: 'expense', color: '#f28a97' });
+  await page
+    .getByRole('region', { name: 'Grupo Casa' })
+    .getByRole('button', { name: 'Adicionar categoria', exact: true })
+    .click();
+  await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Água');
+  await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(postedCategory).toMatchObject({
+    type: 'expense',
+    groupId: groups[0].id,
+    color: '#f28a97',
+  });
+  await page.getByRole('button', { name: 'Receitas', exact: true }).click();
+  await page.getByRole('button', { name: 'Nova categoria', exact: true }).click();
+  await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Salário');
+  await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(postedCategory).toMatchObject({ type: 'income', color: '#5ee9b5' });
 });

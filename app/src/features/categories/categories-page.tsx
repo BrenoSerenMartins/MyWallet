@@ -34,12 +34,18 @@ export function CategoriesPage() {
         matching.some((c) => c.groupId === g.id)),
   );
   return (
-    <div className="page-enter">
+    <div className="page-enter categories-page" data-financial-type={type}>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">CADA GASTO NO SEU LUGAR</span>
+          <span className="eyebrow">
+            {type === 'expense' ? 'CADA GASTO NO SEU LUGAR' : 'CADA RECEITA NO SEU LUGAR'}
+          </span>
           <h1>Grupos e categorias</h1>
-          <p>Casa, alimentação, lazer… organize do seu jeito, sem perder o detalhe.</p>
+          <p>
+            {type === 'expense'
+              ? 'Casa, alimentação, lazer… organize suas despesas sem perder o detalhe.'
+              : 'Salário, rendimentos, outras entradas… organize suas fontes de receita.'}
+          </p>
         </div>
         <Button onClick={() => setEditor({ kind: 'group' })}>
           <Plus size={18} />

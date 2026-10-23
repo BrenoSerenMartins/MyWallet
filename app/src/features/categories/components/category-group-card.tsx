@@ -23,14 +23,22 @@ export function CategoryGroupCard({
   return (
     <section
       className={`panel category-group ${group.isDefault ? 'default-group' : ''}`}
+      data-financial-type={group.type}
       aria-label={`Grupo ${group.name}`}
     >
       <header className="category-group-heading">
-        <span className="category-group-icon" style={{ color: group.color }}>
+        <span className="category-group-icon">
           {group.isDefault ? <ShieldCheck size={23} /> : <FolderOpen size={23} />}
         </span>
         <div>
-          <h2>{group.name}</h2>
+          <h2>
+            <span
+              className="category-color"
+              style={{ background: group.color }}
+              aria-label="Cor personalizada do grupo"
+            />
+            {group.name}
+          </h2>
           <p>
             {categories.length} {categories.length === 1 ? 'categoria' : 'categorias'}
             {group.isDefault && <span className="default-label">Padrão</span>}
