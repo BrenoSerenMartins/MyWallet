@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import type { PlanningLine } from '../../../shared/api/resources';
 import { BudgetLine } from './budget-line';
+const groupKey = (line: PlanningLine) =>
+  line.categoryId === null ? 'uncategorized' : (line.groupId ?? 'ungrouped');
 export function BudgetSection({
   type,
   lines,
@@ -27,10 +29,14 @@ export function BudgetSection({
         </div>
       ) : (
         <div className="budget-lines" role="list">
-          {[...new Set(lines.map((line) => line.groupId ?? ''))].map((id) => {
-            const children = lines.filter((line) => (line.groupId ?? '') === id);
+          {[...new Set(lines.map(groupKey))].map((id) => {
+            const children = lines.filter((line) => groupKey(line) === id);
             return (
-              <details className="budget-group" key={id} open={!id || undefined}>
+              <details
+                className="budget-group"
+                key={id}
+                open={['uncategorized', 'ungrouped'].includes(id) || undefined}
+              >
                 <summary>
                   {children[0].groupName ?? 'Sem grupo'}
                   <span>{children.length} categorias</span>

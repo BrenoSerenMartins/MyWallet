@@ -1523,6 +1523,18 @@
       "PlanningTotalsDto": {
         "type": "object",
         "properties": {
+          "incomeDifference": {
+            "type": "number",
+            "nullable": true
+          },
+          "expenseDifference": {
+            "type": "number",
+            "nullable": true
+          },
+          "resultDifference": {
+            "type": "number",
+            "nullable": true
+          },
           "plannedIncome": {
             "type": "number",
             "nullable": true
@@ -1562,6 +1574,9 @@
           }
         },
         "required": [
+          "incomeDifference",
+          "expenseDifference",
+          "resultDifference",
           "plannedIncome",
           "plannedExpense",
           "actualIncome",

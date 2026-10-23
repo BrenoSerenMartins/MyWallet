@@ -85,19 +85,33 @@ export function PlanningPage() {
               Comparação dos valores salvos com receitas e despesas registradas no mês. O resultado
               não é o saldo da conta. Transferências e estornos ficam fora destes totais.
             </p>
-            {(plan.totals.missingCategoryCount > 0 || plan.totals.unclassifiedCount > 0) && (
-              <div className="review-banner">
+            {plan.totals.missingCategoryCount > 0 && (
+              <div className="review-banner planning-included">
                 <div>
-                  <strong>Seu realizado ainda precisa de revisão</strong>
+                  <strong>Sem categoria também entra na conta</strong>
                   <p>
-                    {plan.totals.missingCategoryCount} lançamentos sem categoria;{' '}
-                    {plan.totals.unclassifiedCount} movimentos sem tipo financeiro. Entradas não
-                    classificadas: {money(plan.totals.unclassifiedInflow)}; saídas:{' '}
-                    {money(plan.totals.unclassifiedOutflow)}. Movimentos sem tipo não entram nos
-                    totais de receita/despesa.
+                    {plan.totals.missingCategoryCount} lançamentos estão em Outros e já fazem parte
+                    do realizado de receitas e despesas. Categorizar depois apenas redistribui os
+                    valores; o total não muda.
                   </p>
                 </div>
                 <Link to="/transactions">
+                  Organizar categorias <ArrowRight size={16} />
+                </Link>
+              </div>
+            )}
+            {plan.totals.unclassifiedCount > 0 && (
+              <div className="review-banner">
+                <div>
+                  <strong>Movimentos sem tipo financeiro precisam de revisão</strong>
+                  <p>
+                    {plan.totals.unclassifiedCount} movimentos ainda sem tipo. Entradas:{' '}
+                    {money(plan.totals.unclassifiedInflow)}; saídas:{' '}
+                    {money(plan.totals.unclassifiedOutflow)}. Esses movimentos ainda não entram nos
+                    totais de receita/despesa.
+                  </p>
+                </div>
+                <Link to="/transactions?type=unclassified">
                   Revisar movimentos <ArrowRight size={16} />
                 </Link>
               </div>

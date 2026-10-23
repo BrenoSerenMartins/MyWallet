@@ -221,3 +221,78 @@
     padding: 20px;
   }
 }
+.planning-comparison {
+  display: grid;
+  gap: 14px;
+  margin: 22px 0 0;
+}
+.planning-comparison > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+.planning-comparison dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.planning-comparison dd {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.planning-comparison > div:first-child dd {
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.planning-comparison dd.planning-unavailable {
+  font-size: 14px;
+  color: var(--muted);
+}
+.planning-metric .planning-difference {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 18px;
+  min-height: 36px;
+}
+@media (max-width: 700px) {
+  .planning-comparison dd {
+    font-size: 22px;
+  }
+  .planning-comparison > div:first-child dd {
+    font-size: 18px;
+  }
+}
+
+.comparison-metric .planning-difference.negative-text {
+  color: var(--negative);
+}
+.comparison-metric .planning-difference.positive-text {
+  color: var(--positive);
+}
+@media (max-width: 700px) {
+  .planning-comparison {
+    margin-top: 18px;
+    gap: 14px;
+  }
+  .planning-comparison > div {
+    display: block;
+  }
+  .planning-comparison dt {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+  .planning-comparison dd,
+  .planning-comparison > div:first-child dd {
+    white-space: nowrap;
+    font-size: clamp(16px, 5vw, 22px);
+  }
+  .planning-comparison dd.planning-unavailable {
+    white-space: normal;
+    font-size: 13px;
+  }
+}

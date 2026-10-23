@@ -8,40 +8,76 @@ export function PlanningSummary({ plan }: { plan: MonthlyPlan }) {
     {
       label: 'Receitas do mês',
       Icon: ArrowDownLeft,
-      value: display(t.plannedIncome),
-      caption: `Recebido: ${money(t.actualIncome)}`,
+      planned: t.plannedIncome,
+      actual: t.actualIncome,
+      difference: t.incomeDifference,
+      kind: 'income',
     },
     {
       label: 'Orçamento de despesas',
       Icon: ArrowUpRight,
-      value: display(t.plannedExpense),
-      caption: `Realizado: ${money(t.actualExpense)}`,
+      planned: t.plannedExpense,
+      actual: t.actualExpense,
+      difference: t.expenseDifference,
+      kind: 'expense',
     },
     {
-      label: 'Resultado previsto',
+      label: 'Resultado do mês',
       Icon: Scale,
-      value: display(t.plannedResult),
-      caption: `Resultado registrado: ${money(t.actualResult)}`,
-    },
-    {
-      label: 'Após aporte planejado',
-      Icon: PiggyBank,
-      value: display(t.afterContribution),
-      caption: `Aporte previsto: ${display(plan.contribution)}`,
+      planned: t.plannedResult,
+      actual: t.actualResult,
+      difference: t.resultDifference,
+      kind: 'result',
     },
   ];
   return (
     <section className="planning-metrics" aria-label="Resumo do planejamento">
-      {metrics.map(({ label, Icon, value, caption }) => (
-        <article className="panel planning-metric" key={label}>
+      {metrics.map(({ label, Icon, planned, actual, difference, kind }) => (
+        <article className="panel planning-metric comparison-metric" key={kind} aria-label={label}>
           <span>
             <Icon size={17} />
             {label}
           </span>
-          <strong>{value}</strong>
-          <p>{caption}</p>
+          <dl className="planning-comparison">
+            <div>
+              <dt>Previsto</dt>
+              <dd>{display(planned)}</dd>
+            </div>
+            <div>
+              <dt>Realizado</dt>
+              <dd>{money(actual)}</dd>
+            </div>
+          </dl>
+          <p
+            className={`planning-difference ${difference == null ? '' : difference < 0 ? 'negative-text' : difference > 0 ? 'positive-text' : ''}`}
+          >
+            {difference == null
+              ? 'Sem previsão para comparar'
+              : difference === 0
+                ? 'Dentro do previsto'
+                : kind === 'expense'
+                  ? `${money(Math.abs(difference))} ${difference < 0 ? 'acima do orçamento' : 'disponíveis no orçamento'}`
+                  : `${money(Math.abs(difference))} ${difference < 0 ? 'abaixo' : 'acima'} do previsto`}
+          </p>
         </article>
       ))}
+      <article className="panel planning-metric comparison-metric" aria-label="Aporte planejado">
+        <span>
+          <PiggyBank size={17} />
+          Aporte planejado
+        </span>
+        <dl className="planning-comparison">
+          <div>
+            <dt>Previsto</dt>
+            <dd>{display(plan.contribution)}</dd>
+          </div>
+          <div>
+            <dt>Realizado</dt>
+            <dd className="planning-unavailable">Não identificado</dd>
+          </div>
+        </dl>
+        <p>Resultado previsto após aporte: {display(t.afterContribution)}</p>
+      </article>
     </section>
   );
 }

@@ -10,7 +10,7 @@ O projeto está em fase de **piloto**. O dashboard mostra os saldos das contas c
 
 - **Espaços financeiros:** seleção em cards, criação com nome, descrição e cor, e dados separados por espaço.
 - **Contas:** instituições, saldo inicial com data de referência e acompanhamento do saldo registrado.
-- **Planejamento mensal:** receitas/despesas previstas por categoria, comparação com o realizado, intenção de aporte, notas e cópia revisada do mês anterior.
+- **Planejamento mensal:** receitas/despesas previstas por categoria, cards com previsto, realizado e diferença; lançamentos sem categoria incluídos em Outros, intenção de aporte, notas e cópia revisada do mês anterior.
 - **Grupos e categorias:** organize Casa → Luz/Água e Alimentação → Mercado/Comer fora; abas de grupos com Geral primeiro, lista compacta de categorias, busca, edição e exclusão revisada. O grupo padrão Geral recebe categorias ainda não organizadas.
 - **Movimentações:** receitas, despesas, categorias agrupadas, filtros recolhíveis, abas por tipo, correções e estornos.
 - **Transferências:** lançamento das duas movimentações entre contas na mesma transação.

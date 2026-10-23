@@ -130,6 +130,9 @@ describe('Monthly planning financial invariants', () => {
       plannedExpense: null,
       plannedResult: null,
       afterContribution: null,
+      incomeDifference: null,
+      expenseDifference: null,
+      resultDifference: null,
       actualIncome: 100000,
       actualExpense: 26000,
       actualResult: 74000,
@@ -143,6 +146,14 @@ describe('Monthly planning financial invariants', () => {
     const before = await db.forUser(db.user, () => accounts.list());
     const saved = await db.forUser(db.user, () => planning.save('2026-02', input()));
     expect(saved.version).toBe(1);
+    expect(
+      saved.lines.find((line) => line.categoryId === null && line.type === 'expense'),
+    ).toMatchObject({ name: 'Outros', groupName: 'Outros', actual: 1000, transactionCount: 1 });
+    expect(saved.totals).toMatchObject({
+      incomeDifference: -20000,
+      expenseDifference: 4000,
+      resultDifference: -16000,
+    });
     expect(saved.totals).toMatchObject({
       plannedIncome: 120000,
       plannedExpense: 30000,
@@ -279,5 +290,69 @@ describe('Monthly planning financial invariants', () => {
         lines: [{ categoryId: income, amount: 1, owner: 'fake' }],
       }),
     ).rejects.toThrow();
+  });
+});
+
+it('counts uncategorized income and expenses exactly once and preserves totals when they receive a category', async () => {
+  await db.forUser(db.user, async () => {
+    const received = await ledger.create({
+      accountId: account,
+      amount: 10000,
+      transactionDate: '2026-04-03',
+      description: 'Uncategorized receipt',
+      transactionType: 'income',
+    });
+    const paid = await ledger.create({
+      accountId: account,
+      amount: -2500,
+      transactionDate: '2026-04-03',
+      description: 'Uncategorized expense',
+      transactionType: 'expense',
+    });
+    const before = await planning.summary('2026-04');
+    expect(before.totals).toMatchObject({
+      actualIncome: 10000,
+      actualExpense: 2500,
+      actualResult: 7500,
+      missingCategoryCount: 2,
+    });
+    expect(before.lines.filter((line) => line.categoryId === null)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Outros', type: 'income', actual: 10000 }),
+        expect.objectContaining({ name: 'Outros', type: 'expense', actual: 2500 }),
+      ]),
+    );
+    await ledger.update(
+      received.id,
+      {
+        accountId: account,
+        categoryId: income,
+        amount: 10000,
+        transactionDate: '2026-04-03',
+        description: 'Uncategorized receipt',
+        transactionType: 'income',
+      },
+      String(received.version),
+    );
+    await ledger.update(
+      paid.id,
+      {
+        accountId: account,
+        categoryId: expense,
+        amount: -2500,
+        transactionDate: '2026-04-03',
+        description: 'Uncategorized expense',
+        transactionType: 'expense',
+      },
+      String(paid.version),
+    );
+    const after = await planning.summary('2026-04');
+    expect(after.totals).toMatchObject({
+      actualIncome: 10000,
+      actualExpense: 2500,
+      actualResult: 7500,
+      missingCategoryCount: 0,
+    });
+    expect(after.lines.filter((line) => line.categoryId === null)).toEqual([]);
   });
 });

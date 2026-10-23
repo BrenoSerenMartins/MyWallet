@@ -72,3 +72,5 @@ Account resources add canEditOpeningPosition. Import previews add canAdjustOpeni
 POST /v1/imports/:id/reprocess accepts version and optional resetClassification. POST /v1/imports/:id/reprocess-file accepts multipart file/version/resetClassification with existing 10 MB and bounded worker limits. Both return the refreshed preview and require owned workspace scope; confirmed/reversed batches return 409, stale versions 412 and wrong original hashes 422. Preview adds canReprocess. Neither endpoint confirms financial entries.
 
 DELETE /v1/categories/:id archives the owned category and returns id/archived. Repeat requests are idempotent; cross-owner/workspace IDs return 404. Archived categories disappear from active category choices and fail new-entry validation, while existing ledger/planning records retain their references.
+
+Planning totals add nullable incomeDifference, expenseDifference and resultDifference (income/result actual-minus-plan; expense plan-minus-actual). Virtual unassigned planning rows are labeled Outros with categoryId/groupId null and remain included in actual totals. No new category records or schema changes.

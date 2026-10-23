@@ -137,3 +137,6 @@ Statements predating the account opening may be uploaded and retained in history
 
 ## Cofrinhos and account reserves
 Moving owned cash into a bank cofrinho reduces spendable account cash but is an internal transfer, not consumption; withdrawal reverses that direction and yield is a separate income event when explicitly identified. Consolidated owned wealth must count the account and tracked reserve once each. The current Mercado Pago mapper recognizes reserve movements as unmatched transfers; it does not automatically create or value individual cofrinhos. Real paired destination matching must avoid duplicating an independently imported reserve movement and requires explicit source evidence.
+
+## Unassigned actuals in monthly planning
+All confirmed typed income/expense flows contribute to monthly actual totals regardless of category. Represent unassigned amounts as a virtual Outros line per type, not a persistent category assignment; assigning a category later moves that amount out of Outros without changing aggregate totals. Planned amounts remain the user's targets, distinct from actuals; lack of a target does not imply a zero budget. Transfers/reversals stay excluded and unknown financial types remain visible as unresolved.

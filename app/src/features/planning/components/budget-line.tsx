@@ -9,7 +9,11 @@ export function BudgetLine({ line, type }: { line: PlanningLine; type: 'income' 
         <div>
           <strong>{line.name}</strong>
           <small>
-            {line.archived ? 'Arquivada · ' : ''}
+            {line.categoryId === null
+              ? 'Sem categoria · já incluídos · '
+              : line.archived
+                ? 'Arquivada · '
+                : ''}
             {line.transactionCount} lançamentos
           </small>
         </div>

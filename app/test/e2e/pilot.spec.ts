@@ -198,6 +198,9 @@ function monthlyPlan(month: string, version = 1) {
       },
     ],
     totals: {
+      incomeDifference: -20000,
+      expenseDifference: -5000,
+      resultDifference: -25000,
       plannedIncome: 300000,
       plannedExpense: 50000,
       actualIncome: 280000,
@@ -1225,3 +1228,71 @@ test('category deletion asks for confirmation and removes the option without del
   );
   expect(deleted).toBe(true);
 });
+
+for (const width of [390, 1440])
+  test(`planning includes Outros in actual totals and compares planned versus actual at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    const plan = monthlyPlan('2026-10');
+    const others = {
+      categoryId: null,
+      groupId: null,
+      groupName: 'Outros',
+      name: 'Outros',
+      type: 'expense',
+      color: '#f28a97',
+      planned: null,
+      actual: 5000,
+      difference: null,
+      transactionCount: 197,
+      archived: false,
+    };
+    const payload = {
+      ...plan,
+      lines: [...plan.lines, others],
+      totals: {
+        ...plan.totals,
+        actualExpense: 60000,
+        actualResult: 220000,
+        missingCategoryCount: 197,
+        expenseDifference: -10000,
+        resultDifference: -30000,
+      },
+    };
+    await page.route('**/v1/planning/**', (route) => route.fulfill({ json: payload }));
+    await page.goto('/planning');
+    await expect(
+      page.getByText('Sem categoria também entra na conta', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Seu realizado ainda precisa de revisão', { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(/197 lançamentos estão em Outros e já fazem parte do realizado/),
+    ).toBeVisible();
+    const expenses = page.getByRole('article', { name: 'Orçamento de despesas', exact: true });
+    await expect(expenses.getByText('R$ 500,00', { exact: true })).toBeVisible();
+    await expect(expenses.getByText('R$ 600,00', { exact: true })).toBeVisible();
+    await expect(expenses.getByText('R$ 100,00 acima do orçamento', { exact: true })).toBeVisible();
+    const incomeCard = page.getByRole('article', { name: 'Receitas do mês', exact: true });
+    await expect(incomeCard.getByText('R$ 3.000,00', { exact: true })).toBeVisible();
+    await expect(incomeCard.getByText('R$ 2.800,00', { exact: true })).toBeVisible();
+    await expect(
+      page
+        .getByRole('article', { name: 'Aporte planejado', exact: true })
+        .getByText('Não identificado', { exact: true }),
+    ).toBeVisible();
+    const line = page
+      .locator('.budget-line')
+      .filter({ has: page.getByText('Outros', { exact: true }) });
+    await expect(line.getByText('R$ 50,00', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({
+      path: `/tmp/mywallet-planning-comparison-${width}.png`,
+      fullPage: true,
+    });
+  });

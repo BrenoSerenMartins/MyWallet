@@ -631,6 +631,9 @@ export interface components {
       archived: boolean;
     };
     PlanningTotalsDto: {
+      incomeDifference: number | null;
+      expenseDifference: number | null;
+      resultDifference: number | null;
       plannedIncome: number | null;
       plannedExpense: number | null;
       actualIncome: number;

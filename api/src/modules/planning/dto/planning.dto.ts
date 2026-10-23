@@ -50,6 +50,9 @@ export class PlanningLineResourceDto {
   @ApiProperty({ type: Boolean }) archived!: boolean;
 }
 export class PlanningTotalsDto {
+  @ApiProperty({ type: Number, nullable: true }) incomeDifference!: number | null;
+  @ApiProperty({ type: Number, nullable: true }) expenseDifference!: number | null;
+  @ApiProperty({ type: Number, nullable: true }) resultDifference!: number | null;
   @ApiProperty({ type: Number, nullable: true }) plannedIncome!: number | null;
   @ApiProperty({ type: Number, nullable: true }) plannedExpense!: number | null;
   @ApiProperty({ type: Number }) actualIncome!: number;

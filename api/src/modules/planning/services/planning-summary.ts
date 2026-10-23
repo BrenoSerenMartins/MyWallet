@@ -38,17 +38,17 @@ export function planningSummary(
   });
   for (const type of ['income', 'expense'] as const) {
     const unmatched = actuals.filter(
-      (a) => a.type === type && !categories.some((c) => c.id === a.categoryId),
+      (a) => a.type === type && !categories.some((c) => c.id === a.categoryId && c.type === a.type),
     );
     if (unmatched.length)
       lines.push({
         categoryId: null,
         groupId: null,
-        groupName: null,
+        groupName: 'Outros',
         difference: null,
-        name: 'Sem categoria',
+        name: 'Outros',
         type,
-        color: '#8296a0',
+        color: type === 'expense' ? '#f28a97' : '#5ee9b5',
         archived: false,
         planned: null,
         actual: sum(unmatched.map((a) => Math.abs(a.amount))),
@@ -71,6 +71,11 @@ export function planningSummary(
     contribution: plan?.contribution ?? null,
     lines,
     totals: {
+      incomeDifference: plannedIncome === null ? null : exactAmount(actualIncome - plannedIncome),
+      expenseDifference:
+        plannedExpense === null ? null : exactAmount(plannedExpense - actualExpense),
+      resultDifference:
+        plannedResult === null ? null : exactAmount(actualIncome - actualExpense - plannedResult),
       plannedIncome,
       plannedExpense,
       actualIncome,
