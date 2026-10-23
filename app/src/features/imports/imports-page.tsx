@@ -1,6 +1,8 @@
 import { CheckCircle2 } from 'lucide-react';
 import { ImportReview } from './components/import-review';
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useRef, useState } from 'react';
+import { useStatementUploads } from './hooks/use-statement-uploads';
+import { UploadResults } from './components/upload-results';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, ChevronRight, FileText, Upload } from 'lucide-react';
@@ -15,8 +17,11 @@ export function ImportsPage() {
   const client = useQueryClient();
   const input = useRef<HTMLInputElement>(null);
   const [account, setAccount] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const uploads = useStatementUploads((rows) => {
+    void client.invalidateQueries({ queryKey: [session?.user.id, 'imports'] });
+    if (rows.length === 1 && rows[0].result) navigate('/imports/' + rows[0].result.id);
+  });
+  const busy = uploads.busy;
   const accounts = useQuery({
     queryKey: [session?.user.id, 'accounts'],
     queryFn: () => request<Account[]>('/accounts'),
@@ -31,29 +36,7 @@ export function ImportsPage() {
     queryFn: () => request<ImportBatch>(`/imports/${importId}`),
     enabled: !!importId,
   });
-  async function upload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setError('');
-    if (file.size > 10 * 1024 * 1024) {
-      setError('O arquivo deve ter até 10 MB.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const form = new FormData();
-      form.set('accountId', account);
-      form.set('file', file);
-      const result = await request<ImportBatch>('/imports', { method: 'POST', body: form });
-      void client.invalidateQueries();
-      navigate('/imports/' + result.id);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não foi possível importar.');
-    } finally {
-      setBusy(false);
-      event.target.value = '';
-    }
-  }
+
   return (
     <div className="page-enter">
       <div className="page-heading">
@@ -73,11 +56,6 @@ export function ImportsPage() {
           </Link>
         )}
       </div>
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
       {importId ? (
         batch.isPending ? (
           <Loading />
@@ -103,8 +81,8 @@ export function ImportsPage() {
                 sem começar do zero.
               </h2>
               <p>
-                Envie o extrato de conta em PDF, CSV ou XLSX. Vamos organizar os dados e conferir os
-                saldos para você revisar.
+                Envie um ou vários extratos de conta em PDF, CSV ou XLSX. Vamos organizar os dados e
+                conferir os saldos para você revisar.
               </p>
               {accounts.isPending ? (
                 <Loading />
@@ -114,7 +92,11 @@ export function ImportsPage() {
                 <>
                   <label>
                     Conta de destino
-                    <select value={account} onChange={(e) => setAccount(e.target.value)}>
+                    <select
+                      value={account}
+                      disabled={busy}
+                      onChange={(e) => setAccount(e.target.value)}
+                    >
                       <option value="">Selecione sua conta Mercado Pago</option>
                       {accounts.data
                         .filter((a) => a.institution === 'mercado_pago')
@@ -128,19 +110,26 @@ export function ImportsPage() {
                   <input
                     ref={input}
                     type="file"
+                    multiple
+                    disabled={busy}
                     accept="application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.pdf,.csv,.xlsx"
                     hidden
-                    onChange={(e) => void upload(e)}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      e.target.value = '';
+                      void uploads.upload(files, account);
+                    }}
                   />
                   <Button
                     disabled={!account || busy || !navigator.onLine}
                     onClick={() => input.current?.click()}
                   >
                     <Upload size={18} />
-                    {busy ? 'Lendo e conferindo o extrato…' : 'Selecionar extrato'}
+                    {busy ? 'Processando arquivos…' : 'Selecionar extratos'}
                   </Button>
                   <span className="field-help">
-                    PDF com texto, CSV UTF-8 ou XLSX · até 10 MB, 100 páginas ou 10.000 movimentos
+                    Selecione vários arquivos de uma vez. PDF com texto, CSV UTF-8 ou XLSX · até 10
+                    MB por arquivo, 100 páginas ou 10.000 movimentos
                   </span>
                 </>
               ) : (
@@ -193,6 +182,12 @@ export function ImportsPage() {
               </div>
             </aside>
           </div>
+          <UploadResults
+            rows={uploads.rows}
+            busy={busy}
+            stopping={uploads.stopping}
+            onStop={uploads.stop}
+          />
           <section className="panel history-panel">
             <div className="section-heading">
               <div>

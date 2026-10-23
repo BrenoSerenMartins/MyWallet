@@ -58,8 +58,8 @@ export function Application() {
                     <Route path="accounts/:accountId" element={<TransactionsPage />} />
                     <Route path="transactions" element={<TransactionsPage />} />
                     <Route path="planning" element={<PlanningPage />} />
-                    <Route path="imports" element={<ImportsPage />} />
-                    <Route path="imports/:importId" element={<ImportsPage />} />
+                    <Route path="imports" element={<ImportsPage key="upload" />} />
+                    <Route path="imports/:importId" element={<ImportsPage key="review" />} />
                     <Route path="settings/*" element={<SettingsPage />} />
                   </Route>
                 </Route>

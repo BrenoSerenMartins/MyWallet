@@ -113,7 +113,7 @@ for (const width of [360, 390, 768, 1440])
     await page.goto('/imports');
     await expect(page.getByRole('heading', { name: /Seu Mercado Pago/ })).toBeVisible();
     await page.getByLabel('Conta de destino').selectOption(account.id);
-    await expect(page.getByRole('button', { name: 'Selecionar extrato' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Selecionar extratos' })).toBeEnabled();
     await page.goto('/settings');
     await expect(page.getByRole('heading', { name: 'Preferências', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -378,16 +378,140 @@ test('CSV statement upload uses the same review and history workflow', async ({ 
   await page.goto('/imports');
   await page.getByLabel('Conta de destino').selectOption(account.id);
   await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.csv.*\.xlsx/);
-  await page
-    .locator('input[type=file]')
-    .setInputFiles({
-      name: 'synthetic.csv',
-      mimeType: 'text/csv',
-      buffer: Buffer.from(
-        'INITIAL_BALANCE;CREDITS;DEBITS;FINAL_BALANCE\n100,00;0,00;-10,00;90,00\n\nRELEASE_DATE;TRANSACTION_TYPE;REFERENCE_ID;TRANSACTION_NET_AMOUNT;PARTIAL_BALANCE\n01-10-2026;Pagamento;123456;-10,00;90,00',
-      ),
-    });
+  await page.locator('input[type=file]').setInputFiles({
+    name: 'synthetic.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(
+      'INITIAL_BALANCE;CREDITS;DEBITS;FINAL_BALANCE\n100,00;0,00;-10,00;90,00\n\nRELEASE_DATE;TRANSACTION_TYPE;REFERENCE_ID;TRANSACTION_NET_AMOUNT;PARTIAL_BALANCE\n01-10-2026;Pagamento;123456;-10,00;90,00',
+    ),
+  });
   await expect(page.getByRole('heading', { name: 'Revise seu extrato' })).toBeVisible();
   await expect(page.getByText(/Formato: CSV/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Salvar apenas como histórico' })).toBeVisible();
+});
+
+test('batch uploads run sequentially, keep successful files after errors and link repeated results', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 1000 });
+  const id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+  let count = 0,
+    active = 0,
+    maximum = 0;
+  let releaseFirst!: () => void;
+  const first = new Promise<void>((resolve) => {
+    releaseFirst = resolve;
+  });
+  await page.route('**/v1/imports', async (route) => {
+    if (route.request().method() !== 'POST') return route.fulfill({ json: [] });
+    count++;
+    active++;
+    maximum = Math.max(maximum, active);
+    expect(route.request().headers()['x-workspace-id']).toBe(workspace.id);
+    expect(route.request().postData()).toContain(account.id);
+    if (count === 1) await first;
+    active--;
+    if (count === 2)
+      return route.fulfill({ status: 422, json: { title: 'Relatório de teste não suportado.' } });
+    return route.fulfill({ status: 201, json: { id, status: 'draft' } });
+  });
+  await page.goto('/imports');
+  await page.getByLabel('Conta de destino').selectOption(account.id);
+  await page.locator('input[type=file]').setInputFiles([
+    { name: 'month.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-synthetic') },
+    {
+      name: 'invalid.xlsx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: Buffer.from('synthetic'),
+    },
+    { name: 'same-month.csv', mimeType: 'text/csv', buffer: Buffer.from('synthetic') },
+  ]);
+  await expect(page.getByText('Lendo e conferindo…', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Conta de destino')).toBeDisabled();
+  expect(count).toBe(1);
+  releaseFirst();
+  const results = page.getByRole('region', { name: 'Resultado do envio de extratos' });
+  await expect(
+    results.getByText('Relatório de teste não suportado.', { exact: true }),
+  ).toBeVisible();
+  await expect(results.getByText('Mesmo extrato de outro arquivo deste lote')).toBeVisible();
+  await expect(results.getByRole('link', { name: 'Revisar', exact: true })).toHaveCount(2);
+  expect(count).toBe(3);
+  expect(maximum).toBe(1);
+  await expect(page).toHaveURL(/\/imports$/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '/tmp/mywallet-batch-390.png', fullPage: true });
+});
+
+test('stopping the queue finishes only the active file and skips the remaining files', async ({
+  page,
+}) => {
+  await signedIn(page);
+  let count = 0;
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/v1/imports', async (route) => {
+    if (route.request().method() !== 'POST') return route.fulfill({ json: [] });
+    count++;
+    await pending;
+    return route.fulfill({
+      status: 201,
+      json: { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', status: 'draft' },
+    });
+  });
+  await page.goto('/imports');
+  await page.getByLabel('Conta de destino').selectOption(account.id);
+  await page.locator('input[type=file]').setInputFiles(
+    ['first.csv', 'second.csv'].map((name) => ({
+      name,
+      mimeType: 'text/csv',
+      buffer: Buffer.from('synthetic'),
+    })),
+  );
+  await expect(page.getByText('Lendo e conferindo…', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Parar após este arquivo', exact: true }).click();
+  release();
+  await expect(page.getByText('Não enviado', { exact: true })).toBeVisible();
+  expect(count).toBe(1);
+  await expect(page.getByLabel('Conta de destino')).toBeEnabled();
+});
+
+test('leaving the upload screen stops subsequent submissions', async ({ page }) => {
+  await signedIn(page);
+  let requests = 0;
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/v1/imports', async (route) => {
+    if (route.request().method() !== 'POST') return route.fulfill({ json: [] });
+    requests++;
+    await pending;
+    return route.fulfill({ json: { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', status: 'draft' } });
+  });
+  await page.goto('/imports');
+  await page.getByLabel('Conta de destino').selectOption(account.id);
+  await page
+    .locator('input[type=file]')
+    .setInputFiles(
+      ['first.csv', 'second.csv'].map((name) => ({
+        name,
+        mimeType: 'text/csv',
+        buffer: Buffer.from('synthetic'),
+      })),
+    );
+  await expect(page.getByText('Lendo e conferindo…', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Minhas contas', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Minhas contas', exact: true })).toBeVisible();
+  const response = page.waitForResponse(
+    (response) => response.url().endsWith('/v1/imports') && response.request().method() === 'POST',
+  );
+  release();
+  await (await response).finished();
+  await page.waitForTimeout(200);
+  expect(requests).toBe(1);
+  await expect(page).toHaveURL(/\/accounts$/);
 });
