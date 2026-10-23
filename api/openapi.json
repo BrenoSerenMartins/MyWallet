@@ -1323,9 +1323,94 @@
         },
         "required": ["version", "sourceVersion"]
       },
+      "SettlementMetadataResourceDto": {
+        "type": "object",
+        "properties": {
+          "eventType": {
+            "type": "string"
+          },
+          "transactionTimestamp": {
+            "type": "string"
+          },
+          "settlementTimestamp": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "grossAmount": {
+            "type": "number"
+          },
+          "netAmount": {
+            "type": "number"
+          },
+          "realAmount": {
+            "type": "number",
+            "nullable": true
+          },
+          "fees": {
+            "type": "number",
+            "nullable": true
+          },
+          "taxes": {
+            "type": "number",
+            "nullable": true
+          },
+          "paymentMethod": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethodType": {
+            "type": "string",
+            "nullable": true
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true
+          },
+          "installments": {
+            "type": "number",
+            "nullable": true
+          },
+          "installmentNumber": {
+            "type": "number",
+            "nullable": true
+          },
+          "lastFourDigits": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "eventType",
+          "transactionTimestamp",
+          "settlementTimestamp",
+          "currency",
+          "grossAmount",
+          "netAmount",
+          "realAmount",
+          "fees",
+          "taxes",
+          "paymentMethod",
+          "paymentMethodType",
+          "brand",
+          "installments",
+          "installmentNumber",
+          "lastFourDigits"
+        ]
+      },
       "ImportItemResourceDto": {
         "type": "object",
         "properties": {
+          "metadata": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SettlementMetadataResourceDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -1361,6 +1446,7 @@
           }
         },
         "required": [
+          "metadata",
           "id",
           "sourceRow",
           "transactionDate",
@@ -1376,6 +1462,13 @@
       "ImportBatchResourceDto": {
         "type": "object",
         "properties": {
+          "reportType": {
+            "type": "string",
+            "enum": ["account_statement", "settlement"]
+          },
+          "canIntegrate": {
+            "type": "boolean"
+          },
           "sourceFormat": {
             "type": "string",
             "enum": ["pdf", "csv", "xlsx"]
@@ -1412,10 +1505,12 @@
             "type": "number"
           },
           "openingBalance": {
-            "type": "number"
+            "type": "number",
+            "nullable": true
           },
           "closingBalance": {
-            "type": "number"
+            "type": "number",
+            "nullable": true
           },
           "items": {
             "type": "array",
@@ -1425,6 +1520,8 @@
           }
         },
         "required": [
+          "reportType",
+          "canIntegrate",
           "sourceFormat",
           "accountOpeningDate",
           "statementStartDate",

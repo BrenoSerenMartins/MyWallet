@@ -558,7 +558,25 @@ export interface components {
       version: number;
       sourceVersion: number;
     };
+    SettlementMetadataResourceDto: {
+      eventType: string;
+      transactionTimestamp: string;
+      settlementTimestamp: string;
+      currency: string;
+      grossAmount: number;
+      netAmount: number;
+      realAmount: number | null;
+      fees: number | null;
+      taxes: number | null;
+      paymentMethod: string | null;
+      paymentMethodType: string | null;
+      brand: string | null;
+      installments: number | null;
+      installmentNumber: number | null;
+      lastFourDigits: string | null;
+    };
     ImportItemResourceDto: {
+      metadata: components['schemas']['SettlementMetadataResourceDto'] | null;
       id: string;
       sourceRow: number;
       transactionDate: string;
@@ -573,6 +591,9 @@ export interface components {
     };
     ImportBatchResourceDto: {
       /** @enum {string} */
+      reportType: 'account_statement' | 'settlement';
+      canIntegrate: boolean;
+      /** @enum {string} */
       sourceFormat: 'pdf' | 'csv' | 'xlsx';
       accountOpeningDate: string;
       statementStartDate: string | null;
@@ -584,8 +605,8 @@ export interface components {
       fileName: string;
       status: string;
       version: number;
-      openingBalance: number;
-      closingBalance: number;
+      openingBalance: number | null;
+      closingBalance: number | null;
       items: components['schemas']['ImportItemResourceDto'][];
     };
     ReviewItemDto: {

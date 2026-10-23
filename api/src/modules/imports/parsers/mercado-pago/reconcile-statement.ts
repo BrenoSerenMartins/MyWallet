@@ -4,6 +4,8 @@ export function reconcileStatement(
   statement: ParsedStatement,
   totals?: { credits: number; debits: number },
 ): ParsedStatement {
+  if (statement.openingBalance === null || statement.closingBalance === null)
+    throw new UnprocessableEntityException('Este relatório não fornece saldos para conciliação.');
   if (!statement.items.length || statement.items.length > 10000)
     throw new UnprocessableEntityException(
       'O extrato deve conter entre 1 e 10.000 movimentos legíveis.',
@@ -19,7 +21,7 @@ export function reconcileStatement(
       );
     previous = item.transactionDate;
     balance += BigInt(item.amount);
-    if (balance !== BigInt(item.balanceAfter))
+    if (item.balanceAfter === null || balance !== BigInt(item.balanceAfter))
       throw new UnprocessableEntityException(
         `O saldo não confere na linha de origem ${item.sourceRow}. Revise o arquivo.`,
       );

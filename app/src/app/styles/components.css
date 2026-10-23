@@ -1373,3 +1373,27 @@ button.transaction-row:hover {
     padding: 16px 17px;
   }
 }
+
+.settlement-details {
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.settlement-details summary {
+  cursor: pointer;
+  color: var(--accent);
+  white-space: normal;
+}
+.settlement-details dl {
+  white-space: normal;
+  max-width: 360px;
+}
+.settlement-details dt {
+  margin-top: 9px;
+  font-size: 9px;
+}
+.settlement-details dd {
+  margin: 3px 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}

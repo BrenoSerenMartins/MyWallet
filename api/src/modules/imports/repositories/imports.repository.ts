@@ -30,7 +30,8 @@ export class ImportsRepository {
       transactionDate: isoDate(r.transaction_date),
       description: r.description,
       amount: Number(r.amount_minor),
-      balanceAfter: Number(r.balance_after_minor),
+      balanceAfter: r.balance_after_minor === null ? null : Number(r.balance_after_minor),
+      metadata: Object.keys(r.report_metadata ?? {}).length ? r.report_metadata : null,
       sourceOperationId: r.source_operation_id,
       transactionType: r.transaction_type,
       selected: r.selected,
@@ -81,7 +82,7 @@ export class ImportsRepository {
   ) {
     const id = randomUUID();
     await this.db.query(
-      'INSERT INTO wallet.import_batches(id,user_id,account_id,file_hash,file_name,mapper_version,opening_balance_minor,closing_balance_minor) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+      'INSERT INTO wallet.import_batches(id,user_id,account_id,file_hash,file_name,mapper_version,opening_balance_minor,closing_balance_minor,report_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
       [
         id,
         this.db.userId,
@@ -91,13 +92,14 @@ export class ImportsRepository {
         version,
         statement.openingBalance,
         statement.closingBalance,
+        statement.reportType ?? 'account_statement',
       ],
     );
     return id;
   }
   async addItem(batchId: string, item: ImportEntry, duplicate: boolean) {
     await this.db.query(
-      'INSERT INTO wallet.import_items(id,user_id,batch_id,source_row,transaction_date,description,amount_minor,balance_after_minor,source_operation_id,transaction_type,duplicate_candidate,selected) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)',
+      'INSERT INTO wallet.import_items(id,user_id,batch_id,source_row,transaction_date,description,amount_minor,balance_after_minor,source_operation_id,transaction_type,duplicate_candidate,selected,report_metadata) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)',
       [
         randomUUID(),
         this.db.userId,
@@ -111,6 +113,7 @@ export class ImportsRepository {
         item.transactionType,
         duplicate,
         !duplicate,
+        JSON.stringify(item.metadata ?? {}),
       ],
     );
   }

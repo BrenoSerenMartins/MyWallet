@@ -77,23 +77,27 @@ export class ImportsService {
         ? await this.ledgerReads.balanceBefore(account.id, statementStartDate)
         : 0);
     return {
-      sourceFormat: b.mapper_version.includes('account-csv/')
+      sourceFormat: b.mapper_version.includes('-csv/')
         ? 'csv'
         : b.mapper_version.includes('account-xlsx/')
           ? 'xlsx'
           : 'pdf',
+      reportType: b.report_type,
+      canIntegrate: b.report_type === 'account_statement',
       accountOpeningDate: account.openingDate,
       statementStartDate,
       openingDateMismatch: !!statementStartDate && statementStartDate < account.openingDate,
       recordedOpeningBalance,
-      openingMismatch: recordedOpeningBalance !== Number(b.opening_balance_minor),
+      openingMismatch:
+        b.opening_balance_minor !== null &&
+        recordedOpeningBalance !== Number(b.opening_balance_minor),
       id: b.id,
       accountId: b.account_id,
       fileName: b.file_name,
       status: b.status,
       version: b.version,
-      openingBalance: Number(b.opening_balance_minor),
-      closingBalance: Number(b.closing_balance_minor),
+      openingBalance: b.opening_balance_minor === null ? null : Number(b.opening_balance_minor),
+      closingBalance: b.closing_balance_minor === null ? null : Number(b.closing_balance_minor),
       expiresAt: b.expires_at,
       items,
     };
@@ -110,7 +114,7 @@ export class ImportsService {
       accountId,
       hash,
       fileName,
-      mercadoPagoMapperVersion(statement.sourceFormat ?? 'pdf'),
+      mercadoPagoMapperVersion(statement.sourceFormat ?? 'pdf', statement.reportType),
       statement,
     );
     const signatures = new Set<string>();
@@ -131,6 +135,7 @@ export class ImportsService {
   async review(id: string, itemId: string, input: ReviewItemDto, version: string) {
     const batch = await this.get(id, true);
     this.assertDraft(batch);
+    this.assertAccountStatement(batch.report_type);
     requireVersion(batch.version, version);
     const items = await this.repository.items(id);
     const item = items.find((i) => i.id === itemId);
@@ -147,6 +152,7 @@ export class ImportsService {
   async classify(id: string, version: number) {
     const batch = await this.get(id, true);
     this.assertDraft(batch);
+    this.assertAccountStatement(batch.report_type);
     requireVersion(batch.version, version);
     for (const item of await this.repository.items(id)) {
       if (item.transactionType === 'unclassified')
@@ -165,6 +171,7 @@ export class ImportsService {
       const batch = await this.get(id, true);
       if (batch.status === 'confirmed') return { id, status: 'confirmed' };
       this.assertDraft(batch);
+      this.assertAccountStatement(batch.report_type);
       requireVersion(batch.version, version);
       const preview = await this.preview(id);
       if (preview.openingMismatch || preview.openingDateMismatch)
@@ -203,6 +210,12 @@ export class ImportsService {
       return { id, status: 'confirmed', count: selected.length };
     });
   }
+  private assertAccountStatement(reportType: string) {
+    if (reportType !== 'account_statement')
+      throw new ConflictException(
+        'Este relatório é apenas para consulta e não fornece saldos para conciliação. Use um extrato de conta para integrar os movimentos.',
+      );
+  }
   async retainHistory(id: string, version: number) {
     const batch = await this.get(id, true);
     if (batch.status === 'history') return this.preview(id);
@@ -216,6 +229,7 @@ export class ImportsService {
   async reopenHistory(id: string, version: number) {
     const batch = await this.get(id, true);
     requireVersion(batch.version, version);
+    this.assertAccountStatement(batch.report_type);
     if (batch.status !== 'history')
       throw new ConflictException('Somente um extrato salvo para consulta pode voltar à revisão.');
     await this.repository.reopenHistory(id);

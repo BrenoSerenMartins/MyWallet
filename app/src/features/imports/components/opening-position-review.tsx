@@ -25,9 +25,10 @@ export function OpeningPositionReview({
         {batch.openingDateMismatch && batch.statementStartDate
           ? `O extrato começa em ${shortDate(batch.statementStartDate)}, antes da posição inicial da conta (${shortDate(batch.accountOpeningDate)}). `
           : ''}
-        O extrato começa com {money(batch.openingBalance)}; a posição registrada é{' '}
-        {money(batch.recordedOpeningBalance)}. Você pode ajustar a posição de uma conta sem
-        movimentos ou salvar o arquivo apenas para consulta.
+        O extrato começa com{' '}
+        {batch.openingBalance === null ? 'Não informado' : money(batch.openingBalance)}; a posição
+        registrada é {money(batch.recordedOpeningBalance)}. Você pode ajustar a posição de uma conta
+        sem movimentos ou salvar o arquivo apenas para consulta.
       </p>
       <Button className="secondary compact" onClick={() => setOpen(true)}>
         Revisar posição inicial
@@ -55,7 +56,7 @@ export function OpeningPositionReview({
                 account={{
                   ...query.data,
                   openingDate: batch.statementStartDate ?? query.data.openingDate,
-                  openingBalance: batch.openingBalance,
+                  openingBalance: batch.openingBalance ?? query.data.openingBalance,
                 }}
                 onSaved={() => {
                   setOpen(false);

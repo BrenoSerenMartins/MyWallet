@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { SettlementDetails } from './settlement-details';
 import { OpeningPositionReview } from './opening-position-review';
 import { useImportReview } from '../hooks/use-import-review';
-import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import type { ImportBatch, ImportItem } from '../../../shared/api/resources';
 import { money, shortDate } from '../../../shared/formatting/money';
 import { Button } from '../../../shared/ui/primitives';
@@ -26,6 +27,7 @@ export function ImportReview({
     retainHistory,
     reopenHistory,
   } = useImportReview(batch, refresh);
+  const canIntegrate = batch.canIntegrate !== false;
   const [search, setSearch] = useState('');
   const items = batch.items.filter((item) =>
     `${item.description} ${item.transactionDate} ${item.sourceOperationId ?? ''}`
@@ -35,7 +37,8 @@ export function ImportReview({
   return (
     <>
       <p className="field-help">
-        Formato: {batch.sourceFormat?.toUpperCase() ?? 'PDF'} · Extrato de conta Mercado Pago.
+        Formato: {batch.sourceFormat?.toUpperCase() ?? 'PDF'} ·{' '}
+        {canIntegrate ? 'Extrato de conta Mercado Pago.' : 'Relatório de liquidações Mercado Pago.'}{' '}
         Referências, datas e valores são preservados para revisar possíveis duplicidades entre
         formatos.
       </p>
@@ -46,28 +49,47 @@ export function ImportReview({
         </div>
         <div className="panel">
           <span>Saldo inicial do extrato</span>
-          <strong>{money(batch.openingBalance)}</strong>
+          <strong>
+            {batch.openingBalance === null ? 'Não informado' : money(batch.openingBalance)}
+          </strong>
         </div>
         <div className="panel">
           <span>Saldo final do extrato</span>
-          <strong>{money(batch.closingBalance)}</strong>
+          <strong>
+            {batch.closingBalance === null ? 'Não informado' : money(batch.closingBalance)}
+          </strong>
         </div>
         <div className="panel">
           <span>Conferência do arquivo</span>
-          <strong className="positive-text">
-            <CheckCircle2 size={18} /> Saldos conferidos
+          <strong className={canIntegrate ? 'positive-text' : 'muted'}>
+            {canIntegrate ? <CheckCircle2 size={18} /> : <Info size={18} />}{' '}
+            {canIntegrate ? 'Saldos conferidos' : 'Sem saldos no relatório'}
           </strong>
         </div>
       </section>
-      {batch.status === 'draft' && (batch.openingMismatch || batch.openingDateMismatch) && (
-        <OpeningPositionReview batch={batch} refresh={refresh} />
+      {batch.status === 'draft' &&
+        canIntegrate &&
+        (batch.openingMismatch || batch.openingDateMismatch) && (
+          <OpeningPositionReview batch={batch} refresh={refresh} />
+        )}
+      {!canIntegrate && (
+        <div className="review-banner">
+          <div>
+            <strong>Liquidações · somente para consulta</strong>
+            <p>
+              Este relatório informa eventos e valores líquidos, mas não fornece saldos para
+              conciliação. Ele não cria lançamentos nem altera gastos, patrimônio ou planejamento.
+              Use um extrato de conta para integrar os movimentos.
+            </p>
+          </div>
+        </div>
       )}
       {batch.status === 'draft' && (
         <div className="review-banner">
           <div>
             <strong>Quer manter este extrato apenas para consulta?</strong>
             <p>
-              Guarda os movimentos do arquivo sem mudar saldos, gastos ou planejamento. O PDF
+              Guarda os movimentos do arquivo sem mudar saldos, gastos ou planejamento. O arquivo
               original não é armazenado.
             </p>
           </div>
@@ -89,16 +111,18 @@ export function ImportReview({
               descrição na busca abaixo.
             </p>
           </div>
-          <Button
-            className="secondary"
-            disabled={busy || !navigator.onLine}
-            onClick={() => void reopenHistory()}
-          >
-            Revisar para integrar às contas
-          </Button>
+          {canIntegrate && (
+            <Button
+              className="secondary"
+              disabled={busy || !navigator.onLine}
+              onClick={() => void reopenHistory()}
+            >
+              Revisar para integrar às contas
+            </Button>
+          )}
         </div>
       )}
-      {batch.status === 'draft' ? (
+      {batch.status === 'draft' && canIntegrate ? (
         <div className="review-banner">
           <div>
             <strong>
@@ -115,7 +139,7 @@ export function ImportReview({
             </Button>
           )}
         </div>
-      ) : (
+      ) : batch.status !== 'draft' ? (
         <div className="review-banner">
           <strong>
             {batch.status === 'confirmed'
@@ -130,7 +154,7 @@ export function ImportReview({
             </Button>
           )}
         </div>
-      )}
+      ) : null}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -171,13 +195,14 @@ export function ImportReview({
                     aria-label={`Selecionar movimento ${item.sourceRow}`}
                     type="checkbox"
                     checked={item.selected}
-                    disabled={busy || batch.status !== 'draft'}
+                    disabled={busy || batch.status !== 'draft' || !canIntegrate}
                     onChange={(e) => void review(item, { selected: e.target.checked })}
                   />
                 </td>
                 <td>
                   <span className="review-date">{shortDate(item.transactionDate)}</span>
                   <strong>{item.description}</strong>
+                  <SettlementDetails metadata={item.metadata} />
                   {item.duplicateCandidate && (
                     <span className="badge warning">Possível duplicidade</span>
                   )}
@@ -186,7 +211,7 @@ export function ImportReview({
                   <select
                     aria-label={`Tipo do movimento ${item.sourceRow}`}
                     value={item.transactionType}
-                    disabled={busy || batch.status !== 'draft'}
+                    disabled={busy || batch.status !== 'draft' || !canIntegrate}
                     onChange={(e) =>
                       void review(item, {
                         transactionType: e.target.value as ImportItem['transactionType'],
@@ -231,7 +256,7 @@ export function ImportReview({
           </div>
         </div>
       </div>
-      {batch.status === 'draft' && (
+      {batch.status === 'draft' && canIntegrate && (
         <div className="review-confirm">
           <p>
             {selected.length !== batch.items.length

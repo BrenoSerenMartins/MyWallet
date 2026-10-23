@@ -45,7 +45,7 @@ export function ImportsPage() {
           <h1>{importId ? 'Revise seu extrato' : 'Importar extrato'}</h1>
           <p>
             {importId
-              ? 'Confira cada movimento antes de adicionar à sua conta.'
+              ? 'Confira os movimentos e escolha como guardar seus dados.'
               : 'Traga seus movimentos para cá. Você confere tudo antes de salvar.'}
           </p>
         </div>
@@ -82,7 +82,8 @@ export function ImportsPage() {
               </h2>
               <p>
                 Envie um ou vários extratos de conta em PDF, CSV ou XLSX. Vamos organizar os dados e
-                conferir os saldos para você revisar.
+                conferir os saldos para você revisar. Relatórios settlement_v2 em CSV também são
+                aceitos, apenas para consulta.
               </p>
               {accounts.isPending ? (
                 <Loading />

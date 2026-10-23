@@ -55,3 +55,5 @@ Authenticated routes handle session loading and expiration explicitly; client ro
 - Multipart upload and export endpoints are authenticated and never cached as public data. Limits, pagination, and date semantics are documented in generated OpenAPI.
 
 Planning month keys are YYYY-MM, from 1900-01 through 9998-12. Save/copy bodies carry edit versions; copied targets do not copy transactions or overwrite target notes. GET import previews expose statement start/account opening dates, sourceFormat and a date mismatch flag. Historical rows remain separate from `/transactions` and financial summaries until explicit confirmation. These new fields/endpoints preserve the existing health and financial movement contracts.
+
+Settlement CSV uses the same import endpoints. Previews add reportType, canIntegrate and nullable balances; items add typed nullable payment metadata. Settlement reports support draft/history consultation only: classification/item edits, confirmation and reviews for integration return conflicts. Account-statement workflows are preserved.

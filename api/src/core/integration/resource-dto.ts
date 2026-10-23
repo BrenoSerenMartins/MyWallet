@@ -36,7 +36,26 @@ export class TransactionResourceDto {
   @ApiProperty({ type: String, nullable: true }) counterparty!: string | null;
   @ApiProperty({ type: String, nullable: true }) sourceOperationId!: string | null;
 }
+export class SettlementMetadataResourceDto {
+  @ApiProperty({ type: String }) eventType!: string;
+  @ApiProperty({ type: String }) transactionTimestamp!: string;
+  @ApiProperty({ type: String }) settlementTimestamp!: string;
+  @ApiProperty({ type: String }) currency!: string;
+  @ApiProperty({ type: Number }) grossAmount!: number;
+  @ApiProperty({ type: Number }) netAmount!: number;
+  @ApiProperty({ type: Number, nullable: true }) realAmount!: number | null;
+  @ApiProperty({ type: Number, nullable: true }) fees!: number | null;
+  @ApiProperty({ type: Number, nullable: true }) taxes!: number | null;
+  @ApiProperty({ type: String, nullable: true }) paymentMethod!: string | null;
+  @ApiProperty({ type: String, nullable: true }) paymentMethodType!: string | null;
+  @ApiProperty({ type: String, nullable: true }) brand!: string | null;
+  @ApiProperty({ type: Number, nullable: true }) installments!: number | null;
+  @ApiProperty({ type: Number, nullable: true }) installmentNumber!: number | null;
+  @ApiProperty({ type: String, nullable: true }) lastFourDigits!: string | null;
+}
 export class ImportItemResourceDto {
+  @ApiProperty({ type: () => SettlementMetadataResourceDto, nullable: true })
+  metadata!: SettlementMetadataResourceDto | null;
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: Number }) sourceRow!: number;
   @ApiProperty({ type: String }) transactionDate!: string;
@@ -50,6 +69,9 @@ export class ImportItemResourceDto {
   @ApiProperty({ type: String, nullable: true }) categoryId!: string | null;
 }
 export class ImportBatchResourceDto {
+  @ApiProperty({ type: String, enum: ['account_statement', 'settlement'] }) reportType!:
+    'account_statement' | 'settlement';
+  @ApiProperty({ type: Boolean }) canIntegrate!: boolean;
   @ApiProperty({ type: String, enum: ['pdf', 'csv', 'xlsx'] }) sourceFormat!:
     'pdf' | 'csv' | 'xlsx';
   @ApiProperty({ type: String }) accountOpeningDate!: string;
@@ -62,8 +84,8 @@ export class ImportBatchResourceDto {
   @ApiProperty({ type: String }) fileName!: string;
   @ApiProperty({ type: String }) status!: string;
   @ApiProperty({ type: Number }) version!: number;
-  @ApiProperty({ type: Number }) openingBalance!: number;
-  @ApiProperty({ type: Number }) closingBalance!: number;
+  @ApiProperty({ type: Number, nullable: true }) openingBalance!: number | null;
+  @ApiProperty({ type: Number, nullable: true }) closingBalance!: number | null;
   @ApiProperty({ type: () => [ImportItemResourceDto] }) items!: ImportItemResourceDto[];
 }
 export class DashboardResourceDto {

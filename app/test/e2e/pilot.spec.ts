@@ -494,15 +494,13 @@ test('leaving the upload screen stops subsequent submissions', async ({ page }) 
   });
   await page.goto('/imports');
   await page.getByLabel('Conta de destino').selectOption(account.id);
-  await page
-    .locator('input[type=file]')
-    .setInputFiles(
-      ['first.csv', 'second.csv'].map((name) => ({
-        name,
-        mimeType: 'text/csv',
-        buffer: Buffer.from('synthetic'),
-      })),
-    );
+  await page.locator('input[type=file]').setInputFiles(
+    ['first.csv', 'second.csv'].map((name) => ({
+      name,
+      mimeType: 'text/csv',
+      buffer: Buffer.from('synthetic'),
+    })),
+  );
   await expect(page.getByText('Lendo e conferindo…', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Minhas contas', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Minhas contas', exact: true })).toBeVisible();
@@ -514,4 +512,79 @@ test('leaving the upload screen stops subsequent submissions', async ({ page }) 
   await page.waitForTimeout(200);
   expect(requests).toBe(1);
   await expect(page).toHaveURL(/\/accounts$/);
+});
+
+test('settlement reports retain payment details without offering financial confirmation', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 1000 });
+  const id = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+  const batch = {
+    id,
+    accountId: account.id,
+    fileName: 'settlement_v2-synthetic.csv',
+    status: 'draft',
+    version: 1,
+    reportType: 'settlement',
+    canIntegrate: false,
+    sourceFormat: 'csv',
+    openingBalance: null,
+    closingBalance: null,
+    openingMismatch: false,
+    openingDateMismatch: false,
+    items: [
+      {
+        ...transaction,
+        id: '99999999-9999-4999-8999-999999999999',
+        sourceRow: 2,
+        selected: true,
+        transactionType: 'unclassified',
+        balanceAfter: null,
+        metadata: {
+          eventType: 'SETTLEMENT',
+          transactionTimestamp: '2026-10-01T12:00:00-03:00',
+          settlementTimestamp: '2026-10-02T12:00:00-03:00',
+          grossAmount: 10000,
+          netAmount: 9500,
+          realAmount: null,
+          fees: -500,
+          taxes: null,
+          paymentMethod: 'visa',
+          paymentMethodType: 'credit_card',
+          brand: 'Visa',
+          installments: 3,
+          installmentNumber: 1,
+          lastFourDigits: '0042',
+        },
+      },
+    ],
+  };
+  await page.route(`**/v1/imports/${id}**`, async (route) => {
+    if (route.request().method() === 'POST') {
+      expect(new URL(route.request().url()).pathname).toBe(`/v1/imports/${id}/history`);
+      batch.status = 'history';
+      batch.version++;
+    }
+    return route.fulfill({ json: batch });
+  });
+  await page.goto(`/imports/${id}`);
+  await expect(
+    page.getByText('Liquidações · somente para consulta', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator('.review-summary').getByText('Não informado', { exact: true }),
+  ).toHaveCount(2);
+  await expect(page.getByRole('button', { name: /Confirmar .* movimentos/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Classificar entradas e saídas' })).toHaveCount(0);
+  await expect(page.getByLabel('Tipo do movimento 2')).toBeDisabled();
+  await page.getByText('Detalhes da liquidação', { exact: true }).click();
+  await expect(page.getByText('0042', { exact: true })).toBeVisible();
+  await expect(page.getByText('Visa', { exact: true })).toBeVisible();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Salvar apenas como histórico' }).click();
+  await expect(page.getByText('Histórico para consulta · não afeta seus saldos')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Revisar para integrar às contas' })).toHaveCount(
+    0,
+  );
 });

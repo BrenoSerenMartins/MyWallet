@@ -9,6 +9,7 @@ function readCsvRows(buffer) {
     delimiter,
     bom: true,
     relax_column_count: true,
+    relax_quotes: header.includes('SOURCE_ID') && header.includes('SETTLEMENT_NET_AMOUNT'),
     max_record_size: 65536,
     skip_empty_lines: false,
   });
@@ -37,7 +38,7 @@ async function readWorkbookRows(buffer) {
 }
 export async function readTabularFile(buffer, format) {
   const rows = format === 'csv' ? readCsvRows(buffer) : await readWorkbookRows(buffer);
-  if (rows.length > 10010 || rows.some((row) => row.length > 32))
+  if (rows.length > 10010 || rows.some((row) => row.length > (format === 'csv' ? 96 : 32)))
     throw new Error('Too many rows or columns.');
   return rows;
 }

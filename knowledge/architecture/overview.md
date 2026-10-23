@@ -57,3 +57,8 @@ For the export-format release, all 50 domain/database tests and 10 fixture brows
 The frontend import screen now owns a sequential, temporary upload queue for mixed PDF/CSV/XLSX files to one account. It tracks individual errors/results, permits stopping after the active file, labels repeated import IDs and provides review links without automatic financial writes. Changing routes/workspaces stops future submissions; already processed files persist in the existing server import history. Backend endpoints, per-file limits and migrations are unchanged.
 
 Batch queue verification passed the 50 existing domain/database tests, 12 browser scenarios in one run and an additional focused navigation/unmount scenario. Lint, types, boundaries, builds, credential scan and formatting passed. No schema change is included in batch upload.
+
+## Settlement report support
+Mercado Pago settlement_v2 CSV maps payment events and available semantic metadata into consultation-only imports. Source balances are null because the report does not supply them. Classification, financial confirmation and reopening for integration are blocked in services; report statuses/balances are constrained in PostgreSQL. The local 218-row sample parsed with production workers; no private sample records were retained. Migration 202610230003_settlement_reports.sql must precede deployment; remote setup is pending after EAI_AGAIN.
+
+Settlement verification: 54 domain/database tests (two workers), 14 browser scenarios, production builds and generated-contract checks passed. Initial concurrent browser/PGlite verification exhausted startup timeouts; each suite passed separately. No hosted migration/deploy is claimed until setup confirmation.

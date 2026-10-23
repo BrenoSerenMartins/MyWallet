@@ -7,6 +7,6 @@ try {
 } catch {
   parentPort.postMessage({
     error:
-      'Não foi possível ler o CSV/XLSX. Use o relatório de extrato de conta Mercado Pago, em UTF-8 para CSV ou com uma única aba no XLSX, dentro dos limites permitidos.',
+      'Não foi possível ler o CSV/XLSX. Use um extrato de conta Mercado Pago (CSV UTF-8 ou XLSX com uma aba) ou um relatório settlement_v2 em CSV, dentro dos limites permitidos.',
   });
 }

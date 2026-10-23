@@ -59,3 +59,6 @@ Financial JSON backups export version 2 with monthlyPlans, still accept version 
 
 ## Multiple statement formats
 PDF/CSV/XLSX use the existing import tables and reviewed movement model. mapper_version records format-specific Mercado Pago versions; sourceFormat is derived for the API. No schema change is needed. Byte-hash uniqueness prevents exact file repetition, while account/date/amount and source reference/description flag financial duplicates across different-format files; no uniqueness is added on source_operation_id.
+
+## Settlement report migration
+202610230003_settlement_reports.sql adds import_batches.report_type (existing rows default account_statement), nullable batch/item source balances and import_items.report_metadata JSON object. Account-statement batch balances remain required. Settlement batches require absent balances and draft/history status; they cannot be confirmed. Import rows allow zero net effects, while ledger nonzero constraints remain unchanged. Existing ownership/RLS and cleanup retention apply. Remote application pending after agent EAI_AGAIN; apply through db:setup before deployment.

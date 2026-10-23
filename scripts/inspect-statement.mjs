@@ -14,7 +14,8 @@ const items = mapMercadoPago(statement);
 console.log({
   format: statement.sourceFormat,
   movements: items.length,
-  reconciled: true,
+  reportType: statement.reportType ?? 'account_statement',
+  reconciled: statement.reportType !== 'settlement',
   reserveTransfers: items.filter((i) => i.transactionType === 'transfer').length,
   unclassified: items.filter((i) => i.transactionType === 'unclassified').length,
 });
