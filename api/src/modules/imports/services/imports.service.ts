@@ -266,9 +266,7 @@ export class ImportsService {
         throw new ConflictException('Resolva as pendências de conciliação antes de confirmar.');
       if (creating.length && preview.openingDateMismatch)
         throw new ConflictException(
-          preview.canAdjustOpeningPosition
-            ? 'A posição inicial da conta não confere com o extrato. Revise o cadastro inicial antes de confirmar.'
-            : 'O saldo registrado antes deste extrato não confere. Confirme os extratos anteriores ou confira as movimentações faltantes; o saldo de abertura da conta será preservado.',
+          `O arquivo começa em ${preview.statementStartDate}, antes da data de início cadastrada da conta (${preview.accountOpeningDate}). Esses movimentos ainda não podem ser confirmados. Você pode guardar o arquivo apenas para consulta.`,
         );
       if (!selected.length && !skippedDuplicates)
         throw new UnprocessableEntityException('Selecione ao menos um movimento.');
