@@ -689,6 +689,60 @@
         "tags": ["Imports"]
       }
     },
+    "/v1/imports/{id}/matches": {
+      "get": {
+        "operationId": "ImportsController_matches",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettlementMatchResourceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
+    "/v1/imports/transaction-sources/{transactionId}": {
+      "get": {
+        "operationId": "ImportsController_transactionSources",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettlementMatchResourceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
     "/v1/imports/{id}/items/{itemId}": {
       "patch": {
         "operationId": "ImportsController_review",
@@ -1689,6 +1743,18 @@
       "SettlementMetadataResourceDto": {
         "type": "object",
         "properties": {
+          "isReleased": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "releaseTimestamp": {
+            "type": "string",
+            "nullable": true
+          },
+          "installmentNetAmount": {
+            "type": "number",
+            "nullable": true
+          },
           "eventType": {
             "type": "string"
           },
@@ -1929,6 +1995,43 @@
           "openingBalance",
           "closingBalance",
           "items"
+        ]
+      },
+      "SettlementMatchResourceDto": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "batchId": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["matched", "ambiguous", "unmatched", "unsupported"]
+          },
+          "transactionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/SettlementMetadataResourceDto"
+          }
+        },
+        "required": [
+          "itemId",
+          "batchId",
+          "fileName",
+          "status",
+          "transactionId",
+          "reason",
+          "metadata"
         ]
       },
       "ReviewItemDto": {

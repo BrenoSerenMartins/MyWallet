@@ -1,3 +1,5 @@
+import { SettlementMatchResourceDto } from '../../../core/integration/index.js';
+import { SettlementMatchingService } from '../services/settlement-matching.service.js';
 import { ImportReprocessingService } from '../services/import-reprocessing.service.js';
 import { ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
 import { ImportBatchResourceDto } from '../../../core/integration/index.js';
@@ -31,6 +33,7 @@ import { ReviewItemDto, ConfirmImportDto, ReprocessImportDto } from '../dto/impo
 @Controller('v1/imports')
 export class ImportsController {
   constructor(
+    @Inject(SettlementMatchingService) private readonly matching: SettlementMatchingService,
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(ImportsService) private readonly imports: ImportsService,
     @Inject(ImportReprocessingService) private readonly reprocessing: ImportReprocessingService,
@@ -43,6 +46,20 @@ export class ImportsController {
     @Param('id') id: string,
   ) {
     return this.db.forUser(r.identity.id, () => this.imports.preview(requireUuid(id)));
+  }
+  @Get(':id/matches')
+  @ApiOkResponse({ type: [SettlementMatchResourceDto] })
+  matches(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
+    return this.db.forUser(r.identity.id, () => this.matching.preview(requireUuid(id)), true);
+  }
+  @Get('transaction-sources/:transactionId')
+  @ApiOkResponse({ type: [SettlementMatchResourceDto] })
+  transactionSources(@Req() r: AuthenticatedRequest, @Param('transactionId') id: string) {
+    return this.db.forUser(
+      r.identity.id,
+      () => this.matching.transactionSources(requireUuid(id)),
+      true,
+    );
   }
   @Post()
   @ApiCreatedResponse({ type: ImportBatchResourceDto })

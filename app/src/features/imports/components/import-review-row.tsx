@@ -1,7 +1,7 @@
 import type { ImportItem, Category } from '../../../shared/api/resources';
 import { CategorySelect } from '../../../shared/ui/category-select';
 import { money, shortDate } from '../../../shared/formatting/money';
-import { SettlementDetails } from './settlement-details';
+import { SettlementDetails } from '../../../shared/ui/settlement-details';
 export function ImportReviewRow({
   item,
   disabled,

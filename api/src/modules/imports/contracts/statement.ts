@@ -25,6 +25,9 @@ export interface ImportEntry extends StatementRow {
 }
 
 export interface SettlementMetadata {
+  isReleased?: boolean | null;
+  releaseTimestamp?: string | null;
+  installmentNetAmount?: number | null;
   eventType: string;
   transactionTimestamp: string;
   settlementTimestamp: string;

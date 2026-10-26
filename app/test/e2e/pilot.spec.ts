@@ -565,6 +565,20 @@ test('settlement reports retain payment details without offering financial confi
     ],
   };
   await page.route(`**/v1/imports/${id}**`, async (route) => {
+    if (new URL(route.request().url()).pathname.endsWith('/matches'))
+      return route.fulfill({
+        json: [
+          {
+            itemId: batch.items[0].id,
+            batchId: id,
+            fileName: batch.fileName,
+            status: 'matched',
+            transactionId: transaction.id,
+            reason: 'Referência, data e valor correspondem.',
+            metadata: batch.items[0].metadata,
+          },
+        ],
+      });
     if (route.request().method() === 'POST') {
       expect(new URL(route.request().url()).pathname).toBe(`/v1/imports/${id}/history`);
       batch.status = 'history';
@@ -574,22 +588,49 @@ test('settlement reports retain payment details without offering financial confi
   });
   await page.goto(`/imports/${id}`);
   await expect(
-    page.getByText('Liquidações · somente para consulta', { exact: true }),
+    page.getByText('Complemente seus movimentos com os detalhes do Mercado Pago', { exact: true }),
   ).toBeVisible();
-  await expect(
-    page.locator('.review-summary').getByText('Não informado', { exact: true }),
-  ).toHaveCount(2);
+  await expect(page.getByText('1 de 1 registros correspondem', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: /Confirmar .* movimentos/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Classificar entradas e saídas' })).toHaveCount(0);
-  await expect(page.getByLabel('Tipo do movimento 2')).toBeDisabled();
+  await expect(page.getByLabel('Tipo do movimento 2')).toHaveCount(0);
   await page.getByText('Detalhes da liquidação', { exact: true }).click();
   await expect(page.getByText('0042', { exact: true })).toBeVisible();
   await expect(page.getByText('Visa', { exact: true })).toBeVisible();
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: 'Salvar apenas como histórico' }).click();
-  await expect(page.getByText('Histórico para consulta · não afeta seus saldos')).toBeVisible();
+  await page.getByRole('button', { name: 'Salvar relatório e complementar detalhes' }).click();
+  await expect(
+    page.getByText('Relatório salvo · detalhes disponíveis nos movimentos correspondentes'),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Revisar para integrar às contas' })).toHaveCount(
     0,
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.route(`**/v1/transactions/${transaction.id}`, (route) =>
+    route.fulfill({ json: transaction }),
+  );
+  await page.route(`**/v1/imports/transaction-sources/${transaction.id}`, (route) =>
+    route.fulfill({
+      json: [
+        {
+          itemId: batch.items[0].id,
+          batchId: id,
+          fileName: batch.fileName,
+          status: 'matched',
+          transactionId: transaction.id,
+          reason: 'Correspondente',
+          metadata: batch.items[0].metadata,
+        },
+      ],
+    }),
+  );
+  await page.getByRole('link', { name: 'Ver movimento', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Detalhes do movimento' })).toBeVisible();
+  await expect(page.getByText('Detalhes do Mercado Pago', { exact: true })).toBeVisible();
+  await page.getByText('Detalhes da liquidação', { exact: true }).click();
+  await expect(page.getByText('0042', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ver relatório de origem' })).toHaveAttribute(
+    'href',
+    `/imports/${id}`,
   );
 });
 

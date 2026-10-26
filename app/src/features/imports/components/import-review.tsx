@@ -1,3 +1,4 @@
+import { SettlementReview } from './settlement-review';
 import { ReprocessImport } from './reprocess-import';
 import { ImportSourceSummary } from './import-source-summary';
 import { ViewSwitcher } from '../../../shared/ui/view-switcher';
@@ -57,6 +58,7 @@ export function ImportReview({
         .toLocaleLowerCase('pt-BR')
         .includes(search.toLocaleLowerCase('pt-BR')),
     );
+  if (!canIntegrate) return <SettlementReview batch={batch} refresh={refresh} />;
   return (
     <>
       <ReprocessImport
@@ -86,18 +88,6 @@ export function ImportReview({
             <p>
               Não entram no saldo e não podem ser selecionadas. A verificação será repetida antes de
               salvar, inclusive entre arquivos do mesmo lote.
-            </p>
-          </div>
-        </div>
-      )}
-      {!canIntegrate && (
-        <div className="review-banner">
-          <div>
-            <strong>Liquidações · somente para consulta</strong>
-            <p>
-              Este relatório informa eventos e valores líquidos, mas não fornece saldos para
-              conciliação. Ele não cria lançamentos nem altera gastos, patrimônio ou planejamento.
-              Use um extrato de conta para integrar os movimentos.
             </p>
           </div>
         </div>

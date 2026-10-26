@@ -1,5 +1,5 @@
-import type { ImportItem } from '../../../shared/api/resources';
-import { money } from '../../../shared/formatting/money';
+import type { ImportItem } from '../api/resources';
+import { money } from '../formatting/money';
 export function SettlementDetails({ metadata }: { metadata: ImportItem['metadata'] }) {
   if (!metadata) return null;
   const amount = (value: number | null) => (value === null ? 'Não informado' : money(value));
@@ -9,6 +9,16 @@ export function SettlementDetails({ metadata }: { metadata: ImportItem['metadata
     ['Data de aprovação', metadata.settlementTimestamp],
     ['Valor bruto', amount(metadata.grossAmount)],
     ['Valor líquido em conta', amount(metadata.netAmount)],
+    [
+      'Disponibilidade informada pelo MP',
+      metadata.isReleased == null
+        ? 'Não informada'
+        : metadata.isReleased
+          ? 'Liberado'
+          : 'Não liberado',
+    ],
+    ['Data de liberação informada', metadata.releaseTimestamp ?? 'Não informada'],
+    ['Valor líquido da parcela', amount(metadata.installmentNetAmount ?? null)],
     ['Valor real', amount(metadata.realAmount)],
     ['Tarifas', amount(metadata.fees)],
     ['Impostos', amount(metadata.taxes)],

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class AccountResourceDto {
   @ApiProperty({ type: Boolean }) canEditOpeningPosition!: boolean;
   @ApiProperty({ type: String }) id!: string;
@@ -47,6 +47,9 @@ export class TransactionResourceDto {
   @ApiProperty({ type: String, nullable: true }) sourceOperationId!: string | null;
 }
 export class SettlementMetadataResourceDto {
+  @ApiPropertyOptional({ type: Boolean, nullable: true }) isReleased?: boolean | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) releaseTimestamp?: string | null;
+  @ApiPropertyOptional({ type: Number, nullable: true }) installmentNetAmount?: number | null;
   @ApiProperty({ type: String }) eventType!: string;
   @ApiProperty({ type: String }) transactionTimestamp!: string;
   @ApiProperty({ type: String }) settlementTimestamp!: string;
@@ -135,4 +138,16 @@ export class CategoryGroupDeletionResourceDto {
   @ApiProperty({ type: String }) destinationGroupId!: string;
   @ApiProperty({ type: String }) destinationGroupName!: string;
   @ApiProperty({ type: [String] }) conflictingNames!: string[];
+}
+
+export class SettlementMatchResourceDto {
+  @ApiProperty({ type: String }) itemId!: string;
+  @ApiProperty({ type: String }) batchId!: string;
+  @ApiProperty({ type: String }) fileName!: string;
+  @ApiProperty({ type: String, enum: ['matched', 'ambiguous', 'unmatched', 'unsupported'] })
+  status!: 'matched' | 'ambiguous' | 'unmatched' | 'unsupported';
+  @ApiProperty({ type: String, nullable: true }) transactionId!: string | null;
+  @ApiProperty({ type: String }) reason!: string;
+  @ApiProperty({ type: () => SettlementMetadataResourceDto })
+  metadata!: SettlementMetadataResourceDto;
 }

@@ -16,3 +16,5 @@ export type MonthlyPlan = components['schemas']['MonthlyPlanResourceDto'];
 export type PlanningLine = components['schemas']['PlanningLineResourceDto'];
 
 export type CategoryGroup = components['schemas']['CategoryGroupResourceDto'];
+
+export type SettlementMatch = components['schemas']['SettlementMatchResourceDto'];

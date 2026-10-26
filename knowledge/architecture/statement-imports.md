@@ -113,3 +113,78 @@ POST /v1/imports/:id/reprocess reanalyses retained normalized source rows; POST 
 Source occurrences match by date/amount/running balance/reference (description only without a reference), preserving matching item IDs, selections and defined types. Older rows lack manual-vs-automatic provenance, so defined types are conservatively retained by default. Explicit resetClassification reapplies current financial types and clears only incompatible category references. Duplicate checks run again; new candidates default excluded and proven copies stay locked. Replacement rows, mapper version, review version and refreshed draft expiry commit atomically. History status/history_saved_at remain; no ledger insert, reversal or automatic confirmation occurs. No schema migration is introduced.
 
 Cofrinho/reserve cash movements recognized from the Mercado Pago descriptions remain transfers under current mapping, including optional classification reset. They reduce/increase the source account, not expense/income totals. Counterparties and per-cofrinho balances are not fabricated: automatic destination matching and consolidated reserve balances remain separate work.
+
+## Proposed evolution: complementary Mercado Pago sources
+Status: initial derived enrichment slice delivered below; remaining financial integration is planned. Existing settlement reports remain nonposting until the acceptance gates below pass.
+
+### Findings and decision
+Read-only review of the four local settlement models found 218/408/456/655 source rows, covering January through October 2026. Events include SETTLEMENT (both positive and negative), PAYOUTS, CRYPTO_OPERATION, CASHBACK, CREDIT, REFUND and PAYOUTS_CANCEL. Counts include overlapping/repeated source evidence and are not ledger totals. Four CSV account statements contain 814 distinct source movements; 398 share a SOURCE_ID with settlement rows. None of the 399 recognized reserve movements share a reference with those settlement rows. Shared references are matching candidates, not proof of equivalence or coverage completeness.
+
+Use settlement as the preferred source of structured operation details, and account statements as the preferred evidence of available-account cash movements, running balances and reserve movements. No single globally authoritative report. Accept each report independently and show its coverage; absence of a second report must not fabricate completeness. A future settlement-only financial mode requires validated cash semantics, not merely removal of the current guard.
+
+The official report covers available and unavailable money. Local PAYOUTS rows all have IS_RELEASED=false despite negative net amounts. Therefore neither false => ignore nor true => post is a valid blanket rule. SETTLEMENT is not synonymous with income. Credit is not automatically income, refunds are not automatically new revenue, and crypto/reserve transfers are not automatically expenses.
+
+### Scope and responsibilities
+- Keep existing institution parsers/mappers, bounded extraction workers and source provenance.
+- Add a focused Mercado Pago source-matching service in Imports. Parsers decode; institution mapping interprets event semantics; the service proposes matches and confirmation actions; repositories persist; Ledger remains the only financial writer.
+- Preserve approval, release and cash-posting dates separately. Keep availability status, release dates, installment net amount and relevant typed references that are currently discarded. Validate semantic fields and do not retain raw METADATA or card prefixes.
+- Separate source operation/event evidence from financial cash entries. A purchase approval, installment release and refund can share an operation reference while representing different events or accounts. Initially support proven one-to-one links only; identify grouped/partial matches for review instead of inventing allocations.
+- Keep the existing ledger and account balance formula. Do not build a second ledger or introduce queues, new infrastructure or a generic reconciliation framework.
+
+### Delivery order and gates
+| Stage | Delivery | Exit evidence |
+| --- | --- | --- |
+| 1. Coverage and semantics | Extend retained typed metadata; investigate local event variants, dates, releases, gross/net/fees and duplicate occurrences against account statements; make a supported-event matrix | Every enabled event has documented cash effect, ownership/transfer treatment and representative synthetic cases; unmatched/unknown events remain visible and nonposting |
+| 2. Enrich existing cash entries | Preview settlement matches against confirmed statement entries and retained source evidence; persist reviewed links; expose structured details in transaction view | Both upload orders produce the same links; adding settlement changes no balance or planning total; user categories/types/notes remain intact |
+| 3. Combined import review | Separate New movements, Enrichments, Already linked and Needs review; source badges and period coverage; preview totals before confirmation | Proven matches need no repetitive selection; ambiguous records cannot create a second financial entry; navigation/queue/reprocessing remain predictable |
+| 4. Settlement-only financial integration | Enable only event families with proven cash-posting semantics; distinguish available cash from receivables; report calculated versus reconciled balance | Known starting position required for calculated balances; no invented opening adjustment; statement received later reconciles/enriches instead of reposting; unavailable funds do not inflate available cash |
+| 5. Release and recovery | Version contracts/backup, apply additive migration, deploy compatible code, opt-in reprocess and confirm | Existing receipts and totals unchanged; fresh migration/restore, RLS, concurrent confirmation, retries, reversal and hosted smoke tests pass |
+
+Start with stages 1–2. Stage 4 is deliberately conditional: a useful first release can enrich all supported records while keeping unproven cash events consultation-only.
+
+### Matching and financial rules
+1. Scope matching by authenticated owner, workspace, institution and account. Preserve file hash idempotency and source occurrence counts. SOURCE_ID alone is never unique.
+2. Use event family and explicit related references, exact currency/net effect and documented date relationships. Different approval/posting days can be legitimate; arbitrary date tolerance or amount-only similarity must not auto-merge.
+3. Automatically link only an unambiguous supported match. Missing evidence, multiple candidates, fee/net mismatch or one-to-many release patterns become review issues; new unmatched evidence is not automatically proof of a new cash entry.
+4. Existing ledger amount/date remain unchanged during enrichment. Metadata conflicts are shown with source provenance; manual edits are never silently overwritten.
+5. Post the cash effect once. For the first delivery, retain gross and fees as analytical details without generating a second expense on top of an already netted amount. A future gross-revenue/fee split needs an explicit accounting policy and equal net reconciliation.
+6. Link refunds/cancellations to their originals where proven; partial refunds preserve separate event occurrences. Unknown origins remain reviewable. Recognize own-account/reserve transfers without inventing counterpart balances; classify CREDIT and CRYPTO_OPERATION only after their actual meaning is established.
+7. New financial confirmation and linking lock the account and relevant evidence, recheck conflicts and commit idempotently. Reprocessing must respect confirmed receipts and manually reviewed links. Reversing one source cannot remove a financial entry supported by another source or leave dangling evidence.
+
+### Persistence, API and regression impact
+A small additive schema change is expected: typed settlement availability/release fields and a provenance association between an import item and a canonical ledger entry, with link state and rule version. Exact schema follows stage 1 cardinality findings; do not encode a global unique source_operation_id. Associations need owner/workspace composite FKs, RLS and runtime grants. Repeated source files must not add financial occurrences; distinct partial events must remain distinct.
+
+Imports preview/receipt gains action (create/enrich/already linked/review), match evidence and reconciliation state. Transaction detail exposes linked source summaries. Public changes remain additive where possible. Version JSON export/restore if links or new semantic fields are required to reconstruct financial behavior: current exports deliberately omit operational import history, so define a minimal portable provenance representation before enabling cross-source posting. Do not silently lose deduplication identity after restore.
+
+Regression gates: PDF/CSV/XLSX statements unchanged; both source arrival orders; same-reference different events/amounts; overlapping exports; partial refunds; fees; installments; same operation on different dates; unavailable money; reserves; unknown events; manual edits; archive/category behavior; existing planning totals; stale review; parallel confirmation; reprocessing; reversal; backup round trip; owner/workspace isolation. Use synthetic fixtures only. Existing financial history is not automatically migrated or reclassified.
+
+### Primary references
+- [Account-money report scope](https://www.mercadopago.com.br/developers/pt/docs/reports/account-money/introduction): includes available and unavailable money.
+- [Account-money report usage](https://www.mercadopago.com.br/developers/pt/docs/reports/account-money/how-to-use): event types and net impact.
+- [Field definitions](https://www.mercadopago.com.br/developers/pt/docs/reports/account-money/report-fields): approval/release dates, net amount, release flag and installment fields.
+- [Release report](https://www.mercadopago.com.br/developers/pt/docs/reports/released-money/introduction): availability and released versus pending funds; an optional future source, not a prerequisite or currently supported parser.
+
+## Delivered first slice: derived settlement enrichment
+The initial implementation uses a read model instead of a persisted association table. At this stage no decision creates or modifies financial entries, so deriving matches from retained source evidence avoids stale links, schema changes and reprocessing/reversal repair logic. Persisted reviewed identity remains necessary before settlement-only posting or user-resolved links. No new migration is required for this slice.
+
+- New optional typed metadata: isReleased, releaseTimestamp and installmentNetAmount. Validate release booleans, timestamps, date consistency and exact amounts. Older retained metadata stays readable; use original-file reprocessing to recover previously discarded columns (saved-row reprocessing cannot reconstruct them).
+- GET /v1/imports/:id/matches compares the current nonexpired settlement draft/history plus retained reports against active confirmed account-statement provenance. GET /v1/imports/transaction-sources/:transactionId returns matching retained settlement details for an owned active transaction. Draft settlement evidence never appears in transaction details until saved as history.
+- Match only identical source reference, source-local approval day and signed net amount, in the same account/workspace. Consult original statement rows even if the user edits the ledger entry; never modify the edited fields. Changed dates, gross/net mismatches and absent references are not guessed.
+- Multiple cash candidates, multiple occurrences for the same key within any report, or different metadata/event families for a key block automatic matching across all contributing reports. Exact repeated exports in separate files can describe the same evidence; transaction details show that evidence once. Unknown event families remain unsupported. Reversed ledger rows disappear from matches immediately.
+- No source ID uniqueness, balance adjustment, category assignment, fee splitting or additional income/expense is introduced. Transient matches may change when later evidence introduces a conflict; the UI says correspondence rather than a durable reviewed link.
+- Imports use a focused settlement view with All/Corresponding/Without automatic link tabs, search/pagination, source metadata, reasons and a deep link to the existing transaction dialog. Saving a report retains its rows and exposes matching details. Subsequent statement confirmation is discovered on the next read; no batch job is needed.
+- Financial JSON backup continues excluding consultation reports and these derived details. Restoring financial records does not restore source associations in this slice. Before stage 4, portable provenance and deduplication across restore remain mandatory release gates.
+
+| Observed event family | Interpretation boundary in this release |
+| --- | --- |
+| SETTLEMENT | Approved operation; positive and negative samples exist. Match evidence, never assume revenue from event name. |
+| PAYOUT/PAYOUTS, WITHDRAWAL | Outgoing operation; ownership and destination determine transfer versus expense. |
+| PAYOUTS_CANCEL, WITHDRAWAL_CANCEL | Cancellation evidence; no automatic new income. |
+| REFUND | Refund evidence, including possible partial events; no automatic new revenue. |
+| CASHBACK | Preserve bank event and net value; financial categorization is unchanged. |
+| CREDIT | Credit origin requires interpretation; do not assume income or loan automatically. |
+| CRYPTO_OPERATION | Asset/cash movement requires asset accounting; do not infer expense. |
+| CHARGEBACK, DISPUTE | Supported for exact evidence matching; financial posting remains deferred. |
+| Other events | Visible as unsupported; no automatic match or posting. |
+
+Validation: 81 domain/database tests and five focused browser scenarios passed, covering exact matches, repeated references/exports, conflicts, both arrival orders, retention boundary, manual edits, reversal, foreign users/accounts and mobile transaction deep links. All four real settlement models parsed via the compiled worker: 218/408/456/655 records. Against distinct local CSV statement source rows, the conservative matcher classified 346 source records as matched, 70 ambiguous and 1321 unmatched, without persistence. These are source-record classifications, not unique-operation counts or a completeness assertion.

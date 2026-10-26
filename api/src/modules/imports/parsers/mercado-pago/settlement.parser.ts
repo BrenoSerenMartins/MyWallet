@@ -60,7 +60,19 @@ function metadata(get: (name: string) => string): SettlementMetadata {
   if (lastFourDigits && !/^\d{4}$/.test(lastFourDigits))
     throw new UnprocessableEntityException('Últimos quatro dígitos inválidos.');
   const optionalAmount = (name: string) => (get(name) ? parseDecimalAmount(get(name)) : null);
+  const released = get('IS_RELEASED').toLowerCase();
+  if (released && !['true', 'false'].includes(released))
+    throw new UnprocessableEntityException('Indicador de liberação inválido.');
+  const releaseTimestamp = get('MONEY_RELEASE_DATE') ? timestamp(get('MONEY_RELEASE_DATE')) : null;
+  if (get('MONEY_RELEASE_DATE_SHORT')) {
+    dateOnly(get('MONEY_RELEASE_DATE_SHORT'));
+    if (releaseTimestamp && get('MONEY_RELEASE_DATE_SHORT') !== releaseTimestamp.slice(0, 10))
+      throw new UnprocessableEntityException('As datas de liberação não conferem.');
+  }
   return {
+    isReleased: released ? released === 'true' : null,
+    releaseTimestamp,
+    installmentNetAmount: optionalAmount('INSTALLMENT_NET_AMOUNT'),
     eventType: get('TRANSACTION_TYPE'),
     transactionTimestamp,
     settlementTimestamp,

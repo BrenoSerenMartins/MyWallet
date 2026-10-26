@@ -1,3 +1,5 @@
+import { SettlementMatchingService } from '../services/settlement-matching.service.js';
+import { SettlementEvidenceRepository } from '../repositories/settlement-evidence.repository.js';
 import { ImportReprocessingService } from '../services/import-reprocessing.service.js';
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -111,6 +113,10 @@ describe('Settlement v2 consultation report', () => {
       { INSTALLMENT_NUMBER: '4' },
       { LAST_FOUR_DIGITS: '123' },
       { SETTLEMENT_NET_AMOUNT: '1.234' },
+      { IS_RELEASED: 'yes' },
+      { MONEY_RELEASE_DATE: '2026-10-03T12:00:00' },
+      { MONEY_RELEASE_DATE: '2026-10-03T12:00:00-04:00', MONEY_RELEASE_DATE_SHORT: '2026-10-04' },
+      { INSTALLMENT_NET_AMOUNT: '1.234' },
     ];
     for (const patch of invalid)
       expect(() => parseSettlementTable(settlementFixture(patch).rows)).toThrow();
@@ -188,4 +194,131 @@ it('reprocesses retained settlement data while preserving consultation status an
   });
   expect((await db.forUser(db.user, () => imports.get(result.id))).history_saved_at).not.toBeNull();
   expect(await db.forUser(db.user, () => ledger.exportRecords())).toEqual([]);
+});
+
+const matching = new SettlementMatchingService(
+  new ImportsRepository(db.service),
+  new SettlementEvidenceRepository(db.service),
+);
+async function uploadEvidence(reference: string) {
+  const fixture = settlementFixture({
+    SOURCE_ID: reference,
+    IS_RELEASED: 'false',
+    MONEY_RELEASE_DATE: '2026-10-05T12:00:00-04:00',
+    INSTALLMENT_NET_AMOUNT: '32.33',
+  });
+  const parsed = await extractMercadoPagoStatement(fixture.buffer, 'evidence.csv');
+  return db.forUser(db.user, () =>
+    imports.upload(accountId, fixture.buffer, 'evidence.csv', parsed),
+  );
+}
+async function confirmCash(reference: string, targetAccountId = accountId) {
+  return db.forUser(db.user, async () => {
+    const account = await accounts.find(targetAccountId);
+    const parsed = {
+      reportType: 'account_statement' as const,
+      openingBalance: account.balance,
+      closingBalance: account.balance + 9700,
+      items: [
+        {
+          sourceRow: 1,
+          sourcePage: 1,
+          sourceOperationId: reference,
+          transactionDate: '2026-10-03',
+          description: 'Synthetic cash movement',
+          amount: 9700,
+          balanceAfter: account.balance + 9700,
+        },
+      ],
+    };
+    const draft = await imports.upload(
+      targetAccountId,
+      Buffer.from(reference + targetAccountId),
+      'cash.pdf',
+      parsed,
+    );
+    await imports.confirm(draft.id, draft.version, reference + targetAccountId);
+    return (await ledger.exportRecords()).find((row) => row.importBatchId === draft.id)!;
+  });
+}
+it('enriches confirmed statement evidence only after history retention, preserves manual edits and removes reversed matches', async () => {
+  const transaction = await confirmCash('enrichment-original');
+  const report = await uploadEvidence('enrichment-original');
+  const matches = await db.forUser(db.user, () => matching.preview(report.id));
+  expect(matches[0]).toMatchObject({
+    status: 'matched',
+    transactionId: transaction.id,
+    metadata: {
+      isReleased: false,
+      installmentNetAmount: 3233,
+      releaseTimestamp: '2026-10-05T12:00:00-04:00',
+    },
+  });
+  expect(await db.forUser(db.user, () => matching.transactionSources(transaction.id))).toEqual([]);
+  const before = await db.forUser(db.user, () => accounts.find(accountId));
+  await db.forUser(db.user, () => imports.retainHistory(report.id, report.version));
+  expect(
+    (await db.forUser(db.user, () => matching.transactionSources(transaction.id))).length,
+  ).toBe(1);
+  expect((await db.forUser(db.user, () => accounts.find(accountId))).balance).toBe(before.balance);
+  const edited = await db.forUser(db.user, () =>
+    ledger.update(
+      transaction.id,
+      { ...transaction, description: 'Manually reviewed', amount: 9600 },
+      String(transaction.version),
+    ),
+  );
+  expect(
+    (await db.forUser(db.user, () => matching.transactionSources(transaction.id))).length,
+  ).toBe(1);
+  expect(await db.forUser(db.user, () => ledger.find(transaction.id))).toMatchObject({
+    amount: 9600,
+    description: 'Manually reviewed',
+  });
+  await expect(db.forUser(db.other, () => matching.preview(report.id))).rejects.toThrow(
+    'não encontrada',
+  );
+  await expect(
+    db.forUser(db.other, () => matching.transactionSources(transaction.id)),
+  ).rejects.toThrow('não encontrado');
+  const space = await db.engine.query<{ id: string }>(
+    "INSERT INTO wallet.workspaces(user_id,name) VALUES($1,'Isolated evidence') RETURNING id",
+    [db.user],
+  );
+  await expect(
+    db.forUser(db.user, () => matching.preview(report.id), true, space.rows[0].id),
+  ).rejects.toThrow('não encontrada');
+  await expect(
+    db.forUser(db.user, () => matching.transactionSources(transaction.id), true, space.rows[0].id),
+  ).rejects.toThrow('não encontrado');
+
+  await db.forUser(db.user, () => ledger.reverse(transaction.id, String(edited!.version)));
+  expect((await db.forUser(db.user, () => matching.preview(report.id)))[0].status).toBe(
+    'unmatched',
+  );
+});
+it('finds retained settlement evidence when the account statement arrives later, without matching another account', async () => {
+  const report = await uploadEvidence('settlement-first');
+  await db.forUser(db.user, () => imports.retainHistory(report.id, report.version));
+  expect((await db.forUser(db.user, () => matching.preview(report.id)))[0].status).toBe(
+    'unmatched',
+  );
+  const otherAccount = await db.forUser(db.user, () =>
+    accounts.create({
+      name: 'Another account',
+      institution: 'mercado_pago',
+      type: 'checking',
+      openingDate: '2026-10-01',
+      openingBalance: 0,
+    }),
+  );
+  const unrelated = await confirmCash('settlement-first', otherAccount.id);
+  expect(await db.forUser(db.user, () => matching.transactionSources(unrelated.id))).toEqual([]);
+  expect((await db.forUser(db.user, () => matching.preview(report.id)))[0].status).toBe(
+    'unmatched',
+  );
+  const transaction = await confirmCash('settlement-first');
+  expect(
+    (await db.forUser(db.user, () => matching.transactionSources(transaction.id)))[0].transactionId,
+  ).toBe(transaction.id);
 });

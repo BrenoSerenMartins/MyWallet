@@ -275,3 +275,5 @@ Investimentos, patrimônio consolidado, reserva de emergência, metas, cartões,
 - [Importação de extratos](knowledge/architecture/statement-imports.md)
 - [Mapa de rotas](knowledge/maps/routes.md)
 - [Modelo de banco](knowledge/maps/database.md)
+
+Os relatórios `settlement_v2` do Mercado Pago complementam os detalhes dos movimentos já confirmados por extrato. A revisão mostra correspondências e ambiguidades; salve o relatório para consultar os detalhes na movimentação. Esse cruzamento preserva valores e categorias e ainda não cria lançamentos financeiros a partir do settlement. Para recuperar os novos campos de liberação em relatórios antigos, use o reprocessamento com o arquivo original.

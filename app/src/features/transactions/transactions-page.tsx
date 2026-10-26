@@ -1,3 +1,4 @@
+import { TransactionSources } from './components/transaction-sources';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { CategorySelect } from '../../shared/ui/category-select';
 import { useEffect, useState } from 'react';
@@ -32,6 +33,18 @@ export function TransactionsPage() {
       setOpen(true);
     }
   }, [params]);
+  const transactionId = params.get('transaction');
+  const requestedTransaction = useQuery({
+    queryKey: [session?.user.id, 'transaction', transactionId],
+    enabled: !!transactionId,
+    queryFn: () => request<Transaction>(`/transactions/${transactionId}`),
+  });
+  useEffect(() => {
+    if (requestedTransaction.data && transactionId) {
+      setSelected(requestedTransaction.data);
+      setOpen(true);
+    }
+  }, [requestedTransaction.data, transactionId]);
   const accounts = useQuery({
     queryKey: [session?.user.id, 'accounts'],
     queryFn: () => request<Account[]>('/accounts'),
@@ -68,8 +81,9 @@ export function TransactionsPage() {
   const accountName = accounts.data?.find((a) => a.id === accountId)?.name;
   const close = () => {
     setOpen(false);
-    if (params.has('new')) {
+    if (params.has('new') || params.has('transaction')) {
       params.delete('new');
+      params.delete('transaction');
       setParams(params, { replace: true });
     }
   };
@@ -91,6 +105,7 @@ export function TransactionsPage() {
           Novo lançamento
         </Button>
       </div>
+      {requestedTransaction.isError && <ErrorState error={requestedTransaction.error} />}
       <div className="panel">
         <div className="filters">
           <label className="search-field">
@@ -225,6 +240,7 @@ export function TransactionsPage() {
         onOpenChange={(v) => (v ? setOpen(true) : close())}
         title={selected ? 'Detalhes do movimento' : 'Novo lançamento'}
       >
+        {selected && <TransactionSources transactionId={selected.id} />}
         {accounts.isError || categories.isError ? (
           <ErrorState error={accounts.error ?? categories.error} />
         ) : accounts.isPending || categories.isPending ? (

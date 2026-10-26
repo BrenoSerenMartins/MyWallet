@@ -276,6 +276,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/imports/{id}/matches': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['ImportsController_matches'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/imports/transaction-sources/{transactionId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['ImportsController_transactionSources'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/imports/{id}/items/{itemId}': {
     parameters: {
       query?: never;
@@ -677,6 +709,9 @@ export interface components {
       lastDate: string;
     };
     SettlementMetadataResourceDto: {
+      isReleased?: boolean | null;
+      releaseTimestamp?: string | null;
+      installmentNetAmount?: number | null;
       eventType: string;
       transactionTimestamp: string;
       settlementTimestamp: string;
@@ -733,6 +768,16 @@ export interface components {
       openingBalance: number | null;
       closingBalance: number | null;
       items: components['schemas']['ImportItemResourceDto'][];
+    };
+    SettlementMatchResourceDto: {
+      itemId: string;
+      batchId: string;
+      fileName: string;
+      /** @enum {string} */
+      status: 'matched' | 'ambiguous' | 'unmatched' | 'unsupported';
+      transactionId: string | null;
+      reason: string;
+      metadata: components['schemas']['SettlementMetadataResourceDto'];
     };
     ReviewItemDto: {
       selected: boolean;
@@ -1317,6 +1362,44 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ImportBatchResourceDto'];
+        };
+      };
+    };
+  };
+  ImportsController_matches: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SettlementMatchResourceDto'][];
+        };
+      };
+    };
+  };
+  ImportsController_transactionSources: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SettlementMatchResourceDto'][];
         };
       };
     };
