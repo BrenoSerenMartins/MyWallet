@@ -196,6 +196,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/accounts/{id}/balance-adjustments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['LedgerController_adjustBalance'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/transfers': {
     parameters: {
       query?: never;
@@ -569,7 +585,7 @@ export interface components {
       name: string;
       institution: string;
       /** @enum {string} */
-      type: 'checking' | 'savings' | 'cash' | 'reserve';
+      type: 'checking' | 'savings' | 'cash' | 'reserve' | 'benefit_food' | 'benefit_meal';
       openingBalance: number;
       openingDate: string;
     };
@@ -609,7 +625,13 @@ export interface components {
       destinationGroupName: string;
       conflictingNames: string[];
     };
+    BalanceAdjustmentResourceDto: {
+      previousBalance: number;
+      targetBalance: number;
+      reason: string;
+    };
     TransactionResourceDto: {
+      balanceAdjustment?: components['schemas']['BalanceAdjustmentResourceDto'] | null;
       /** @enum {string} */
       reconciliationStatus: 'pending' | 'reconciled';
       id: string;
@@ -642,6 +664,11 @@ export interface components {
       amount: number;
       /** @enum {string} */
       transactionType: 'income' | 'expense';
+    };
+    BalanceAdjustmentDto: {
+      targetBalance: number;
+      expectedBalance: number;
+      reason: string;
     };
     TransferDto: {
       fromAccountId: string;
@@ -758,12 +785,15 @@ export interface components {
       categoryId: string | null;
     };
     ImportBatchResourceDto: {
+      institution: string;
+      /** @enum {string} */
+      reconciliationCapability: 'running_balance' | 'partial';
       canReprocess: boolean;
       canAdjustOpeningPosition: boolean;
       openingDifference: number | null;
       previousImports: components['schemas']['PreviousImportResourceDto'][];
       /** @enum {string} */
-      reportType: 'account_statement' | 'settlement';
+      reportType: 'account_statement' | 'settlement' | 'benefit_statement';
       canIntegrate: boolean;
       /** @enum {string} */
       sourceFormat: 'pdf' | 'csv' | 'xlsx';
@@ -806,6 +836,9 @@ export interface components {
       resetClassification?: boolean;
     };
     DashboardResourceDto: {
+      benefitBalance: number;
+      reserveBalance: number;
+      recordedResources: number;
       balance: number;
       income: number;
       expense: number;
@@ -1236,6 +1269,29 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  LedgerController_adjustBalance: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BalanceAdjustmentDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TransactionResourceDto'];
+        };
       };
     };
   };

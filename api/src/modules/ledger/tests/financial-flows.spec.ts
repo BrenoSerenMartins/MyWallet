@@ -299,3 +299,116 @@ describe('Financial integrity with PostgreSQL RLS', () => {
     });
   });
 });
+
+it('records an idempotent manual balance correction without changing income/expense totals or opening position', async () => {
+  await db.forUser(db.user, async () => {
+    const account = await accounts.create({
+      name: 'Balance correction test',
+      institution: 'mercado_pago',
+      type: 'checking',
+      openingBalance: 10000,
+      openingDate: '2026-01-01',
+    });
+    const before = await ledger.summary('2026-01-01', '2027-01-01');
+    const adjustment = await ledger.adjustBalance(
+      account.id,
+      { expectedBalance: 10000, targetBalance: 7500, reason: 'Historical gap verified manually' },
+      'manual-balance-proof',
+    );
+    expect(adjustment).toMatchObject({
+      amount: -2500,
+      description: 'Correção de saldo manual',
+      transactionType: 'transfer',
+      balanceAdjustment: {
+        previousBalance: 10000,
+        targetBalance: 7500,
+        reason: 'Historical gap verified manually',
+      },
+      reconciliationStatus: 'pending',
+    });
+    expect(
+      await ledger.adjustBalance(
+        account.id,
+        { expectedBalance: 10000, targetBalance: 7500, reason: 'Historical gap verified manually' },
+        'manual-balance-proof',
+      ),
+    ).toEqual(adjustment);
+    expect(await accounts.find(account.id)).toMatchObject({ openingBalance: 10000, balance: 7500 });
+    expect(await ledger.summary('2026-01-01', '2027-01-01')).toEqual(before);
+    await expect(
+      ledger.update(adjustment.id, { ...adjustment, amount: -1000 }, String(adjustment.version)),
+    ).rejects.toThrow('não são editadas');
+  });
+});
+it('rejects stale/zero balance adjustments and reverses corrections without deleting original movements', async () => {
+  const account = await db.forUser(db.user, () =>
+    accounts.create({
+      name: 'Correction reversal',
+      institution: 'mercado_pago',
+      type: 'checking',
+      openingBalance: 1000,
+      openingDate: '2026-01-01',
+    }),
+  );
+  await expect(
+    db.forUser(db.user, () =>
+      ledger.adjustBalance(
+        account.id,
+        { expectedBalance: 900, targetBalance: 2000, reason: 'Stale balance' },
+        'stale-balance',
+      ),
+    ),
+  ).rejects.toThrow('saldo mudou');
+  await expect(
+    db.forUser(db.user, () =>
+      ledger.adjustBalance(
+        account.id,
+        { expectedBalance: 1000, targetBalance: 1000, reason: 'No difference' },
+        'zero-balance',
+      ),
+    ),
+  ).rejects.toThrow('já corresponde');
+  await expect(
+    db.forUser(db.other, () =>
+      ledger.adjustBalance(
+        account.id,
+        { expectedBalance: 1000, targetBalance: 2000, reason: 'Foreign' },
+        'foreign-balance',
+      ),
+    ),
+  ).rejects.toThrow('não encontrada');
+  const adjustment = await db.forUser(db.user, () =>
+    ledger.adjustBalance(
+      account.id,
+      { expectedBalance: 1000, targetBalance: 2000, reason: 'Verified statement snapshot' },
+      'upward-balance',
+    ),
+  );
+  await db.forUser(db.user, () => ledger.reverse(adjustment.id, String(adjustment.version)));
+  expect((await db.forUser(db.user, () => accounts.find(account.id))).balance).toBe(1000);
+});
+it('round-trips balance-correction evidence and excludes it from all planning actuals', async () => {
+  const backup = await db.forUser(db.user, () => backups.backup());
+  const adjustment = backup.transactions.find((t) => t.balanceAdjustment);
+  expect(adjustment?.balanceAdjustment?.reason).toBe('Historical gap verified manually');
+  const bad = structuredClone(backup);
+  bad.transactions.find((t) => t.balanceAdjustment)!.balanceAdjustment!.targetBalance++;
+  await expect(db.forUser(db.user, () => backups.preview(bad))).rejects.toThrow('backup');
+  const space = await db.engine.query<{ id: string }>(
+    "INSERT INTO wallet.workspaces(user_id,name) VALUES($1,'Correction restore') RETURNING id",
+    [db.user],
+  );
+  await db.forUser(
+    db.user,
+    async () => {
+      const draft = await backups.preview(backup);
+      await backups.confirm(draft.id);
+      const restored = (await ledger.exportRecords()).find(
+        (t) => t.description === 'Correção de saldo manual',
+      );
+      expect(restored?.balanceAdjustment).toEqual(adjustment?.balanceAdjustment);
+    },
+    false,
+    space.rows[0].id,
+  );
+});

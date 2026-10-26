@@ -1712,3 +1712,8 @@ button.transaction-row:hover {
   height: 20px;
   flex-shrink: 0;
 }
+
+.account-card-footer {
+  flex-wrap: wrap;
+  gap: 12px;
+}

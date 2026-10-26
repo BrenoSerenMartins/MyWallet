@@ -5,7 +5,7 @@ import type {
   ReprocessedImportEntry,
   StatementRow,
 } from '../contracts/statement.js';
-import { mapMercadoPago } from '../mappers/mercado-pago/statement.mapper.js';
+import { mapInstitutionStatement } from './statement-institution.js';
 function sourceIdentity(
   item: Pick<
     StatementRow,
@@ -35,7 +35,7 @@ export function preserveImportReviews(
     group.push(item);
     matches.set(identity, group);
   }
-  return mapMercadoPago(statement).map((item) => {
+  return mapInstitutionStatement(statement).map((item) => {
     const old = matches.get(sourceIdentity(item))?.shift();
     const transactionType =
       !resetClassification && old && old.transactionType !== 'unclassified'

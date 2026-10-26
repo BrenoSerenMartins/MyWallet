@@ -25,13 +25,13 @@ export class PlanningService implements PlanningBackup {
     @Inject(CATEGORY_READS) private readonly categories: CategoryReads,
     @Inject(LEDGER_READS) private readonly ledger: LedgerReads,
   ) {}
-  async summary(month: string) {
+  async summary(month: string, scope: 'all' | 'cash' | 'benefits' = 'all') {
     const { from, to } = planningPeriod(month);
     return planningSummary(
       month,
       await this.repository.find(month),
       await this.categories.list(true),
-      await this.ledger.planningActuals(from, to),
+      await this.ledger.planningActuals(from, to, scope),
     );
   }
   async save(month: string, input: SaveMonthlyPlanDto) {

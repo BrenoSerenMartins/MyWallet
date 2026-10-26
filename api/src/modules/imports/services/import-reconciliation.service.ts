@@ -34,10 +34,59 @@ export class ImportReconciliationService {
     if (candidates.length > 20000)
       throw new UnprocessableEntityException('Use um período menor para conciliar os movimentos.');
     const indexed = reconciliationCandidates(candidates);
+    const benefitOccurrences = new Map<string, number>();
     const seen = new Set<string>();
     const claimed = new Map<string, string | null>();
     return items.map((item) => {
-      const source = importSourceEvidence(item, reportType);
+      const benefitIdentity = JSON.stringify([item.transactionDate, item.amount, item.description]);
+      const existingOccurrence =
+        item.confirmNew && reportType === 'benefit_statement'
+          ? Math.max(
+              0,
+              ...candidates.flatMap((candidate) =>
+                candidate.evidence
+                  .filter(
+                    (proof) =>
+                      proof.data.reportType === 'benefit_statement' &&
+                      proof.data.date === item.transactionDate &&
+                      proof.data.amount === item.amount &&
+                      proof.data.description === item.description,
+                  )
+                  .map((proof) => proof.data.occurrence ?? 0),
+              ),
+            )
+          : 0;
+      const occurrence = existingOccurrence + (benefitOccurrences.get(benefitIdentity) ?? 0) + 1;
+      benefitOccurrences.set(benefitIdentity, occurrence);
+      let source: SourceEvidence | null =
+        reportType === 'benefit_statement'
+          ? {
+              reportType,
+              institution: 'alelo',
+              reference: '',
+              date: item.transactionDate,
+              amount: item.amount,
+              balance: null,
+              eventType: null,
+              timestamp: null,
+              installmentNumber: null,
+              description: item.description,
+              occurrence,
+              ruleVersion: 'alelo/food-pdf/1',
+            }
+          : importSourceEvidence(item, reportType);
+      if (reportType === 'benefit_statement' && item.linkedTransactionId && !item.confirmNew) {
+        const proof = indexed.byId
+          .get(item.linkedTransactionId)
+          ?.evidence.find(
+            (proof) =>
+              proof.data.reportType === 'benefit_statement' &&
+              proof.data.date === item.transactionDate &&
+              proof.data.amount === item.amount &&
+              proof.data.description === item.description,
+          );
+        if (proof) source = proof.data;
+      }
       const key = source ? sourceEvidenceKey(source) : null;
       const occurrenceRepeated = key !== null && seen.has(key);
       if (key) seen.add(key);
@@ -78,6 +127,9 @@ export class ImportReconciliationService {
             : eligible.length > 1 || similar.length
               ? 'review'
               : 'create';
+      if (reportType === 'benefit_statement' && (known || similar.length) && !explicit)
+        action = 'review';
+      if (reportType === 'benefit_statement' && explicit) action = 'reconcile';
       if (item.confirmNew && !linked && !occurrenceRepeated) action = 'create';
       const metadata = item.metadata;
       const transactionType =
@@ -98,15 +150,17 @@ export class ImportReconciliationService {
       const reason =
         linked?.modified && reportType === 'settlement'
           ? 'O valor ou a data do lançamento foi alterado. Confira a diferença antes de conciliar; suas alterações serão preservadas.'
-          : action === 'create'
-            ? 'Novo movimento identificado na fonte.'
-            : action === 'reconcile'
-              ? 'Vincular ao lançamento existente, preservando seus valores e categorias.'
-              : action === 'recorded'
-                ? 'Esta operação já está registrada.'
-                : action === 'ignore'
-                  ? 'Registro repetido ou sem efeito financeiro.'
-                  : 'Confira classificação, disponibilidade ou um possível lançamento já existente.';
+          : reportType === 'benefit_statement' && action === 'review'
+            ? 'O PDF não fornece ID por compra. Confira as ocorrências antes de vincular; compras iguais no mesmo dia podem ser legítimas.'
+            : action === 'create'
+              ? 'Novo movimento identificado na fonte.'
+              : action === 'reconcile'
+                ? 'Vincular ao lançamento existente, preservando seus valores e categorias.'
+                : action === 'recorded'
+                  ? 'Esta operação já está registrada.'
+                  : action === 'ignore'
+                    ? 'Registro repetido ou sem efeito financeiro.'
+                    : 'Confira classificação, disponibilidade ou um possível lançamento já existente.';
       return {
         ...item,
         transactionType,

@@ -27,7 +27,14 @@ export class CategoryResourceDto {
   @ApiProperty({ type: String }) type!: string;
   @ApiProperty({ type: String }) color!: string;
 }
+export class BalanceAdjustmentResourceDto {
+  @ApiProperty({ type: Number }) previousBalance!: number;
+  @ApiProperty({ type: Number }) targetBalance!: number;
+  @ApiProperty({ type: String }) reason!: string;
+}
 export class TransactionResourceDto {
+  @ApiPropertyOptional({ type: () => BalanceAdjustmentResourceDto, nullable: true })
+  balanceAdjustment?: BalanceAdjustmentResourceDto | null;
   @ApiProperty({ type: String, enum: ['pending', 'reconciled'] }) reconciliationStatus!:
     'pending' | 'reconciled';
   @ApiProperty({ type: String }) id!: string;
@@ -105,13 +112,16 @@ export class PreviousImportResourceDto {
   @ApiProperty({ type: String }) lastDate!: string;
 }
 export class ImportBatchResourceDto {
+  @ApiProperty({ type: String }) institution!: string;
+  @ApiProperty({ type: String, enum: ['running_balance', 'partial'] }) reconciliationCapability!:
+    'running_balance' | 'partial';
   @ApiProperty({ type: Boolean }) canReprocess!: boolean;
   @ApiProperty({ type: Boolean }) canAdjustOpeningPosition!: boolean;
   @ApiProperty({ type: Number, nullable: true }) openingDifference!: number | null;
   @ApiProperty({ type: () => [PreviousImportResourceDto] })
   previousImports!: PreviousImportResourceDto[];
-  @ApiProperty({ type: String, enum: ['account_statement', 'settlement'] }) reportType!:
-    'account_statement' | 'settlement';
+  @ApiProperty({ type: String, enum: ['account_statement', 'settlement', 'benefit_statement'] })
+  reportType!: 'account_statement' | 'settlement' | 'benefit_statement';
   @ApiProperty({ type: Boolean }) canIntegrate!: boolean;
   @ApiProperty({ type: String, enum: ['pdf', 'csv', 'xlsx'] }) sourceFormat!:
     'pdf' | 'csv' | 'xlsx';
@@ -130,6 +140,9 @@ export class ImportBatchResourceDto {
   @ApiProperty({ type: () => [ImportItemResourceDto] }) items!: ImportItemResourceDto[];
 }
 export class DashboardResourceDto {
+  @ApiProperty({ type: Number }) benefitBalance!: number;
+  @ApiProperty({ type: Number }) reserveBalance!: number;
+  @ApiProperty({ type: Number }) recordedResources!: number;
   @ApiProperty({ type: Number }) balance!: number;
   @ApiProperty({ type: Number }) income!: number;
   @ApiProperty({ type: Number }) expense!: number;

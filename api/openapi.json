@@ -509,6 +509,40 @@
         "tags": ["Transactions"]
       }
     },
+    "/v1/accounts/{id}/balance-adjustments": {
+      "post": {
+        "operationId": "LedgerController_adjustBalance",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BalanceAdjustmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Transactions"]
+      }
+    },
     "/v1/transfers": {
       "post": {
         "operationId": "LedgerController_transfer",
@@ -1246,7 +1280,7 @@
           },
           "type": {
             "type": "string",
-            "enum": ["checking", "savings", "cash", "reserve"]
+            "enum": ["checking", "savings", "cash", "reserve", "benefit_food", "benefit_meal"]
           },
           "openingBalance": {
             "type": "number"
@@ -1374,9 +1408,33 @@
           "conflictingNames"
         ]
       },
+      "BalanceAdjustmentResourceDto": {
+        "type": "object",
+        "properties": {
+          "previousBalance": {
+            "type": "number"
+          },
+          "targetBalance": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["previousBalance", "targetBalance", "reason"]
+      },
       "TransactionResourceDto": {
         "type": "object",
         "properties": {
+          "balanceAdjustment": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BalanceAdjustmentResourceDto"
+              }
+            ]
+          },
           "reconciliationStatus": {
             "type": "string",
             "enum": ["pending", "reconciled"]
@@ -1500,6 +1558,21 @@
           }
         },
         "required": ["accountId", "transactionDate", "description", "amount", "transactionType"]
+      },
+      "BalanceAdjustmentDto": {
+        "type": "object",
+        "properties": {
+          "targetBalance": {
+            "type": "number"
+          },
+          "expectedBalance": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["targetBalance", "expectedBalance", "reason"]
       },
       "TransferDto": {
         "type": "object",
@@ -1943,6 +2016,13 @@
       "ImportBatchResourceDto": {
         "type": "object",
         "properties": {
+          "institution": {
+            "type": "string"
+          },
+          "reconciliationCapability": {
+            "type": "string",
+            "enum": ["running_balance", "partial"]
+          },
           "canReprocess": {
             "type": "boolean"
           },
@@ -1961,7 +2041,7 @@
           },
           "reportType": {
             "type": "string",
-            "enum": ["account_statement", "settlement"]
+            "enum": ["account_statement", "settlement", "benefit_statement"]
           },
           "canIntegrate": {
             "type": "boolean"
@@ -2017,6 +2097,8 @@
           }
         },
         "required": [
+          "institution",
+          "reconciliationCapability",
           "canReprocess",
           "canAdjustOpeningPosition",
           "openingDifference",
@@ -2122,6 +2204,15 @@
       "DashboardResourceDto": {
         "type": "object",
         "properties": {
+          "benefitBalance": {
+            "type": "number"
+          },
+          "reserveBalance": {
+            "type": "number"
+          },
+          "recordedResources": {
+            "type": "number"
+          },
           "balance": {
             "type": "number"
           },
@@ -2151,6 +2242,9 @@
           }
         },
         "required": [
+          "benefitBalance",
+          "reserveBalance",
+          "recordedResources",
           "balance",
           "income",
           "expense",

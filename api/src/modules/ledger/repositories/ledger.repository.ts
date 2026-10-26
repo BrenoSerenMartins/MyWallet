@@ -31,7 +31,8 @@ export class LedgerRepository {
     );
     return rows.map((row) => ({
       ...transactionResource(row),
-      sourceEvidence: row.source_evidence,
+      sourceEvidence:
+        row.source_evidence as import('../../../core/integration/index.js').SourceEvidence[],
     }));
   }
   async recordEvidence(transactionId: string, accountId: string, evidence: SourceEvidence) {
@@ -58,7 +59,7 @@ export class LedgerRepository {
   }
   async insert(input: TransactionInput) {
     const rows = await this.db.query(
-      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
       [
         randomUUID(),
         this.db.userId,
@@ -72,6 +73,7 @@ export class LedgerRepository {
         input.importBatchId ?? null,
         input.sourceRow ?? null,
         input.transferGroupId ?? null,
+        input.balanceAdjustment ? JSON.stringify(input.balanceAdjustment) : null,
       ],
     );
     return transactionResource(rows[0]);
@@ -146,6 +148,13 @@ export class LedgerRepository {
     ]);
     return id;
   }
+  async hasFutureEntries(accountId: string, date: string) {
+    const rows = await this.db.query(
+      'SELECT 1 FROM wallet.transactions WHERE user_id=$1 AND account_id=$2 AND reversed_at IS NULL AND transaction_date>$3 LIMIT 1',
+      [this.db.userId, accountId, date],
+    );
+    return rows.length > 0;
+  }
   async balanceBefore(accountId: string, date: string) {
     const [r] = await this.db.query(
       'SELECT coalesce(sum(amount_minor),0) total FROM wallet.transactions WHERE user_id=$1 AND account_id=$2 AND transaction_date<$3 AND reversed_at IS NULL',
@@ -164,7 +173,11 @@ export class LedgerRepository {
       unclassified: Number(r.unclassified),
     };
   }
-  async planningActuals(from: string, to: string): Promise<PlanningActual[]> {
+  async planningActuals(
+    from: string,
+    to: string,
+    scope: 'all' | 'cash' | 'benefits' = 'all',
+  ): Promise<PlanningActual[]> {
     const rows = await this.db.query(
       `SELECT category_id,transaction_type,
       coalesce(sum(amount_minor),0) AS total,count(*) AS count,
@@ -172,8 +185,9 @@ export class LedgerRepository {
       coalesce(-sum(amount_minor) FILTER(WHERE amount_minor<0),0) AS outflow
       FROM wallet.transactions WHERE user_id=$1 AND reversed_at IS NULL
       AND transaction_date >= $2 AND transaction_date < $3 AND transaction_type <> 'transfer'
+      AND ($4='all' OR account_id IN(SELECT id FROM wallet.financial_accounts WHERE CASE WHEN $4='benefits' THEN type IN ('benefit_food','benefit_meal') ELSE type NOT IN ('benefit_food','benefit_meal') END))
       GROUP BY category_id,transaction_type`,
-      [this.db.userId, from, to],
+      [this.db.userId, from, to, scope],
     );
     return rows.map((r) => ({
       categoryId: r.category_id,

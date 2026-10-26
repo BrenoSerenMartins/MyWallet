@@ -279,3 +279,13 @@ Investimentos, patrimônio consolidado, reserva de emergência, metas, cartões,
 Em **Movimentações**, o filtro de conciliação separa pendentes e conciliadas. Nos detalhes, confira o ID externo e os relatórios vinculados. Para recuperar campos antes descartados em relatórios antigos, reprocese com o arquivo original; relatórios guardados no histórico podem voltar à revisão e ser confirmados financeiramente.
 
 Para investigar uma diferença de saldo sem alterar dados, execute `npm run db:diagnose -- --balance=703.31` (valor exibido no app, com ponto decimal) ou `npm run db:diagnose -- --account=<uuid>`. O comando usa `.env.local`, verifica TLS e imprime valores em centavos, posição inicial, movimentos manuais/importados e diferenças para os últimos extratos confirmados. Ele não corrige saldos automaticamente.
+
+### Alelo e saldo atual
+
+Cadastre a instituição **Alelo** com o tipo **Vale-alimentação** ou **Vale-refeição**, separando os saldos. O importador validado aceita o PDF com texto de **Alelo Alimentação** do Meu Alelo. Ele importa créditos e compras, mantém compras iguais como ocorrências distintas e exige revisão de arquivos sobrepostos. O PDF não informa saldo inicial nem saldos por movimento: a cobertura é parcial e os movimentos permanecem pendentes de conciliação. O EDI do MP não confirma operações da Alelo. Refeição ainda precisa de um modelo compatível para importação.
+
+A visão geral separa dinheiro disponível, benefícios e reservas registradas. Entradas/saídas mensais incluem todas as contas; em Planejamento, o filtro permite ver o realizado com ou sem benefícios, sem alterar o plano salvo.
+
+Em **Minhas contas → Corrigir saldo**, informe o saldo atual correto e o motivo. O app mostra a diferença e registra uma **Correção de saldo manual**, preservando os movimentos anteriores. O ajuste não entra em receitas/despesas e não marca a conta como conciliada. Ele pode ser desfeito pelo histórico; seu registro e motivo ficam no backup. Se houver lançamentos futuros ou o saldo mudar durante a confirmação, revise antes de tentar novamente. Não some o saldo atual ao saldo de abertura: a correção calcula apenas a diferença.
+
+As migrations `202610260002_alelo_benefit_imports.sql` e `202610260003_manual_balance_adjustments.sql` foram aplicadas pelo usuário antes do deploy.

@@ -184,7 +184,11 @@ export function TransactionForm({
           {error}
         </p>
       )}
-      <Button disabled={busy || !navigator.onLine || !!entry?.transferGroupId}>
+      <Button
+        disabled={
+          busy || !navigator.onLine || !!entry?.transferGroupId || !!entry?.balanceAdjustment
+        }
+      >
         {busy ? 'Salvando…' : entry ? 'Salvar alterações' : 'Registrar movimento'}
       </Button>
       {entry && (

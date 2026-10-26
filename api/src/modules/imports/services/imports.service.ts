@@ -1,3 +1,8 @@
+import {
+  extractInstitutionStatement,
+  mapInstitutionStatement,
+  statementMapperVersion,
+} from './statement-institution.js';
 import { ImportReconciliationService } from './import-reconciliation.service.js';
 import {
   ConflictException,
@@ -23,23 +28,25 @@ import {
 import { requireVersion } from '../../../core/rest/index.js';
 import { ImportsRepository } from '../repositories/imports.repository.js';
 import {
-  mapMercadoPago,
   classifyMercadoPagoMovement,
-  mercadoPagoMapperVersion,
   mercadoPagoSourceFormat,
 } from '../mappers/mercado-pago/statement.mapper.js';
-import { extractMercadoPagoStatement } from '../parsers/mercado-pago/extract-statement.js';
 import type { ParsedStatement } from '../contracts/statement.js';
 import type { ReviewItemDto } from '../dto/import.dto.js';
 @Injectable()
 export class ImportsService {
   private readonly activeExtractions = new Set<string>();
-  async extract(userId: string, buffer: Buffer, fileName = 'statement.pdf') {
+  async extract(
+    userId: string,
+    buffer: Buffer,
+    fileName = 'statement.pdf',
+    institution = 'mercado_pago',
+  ) {
     if (this.activeExtractions.has(userId))
       throw new ConflictException('Já existe uma leitura em andamento.');
     this.activeExtractions.add(userId);
     try {
-      return await extractMercadoPagoStatement(buffer, fileName);
+      return await extractInstitutionStatement(institution, buffer, fileName);
     } finally {
       this.activeExtractions.delete(userId);
     }
@@ -54,6 +61,12 @@ export class ImportsService {
     @Inject(ImportReconciliationService)
     private readonly reconciliation: ImportReconciliationService,
   ) {}
+  async sourceAccount(accountId: string) {
+    const account = await this.accounts.find(accountId);
+    if (!['mercado_pago', 'alelo'].includes(account.institution))
+      throw new UnprocessableEntityException('Esta instituição ainda não possui importador.');
+    return account;
+  }
   list() {
     return this.repository.list();
   }
@@ -72,7 +85,7 @@ export class ImportsService {
     id: string,
     accountId: string,
     automaticClassification = false,
-    reportType: 'account_statement' | 'settlement' = 'account_statement',
+    reportType: 'account_statement' | 'settlement' | 'benefit_statement' = 'account_statement',
   ) {
     const items = await this.repository.items(id);
     const normalized = items.map((item) => ({
@@ -120,6 +133,9 @@ export class ImportsService {
       previousImports,
       canReprocess: ['draft', 'history'].includes(b.status),
       sourceFormat: mercadoPagoSourceFormat(b.mapper_version),
+      reconciliationCapability:
+        b.report_type === 'account_statement' ? 'running_balance' : 'partial',
+      institution: account.institution,
       reportType: b.report_type,
       canIntegrate: true,
       accountOpeningDate: account.openingDate,
@@ -140,8 +156,15 @@ export class ImportsService {
   }
   async upload(accountId: string, buffer: Buffer, fileName: string, statement: ParsedStatement) {
     const account = await this.accounts.find(accountId, true);
-    if (account.institution !== 'mercado_pago')
-      throw new UnprocessableEntityException('O primeiro importador atende contas Mercado Pago.');
+    if (
+      (statement.reportType === 'benefit_statement') !== (account.institution === 'alelo') ||
+      !['alelo', 'mercado_pago'].includes(account.institution)
+    )
+      throw new UnprocessableEntityException('O arquivo não corresponde à instituição da conta.');
+    if (account.institution === 'alelo' && account.type !== 'benefit_food')
+      throw new UnprocessableEntityException(
+        'Este modelo é Alelo Alimentação. Selecione uma conta de Alimentação.',
+      );
     const hash = createHash('sha256').update(buffer).digest('hex');
     const existing = await this.repository.sameFile(accountId, hash);
     if (existing) return this.preview(existing.id);
@@ -150,10 +173,10 @@ export class ImportsService {
       accountId,
       hash,
       fileName,
-      mercadoPagoMapperVersion(statement.sourceFormat ?? 'pdf', statement.reportType),
+      statementMapperVersion(statement),
       statement,
     );
-    const entries = mapMercadoPago(statement);
+    const entries = mapInstitutionStatement(statement);
     for (const entry of entries) await this.repository.addItem(id, entry, false);
     return this.preview(id);
   }

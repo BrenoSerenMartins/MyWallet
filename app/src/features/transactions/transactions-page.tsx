@@ -1,3 +1,4 @@
+import { money } from '../../shared/formatting/money';
 import { TransactionSources } from './components/transaction-sources';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { CategorySelect } from '../../shared/ui/category-select';
@@ -266,6 +267,19 @@ export function TransactionsPage() {
                   : 'Pendente de conciliação'}
               </strong>
               <p>ID externo: {selected.sourceOperationId ?? 'Ainda não vinculado'}</p>
+            </div>
+          </div>
+        )}
+        {selected?.balanceAdjustment && (
+          <div className="review-banner">
+            <div>
+              <strong>Correção de saldo manual</strong>
+              <p>
+                Anterior: {money(selected.balanceAdjustment.previousBalance)} · Corrigido:{' '}
+                {money(selected.balanceAdjustment.targetBalance)}
+              </p>
+              <p>Motivo: {selected.balanceAdjustment.reason}</p>
+              <p>Este ajuste preserva o histórico e não conta como receita ou despesa.</p>
             </div>
           </div>
         )}

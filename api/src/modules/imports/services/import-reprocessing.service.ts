@@ -1,3 +1,4 @@
+import { statementMapperVersion } from './statement-institution.js';
 import {
   ConflictException,
   Inject,
@@ -12,10 +13,7 @@ import { ImportsRepository } from '../repositories/imports.repository.js';
 import { ImportsService } from './imports.service.js';
 import { preserveImportReviews } from './preserve-import-reviews.js';
 import { reconcileStatement } from '../parsers/mercado-pago/reconcile-statement.js';
-import {
-  mercadoPagoMapperVersion,
-  mercadoPagoSourceFormat,
-} from '../mappers/mercado-pago/statement.mapper.js';
+import { mercadoPagoSourceFormat } from '../mappers/mercado-pago/statement.mapper.js';
 @Injectable()
 export class ImportReprocessingService {
   constructor(
@@ -51,7 +49,7 @@ export class ImportReprocessingService {
     const account = await this.accounts.find(first.account_id, true);
     const batch = await this.imports.get(id, true);
     await this.validateSource(id, version, source?.buffer);
-    if (account.institution !== 'mercado_pago')
+    if (!['mercado_pago', 'alelo'].includes(account.institution))
       throw new UnprocessableEntityException('O arquivo pertence ao importador Mercado Pago.');
     const previous = await this.repository.items(id);
     const statement: ParsedStatement = source?.statement ?? {
@@ -77,7 +75,7 @@ export class ImportReprocessingService {
       id,
       statement,
       items,
-      mercadoPagoMapperVersion(statement.sourceFormat ?? 'pdf', statement.reportType),
+      statementMapperVersion(statement),
     );
     return this.imports.preview(id);
   }

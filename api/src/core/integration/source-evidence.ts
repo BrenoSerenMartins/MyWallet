@@ -1,7 +1,10 @@
 import { createHash } from 'node:crypto';
 export interface SourceEvidence {
   ruleVersion?: string;
-  reportType: 'account_statement' | 'settlement';
+  reportType: 'account_statement' | 'settlement' | 'benefit_statement';
+  institution?: 'mercado_pago' | 'alelo';
+  description?: string;
+  occurrence?: number;
   reference: string;
   date: string;
   originDate?: string | null;
@@ -15,7 +18,7 @@ export function sourceEvidenceKey(source: SourceEvidence) {
   return createHash('sha256')
     .update(
       JSON.stringify([
-        'mercado_pago',
+        source.institution ?? 'mercado_pago',
         source.reportType,
         source.reference,
         source.date,
@@ -25,6 +28,9 @@ export function sourceEvidenceKey(source: SourceEvidence) {
           ? new Date(source.timestamp).toISOString()
           : null,
         source.reportType === 'settlement' ? source.installmentNumber : null,
+        ...(source.reportType === 'benefit_statement'
+          ? [source.description, source.occurrence]
+          : []),
       ]),
     )
     .digest('hex');

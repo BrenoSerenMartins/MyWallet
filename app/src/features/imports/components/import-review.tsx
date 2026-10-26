@@ -72,6 +72,21 @@ export function ImportReview({
         }}
       />
       <ImportSourceSummary batch={batch} />
+      {batch.reportType === 'benefit_statement' && (
+        <div className="review-banner">
+          <div>
+            <strong>Alelo Alimentação · histórico parcial</strong>
+            <p>
+              Este PDF não informa saldo inicial nem saldo após cada compra. Confira a posição
+              inicial cadastrada: o saldo será calculado pelos movimentos confirmados.
+            </p>
+            <p>
+              A importação fica pendente de conciliação. Revise possíveis compras repetidas antes de
+              confirmar.
+            </p>
+          </div>
+        </div>
+      )}
       {batch.status === 'draft' &&
         canIntegrate &&
         (batch.openingMismatch || batch.openingDateMismatch) && (
@@ -145,8 +160,9 @@ export function ImportReview({
               {unresolved} a classificar
             </strong>
             <p>
-              Entradas e saídas já foram classificadas pelo valor. Reservas reconhecidas são
-              transferências. Confira as categorias e transferências entre suas próprias contas.
+              {batch.reportType === 'benefit_statement'
+                ? 'Créditos reconhecidos do benefício são receitas; compras são despesas. Confira categorias e possíveis compras repetidas.'
+                : 'Entradas e saídas já foram classificadas pelo valor. Reservas reconhecidas são transferências. Confira as categorias e transferências entre suas próprias contas.'}
             </p>
           </div>
           {unresolved > 0 && (

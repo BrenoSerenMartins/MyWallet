@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Query,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUserGuard, type AuthenticatedRequest } from '../../../core/auth/index.js';
 import { DatabaseService } from '../../../core/database/index.js';
@@ -20,8 +32,18 @@ export class PlanningController {
   ) {}
   @Get(':month')
   @ApiOkResponse({ type: MonthlyPlanResourceDto })
-  summary(@Req() r: AuthenticatedRequest, @Param('month') month: string) {
-    return this.db.forUser(r.identity.id, () => this.planning.summary(month), true);
+  summary(
+    @Req() r: AuthenticatedRequest,
+    @Param('month') month: string,
+    @Query('scope') scope = 'all',
+  ) {
+    if (!['all', 'cash', 'benefits'].includes(scope))
+      throw new BadRequestException('Escopo de contas inválido.');
+    return this.db.forUser(
+      r.identity.id,
+      () => this.planning.summary(month, scope as 'all' | 'cash' | 'benefits'),
+      true,
+    );
   }
   @Put(':month')
   @ApiBody({ type: SaveMonthlyPlanDto })

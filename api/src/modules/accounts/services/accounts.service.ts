@@ -1,4 +1,10 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  UnprocessableEntityException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AccountReads } from '../../../core/integration/index.js';
 import { dateOnly, requireVersion } from '../../../core/rest/index.js';
 import { AccountsRepository } from '../repositories/accounts.repository.js';
@@ -21,7 +27,15 @@ export class AccountsService implements AccountReads {
     if (!account) throw new NotFoundException('Conta não encontrada.');
     return account;
   }
+  private validateProduct(input: CreateAccountDto) {
+    const benefit = ['benefit_food', 'benefit_meal'].includes(input.type);
+    if ((input.institution === 'alelo') !== benefit)
+      throw new UnprocessableEntityException(
+        'Use Alelo com o tipo Alimentação ou Refeição, em contas separadas.',
+      );
+  }
   async create(input: CreateAccountDto) {
+    this.validateProduct(input);
     dateOnly(input.openingDate);
     const id = await this.repository.create(input);
     return this.find(id);
@@ -29,6 +43,14 @@ export class AccountsService implements AccountReads {
   async update(id: string, input: CreateAccountDto, version: string) {
     const account = await this.find(id, true);
     requireVersion(account.version, version);
+    if (
+      (account.institution !== input.institution || account.type !== input.type) &&
+      (await this.repository.hasTransactions(id))
+    )
+      throw new ConflictException(
+        'A instituição e o tipo de uma conta com movimentos devem ser preservados. Crie outra conta e revise os registros.',
+      );
+    this.validateProduct(input);
     dateOnly(input.openingDate);
     if (
       (account.openingBalance !== input.openingBalance ||

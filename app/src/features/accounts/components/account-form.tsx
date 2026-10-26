@@ -51,7 +51,14 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
       <div className="form-grid">
         <label>
           Instituição
-          <select value={institution} onChange={(e) => setInstitution(e.target.value)}>
+          <select
+            value={institution}
+            onChange={(e) => {
+              setInstitution(e.target.value);
+              setType(e.target.value === 'alelo' ? 'benefit_food' : 'checking');
+            }}
+          >
+            <option value="alelo">Alelo</option>
             <option value="mercado_pago">Mercado Pago</option>
             <option value="nubank">Nubank</option>
             <option value="itau">Itaú</option>
@@ -63,10 +70,19 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
         <label>
           Tipo
           <select value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="checking">Conta corrente / pagamento</option>
-            <option value="savings">Poupança</option>
-            <option value="cash">Dinheiro em espécie</option>
-            <option value="reserve">Conta de reserva</option>
+            {institution === 'alelo' ? (
+              <>
+                <option value="benefit_food">Vale-alimentação</option>
+                <option value="benefit_meal">Vale-refeição</option>
+              </>
+            ) : (
+              <>
+                <option value="checking">Conta corrente / pagamento</option>
+                <option value="savings">Poupança</option>
+                <option value="cash">Dinheiro em espécie</option>
+                <option value="reserve">Conta de reserva</option>
+              </>
+            )}
           </select>
         </label>
       </div>
@@ -86,8 +102,9 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
         </label>
       </div>
       <p className="field-help">
-        Para importar um extrato, use o saldo inicial dele e uma data igual ou anterior ao primeiro
-        movimento.
+        {institution === 'alelo'
+          ? 'Benefício não é limite de crédito nem dinheiro livre. Informe a posição conhecida antes dos movimentos; o saldo atual no PDF não define o saldo inicial. A importação validada é para Alimentação.'
+          : 'Para importar um extrato, use o saldo inicial dele e uma data igual ou anterior ao primeiro movimento.'}
       </p>
       {error && (
         <p className="form-error" role="alert">

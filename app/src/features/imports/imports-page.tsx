@@ -88,20 +88,23 @@ export function ImportsPage() {
                   <FileText size={28} />
                 </span>
                 <h2>
-                  Seu Mercado Pago,
+                  Seus movimentos,
                   <br />
                   sem começar do zero.
                 </h2>
                 <p>
-                  Envie um ou vários extratos de conta em PDF, CSV ou XLSX. Vamos organizar os dados
-                  e conferir os saldos para você revisar. Relatórios settlement_v2 em CSV também são
-                  aceitos, apenas para consulta.
+                  Mercado Pago: extratos PDF, CSV, XLSX e EDI para conciliação. Alelo Alimentação:
+                  PDF com texto, com revisão da cobertura e dos movimentos.
                 </p>
                 {accounts.isPending ? (
                   <Loading />
                 ) : accounts.isError ? (
                   <ErrorState error={accounts.error} />
-                ) : accounts.data.some((a) => a.institution === 'mercado_pago') ? (
+                ) : accounts.data.some(
+                    (a) =>
+                      a.institution === 'mercado_pago' ||
+                      (a.institution === 'alelo' && a.type === 'benefit_food'),
+                  ) ? (
                   <>
                     <label>
                       Conta de destino
@@ -110,9 +113,13 @@ export function ImportsPage() {
                         disabled={busy}
                         onChange={(e) => setAccount(e.target.value)}
                       >
-                        <option value="">Selecione sua conta Mercado Pago</option>
+                        <option value="">Selecione a conta do arquivo</option>
                         {accounts.data
-                          .filter((a) => a.institution === 'mercado_pago')
+                          .filter(
+                            (a) =>
+                              a.institution === 'mercado_pago' ||
+                              (a.institution === 'alelo' && a.type === 'benefit_food'),
+                          )
                           .map((a) => (
                             <option value={a.id} key={a.id}>
                               {a.name}
@@ -154,7 +161,8 @@ export function ImportsPage() {
                       </Link>
                     }
                   >
-                    Cadastre o Mercado Pago com o saldo e a data inicial do seu extrato.
+                    Cadastre sua conta Mercado Pago ou Alelo Alimentação com a posição inicial
+                    conhecida.
                   </EmptyState>
                 )}
               </section>

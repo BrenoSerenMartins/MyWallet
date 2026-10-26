@@ -16,7 +16,16 @@ export class DashboardService {
     const summary = await this.ledger.summary(from, to);
     return {
       ...summary,
-      balance: accounts.reduce((sum, a) => sum + a.balance, 0),
+      balance: accounts
+        .filter((a) => !['benefit_food', 'benefit_meal', 'reserve'].includes(a.type))
+        .reduce((sum, a) => sum + a.balance, 0),
+      benefitBalance: accounts
+        .filter((a) => ['benefit_food', 'benefit_meal'].includes(a.type))
+        .reduce((sum, a) => sum + a.balance, 0),
+      reserveBalance: accounts
+        .filter((a) => a.type === 'reserve')
+        .reduce((sum, a) => sum + a.balance, 0),
+      recordedResources: accounts.reduce((sum, a) => sum + a.balance, 0),
       accounts,
       from,
       to,

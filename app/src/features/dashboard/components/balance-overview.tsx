@@ -18,7 +18,7 @@ export function BalanceOverview({
         <div className="hero-orbits" aria-hidden="true" />
         <div className="hero-label">
           <span>
-            <span className="status-dot" /> SALDO NAS SUAS CONTAS
+            <span className="status-dot" /> DINHEIRO DISPONÍVEL
           </span>
           <button
             className="icon-button"
@@ -30,8 +30,22 @@ export function BalanceOverview({
         </div>
         <div className="hero-balance">{amount(summary.balance)}</div>
         <p className="hero-caption">
-          Visão das contas cadastradas <span>BRL</span>
+          Saldos registrados · sem benefícios e reservas <span>BRL</span>
         </p>
+        {summary.accounts.some((account) =>
+          ['benefit_food', 'benefit_meal', 'reserve'].includes(account.type),
+        ) && (
+          <dl className="resource-balances">
+            <div>
+              <dt>Benefícios · uso restrito</dt>
+              <dd>{amount(summary.benefitBalance ?? 0)}</dd>
+            </div>
+            <div>
+              <dt>Reservas registradas</dt>
+              <dd>{amount(summary.reserveBalance ?? 0)}</dd>
+            </div>
+          </dl>
+        )}
         <div className="hero-divider" />
         <div className="hero-bottom">
           <span>
@@ -63,6 +77,7 @@ export function BalanceOverview({
             <strong>{amount(summary.expense)}</strong>
           </div>
         </div>
+        <p className="field-help">Entradas e saídas de todas as contas, incluindo benefícios.</p>
         <div className="summary-foot">
           <span>Resultado do período</span>
           <strong

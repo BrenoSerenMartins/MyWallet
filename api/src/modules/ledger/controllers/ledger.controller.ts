@@ -1,3 +1,4 @@
+import { BalanceAdjustmentDto } from '../dto/balance-adjustment.dto.js';
 import { ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
 import {
   TransactionResourceDto,
@@ -94,6 +95,20 @@ export class LedgerController {
     @Headers('if-match') version: string,
   ) {
     return this.db.forUser(r.identity.id, () => this.ledger.reverse(requireUuid(id), version));
+  }
+  @Post('accounts/:id/balance-adjustments')
+  @ApiBody({ type: BalanceAdjustmentDto })
+  @ApiCreatedResponse({ type: TransactionResourceDto })
+  async adjustBalance(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Headers('idempotency-key') key: string,
+    @Body() body: unknown,
+  ) {
+    const input = await validateInput(BalanceAdjustmentDto, body);
+    return this.db.forUser(r.identity.id, () =>
+      this.ledger.adjustBalance(requireUuid(id), input, key),
+    );
   }
   @Post('transfers') @ApiBody({ type: TransferDto }) async transfer(
     @Req() r: AuthenticatedRequest,

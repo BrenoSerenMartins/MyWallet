@@ -111,7 +111,7 @@ for (const width of [360, 390, 768, 1440])
       true,
     );
     await page.goto('/imports');
-    await expect(page.getByRole('heading', { name: /Seu Mercado Pago/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Seus movimentos/ })).toBeVisible();
     await page.getByLabel('Conta de destino').selectOption(account.id);
     await expect(page.getByRole('button', { name: 'Selecionar extratos' })).toBeEnabled();
     await page.goto('/settings');
@@ -1352,4 +1352,136 @@ for (const width of [390, 1440])
       path: `/tmp/mywallet-planning-comparison-${width}.png`,
       fullPage: true,
     });
+  });
+
+for (const width of [390, 1440])
+  test(`Alelo benefit separation, upload and manual balance adjustment at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1100 });
+    const benefit = {
+      ...account,
+      id: '88888888-8888-4888-8888-888888888888',
+      name: 'Alelo Alimentação',
+      institution: 'alelo',
+      type: 'benefit_food',
+      openingBalance: 0,
+      openingDate: '2026-01-01',
+      balance: 12000,
+    };
+    const reserve = {
+      ...account,
+      id: '99999999-9999-4999-8999-999999999999',
+      name: 'Reserva',
+      type: 'reserve',
+      balance: 20000,
+    };
+    await page.route('**/v1/accounts', (route) =>
+      route.fulfill({ json: [account, benefit, reserve] }),
+    );
+    await page.route('**/v1/dashboard*', (route) =>
+      route.fulfill({
+        json: {
+          balance: account.balance,
+          benefitBalance: 12000,
+          reserveBalance: 20000,
+          recordedResources: account.balance + 32000,
+          income: 100000,
+          expense: 50000,
+          unclassified: 0,
+          accounts: [account, benefit, reserve],
+          coverage: 'tracked-accounts',
+        },
+      }),
+    );
+    await page.goto('/');
+    await expect(page.getByText('DINHEIRO DISPONÍVEL', { exact: false })).toBeVisible();
+    await expect(page.getByText('Benefícios · uso restrito', { exact: true })).toBeVisible();
+    await page.goto('/accounts');
+    await page.getByRole('button', { name: 'Benefícios', exact: true }).click();
+    await expect(page.getByRole('link', { name: 'Alelo Alimentação', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: account.name, exact: true })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Corrigir saldo', exact: true }).click();
+    await page.getByLabel('Saldo atual correto (R$)').fill('192,20');
+    await page.getByLabel('Motivo da correção').fill('Saldo conferido no Meu Alelo');
+    await expect(page.getByText('Diferença a registrar: R$ 72,20')).toBeVisible();
+    let posted = 0;
+    await page.route(`**/v1/accounts/${benefit.id}/balance-adjustments`, async (route) => {
+      posted++;
+      expect(route.request().postDataJSON()).toEqual({
+        targetBalance: 19220,
+        expectedBalance: 12000,
+        reason: 'Saldo conferido no Meu Alelo',
+      });
+      expect(route.request().headers()['idempotency-key']).toBeTruthy();
+      return route.fulfill({ json: { id: transaction.id } });
+    });
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Registrar correção de saldo', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Corrigir saldo atual' })).toHaveCount(0);
+    expect(posted).toBe(1);
+    await page.goto('/imports');
+    await page.getByLabel('Conta de destino').selectOption(benefit.id);
+    const batchId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const batch = {
+      id: batchId,
+      accountId: benefit.id,
+      institution: 'alelo',
+      reportType: 'benefit_statement',
+      reconciliationCapability: 'partial',
+      status: 'draft',
+      version: 1,
+      canIntegrate: true,
+      canReprocess: true,
+      sourceFormat: 'pdf',
+      fileName: 'alelo.pdf',
+      openingBalance: null,
+      closingBalance: null,
+      openingMismatch: false,
+      openingDateMismatch: false,
+      items: [
+        {
+          ...transaction,
+          id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          sourceRow: 1,
+          sourceOperationId: null,
+          transactionType: 'expense',
+          description: 'Synthetic benefit purchase',
+          amount: -1000,
+          selected: true,
+          action: 'create',
+          actionReason: 'Novo movimento identificado na fonte.',
+          linkedTransactionId: null,
+          confirmNew: false,
+          candidateDescriptions: [],
+          duplicateLocked: false,
+          duplicateCandidate: false,
+          metadata: null,
+          categoryId: null,
+        },
+      ],
+    };
+    await page.route('**/v1/imports', async (route) => {
+      if (route.request().method() === 'POST') {
+        expect(route.request().postDataBuffer()?.toString()).toContain(benefit.id);
+        return route.fulfill({ json: batch });
+      }
+      return route.fulfill({ json: [] });
+    });
+    await page.route(`**/v1/imports/${batchId}`, (route) => route.fulfill({ json: batch }));
+    await page.locator('input[type=file]').setInputFiles({
+      name: 'alelo.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-synthetic'),
+    });
+    await expect(
+      page.getByText('Alelo Alimentação · histórico parcial', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('Synthetic benefit purchase', { exact: true })).toBeVisible();
+    await expect(page.getByText('Novo · pendente de conciliação', { exact: true })).toBeVisible();
+    await page.screenshot({ path: `/tmp/mywallet-alelo-review-${width}.png`, fullPage: true });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
   });

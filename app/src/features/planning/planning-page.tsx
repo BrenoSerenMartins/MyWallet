@@ -1,3 +1,4 @@
+import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, Copy, Pencil, ArrowRight } from 'lucide-react';
@@ -13,7 +14,8 @@ export function PlanningPage() {
   const [month, setMonth] = useState(() => dateToday().slice(0, 7));
   const [dialog, setDialog] = useState<'edit' | 'copy' | null>(null);
   const [message, setMessage] = useState('');
-  const { query, save, copy } = useMonthlyPlan(month);
+  const [scope, setScope] = useState('all');
+  const { query, save, copy } = useMonthlyPlan(month, scope);
   const plan = query.data;
   function saved() {
     setDialog(null);
@@ -21,6 +23,19 @@ export function PlanningPage() {
   }
   return (
     <div className="page-enter planning-page">
+      <ViewSwitcher
+        label="Contas no realizado"
+        value={scope}
+        onChange={setScope}
+        options={[
+          { value: 'all', label: 'Todas as contas' },
+          { value: 'cash', label: 'Sem benefícios' },
+          { value: 'benefits', label: 'Só benefícios' },
+        ]}
+      />
+      <p className="field-help">
+        O filtro altera apenas o realizado. O planejamento salvo continua sendo o do espaço inteiro.
+      </p>
       <div className="page-heading">
         <div>
           <span className="eyebrow">SEU MÊS, COM DIREÇÃO</span>

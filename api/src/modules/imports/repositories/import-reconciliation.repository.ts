@@ -23,7 +23,7 @@ export class ImportReconciliationRepository {
        coalesce((SELECT jsonb_agg(jsonb_build_object('key',s.source_key,'data',s.source_data)) FROM wallet.transaction_sources s WHERE s.transaction_id=t.id),'[]'::jsonb) AS evidence
        FROM wallet.transactions t LEFT JOIN wallet.import_items i ON i.batch_id=t.import_batch_id AND i.source_row=t.source_row
        LEFT JOIN wallet.import_batches b ON b.id=t.import_batch_id
-       WHERE t.user_id=$1 AND t.account_id=$2 AND t.reversed_at IS NULL
+       WHERE t.user_id=$1 AND t.account_id=$2 AND t.reversed_at IS NULL AND t.balance_adjustment IS NULL
        AND (coalesce(i.source_operation_id,t.source_operation_id)=ANY($3::text[])
         OR coalesce(i.transaction_date,t.transaction_date) BETWEEN $4 AND $5
         OR EXISTS(SELECT 1 FROM wallet.transaction_sources s WHERE s.transaction_id=t.id AND s.source_data->>'reference'=ANY($3::text[])))

@@ -1,3 +1,5 @@
+import { BalanceAdjustmentForm } from './components/balance-adjustment-form';
+import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { AccountForm } from './components/account-form';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -11,7 +13,9 @@ import { Button, EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/
 export function AccountsPage() {
   const { session } = useAuth();
   const client = useQueryClient();
+  const [scope, setScope] = useState('all');
   const [open, setOpen] = useState(false);
+  const [adjusting, setAdjusting] = useState<Account>();
   const [editing, setEditing] = useState<Account>();
   const accounts = useQuery({
     queryKey: [session?.user.id, 'accounts'],
@@ -36,45 +40,77 @@ export function AccountsPage() {
           Adicionar conta
         </Button>
       </div>
+      <ViewSwitcher
+        label="Tipos de contas"
+        value={scope}
+        onChange={setScope}
+        options={[
+          { value: 'all', label: 'Todas' },
+          { value: 'cash', label: 'Dinheiro' },
+          { value: 'benefits', label: 'Benefícios' },
+          { value: 'reserve', label: 'Reservas' },
+        ]}
+      />
       {accounts.isPending ? (
         <Loading />
       ) : accounts.isError ? (
         <ErrorState error={accounts.error} retry={() => void accounts.refetch()} />
       ) : accounts.data.length ? (
         <div className="accounts-grid">
-          {accounts.data.map((a) => (
-            <article className="account-card panel" key={a.id}>
-              <div className="account-card-top">
-                <span className={`bank-icon large ${a.institution === 'mercado_pago' ? 'mp' : ''}`}>
-                  {a.institution === 'mercado_pago' ? 'mp' : <Landmark size={23} />}
-                </span>
-                <ArrowUpRight size={20} />
-              </div>
-              <h2>
-                <Link to={`/accounts/${a.id}`}>{a.name}</Link>
-              </h2>
-              <p>
-                {a.institution === 'mercado_pago' ? 'Mercado Pago' : a.institution} ·{' '}
-                {a.type === 'reserve' ? 'Reserva' : 'Conta pessoal'}
-              </p>
-              <span className="eyebrow">SALDO REGISTRADO</span>
-              <strong className="account-card-balance">{money(a.balance)}</strong>
-              <div className="account-card-footer">
-                <Link to={`/accounts/${a.id}`}>
-                  Ver movimentações <ArrowUpRight size={16} />
-                </Link>
-                <button
-                  className="text-button"
-                  onClick={() => {
-                    setEditing(a);
-                    setOpen(true);
-                  }}
-                >
-                  Editar
-                </button>
-              </div>
-            </article>
-          ))}
+          {accounts.data
+            .filter(
+              (a) =>
+                scope === 'all' ||
+                (scope === 'benefits'
+                  ? a.type.startsWith('benefit_')
+                  : scope === 'reserve'
+                    ? a.type === 'reserve'
+                    : !a.type.startsWith('benefit_') && a.type !== 'reserve'),
+            )
+            .map((a) => (
+              <article className="account-card panel" key={a.id}>
+                <div className="account-card-top">
+                  <span
+                    className={`bank-icon large ${a.institution === 'mercado_pago' ? 'mp' : ''}`}
+                  >
+                    {a.institution === 'mercado_pago' ? 'mp' : <Landmark size={23} />}
+                  </span>
+                  <ArrowUpRight size={20} />
+                </div>
+                <h2>
+                  <Link to={`/accounts/${a.id}`}>{a.name}</Link>
+                </h2>
+                <p>
+                  {a.institution === 'mercado_pago' ? 'Mercado Pago' : a.institution} ·{' '}
+                  {a.type === 'benefit_food'
+                    ? 'Vale-alimentação'
+                    : a.type === 'benefit_meal'
+                      ? 'Vale-refeição'
+                      : a.type === 'reserve'
+                        ? 'Reserva'
+                        : 'Conta pessoal'}
+                </p>
+                <span className="eyebrow">SALDO REGISTRADO</span>
+                <strong className="account-card-balance">{money(a.balance)}</strong>
+                <div className="account-card-footer">
+                  <Link to={`/accounts/${a.id}`}>
+                    Ver movimentações <ArrowUpRight size={16} />
+                  </Link>
+                  <button className="text-button" onClick={() => setAdjusting(a)}>
+                    Corrigir saldo
+                  </button>
+                  <button
+                    className="text-button"
+                    onClick={() => {
+                      setEditing(a);
+                      setOpen(true);
+                    }}
+                  >
+                    Editar
+                  </button>
+                </div>
+              </article>
+            ))}
         </div>
       ) : (
         <div className="panel">
@@ -96,6 +132,22 @@ export function AccountsPage() {
           </EmptyState>
         </div>
       )}
+      <Modal
+        open={!!adjusting}
+        onOpenChange={(value) => !value && setAdjusting(undefined)}
+        title="Corrigir saldo atual"
+      >
+        {adjusting && (
+          <BalanceAdjustmentForm
+            key={adjusting.id}
+            account={adjusting}
+            onSaved={() => {
+              setAdjusting(undefined);
+              void client.invalidateQueries();
+            }}
+          />
+        )}
+      </Modal>
       <Modal
         open={open}
         onOpenChange={setOpen}

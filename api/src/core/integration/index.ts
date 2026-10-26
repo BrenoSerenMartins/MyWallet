@@ -33,7 +33,13 @@ export interface CategoryResource {
   color: string;
   archived?: boolean;
 }
+export interface BalanceAdjustment {
+  previousBalance: number;
+  targetBalance: number;
+  reason: string;
+}
 export interface TransactionInput {
+  balanceAdjustment?: BalanceAdjustment | null;
   accountId: string;
   categoryId?: string | null;
   transactionDate: string;
@@ -68,7 +74,11 @@ export interface PlanningActual {
   outflow: number;
 }
 export interface LedgerReads {
-  planningActuals(from: string, to: string): Promise<PlanningActual[]>;
+  planningActuals(
+    from: string,
+    to: string,
+    scope?: 'all' | 'cash' | 'benefits',
+  ): Promise<PlanningActual[]>;
   balanceBefore(accountId: string, date: string): Promise<number>;
   summary(
     from: string,
@@ -100,6 +110,7 @@ export interface BackupCategory {
   color: string;
 }
 export interface BackupTransaction {
+  balanceAdjustment?: BalanceAdjustment | null;
   id: string;
   accountId: string;
   categoryId: string | null;

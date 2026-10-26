@@ -36,9 +36,10 @@ export function validateBackup(raw: unknown): BackupPayload {
     if (
       !text(a.name, 100) ||
       !text(a.institution, 80) ||
-      !['checking', 'savings', 'cash', 'reserve'].includes(a.type)
+      !['checking', 'savings', 'cash', 'reserve', 'benefit_food', 'benefit_meal'].includes(a.type)
     )
       fail();
+    if ((a.institution === 'alelo') !== ['benefit_food', 'benefit_meal'].includes(a.type)) fail();
     dateOnly(a.openingDate);
     exactAmount(a.openingBalance);
   }
@@ -97,6 +98,20 @@ export function validateBackup(raw: unknown): BackupPayload {
     )
       fail();
     if (t.sourceOperationId !== null && !text(t.sourceOperationId, 160)) fail();
+    if (t.balanceAdjustment != null) {
+      const adjustment = t.balanceAdjustment;
+      exactAmount(adjustment.previousBalance);
+      exactAmount(adjustment.targetBalance);
+      if (
+        b.version < 4 ||
+        !text(adjustment.reason, 500) ||
+        t.transactionType !== 'transfer' ||
+        t.categoryId ||
+        t.transferGroupId ||
+        adjustment.targetBalance - adjustment.previousBalance !== t.amount
+      )
+        fail();
+    }
     if (t.sourceEvidence !== undefined) {
       if (
         !Array.isArray(t.sourceEvidence) ||
@@ -107,8 +122,15 @@ export function validateBackup(raw: unknown): BackupPayload {
       for (const evidence of t.sourceEvidence ?? []) {
         if (
           !evidence ||
-          !['account_statement', 'settlement'].includes(evidence.reportType) ||
-          !text(evidence.reference, 160)
+          !['account_statement', 'settlement', 'benefit_statement'].includes(evidence.reportType) ||
+          !(evidence.reportType === 'benefit_statement'
+            ? evidence.reference === '' &&
+              evidence.institution === 'alelo' &&
+              text(evidence.description, 500) &&
+              Number.isInteger(evidence.occurrence) &&
+              evidence.occurrence! > 0 &&
+              evidence.occurrence! <= 10000
+            : text(evidence.reference, 160))
         )
           fail();
         if (evidence.ruleVersion !== undefined && !text(evidence.ruleVersion, 80)) fail();

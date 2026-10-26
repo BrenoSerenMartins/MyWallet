@@ -74,7 +74,17 @@ export class ImportsController {
   ) {
     if (!file) throw new UnprocessableEntityException('Selecione um extrato em PDF, CSV ou XLSX.');
     requireUuid(accountId);
-    const statement = await this.imports.extract(r.identity.id, file.buffer, file.originalname);
+    const account = await this.db.forUser(
+      r.identity.id,
+      () => this.imports.sourceAccount(accountId),
+      true,
+    );
+    const statement = await this.imports.extract(
+      r.identity.id,
+      file.buffer,
+      file.originalname,
+      account.institution,
+    );
     return this.db.forUser(r.identity.id, () =>
       this.imports.upload(accountId, file.buffer, file.originalname, statement),
     );
@@ -203,7 +213,17 @@ export class ImportsController {
     await this.db.forUser(r.identity.id, () =>
       this.reprocessing.validateSource(id, input.version, file.buffer),
     );
-    const statement = await this.imports.extract(r.identity.id, file.buffer, file.originalname);
+    const account = await this.db.forUser(
+      r.identity.id,
+      async () => this.imports.sourceAccount((await this.imports.get(id)).account_id),
+      true,
+    );
+    const statement = await this.imports.extract(
+      r.identity.id,
+      file.buffer,
+      file.originalname,
+      account.institution,
+    );
     return this.db.forUser(r.identity.id, () =>
       this.reprocessing.reprocess(id, input.version, {
         source: { buffer: file.buffer, statement },

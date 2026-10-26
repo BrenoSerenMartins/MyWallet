@@ -70,8 +70,8 @@ export class LedgerService implements LedgerWrites, LedgerReads {
   balanceBefore(accountId: string, date: string) {
     return this.repository.balanceBefore(accountId, date);
   }
-  planningActuals(from: string, to: string) {
-    return this.repository.planningActuals(from, to);
+  planningActuals(from: string, to: string, scope: 'all' | 'cash' | 'benefits' = 'all') {
+    return this.repository.planningActuals(from, to, scope);
   }
   summary(from: string, to: string) {
     return this.repository.summary(from, to);
@@ -102,8 +102,58 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       throw new UnprocessableEntityException('Use o fluxo de transferência.');
     return this.repository.insert(input);
   }
+  async adjustBalance(
+    accountId: string,
+    input: import('../dto/balance-adjustment.dto.js').BalanceAdjustmentDto,
+    key: string,
+  ) {
+    return this.receipts.execute('balance-adjustment', key, { accountId, ...input }, async () => {
+      const account = await this.accounts.find(accountId, true);
+      const date = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+      if (account.archived) throw new ConflictException('Esta conta está arquivada.');
+      if (account.balance !== input.expectedBalance)
+        throw new ConflictException(
+          'O saldo mudou. Atualize a conta e confira a diferença novamente.',
+        );
+      if (await this.repository.hasFutureEntries(accountId, date))
+        throw new ConflictException(
+          'Existem lançamentos futuros nesta conta. Revise-os antes de corrigir o saldo atual.',
+        );
+      const amount = input.targetBalance - account.balance;
+      exactAmount(amount);
+      if (!amount)
+        throw new UnprocessableEntityException('O saldo já corresponde ao valor informado.');
+      if (!input.reason.trim())
+        throw new UnprocessableEntityException('Informe o motivo da correção.');
+      return this.create(
+        {
+          accountId,
+          amount,
+          transactionType: 'transfer',
+          description: 'Correção de saldo manual',
+          transactionDate: date,
+          categoryId: null,
+          balanceAdjustment: {
+            previousBalance: account.balance,
+            targetBalance: input.targetBalance,
+            reason: input.reason.trim(),
+          },
+        },
+        true,
+      );
+    });
+  }
   async update(id: string, input: TransactionInput, version: string) {
     const original = await this.find(id);
+    if (original.balanceAdjustment)
+      throw new ConflictException(
+        'Correções de saldo não são editadas. Desfaça a correção e registre outra para preservar o histórico.',
+      );
     await this.accounts.find(original.accountId, true);
     const current = await this.find(id, true);
     requireVersion(current.version, version);
