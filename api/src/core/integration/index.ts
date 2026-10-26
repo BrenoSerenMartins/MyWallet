@@ -1,3 +1,5 @@
+import type { SourceEvidence } from './source-evidence.js';
+export * from './source-evidence.js';
 export const ACCOUNT_READS = Symbol('ACCOUNT_READS');
 export const CATEGORY_READS = Symbol('CATEGORY_READS');
 export const LEDGER_WRITES = Symbol('LEDGER_WRITES');
@@ -52,7 +54,9 @@ export interface CategoryReads {
   validate(id: string, type: string): Promise<void>;
 }
 export interface LedgerWrites {
-  create(input: TransactionInput, imported?: boolean): Promise<unknown>;
+  create(input: TransactionInput, imported?: boolean): Promise<{ id: string }>;
+  recordEvidence(transactionId: string, accountId: string, evidence: SourceEvidence): Promise<void>;
+  removeBatchEvidence(batchId: string): Promise<void>;
   reverseBatch(batchId: string): Promise<void>;
 }
 export interface PlanningActual {
@@ -105,10 +109,11 @@ export interface BackupTransaction {
   transactionType: TransactionInput['transactionType'];
   transferGroupId: string | null;
   sourceOperationId: string | null;
+  sourceEvidence?: SourceEvidence[];
 }
 export interface BackupPayload {
   format: 'mywallet';
-  version: 1 | 2 | 3;
+  version: 1 | 2 | 3 | 4;
   categoryGroups?: CategoryGroupResource[];
   monthlyPlans?: BackupMonthlyPlan[];
   currency: 'BRL';

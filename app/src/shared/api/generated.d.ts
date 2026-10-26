@@ -610,6 +610,8 @@ export interface components {
       conflictingNames: string[];
     };
     TransactionResourceDto: {
+      /** @enum {string} */
+      reconciliationStatus: 'pending' | 'reconciled';
       id: string;
       accountId: string;
       categoryId: string | null;
@@ -708,6 +710,10 @@ export interface components {
       firstDate: string;
       lastDate: string;
     };
+    ReconciliationCandidateResourceDto: {
+      id: string;
+      description: string;
+    };
     SettlementMetadataResourceDto: {
       isReleased?: boolean | null;
       releaseTimestamp?: string | null;
@@ -729,6 +735,12 @@ export interface components {
       lastFourDigits: string | null;
     };
     ImportItemResourceDto: {
+      confirmNew: boolean;
+      /** @enum {string} */
+      action: 'create' | 'reconcile' | 'recorded' | 'review' | 'ignore';
+      actionReason: string;
+      linkedTransactionId: string | null;
+      candidateDescriptions: components['schemas']['ReconciliationCandidateResourceDto'][];
       duplicateLocked: boolean;
       /** @enum {string|null} */
       duplicateReason: 'recorded' | 'same_statement' | 'similar' | null;
@@ -780,6 +792,8 @@ export interface components {
       metadata: components['schemas']['SettlementMetadataResourceDto'];
     };
     ReviewItemDto: {
+      confirmNew?: boolean;
+      linkedTransactionId?: string | null;
       selected: boolean;
       transactionType: string;
       categoryId?: string;

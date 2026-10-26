@@ -1377,6 +1377,10 @@
       "TransactionResourceDto": {
         "type": "object",
         "properties": {
+          "reconciliationStatus": {
+            "type": "string",
+            "enum": ["pending", "reconciled"]
+          },
           "id": {
             "type": "string"
           },
@@ -1437,6 +1441,7 @@
           }
         },
         "required": [
+          "reconciliationStatus",
           "id",
           "accountId",
           "categoryId",
@@ -1740,6 +1745,18 @@
         },
         "required": ["id", "fileName", "status", "firstDate", "lastDate"]
       },
+      "ReconciliationCandidateResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "description"]
+      },
       "SettlementMetadataResourceDto": {
         "type": "object",
         "properties": {
@@ -1831,6 +1848,26 @@
       "ImportItemResourceDto": {
         "type": "object",
         "properties": {
+          "confirmNew": {
+            "type": "boolean"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["create", "reconcile", "recorded", "review", "ignore"]
+          },
+          "actionReason": {
+            "type": "string"
+          },
+          "linkedTransactionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "candidateDescriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReconciliationCandidateResourceDto"
+            }
+          },
           "duplicateLocked": {
             "type": "boolean"
           },
@@ -1883,6 +1920,11 @@
           }
         },
         "required": [
+          "confirmNew",
+          "action",
+          "actionReason",
+          "linkedTransactionId",
+          "candidateDescriptions",
           "duplicateLocked",
           "duplicateReason",
           "metadata",
@@ -2037,6 +2079,13 @@
       "ReviewItemDto": {
         "type": "object",
         "properties": {
+          "confirmNew": {
+            "type": "boolean"
+          },
+          "linkedTransactionId": {
+            "type": "string",
+            "nullable": true
+          },
           "selected": {
             "type": "boolean"
           },

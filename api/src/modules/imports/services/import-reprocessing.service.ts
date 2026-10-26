@@ -11,7 +11,6 @@ import type { ParsedStatement } from '../contracts/statement.js';
 import { ImportsRepository } from '../repositories/imports.repository.js';
 import { ImportsService } from './imports.service.js';
 import { preserveImportReviews } from './preserve-import-reviews.js';
-import { detectDuplicates } from './duplicate-detection.js';
 import { reconcileStatement } from '../parsers/mercado-pago/reconcile-statement.js';
 import {
   mercadoPagoMapperVersion,
@@ -74,22 +73,6 @@ export class ImportReprocessingService {
     const items = preserveImportReviews(statement, previous, resetClassification);
     if (!items.length || items.length > 10000)
       throw new UnprocessableEntityException('O relatório deve ter entre 1 e 10.000 movimentos.');
-    const dates = items.map((item) => item.transactionDate).sort();
-    const recorded = await this.repository.duplicateSources(
-      account.id,
-      dates[0],
-      dates.at(-1)!,
-      id,
-    );
-    const reasons = detectDuplicates(items, recorded);
-    const previousCandidates = new Set(
-      previous.filter((item) => item.duplicateCandidate).map((item) => item.id),
-    );
-    for (const [index, item] of items.entries()) {
-      item.duplicateCandidate = !!reasons[index];
-      if (reasons[index] && (reasons[index] !== 'similar' || !previousCandidates.has(item.id)))
-        item.selected = false;
-    }
     await this.repository.replaceUnconfirmedSource(
       id,
       statement,

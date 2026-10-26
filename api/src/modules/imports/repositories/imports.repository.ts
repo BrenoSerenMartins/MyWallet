@@ -42,6 +42,8 @@ export class ImportsRepository {
       selected: r.selected,
       duplicateCandidate: r.duplicate_candidate,
       categoryId: r.category_id,
+      linkedTransactionId: r.linked_transaction_id,
+      confirmNew: r.confirm_new,
     }));
   }
   async previousImports(accountId: string, date: string, excludeBatchId: string) {
@@ -152,15 +154,17 @@ export class ImportsRepository {
       category_id: item.categoryId,
       duplicate_candidate: item.duplicateCandidate,
       report_metadata: item.metadata ?? {},
+      linked_transaction_id: item.linkedTransactionId ?? null,
+      confirm_new: item.confirmNew ?? false,
     }));
     await this.db.query('DELETE FROM wallet.import_items WHERE user_id=$1 AND batch_id=$2', [
       this.db.userId,
       id,
     ]);
     await this.db.query(
-      `INSERT INTO wallet.import_items(id,user_id,batch_id,source_row,transaction_date,description,amount_minor,balance_after_minor,source_operation_id,transaction_type,selected,category_id,duplicate_candidate,report_metadata)
-      SELECT r.id,$1,$2,r.source_row,r.transaction_date,r.description,r.amount_minor,r.balance_after_minor,r.source_operation_id,r.transaction_type,r.selected,r.category_id,r.duplicate_candidate,r.report_metadata
-      FROM jsonb_to_recordset($3::jsonb) AS r(id uuid,source_row integer,transaction_date date,description text,amount_minor bigint,balance_after_minor bigint,source_operation_id text,transaction_type text,selected boolean,category_id uuid,duplicate_candidate boolean,report_metadata jsonb)`,
+      `INSERT INTO wallet.import_items(id,user_id,batch_id,source_row,transaction_date,description,amount_minor,balance_after_minor,source_operation_id,transaction_type,selected,category_id,duplicate_candidate,report_metadata,linked_transaction_id,confirm_new)
+      SELECT r.id,$1,$2,r.source_row,r.transaction_date,r.description,r.amount_minor,r.balance_after_minor,r.source_operation_id,r.transaction_type,r.selected,r.category_id,r.duplicate_candidate,r.report_metadata,r.linked_transaction_id,r.confirm_new
+      FROM jsonb_to_recordset($3::jsonb) AS r(id uuid,source_row integer,transaction_date date,description text,amount_minor bigint,balance_after_minor bigint,source_operation_id text,transaction_type text,selected boolean,category_id uuid,duplicate_candidate boolean,report_metadata jsonb,linked_transaction_id uuid,confirm_new boolean)`,
       [this.db.userId, id, JSON.stringify(rows)],
     );
     await this.db.query(
@@ -192,10 +196,16 @@ export class ImportsRepository {
   async updateItem(
     batchId: string,
     id: string,
-    input: { selected: boolean; transactionType: string; categoryId?: string | null },
+    input: {
+      selected: boolean;
+      transactionType: string;
+      categoryId?: string | null;
+      linkedTransactionId?: string | null;
+      confirmNew?: boolean;
+    },
   ) {
     await this.db.query(
-      'UPDATE wallet.import_items SET selected=$4,transaction_type=$5,category_id=$6 WHERE user_id=$1 AND batch_id=$2 AND id=$3',
+      'UPDATE wallet.import_items SET selected=$4,transaction_type=$5,category_id=$6,linked_transaction_id=$7,confirm_new=$8 WHERE user_id=$1 AND batch_id=$2 AND id=$3',
       [
         this.db.userId,
         batchId,
@@ -203,6 +213,8 @@ export class ImportsRepository {
         input.selected,
         input.transactionType,
         input.categoryId ?? null,
+        input.linkedTransactionId ?? null,
+        input.confirmNew ?? false,
       ],
     );
     await this.db.query(

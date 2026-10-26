@@ -22,6 +22,7 @@ export function TransactionsPage() {
   const [account, setAccount] = useState(accountId ?? '');
   const [kind, setKind] = useState(params.get('type') ?? '');
   const [category, setCategory] = useState('');
+  const [reconciliation, setReconciliation] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   useEffect(() => {
@@ -58,6 +59,7 @@ export function TransactionsPage() {
     ...(account ? { accountId: account } : {}),
     ...(kind ? { type: kind } : {}),
     ...(category ? { categoryId: category } : {}),
+    ...(reconciliation ? { reconciliation } : {}),
     ...(search ? { search } : {}),
     ...(from ? { from } : {}),
     ...(to
@@ -137,9 +139,23 @@ export function TransactionsPage() {
           <summary>
             <SlidersHorizontal size={17} />
             Filtros de conta, categoria e período
-            {(account || category || from || to) && <span className="badge">Ativos</span>}
+            {(account || category || from || to || reconciliation) && (
+              <span className="badge">Ativos</span>
+            )}
           </summary>
           <div className="expanded-filters">
+            <label>
+              Conciliação
+              <select
+                aria-label="Filtrar conciliação"
+                value={reconciliation}
+                onChange={(event) => setReconciliation(event.target.value)}
+              >
+                <option value="">Todas</option>
+                <option value="pending">Pendentes</option>
+                <option value="reconciled">Conciliadas pelo EDI</option>
+              </select>
+            </label>
             <label>
               Conta
               <select
@@ -179,6 +195,7 @@ export function TransactionsPage() {
               onClick={() => {
                 setAccount(accountId ?? '');
                 setCategory('');
+                setReconciliation('');
                 setFrom('');
                 setTo('');
               }}
@@ -240,6 +257,18 @@ export function TransactionsPage() {
         onOpenChange={(v) => (v ? setOpen(true) : close())}
         title={selected ? 'Detalhes do movimento' : 'Novo lançamento'}
       >
+        {selected && (
+          <div className="review-banner">
+            <div>
+              <strong>
+                {selected.reconciliationStatus === 'reconciled'
+                  ? 'Conciliada pelo EDI'
+                  : 'Pendente de conciliação'}
+              </strong>
+              <p>ID externo: {selected.sourceOperationId ?? 'Ainda não vinculado'}</p>
+            </div>
+          </div>
+        )}
         {selected && <TransactionSources transactionId={selected.id} />}
         {accounts.isError || categories.isError ? (
           <ErrorState error={accounts.error ?? categories.error} />

@@ -45,6 +45,8 @@ export function preserveImportReviews(
       ...item,
       id: old?.id ?? randomUUID(),
       selected: old?.selected ?? true,
+      linkedTransactionId: old?.linkedTransactionId ?? null,
+      confirmNew: old?.confirmNew ?? false,
       categoryId: old?.transactionType === transactionType ? old.categoryId : null,
       transactionType,
       duplicateCandidate: false,

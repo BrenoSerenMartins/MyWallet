@@ -52,10 +52,14 @@ export interface SavedImportItem extends Omit<StatementRow, 'sourcePage' | 'meta
   selected: boolean;
   duplicateCandidate: boolean;
   categoryId: string | null;
+  linkedTransactionId?: string | null;
+  confirmNew?: boolean;
 }
 export interface ReprocessedImportEntry extends ImportEntry {
   id: string;
   selected: boolean;
   duplicateCandidate: boolean;
   categoryId: string | null;
+  linkedTransactionId?: string | null;
+  confirmNew?: boolean;
 }

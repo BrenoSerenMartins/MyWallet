@@ -13,7 +13,12 @@ export function ImportReviewRow({
   categories: Category[];
   onReview: (
     item: ImportItem,
-    change: Partial<Pick<ImportItem, 'selected' | 'transactionType' | 'categoryId'>>,
+    change: Partial<
+      Pick<
+        ImportItem,
+        'selected' | 'transactionType' | 'categoryId' | 'linkedTransactionId' | 'confirmNew'
+      >
+    >,
   ) => Promise<void>;
 }) {
   const locked = disabled || item.duplicateLocked;
@@ -24,19 +29,62 @@ export function ImportReviewRow({
           aria-label={`Selecionar movimento ${item.sourceRow}`}
           type="checkbox"
           checked={item.selected}
-          disabled={locked}
+          disabled={locked || item.action === 'review'}
           onChange={(e) => void onReview(item, { selected: e.target.checked })}
         />
       </td>
       <td data-label="Movimento">
         <span className="review-date">{shortDate(item.transactionDate)}</span>
         <strong>{item.description}</strong>
-        {item.duplicateLocked ? (
+        {item.action && (
+          <span className="badge">
+            {
+              {
+                create: item.metadata
+                  ? 'Novo · conciliado pelo EDI'
+                  : 'Novo · pendente de conciliação',
+                reconcile: 'Conciliar lançamento existente',
+                recorded: 'Já registrado',
+                review: 'Revisão necessária',
+                ignore: 'Sem novo lançamento',
+              }[item.action]
+            }
+          </span>
+        )}
+        {item.actionReason && <p className="field-help">{item.actionReason}</p>}
+        {item.action === 'review' && !!item.candidateDescriptions?.length && (
+          <label>
+            Vincular ao movimento existente
+            <select
+              aria-label={`Vínculo do movimento ${item.sourceRow}`}
+              value={item.linkedTransactionId ?? ''}
+              disabled={locked}
+              onChange={(event) =>
+                void onReview(item, {
+                  linkedTransactionId:
+                    event.target.value === '__new' ? null : event.target.value || null,
+                  confirmNew: event.target.value === '__new',
+                  selected: true,
+                })
+              }
+            >
+              <option value="">Escolha uma ação para conferir</option>
+              <option value="__new">É outro movimento: criar novo</option>
+              {item.candidateDescriptions.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.description}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {item.duplicateLocked && !item.action ? (
           <span className="badge">
             Duplicata bloqueada ·{' '}
             {item.duplicateReason === 'same_statement' ? 'repetida no arquivo' : 'já registrada'}
           </span>
         ) : (
+          !item.action &&
           item.duplicateCandidate && (
             <span className="badge warning">Semelhança encontrada · confira a origem</span>
           )
@@ -58,6 +106,7 @@ export function ImportReviewRow({
             void onReview(item, {
               transactionType: e.target.value as ImportItem['transactionType'],
               categoryId: null,
+              selected: true,
             })
           }
         >

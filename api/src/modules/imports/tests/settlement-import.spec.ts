@@ -1,3 +1,5 @@
+import { ImportReconciliationService } from '../services/import-reconciliation.service.js';
+import { ImportReconciliationRepository } from '../repositories/import-reconciliation.repository.js';
 import { SettlementMatchingService } from '../services/settlement-matching.service.js';
 import { SettlementEvidenceRepository } from '../repositories/settlement-evidence.repository.js';
 import { ImportReprocessingService } from '../services/import-reprocessing.service.js';
@@ -30,6 +32,7 @@ const imports = new ImportsService(
   receipts,
   categories,
   ledger,
+  new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
 );
 let accountId: string;
 beforeAll(async () => {
@@ -133,30 +136,21 @@ describe('Settlement v2 consultation report', () => {
     const preview = await db.forUser(db.user, () =>
       imports.upload(accountId, fixture.buffer, 'settlement.csv', parsed),
     );
-    expect(preview.canIntegrate).toBe(false);
+    expect(preview.canIntegrate).toBe(true);
     expect(preview.sourceFormat).toBe('csv');
     expect(preview.openingBalance).toBeNull();
-    await expect(
-      db.forUser(db.user, () => imports.classify(preview.id, preview.version)),
-    ).rejects.toThrow('apenas para consulta');
-    await expect(
-      db.forUser(db.user, () => imports.confirm(preview.id, preview.version, 'settlement-attempt')),
-    ).rejects.toThrow('não fornece saldos');
+    expect(preview.items[0].action).toBe('review');
+    expect(preview.items[0].selected).toBe(false);
     await expect(
       db.forUser(db.user, () =>
-        db.service.query("UPDATE wallet.import_batches SET status='confirmed' WHERE id=$1", [
-          preview.id,
-        ]),
+        imports.confirm(preview.id, preview.version, 'unavailable-receipt'),
       ),
-    ).rejects.toThrow();
+    ).rejects.toThrow('Selecione');
     const history = await db.forUser(db.user, () =>
       imports.retainHistory(preview.id, preview.version),
     );
     expect(history.items[0].metadata?.netAmount).toBe(9700);
     expect(history.status).toBe('history');
-    await expect(
-      db.forUser(db.user, () => imports.reopenHistory(preview.id, history.version)),
-    ).rejects.toThrow('apenas para consulta');
     expect((await db.forUser(db.user, () => accounts.find(accountId))).balance).toBe(20000);
     expect(await db.forUser(db.user, () => ledger.exportRecords())).toEqual([]);
     await expect(db.forUser(db.other, () => imports.preview(preview.id))).rejects.toThrow(
@@ -186,10 +180,10 @@ it('reprocesses retained settlement data while preserving consultation status an
     service.reprocess(history.id, history.version, { resetClassification: true }),
   );
   expect(result.status).toBe('history');
-  expect(result.canIntegrate).toBe(false);
+  expect(result.canIntegrate).toBe(true);
   expect(result.openingBalance).toBeNull();
   expect(result.items[0]).toMatchObject({
-    transactionType: 'unclassified',
+    transactionType: 'income',
     metadata: { netAmount: 9700 },
   });
   expect((await db.forUser(db.user, () => imports.get(result.id))).history_saved_at).not.toBeNull();

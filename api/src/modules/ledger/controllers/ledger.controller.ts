@@ -37,6 +37,8 @@ export class LedgerController {
     @Req() r: AuthenticatedRequest,
     @Query() q: Record<string, string>,
   ) {
+    if (q.reconciliation && !['pending', 'reconciled'].includes(q.reconciliation))
+      throw new BadRequestException('Filtro de conciliação inválido.');
     const limit = Math.min(Number(q.limit ?? 50), 100);
     if (!Number.isInteger(limit) || limit < 1) throw new BadRequestException('Limite inválido.');
     if (q.cursor) {
@@ -55,6 +57,7 @@ export class LedgerController {
         accountId: q.accountId ? requireUuid(q.accountId) : undefined,
         categoryId: q.categoryId ? requireUuid(q.categoryId) : undefined,
         type: q.type,
+        reconciliation: q.reconciliation,
         search: q.search?.slice(0, 150),
         cursor: q.cursor,
       }),

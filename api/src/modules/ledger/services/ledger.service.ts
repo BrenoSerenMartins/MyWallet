@@ -42,16 +42,27 @@ export class LedgerService implements LedgerWrites, LedgerReads {
           groups.set(entry.transferGroupId, await this.repository.createTransferGroup());
         transferGroupId = groups.get(entry.transferGroupId);
       }
-      await this.create(
+      const restored = await this.create(
         {
           ...entry,
+          importBatchId: undefined,
+          sourceRow: undefined,
           accountId: accounts.get(entry.accountId)!,
           categoryId: entry.categoryId ? categories.get(entry.categoryId) : null,
           transferGroupId,
         },
         true,
       );
+      for (const evidence of entry.sourceEvidence ?? [])
+        await this.recordEvidence(restored.id, accounts.get(entry.accountId)!, evidence);
     }
+  }
+  recordEvidence(
+    transactionId: string,
+    accountId: string,
+    evidence: import('../../../core/integration/index.js').SourceEvidence,
+  ) {
+    return this.repository.recordEvidence(transactionId, accountId, evidence);
   }
   list(filter: LedgerFilter) {
     return this.repository.list(filter);
@@ -138,6 +149,9 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       });
       return { id: group, from, to };
     });
+  }
+  removeBatchEvidence(batchId: string) {
+    return this.repository.removeBatchEvidence(batchId);
   }
   async reverseBatch(batchId: string) {
     const entries = await this.repository.batchEntries(batchId);

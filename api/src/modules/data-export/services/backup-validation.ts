@@ -1,3 +1,4 @@
+import { sourceEvidenceKey } from '../../../core/integration/index.js';
 import { UnprocessableEntityException } from '@nestjs/common';
 import type { BackupPayload } from '../../../core/integration/index.js';
 import { dateOnly, exactAmount, requireUuid } from '../../../core/rest/index.js';
@@ -13,7 +14,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   const b = raw as BackupPayload;
   if (
     b.format !== 'mywallet' ||
-    ![1, 2, 3].includes(b.version) ||
+    ![1, 2, 3, 4].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||
@@ -41,7 +42,7 @@ export function validateBackup(raw: unknown): BackupPayload {
     dateOnly(a.openingDate);
     exactAmount(a.openingBalance);
   }
-  const categoryGroups = b.version === 3 ? b.categoryGroups : [];
+  const categoryGroups = b.version >= 3 ? b.categoryGroups : [];
   if (!Array.isArray(categoryGroups) || categoryGroups.length > 2000) fail();
   const defaultTypes = new Set<string>();
   for (const group of categoryGroups!) {
@@ -73,6 +74,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   const accounts = new Map(b.accounts.map((a) => [a.id, a]));
   const categories = new Map(b.categories.map((c) => [c.id, c]));
   const groups = new Map<string, typeof b.transactions>();
+  const sourceKeys = new Set<string>();
   for (const t of b.transactions) {
     if (!t || typeof t !== 'object') fail();
     unique(t.id);
@@ -95,6 +97,47 @@ export function validateBackup(raw: unknown): BackupPayload {
     )
       fail();
     if (t.sourceOperationId !== null && !text(t.sourceOperationId, 160)) fail();
+    if (t.sourceEvidence !== undefined) {
+      if (
+        !Array.isArray(t.sourceEvidence) ||
+        t.sourceEvidence.length > 100 ||
+        (b.version < 4 && t.sourceEvidence.length > 0)
+      )
+        fail();
+      for (const evidence of t.sourceEvidence ?? []) {
+        if (
+          !evidence ||
+          !['account_statement', 'settlement'].includes(evidence.reportType) ||
+          !text(evidence.reference, 160)
+        )
+          fail();
+        if (evidence.ruleVersion !== undefined && !text(evidence.ruleVersion, 80)) fail();
+        dateOnly(evidence.date);
+        if (evidence.originDate != null) dateOnly(evidence.originDate);
+        exactAmount(evidence.amount);
+        if (!evidence.amount) fail();
+        if (evidence.reportType === 'account_statement' && evidence.balance === null) fail();
+        if (evidence.reportType === 'settlement' && (!evidence.eventType || !evidence.timestamp))
+          fail();
+        if (evidence.balance !== null) exactAmount(evidence.balance);
+        if (evidence.eventType !== null && !text(evidence.eventType, 100)) fail();
+        if (
+          evidence.timestamp !== null &&
+          (!text(evidence.timestamp, 64) || !Number.isFinite(Date.parse(evidence.timestamp!)))
+        )
+          fail();
+        if (
+          evidence.installmentNumber !== null &&
+          (!Number.isInteger(evidence.installmentNumber) ||
+            evidence.installmentNumber < 1 ||
+            evidence.installmentNumber > 999)
+        )
+          fail();
+        const key = t.accountId + sourceEvidenceKey(evidence);
+        if (sourceKeys.has(key)) fail();
+        sourceKeys.add(key);
+      }
+    }
     if (t.transferGroupId) {
       requireUuid(t.transferGroupId);
       if (t.transactionType !== 'transfer') fail();

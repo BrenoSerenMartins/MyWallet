@@ -518,9 +518,7 @@ test('leaving the upload screen stops subsequent submissions', async ({ page }) 
   await expect(page).toHaveURL(/\/accounts$/);
 });
 
-test('settlement reports retain payment details without offering financial confirmation', async ({
-  page,
-}) => {
+test('EDI reconciles existing movements and preserves source details', async ({ page }) => {
   await signedIn(page);
   await page.setViewportSize({ width: 390, height: 1000 });
   const id = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
@@ -531,7 +529,7 @@ test('settlement reports retain payment details without offering financial confi
     status: 'draft',
     version: 1,
     reportType: 'settlement',
-    canIntegrate: false,
+    canIntegrate: true,
     sourceFormat: 'csv',
     openingBalance: null,
     closingBalance: null,
@@ -543,10 +541,18 @@ test('settlement reports retain payment details without offering financial confi
         id: '99999999-9999-4999-8999-999999999999',
         sourceRow: 2,
         selected: true,
-        transactionType: 'unclassified',
+        transactionType: 'income',
+        action: 'reconcile',
+        actionReason: 'Vincular ao lançamento existente.',
+        linkedTransactionId: transaction.id,
+        confirmNew: false,
+        candidateDescriptions: [],
+        duplicateLocked: false,
+        duplicateCandidate: false,
         balanceAfter: null,
         metadata: {
           eventType: 'SETTLEMENT',
+          isReleased: true,
           transactionTimestamp: '2026-10-01T12:00:00-03:00',
           settlementTimestamp: '2026-10-02T12:00:00-03:00',
           grossAmount: 10000,
@@ -580,33 +586,41 @@ test('settlement reports retain payment details without offering financial confi
         ],
       });
     if (route.request().method() === 'POST') {
-      expect(new URL(route.request().url()).pathname).toBe(`/v1/imports/${id}/history`);
-      batch.status = 'history';
+      expect(new URL(route.request().url()).pathname).toBe(`/v1/imports/${id}/confirmations`);
+      expect(route.request().headers()['idempotency-key']).toBeTruthy();
+      batch.status = 'confirmed';
       batch.version++;
     }
     return route.fulfill({ json: batch });
   });
   await page.goto(`/imports/${id}`);
   await expect(
-    page.getByText('Complemente seus movimentos com os detalhes do Mercado Pago', { exact: true }),
+    page.getByText('EDI Mercado Pago · fonte de conciliação', { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText('1 de 1 registros correspondem', { exact: false })).toBeVisible();
+  await expect(page.getByText('0 novos · 1 a conciliar', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: /Confirmar .* movimentos/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Classificar entradas e saídas' })).toHaveCount(0);
-  await expect(page.getByLabel('Tipo do movimento 2')).toHaveCount(0);
+  await expect(page.getByLabel('Tipo do movimento 2')).toBeEnabled();
   await page.getByText('Detalhes da liquidação', { exact: true }).click();
   await expect(page.getByText('0042', { exact: true })).toBeVisible();
   await expect(page.getByText('Visa', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Salvar relatório e complementar detalhes' }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Confirmar EDI e conciliar' }).click();
   await expect(
-    page.getByText('Relatório salvo · detalhes disponíveis nos movimentos correspondentes'),
+    page.getByText('EDI confirmado. Operações vinculadas aos lançamentos financeiros.'),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Revisar para integrar às contas' })).toHaveCount(
     0,
   );
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.route(`**/v1/transactions/${transaction.id}`, (route) =>
-    route.fulfill({ json: transaction }),
+    route.fulfill({
+      json: {
+        ...transaction,
+        reconciliationStatus: 'reconciled',
+        sourceOperationId: 'mp-external-123',
+      },
+    }),
   );
   await page.route(`**/v1/imports/transaction-sources/${transaction.id}`, (route) =>
     route.fulfill({
@@ -623,9 +637,11 @@ test('settlement reports retain payment details without offering financial confi
       ],
     }),
   );
-  await page.getByRole('link', { name: 'Ver movimento', exact: true }).click();
+  await page.goto(`/transactions?transaction=${transaction.id}`);
   await expect(page.getByRole('dialog', { name: 'Detalhes do movimento' })).toBeVisible();
   await expect(page.getByText('Detalhes do Mercado Pago', { exact: true })).toBeVisible();
+  await expect(page.getByText('Conciliada pelo EDI', { exact: true })).toBeVisible();
+  await expect(page.getByText('ID externo: mp-external-123', { exact: true })).toBeVisible();
   await page.getByText('Detalhes da liquidação', { exact: true }).click();
   await expect(page.getByText('0042', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Ver relatório de origem' })).toHaveAttribute(

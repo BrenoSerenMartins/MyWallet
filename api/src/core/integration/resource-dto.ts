@@ -28,6 +28,8 @@ export class CategoryResourceDto {
   @ApiProperty({ type: String }) color!: string;
 }
 export class TransactionResourceDto {
+  @ApiProperty({ type: String, enum: ['pending', 'reconciled'] }) reconciliationStatus!:
+    'pending' | 'reconciled';
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) accountId!: string;
   @ApiProperty({ type: String, nullable: true }) categoryId!: string | null;
@@ -66,7 +68,18 @@ export class SettlementMetadataResourceDto {
   @ApiProperty({ type: Number, nullable: true }) installmentNumber!: number | null;
   @ApiProperty({ type: String, nullable: true }) lastFourDigits!: string | null;
 }
+export class ReconciliationCandidateResourceDto {
+  @ApiProperty({ type: String }) id!: string;
+  @ApiProperty({ type: String }) description!: string;
+}
 export class ImportItemResourceDto {
+  @ApiProperty({ type: Boolean }) confirmNew!: boolean;
+  @ApiProperty({ type: String, enum: ['create', 'reconcile', 'recorded', 'review', 'ignore'] })
+  action!: 'create' | 'reconcile' | 'recorded' | 'review' | 'ignore';
+  @ApiProperty({ type: String }) actionReason!: string;
+  @ApiProperty({ type: String, nullable: true }) linkedTransactionId!: string | null;
+  @ApiProperty({ type: () => [ReconciliationCandidateResourceDto] })
+  candidateDescriptions!: ReconciliationCandidateResourceDto[];
   @ApiProperty({ type: Boolean }) duplicateLocked!: boolean;
   @ApiProperty({ type: String, nullable: true, enum: ['recorded', 'same_statement', 'similar'] })
   duplicateReason!: 'recorded' | 'same_statement' | 'similar' | null;

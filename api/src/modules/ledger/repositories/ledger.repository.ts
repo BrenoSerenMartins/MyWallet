@@ -1,13 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../../../core/database/index.js';
 import type { PlanningActual, TransactionInput } from '../../../core/integration/index.js';
+import { sourceEvidenceKey, type SourceEvidence } from '../../../core/integration/index.js';
 import { transactionResource } from '../mappers/transaction.mapper.js';
+function reconciliationSql(alias = 'wallet.transactions') {
+  return `EXISTS(SELECT 1 FROM wallet.transaction_sources proof
+    WHERE proof.transaction_id=${alias}.id AND proof.source_data->>'reportType'='settlement'
+    AND (proof.source_data->>'amount')::bigint=${alias}.amount_minor
+    AND ${alias}.transaction_date IN ((proof.source_data->>'date')::date,(proof.source_data->>'originDate')::date))`;
+}
 export interface LedgerFilter {
   from?: string;
   to?: string;
   accountId?: string;
   categoryId?: string;
+  reconciliation?: string;
   type?: string;
   search?: string;
   cursor?: string;
@@ -18,10 +26,35 @@ export class LedgerRepository {
   constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
   async exportRecords() {
     const rows = await this.db.query(
-      'SELECT * FROM wallet.transactions WHERE user_id=$1 AND reversed_at IS NULL ORDER BY transaction_date,id',
+      `SELECT t.*, ${reconciliationSql('t')} AS reconciled, coalesce((SELECT jsonb_agg(s.source_data ORDER BY s.source_key) FROM wallet.transaction_sources s WHERE s.transaction_id=t.id),'[]'::jsonb) AS source_evidence FROM wallet.transactions t WHERE user_id=$1 AND reversed_at IS NULL ORDER BY transaction_date,id`,
       [this.db.userId],
     );
-    return rows.map(transactionResource);
+    return rows.map((row) => ({
+      ...transactionResource(row),
+      sourceEvidence: row.source_evidence,
+    }));
+  }
+  async recordEvidence(transactionId: string, accountId: string, evidence: SourceEvidence) {
+    const inserted = await this.db.query(
+      `INSERT INTO wallet.transaction_sources(user_id,account_id,transaction_id,source_key,source_data) VALUES($1,$2,$3,$4,$5)
+      ON CONFLICT(user_id,workspace_id,account_id,source_key) DO UPDATE SET transaction_id=excluded.transaction_id,source_data=excluded.source_data
+      WHERE wallet.transaction_sources.transaction_id=excluded.transaction_id
+      OR EXISTS(SELECT 1 FROM wallet.transactions t WHERE t.id=wallet.transaction_sources.transaction_id AND t.reversed_at IS NOT NULL) RETURNING transaction_id`,
+      [
+        this.db.userId,
+        accountId,
+        transactionId,
+        sourceEvidenceKey(evidence),
+        JSON.stringify(evidence),
+      ],
+    );
+    if (!inserted.length)
+      throw new ConflictException('A operação externa já está vinculada a outro lançamento.');
+    if (evidence.reportType === 'settlement')
+      await this.db.query(
+        'UPDATE wallet.transactions SET source_operation_id=coalesce(source_operation_id,$3) WHERE user_id=$1 AND id=$2',
+        [this.db.userId, transactionId, evidence.reference],
+      );
   }
   async insert(input: TransactionInput) {
     const rows = await this.db.query(
@@ -45,7 +78,7 @@ export class LedgerRepository {
   }
   async find(id: string, lock = false) {
     const rows = await this.db.query(
-      `SELECT * FROM wallet.transactions WHERE user_id=$1 AND id=$2 AND reversed_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
+      `SELECT *,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE user_id=$1 AND id=$2 AND reversed_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
       [this.db.userId, id],
     );
     return rows[0] ? transactionResource(rows[0]) : null;
@@ -53,6 +86,8 @@ export class LedgerRepository {
   async list(filter: LedgerFilter) {
     const values: unknown[] = [this.db.userId];
     const where = ['user_id=$1', 'reversed_at IS NULL'];
+    if (filter.reconciliation)
+      where.push(`${filter.reconciliation === 'pending' ? 'NOT ' : ''}${reconciliationSql()}`);
     const add = (expression: string, value: unknown) => {
       values.push(value);
       where.push(expression.replace('?', `$${values.length}`));
@@ -69,7 +104,7 @@ export class LedgerRepository {
     }
     values.push(filter.limit + 1);
     const rows = await this.db.query(
-      `SELECT * FROM wallet.transactions WHERE ${where.join(' AND ')} ORDER BY transaction_date DESC,id DESC LIMIT $${values.length}`,
+      `SELECT *,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE ${where.join(' AND ')} ORDER BY transaction_date DESC,id DESC LIMIT $${values.length}`,
       values,
     );
     const items = rows.slice(0, filter.limit).map(transactionResource);
@@ -155,7 +190,23 @@ export class LedgerRepository {
       [this.db.userId, id],
     );
   }
+  async removeBatchEvidence(id: string) {
+    await this.db.query(
+      `DELETE FROM wallet.transaction_sources s WHERE s.user_id=$1
+      AND EXISTS(SELECT 1 FROM wallet.import_items i WHERE i.batch_id=$2 AND i.source_key=s.source_key AND i.linked_transaction_id=s.transaction_id)
+      AND NOT EXISTS(SELECT 1 FROM wallet.import_items other JOIN wallet.import_batches b ON b.id=other.batch_id WHERE other.batch_id<>$2 AND b.status='confirmed' AND other.source_key=s.source_key AND other.linked_transaction_id=s.transaction_id)`,
+      [this.db.userId, id],
+    );
+  }
   async reverseBatch(id: string) {
+    const supported = await this.db.query(
+      `SELECT 1 FROM wallet.transactions t JOIN wallet.import_items i ON i.linked_transaction_id=t.id JOIN wallet.import_batches b ON b.id=i.batch_id WHERE t.user_id=$1 AND t.import_batch_id=$2 AND t.reversed_at IS NULL AND b.id<>$2 AND b.status='confirmed' LIMIT 1`,
+      [this.db.userId, id],
+    );
+    if (supported.length)
+      throw new ConflictException(
+        'Outro arquivo confirmado está vinculado a estes movimentos. Revise os vínculos antes de desfazer.',
+      );
     await this.db.query(
       'UPDATE wallet.transactions SET reversed_at=now(),version=version+1 WHERE user_id=$1 AND import_batch_id=$2 AND reversed_at IS NULL',
       [this.db.userId, id],

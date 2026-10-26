@@ -1,4 +1,4 @@
-import { detectDuplicates } from './duplicate-detection.js';
+import { ImportReconciliationService } from './import-reconciliation.service.js';
 import {
   ConflictException,
   GoneException,
@@ -51,6 +51,8 @@ export class ImportsService {
     @Inject(COMMAND_RECEIPTS) private readonly receipts: CommandReceipts,
     @Inject(CATEGORY_READS) private readonly categories: CategoryReads,
     @Inject(LEDGER_READS) private readonly ledgerReads: LedgerReads,
+    @Inject(ImportReconciliationService)
+    private readonly reconciliation: ImportReconciliationService,
   ) {}
   list() {
     return this.repository.list();
@@ -66,37 +68,32 @@ export class ImportsService {
     if (new Date(batch.expires_at).getTime() <= Date.now())
       throw new GoneException('A revisão expirou. Envie o arquivo novamente.');
   }
-  private async reviewItems(id: string, accountId: string, automaticClassification = false) {
+  private async reviewItems(
+    id: string,
+    accountId: string,
+    automaticClassification = false,
+    reportType: 'account_statement' | 'settlement' = 'account_statement',
+  ) {
     const items = await this.repository.items(id);
-    const dates = items.map((i) => i.transactionDate).sort();
-    const recorded = dates.length
-      ? await this.repository.duplicateSources(accountId, dates[0], dates.at(-1)!, id)
-      : [];
-    const reasons = detectDuplicates(items, recorded);
-    return items.map((item, index) => {
-      const duplicateReason = reasons[index];
-      const duplicateLocked =
-        duplicateReason === 'recorded' || duplicateReason === 'same_statement';
-      return {
-        ...item,
-        transactionType:
-          automaticClassification && item.transactionType === 'unclassified'
-            ? classifyMercadoPagoMovement(item)
-            : item.transactionType,
-        duplicateReason,
-        duplicateLocked,
-        duplicateCandidate: !!duplicateReason,
-        selected: item.selected && !duplicateLocked,
-      };
-    });
+    const normalized = items.map((item) => ({
+      ...item,
+      transactionType:
+        automaticClassification && item.transactionType === 'unclassified'
+          ? classifyMercadoPagoMovement(item)
+          : item.transactionType,
+    }));
+    return this.reconciliation.plan(accountId, reportType, normalized);
   }
+
   async preview(id: string) {
     const b = await this.get(id);
     const items = await this.reviewItems(
       id,
       b.account_id,
       b.report_type === 'account_statement' && b.status === 'draft',
+      b.report_type,
     );
+    if (b.status === 'confirmed') for (const item of items) item.duplicateLocked = false;
     const account = await this.accounts.find(b.account_id);
     const statementStartDate = items.reduce<string | null>(
       (date, item) => (!date || item.transactionDate < date ? item.transactionDate : date),
@@ -124,7 +121,7 @@ export class ImportsService {
       canReprocess: ['draft', 'history'].includes(b.status),
       sourceFormat: mercadoPagoSourceFormat(b.mapper_version),
       reportType: b.report_type,
-      canIntegrate: b.report_type === 'account_statement',
+      canIntegrate: true,
       accountOpeningDate: account.openingDate,
       statementStartDate,
       openingDateMismatch: !!statementStartDate && statementStartDate < account.openingDate,
@@ -157,23 +154,23 @@ export class ImportsService {
       statement,
     );
     const entries = mapMercadoPago(statement);
-    const dates = entries.map((i) => i.transactionDate).sort();
-    const recorded = dates.length
-      ? await this.repository.duplicateSources(accountId, dates[0], dates.at(-1)!, id)
-      : [];
-    const reasons = detectDuplicates(entries, recorded);
-    for (const [index, entry] of entries.entries())
-      await this.repository.addItem(id, entry, !!reasons[index]);
+    for (const entry of entries) await this.repository.addItem(id, entry, false);
     return this.preview(id);
   }
   async review(id: string, itemId: string, input: ReviewItemDto, version: string) {
     const batch = await this.get(id, true);
     this.assertDraft(batch);
-    this.assertAccountStatement(batch.report_type);
     requireVersion(batch.version, version);
-    const items = await this.reviewItems(id, batch.account_id, true);
+    const items = await this.reviewItems(
+      id,
+      batch.account_id,
+      batch.report_type === 'account_statement',
+      batch.report_type,
+    );
     const item = items.find((i) => i.id === itemId);
     if (!item) throw new NotFoundException('Linha não encontrada.');
+    if (input.linkedTransactionId && !item.candidateIds.includes(input.linkedTransactionId))
+      throw new UnprocessableEntityException('Escolha um movimento compatível desta conta.');
     if (item.duplicateLocked)
       throw new ConflictException(
         'Esta duplicata foi excluída automaticamente e não pode ser selecionada.',
@@ -190,11 +187,15 @@ export class ImportsService {
   async classify(id: string, version: number) {
     const batch = await this.get(id, true);
     this.assertDraft(batch);
-    this.assertAccountStatement(batch.report_type);
     requireVersion(batch.version, version);
     await this.repository.applyAutomaticTypes(
       id,
-      await this.reviewItems(id, batch.account_id, true),
+      await this.reviewItems(
+        id,
+        batch.account_id,
+        batch.report_type === 'account_statement',
+        batch.report_type,
+      ),
     );
     await this.repository.advanceVersion(id);
     return this.preview(id);
@@ -206,12 +207,14 @@ export class ImportsService {
       const batch = await this.get(id, true);
       if (batch.status === 'confirmed') return { id, status: 'confirmed' };
       this.assertDraft(batch);
-      this.assertAccountStatement(batch.report_type);
       requireVersion(batch.version, version);
       const preview = await this.preview(id);
       const selected = preview.items.filter((i) => i.selected);
       const skippedDuplicates = preview.items.filter((i) => i.duplicateLocked).length;
-      if (selected.length && (preview.openingMismatch || preview.openingDateMismatch))
+      const creating = selected.filter((item) => item.action === 'create');
+      if (selected.some((item) => item.action === 'review'))
+        throw new ConflictException('Resolva as pendências de conciliação antes de confirmar.');
+      if (creating.length && (preview.openingMismatch || preview.openingDateMismatch))
         throw new ConflictException(
           preview.canAdjustOpeningPosition
             ? 'A posição inicial da conta não confere com o extrato. Revise o cadastro inicial antes de confirmar.'
@@ -219,13 +222,36 @@ export class ImportsService {
         );
       if (!selected.length && !skippedDuplicates)
         throw new UnprocessableEntityException('Selecione ao menos um movimento.');
-      if (selected.some((i) => i.transactionType === 'unclassified'))
+      if (creating.some((i) => i.transactionType === 'unclassified'))
         throw new UnprocessableEntityException(
-          'Classifique os movimentos selecionados antes de confirmar.',
+          'Classifique os movimentos novos antes de confirmar.',
         );
       await this.repository.applyAutomaticTypes(id, preview.items);
-      for (const item of selected) {
-        await this.ledger.create(
+      for (const item of preview.items.filter(
+        (item) => item.selected || item.action === 'recorded',
+      )) {
+        if (item.linkedTransactionId) {
+          if (item.originalSource)
+            await this.ledger.recordEvidence(
+              item.linkedTransactionId,
+              batch.account_id,
+              item.originalSource,
+            );
+          if (item.sourceEvidence)
+            await this.ledger.recordEvidence(
+              item.linkedTransactionId,
+              batch.account_id,
+              item.sourceEvidence,
+            );
+          await this.reconciliation.link(
+            id,
+            item.id,
+            item.linkedTransactionId,
+            item.sourceEvidence,
+          );
+          continue;
+        }
+        const created = await this.ledger.create(
           {
             accountId: batch.account_id,
             categoryId: item.categoryId,
@@ -239,16 +265,19 @@ export class ImportsService {
           },
           true,
         );
+        if (item.sourceEvidence)
+          await this.ledger.recordEvidence(created.id, batch.account_id, item.sourceEvidence);
+        await this.reconciliation.link(id, item.id, created.id, item.sourceEvidence);
       }
       await this.repository.mark(id, 'confirmed');
-      return { id, status: 'confirmed', count: selected.length, skippedDuplicates };
+      return {
+        id,
+        status: 'confirmed',
+        count: creating.length,
+        reconciled: selected.length - creating.length,
+        skippedDuplicates,
+      };
     });
-  }
-  private assertAccountStatement(reportType: string) {
-    if (reportType !== 'account_statement')
-      throw new ConflictException(
-        'Este relatório é apenas para consulta e não fornece saldos para conciliação. Use um extrato de conta para integrar os movimentos.',
-      );
   }
   async retainHistory(id: string, version: number) {
     const batch = await this.get(id, true);
@@ -263,7 +292,6 @@ export class ImportsService {
   async reopenHistory(id: string, version: number) {
     const batch = await this.get(id, true);
     requireVersion(batch.version, version);
-    this.assertAccountStatement(batch.report_type);
     if (batch.status !== 'history')
       throw new ConflictException('Somente um extrato salvo para consulta pode voltar à revisão.');
     await this.repository.reopenHistory(id);
@@ -277,6 +305,7 @@ export class ImportsService {
     if (batch.status !== 'confirmed')
       throw new ConflictException('Somente uma importação confirmada pode ser desfeita.');
     await this.ledger.reverseBatch(id);
+    await this.ledger.removeBatchEvidence(id);
     await this.repository.mark(id, 'reversed');
     return { id, status: 'reversed' };
   }

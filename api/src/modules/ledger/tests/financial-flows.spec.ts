@@ -1,3 +1,5 @@
+import { ImportReconciliationService } from '../../imports/services/import-reconciliation.service.js';
+import { ImportReconciliationRepository } from '../../imports/repositories/import-reconciliation.repository.js';
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
@@ -39,6 +41,7 @@ const imports = new ImportsService(
   new IdempotencyService(db.service),
   categories,
   ledger,
+  new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
 );
 let first: string;
 let second: string;

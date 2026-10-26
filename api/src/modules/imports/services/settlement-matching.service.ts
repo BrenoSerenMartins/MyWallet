@@ -25,6 +25,8 @@ export class SettlementMatchingService {
   async transactionSources(id: string) {
     const transaction = await this.evidence.transaction(id);
     if (!transaction) throw new NotFoundException('Lançamento não encontrado.');
+    const direct = await this.evidence.directSources(id);
+    if (direct.length) return direct;
     if (!transaction.source_operation_id) return [];
     const matches = await this.match(
       transaction.account_id,

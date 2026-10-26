@@ -36,6 +36,9 @@ export function TransactionRow({
         <span>
           {labels[t.transactionType]} · {shortDate(t.transactionDate)}
           {t.importBatchId ? ' · Importado' : ''}
+          {t.reconciliationStatus === 'reconciled'
+            ? ' · Conciliada pelo EDI'
+            : ' · Pendente de conciliação'}
         </span>
         {categoryLabel && <span className="transaction-category">{categoryLabel}</span>}
       </div>

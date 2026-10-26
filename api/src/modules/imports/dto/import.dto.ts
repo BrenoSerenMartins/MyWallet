@@ -1,6 +1,11 @@
 import { IsBoolean, IsIn, IsInt, IsOptional, IsUUID, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class ReviewItemDto {
+  @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() confirmNew?: boolean;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
+  @IsUUID()
+  linkedTransactionId?: string | null;
   @ApiProperty({ type: Boolean }) @IsBoolean() selected!: boolean;
   @ApiProperty({ type: String })
   @IsIn(['income', 'expense', 'transfer', 'unclassified'])

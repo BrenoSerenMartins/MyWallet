@@ -1,3 +1,5 @@
+import { ImportReconciliationService } from '../services/import-reconciliation.service.js';
+import { ImportReconciliationRepository } from '../repositories/import-reconciliation.repository.js';
 import { ImportReprocessingService } from '../services/import-reprocessing.service.js';
 import { csvFixture, sampleRows } from './tabular-fixture.js';
 import { extractMercadoPagoStatement } from '../parsers/mercado-pago/extract-statement.js';
@@ -25,6 +27,7 @@ const imports = new ImportsService(
   receipts,
   categories,
   ledger,
+  new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
 );
 let account: string, batch: string;
 beforeAll(async () => {

@@ -15,10 +15,18 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
   const [error, setError] = useState('');
   const [key] = useState(() => crypto.randomUUID());
   const selected = batch.items.filter((i) => i.selected);
-  const unresolved = selected.filter((i) => i.transactionType === 'unclassified').length;
+  const unresolved = selected.filter(
+    (i) =>
+      (i.transactionType === 'unclassified' && i.action !== 'reconcile') || i.action === 'review',
+  ).length;
   async function review(
     item: ImportItem,
-    change: Partial<Pick<ImportItem, 'selected' | 'transactionType' | 'categoryId'>>,
+    change: Partial<
+      Pick<
+        ImportItem,
+        'selected' | 'transactionType' | 'categoryId' | 'linkedTransactionId' | 'confirmNew'
+      >
+    >,
   ) {
     setBusy(true);
     setError('');
@@ -30,6 +38,8 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
           selected: item.selected,
           transactionType: item.transactionType,
           categoryId: item.categoryId,
+          linkedTransactionId: item.linkedTransactionId,
+          confirmNew: item.confirmNew,
           ...change,
         }),
       });

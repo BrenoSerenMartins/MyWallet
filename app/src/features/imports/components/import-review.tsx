@@ -58,7 +58,8 @@ export function ImportReview({
         .toLocaleLowerCase('pt-BR')
         .includes(search.toLocaleLowerCase('pt-BR')),
     );
-  if (!canIntegrate) return <SettlementReview batch={batch} refresh={refresh} />;
+  if (batch.reportType === 'settlement')
+    return <SettlementReview batch={batch} refresh={refresh} />;
   return (
     <>
       <ReprocessImport
