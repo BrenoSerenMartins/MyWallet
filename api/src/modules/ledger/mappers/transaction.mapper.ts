@@ -3,6 +3,7 @@ export function transactionResource(row: Record<string, any>) {
   return {
     reconciliationStatus: row.reconciled ? ('reconciled' as const) : ('pending' as const),
     balanceAdjustment: row.balance_adjustment ?? null,
+    refundOfId: row.refund_of_id ?? null,
     id: row.id,
     accountId: row.account_id,
     categoryId: row.category_id,

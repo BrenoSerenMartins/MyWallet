@@ -57,9 +57,25 @@ export class LedgerRepository {
         [this.db.userId, transactionId, evidence.reference],
       );
   }
+  async attachRefund(
+    id: string,
+    original: { id: string; transactionType: string; categoryId: string | null },
+  ) {
+    await this.db.query(
+      'UPDATE wallet.transactions SET refund_of_id=$3,transaction_type=$4,category_id=$5,version=version+1 WHERE user_id=$1 AND id=$2',
+      [this.db.userId, id, original.id, original.transactionType, original.categoryId],
+    );
+  }
+  async refundedAmount(id: string) {
+    const [row] = await this.db.query(
+      'SELECT coalesce(sum(abs(amount_minor)),0) AS amount FROM wallet.transactions WHERE user_id=$1 AND refund_of_id=$2 AND reversed_at IS NULL',
+      [this.db.userId, id],
+    );
+    return Number(row.amount);
+  }
   async insert(input: TransactionInput) {
     const rows = await this.db.query(
-      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment,refund_of_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
       [
         randomUUID(),
         this.db.userId,
@@ -74,6 +90,7 @@ export class LedgerRepository {
         input.sourceRow ?? null,
         input.transferGroupId ?? null,
         input.balanceAdjustment ? JSON.stringify(input.balanceAdjustment) : null,
+        input.refundOfId ?? null,
       ],
     );
     return transactionResource(rows[0]);
@@ -213,6 +230,14 @@ export class LedgerRepository {
     );
   }
   async reverseBatch(id: string) {
+    const refunds = await this.db.query(
+      'SELECT 1 FROM wallet.transactions r JOIN wallet.transactions original ON original.id=r.refund_of_id WHERE original.user_id=$1 AND original.import_batch_id=$2 AND original.reversed_at IS NULL AND r.reversed_at IS NULL LIMIT 1',
+      [this.db.userId, id],
+    );
+    if (refunds.length)
+      throw new ConflictException(
+        'Existem devoluções vinculadas. Desfaça as devoluções antes da operação original.',
+      );
     const supported = await this.db.query(
       `SELECT 1 FROM wallet.transactions t JOIN wallet.import_items i ON i.linked_transaction_id=t.id JOIN wallet.import_batches b ON b.id=i.batch_id WHERE t.user_id=$1 AND t.import_batch_id=$2 AND t.reversed_at IS NULL AND b.id<>$2 AND b.status='confirmed' LIMIT 1`,
       [this.db.userId, id],

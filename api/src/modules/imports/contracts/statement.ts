@@ -55,6 +55,7 @@ export interface SavedImportItem extends Omit<StatementRow, 'sourcePage' | 'meta
   categoryId: string | null;
   linkedTransactionId?: string | null;
   confirmNew?: boolean;
+  refundOfId?: string | null;
 }
 export interface ReprocessedImportEntry extends ImportEntry {
   id: string;
@@ -63,4 +64,5 @@ export interface ReprocessedImportEntry extends ImportEntry {
   categoryId: string | null;
   linkedTransactionId?: string | null;
   confirmNew?: boolean;
+  refundOfId?: string | null;
 }

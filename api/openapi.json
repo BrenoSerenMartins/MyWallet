@@ -1426,6 +1426,10 @@
       "TransactionResourceDto": {
         "type": "object",
         "properties": {
+          "refundOfId": {
+            "type": "string",
+            "nullable": true
+          },
           "balanceAdjustment": {
             "nullable": true,
             "type": "object",
@@ -1921,6 +1925,16 @@
       "ImportItemResourceDto": {
         "type": "object",
         "properties": {
+          "refundOfId": {
+            "type": "string",
+            "nullable": true
+          },
+          "refundCandidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReconciliationCandidateResourceDto"
+            }
+          },
           "confirmNew": {
             "type": "boolean"
           },
@@ -1993,6 +2007,7 @@
           }
         },
         "required": [
+          "refundCandidates",
           "confirmNew",
           "action",
           "actionReason",
@@ -2016,6 +2031,9 @@
       "ImportBatchResourceDto": {
         "type": "object",
         "properties": {
+          "willInitializeOpening": {
+            "type": "boolean"
+          },
           "institution": {
             "type": "string"
           },
@@ -2161,6 +2179,10 @@
       "ReviewItemDto": {
         "type": "object",
         "properties": {
+          "refundOfId": {
+            "type": "string",
+            "nullable": true
+          },
           "confirmNew": {
             "type": "boolean"
           },

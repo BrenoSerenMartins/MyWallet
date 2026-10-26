@@ -93,8 +93,9 @@ export function validateBackup(raw: unknown): BackupPayload {
       fail();
     if (t.categoryId && (!category || category.type !== t.transactionType)) fail();
     if (
-      (t.transactionType === 'income' && t.amount < 0) ||
-      (t.transactionType === 'expense' && t.amount > 0)
+      !t.refundOfId &&
+      ((t.transactionType === 'income' && t.amount < 0) ||
+        (t.transactionType === 'expense' && t.amount > 0))
     )
       fail();
     if (t.sourceOperationId !== null && !text(t.sourceOperationId, 160)) fail();
@@ -168,6 +169,31 @@ export function validateBackup(raw: unknown): BackupPayload {
       groups.set(t.transferGroupId, group);
     }
   }
+  const transactions = new Map(b.transactions.map((row) => [row.id, row]));
+  const refunds = new Map<string, number>();
+  for (const transaction of b.transactions)
+    if (transaction.refundOfId) {
+      requireUuid(transaction.refundOfId);
+      const original = transactions.get(transaction.refundOfId);
+      if (
+        b.version < 4 ||
+        !original ||
+        original.refundOfId ||
+        original.balanceAdjustment ||
+        !['income', 'expense'].includes(original.transactionType) ||
+        transaction.accountId !== original.accountId ||
+        transaction.categoryId !== original.categoryId ||
+        transaction.transactionType !== original.transactionType ||
+        transaction.amount * original.amount >= 0 ||
+        transaction.transactionDate < original.transactionDate ||
+        transaction.balanceAdjustment ||
+        transaction.transferGroupId
+      )
+        fail();
+      const amount = (refunds.get(original!.id) ?? 0) + Math.abs(transaction.amount);
+      if (amount > Math.abs(original!.amount)) fail();
+      refunds.set(original!.id, amount);
+    }
   for (const pair of groups.values())
     if (
       pair.length !== 2 ||

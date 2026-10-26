@@ -1,3 +1,7 @@
+export const ACCOUNT_OPENING_POSITIONS = Symbol('ACCOUNT_OPENING_POSITIONS');
+export interface AccountOpeningPositions {
+  initializeFromStatement(accountId: string, balance: number, date: string): Promise<void>;
+}
 import type { SourceEvidence } from './source-evidence.js';
 export * from './source-evidence.js';
 export const ACCOUNT_READS = Symbol('ACCOUNT_READS');
@@ -39,6 +43,7 @@ export interface BalanceAdjustment {
   reason: string;
 }
 export interface TransactionInput {
+  refundOfId?: string | null;
   balanceAdjustment?: BalanceAdjustment | null;
   accountId: string;
   categoryId?: string | null;
@@ -60,6 +65,7 @@ export interface CategoryReads {
   validate(id: string, type: string): Promise<void>;
 }
 export interface LedgerWrites {
+  attachRefund(transactionId: string, refundOfId: string): Promise<void>;
   create(input: TransactionInput, imported?: boolean): Promise<{ id: string }>;
   recordEvidence(transactionId: string, accountId: string, evidence: SourceEvidence): Promise<void>;
   removeBatchEvidence(batchId: string): Promise<void>;
@@ -110,6 +116,7 @@ export interface BackupCategory {
   color: string;
 }
 export interface BackupTransaction {
+  refundOfId?: string | null;
   balanceAdjustment?: BalanceAdjustment | null;
   id: string;
   accountId: string;

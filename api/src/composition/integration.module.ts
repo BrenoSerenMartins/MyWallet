@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import {
   PLANNING_BACKUP,
   ACCOUNT_READS,
+  ACCOUNT_OPENING_POSITIONS,
   CATEGORY_READS,
   LEDGER_WRITES,
   LEDGER_READS,
@@ -15,6 +16,7 @@ import { CategoriesModule, CategoriesService } from '../modules/categories/index
 import { LedgerModule, LedgerService, IdempotencyService } from '../modules/ledger/index.js';
 import { PlanningModule, PlanningService } from '../modules/planning/index.js';
 const bindings = [
+  { provide: ACCOUNT_OPENING_POSITIONS, useExisting: AccountsService },
   { provide: PLANNING_BACKUP, useExisting: PlanningService },
   { provide: ACCOUNT_BACKUP, useExisting: AccountsService },
   { provide: CATEGORY_BACKUP, useExisting: CategoriesService },

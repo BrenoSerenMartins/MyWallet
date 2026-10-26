@@ -1,3 +1,4 @@
+import { OpeningInitialization } from './opening-initialization';
 import { useState } from 'react';
 import { useImportReview } from '../hooks/use-import-review';
 import type { ImportBatch } from '../../../shared/api/resources';
@@ -44,6 +45,7 @@ export function SettlementReview({
           setPage(0);
         }}
       />
+      <OpeningInitialization batch={batch} />
       <div className="review-banner">
         <div>
           <strong>EDI Mercado Pago · fonte de conciliação</strong>

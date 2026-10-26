@@ -28,6 +28,7 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
+  accounts,
 );
 let account: string, batch: string;
 beforeAll(async () => {
@@ -68,9 +69,7 @@ describe('Older statements and consultation history', () => {
     expect(preview.openingDateMismatch).toBe(true);
     expect(preview.statementStartDate).toBe('2026-01-05');
     expect((await db.forUser(db.user, () => accounts.find(account))).balance).toBe(0);
-    await expect(
-      db.forUser(db.user, () => imports.confirm(batch, preview.version, 'early-confirm')),
-    ).rejects.toThrow('posição inicial');
+    expect(preview.willInitializeOpening).toBe(true);
   });
   it('retains history without transactions and returns the same uploaded file', async () => {
     const history = await db.forUser(db.user, () => imports.retainHistory(batch, 1));
@@ -366,11 +365,10 @@ it('classifies old drafts automatically and guides later statements to unfinishe
   expect(october.previousImports).toEqual([
     expect.objectContaining({ id: september.id, status: 'draft' }),
   ]);
-  await expect(
-    db.forUser(db.user, () =>
-      imports.confirm(october.id, october.version, 'sequence-early-october'),
-    ),
-  ).rejects.toThrow('Confirme os extratos anteriores');
+  await db.forUser(db.user, () =>
+    imports.confirm(october.id, october.version, 'sequence-early-october'),
+  );
+  expect((await db.forUser(db.user, () => accounts.find(accountId))).openingBalance).toBe(10000);
   const history = await db.forUser(db.user, () =>
     imports.retainHistory(september.id, september.version),
   );

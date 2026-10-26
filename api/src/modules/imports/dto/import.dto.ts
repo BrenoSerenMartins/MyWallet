@@ -1,6 +1,8 @@
 import { IsBoolean, IsIn, IsInt, IsOptional, IsUUID, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class ReviewItemDto {
+  @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() refundOfId?:
+    string | null;
   @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() confirmNew?: boolean;
   @ApiPropertyOptional({ type: String, nullable: true })
   @IsOptional()

@@ -33,6 +33,7 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
+  accounts,
 );
 let accountId: string;
 beforeAll(async () => {

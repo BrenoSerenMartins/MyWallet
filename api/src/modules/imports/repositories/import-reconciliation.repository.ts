@@ -15,6 +15,24 @@ export interface ReconciliationCandidate {
 @Injectable()
 export class ImportReconciliationRepository {
   constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
+  async refundOrigins(accountId: string, to: string) {
+    const rows = await this.db.query(
+      `SELECT t.id,t.description,t.category_id,t.transaction_type,t.amount_minor,t.transaction_date,t.source_operation_id,
+      abs(t.amount_minor)-coalesce((SELECT sum(abs(r.amount_minor)) FROM wallet.transactions r WHERE r.refund_of_id=t.id AND r.reversed_at IS NULL),0) AS remaining
+      FROM wallet.transactions t WHERE t.user_id=$1 AND t.account_id=$2 AND t.reversed_at IS NULL AND t.refund_of_id IS NULL AND t.balance_adjustment IS NULL AND t.transaction_type IN ('income','expense') AND t.transaction_date<=$3 ORDER BY t.transaction_date DESC,t.id LIMIT 20001`,
+      [this.db.userId, accountId, to],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      description: row.description,
+      categoryId: row.category_id as string | null,
+      transactionType: row.transaction_type as 'income' | 'expense',
+      amount: Number(row.amount_minor),
+      remaining: Number(row.remaining),
+      date: isoDate(row.transaction_date),
+      reference: row.source_operation_id as string | null,
+    }));
+  }
   async candidates(accountId: string, references: string[], from: string, to: string) {
     const rows = await this.db.query(
       `SELECT t.id,t.description,t.amount_minor AS current_amount,t.transaction_date AS current_date,coalesce(i.source_operation_id,t.source_operation_id) AS reference,

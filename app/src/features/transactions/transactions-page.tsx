@@ -270,6 +270,17 @@ export function TransactionsPage() {
             </div>
           </div>
         )}
+        {selected?.refundOfId && (
+          <div className="review-banner">
+            <div>
+              <strong>Devolução vinculada à operação original</strong>
+              <p>O valor reduz a receita ou despesa da categoria original na data da devolução.</p>
+              <Link to={`/transactions?transaction=${selected.refundOfId}`}>
+                Ver operação original
+              </Link>
+            </div>
+          </div>
+        )}
         {selected?.balanceAdjustment && (
           <div className="review-banner">
             <div>

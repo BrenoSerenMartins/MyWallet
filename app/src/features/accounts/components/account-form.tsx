@@ -104,7 +104,7 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
       <p className="field-help">
         {institution === 'alelo'
           ? 'Benefício não é limite de crédito nem dinheiro livre. Informe a posição conhecida antes dos movimentos; o saldo atual no PDF não define o saldo inicial. A importação validada é para Alimentação.'
-          : 'Para importar um extrato, use o saldo inicial dele e uma data igual ou anterior ao primeiro movimento.'}
+          : 'No primeiro extrato de uma conta vazia, o app identifica a data e o saldo inicial automaticamente ao confirmar. Para registros manuais, informe a posição inicial conhecida.'}
       </p>
       {error && (
         <p className="form-error" role="alert">

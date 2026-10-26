@@ -289,3 +289,11 @@ A visão geral separa dinheiro disponível, benefícios e reservas registradas. 
 Em **Minhas contas → Corrigir saldo**, informe o saldo atual correto e o motivo. O app mostra a diferença e registra uma **Correção de saldo manual**, preservando os movimentos anteriores. O ajuste não entra em receitas/despesas e não marca a conta como conciliada. Ele pode ser desfeito pelo histórico; seu registro e motivo ficam no backup. Se houver lançamentos futuros ou o saldo mudar durante a confirmação, revise antes de tentar novamente. Não some o saldo atual ao saldo de abertura: a correção calcula apenas a diferença.
 
 As migrations `202610260002_alelo_benefit_imports.sql` e `202610260003_manual_balance_adjustments.sql` foram aplicadas pelo usuário antes do deploy.
+
+### Início automático e devoluções
+
+Ao confirmar o primeiro arquivo de uma conta vazia, a data inicial é ajustada ao histórico. Se for um extrato com saldo de abertura, o app usa esse saldo; se for EDI ou Alelo sem saldo inicial, conserva o valor cadastrado. Você não precisa copiar o saldo inicial de um extrato bancário manualmente. A operação ocorre apenas ao confirmar os movimentos.
+
+Em contas que já possuem movimentos, uma diferença de abertura é um aviso: a importação dos novos movimentos pode continuar sem alterar a posição inicial ou inventar ajustes. O saldo continua calculado pelo histórico registrado e pode precisar de conferência. Datas anteriores ao início de uma conta já movimentada continuam protegidas.
+
+No EDI, devoluções podem ser vinculadas à compra ou receita original. O app conserva a categoria, controla o total já devolvido e reduz a receita/despesa na data da devolução. Se o dinheiro já entrou por um extrato, a revisão vincula e corrige a natureza do movimento sem lançá-lo novamente. Operações com devoluções exigem desfazer os retornos antes de alterar a origem. Parcelas com valores líquidos incompatíveis e eventos ainda não liberados continuam sinalizados para revisão.

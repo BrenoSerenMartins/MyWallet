@@ -35,7 +35,11 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     categories: Map<string, string>,
   ) {
     const groups = new Map<string, string>();
-    for (const entry of records) {
+    const restoredIds = new Map<string, string>();
+    for (const entry of [
+      ...records.filter((entry) => !entry.refundOfId),
+      ...records.filter((entry) => entry.refundOfId),
+    ]) {
       let transferGroupId: string | undefined;
       if (entry.transferGroupId) {
         if (!groups.has(entry.transferGroupId))
@@ -47,12 +51,14 @@ export class LedgerService implements LedgerWrites, LedgerReads {
           ...entry,
           importBatchId: undefined,
           sourceRow: undefined,
+          refundOfId: entry.refundOfId ? restoredIds.get(entry.refundOfId) : null,
           accountId: accounts.get(entry.accountId)!,
           categoryId: entry.categoryId ? categories.get(entry.categoryId) : null,
           transferGroupId,
         },
         true,
       );
+      restoredIds.set(entry.id, restored.id);
       for (const evidence of entry.sourceEvidence ?? [])
         await this.recordEvidence(restored.id, accounts.get(entry.accountId)!, evidence);
     }
@@ -89,12 +95,54 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       throw new UnprocessableEntityException('A data deve respeitar a posição inicial da conta.');
     if (!input.amount || !input.description.trim())
       throw new UnprocessableEntityException('Informe valor e descrição.');
-    if (
+    if (input.refundOfId) await this.validateRefund(input);
+    else if (
       (input.transactionType === 'income' && input.amount < 0) ||
       (input.transactionType === 'expense' && input.amount > 0)
     )
       throw new UnprocessableEntityException('Valor incompatível com o tipo do lançamento.');
-    if (input.categoryId) await this.categories.validate(input.categoryId, input.transactionType);
+    if (input.categoryId && !input.refundOfId)
+      await this.categories.validate(input.categoryId, input.transactionType);
+  }
+  async attachRefund(transactionId: string, refundOfId: string) {
+    const entry = await this.find(transactionId);
+    await this.accounts.find(entry.accountId, true);
+    const current = await this.find(transactionId, true);
+    if (current.refundOfId === refundOfId) return;
+    if (
+      current.refundOfId ||
+      current.balanceAdjustment ||
+      current.transferGroupId ||
+      (await this.repository.refundedAmount(current.id)) > 0
+    )
+      throw new ConflictException('Este lançamento já possui um vínculo financeiro incompatível.');
+    const original = await this.find(refundOfId, true);
+    await this.validateRefund({
+      ...current,
+      refundOfId,
+      transactionType: original.transactionType,
+      categoryId: original.categoryId,
+    });
+    await this.repository.attachRefund(current.id, original);
+  }
+  private async validateRefund(input: TransactionInput) {
+    const original = await this.find(input.refundOfId!, true);
+    if (
+      original.accountId !== input.accountId ||
+      original.refundOfId ||
+      original.balanceAdjustment ||
+      !['income', 'expense'].includes(original.transactionType) ||
+      input.transactionType !== original.transactionType ||
+      input.categoryId !== original.categoryId ||
+      input.amount * original.amount >= 0 ||
+      input.transactionDate < original.transactionDate
+    )
+      throw new UnprocessableEntityException(
+        'A devolução deve corresponder à conta, categoria e natureza da operação original, com sinal oposto.',
+      );
+    const refunded = await this.repository.refundedAmount(original.id);
+    if (refunded + Math.abs(input.amount) > Math.abs(original.amount))
+      throw new ConflictException('O total devolvido excede o valor da operação original.');
   }
   async create(input: TransactionInput, imported = false) {
     await this.validate(input);
@@ -150,6 +198,10 @@ export class LedgerService implements LedgerWrites, LedgerReads {
   }
   async update(id: string, input: TransactionInput, version: string) {
     const original = await this.find(id);
+    if (original.refundOfId || (await this.repository.refundedAmount(id)) > 0)
+      throw new ConflictException(
+        'Operações com devoluções não são editadas. Desfaça as devoluções antes de corrigir o histórico.',
+      );
     if (original.balanceAdjustment)
       throw new ConflictException(
         'Correções de saldo não são editadas. Desfaça a correção e registre outra para preservar o histórico.',
@@ -169,6 +221,8 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     await this.accounts.find(current.accountId, true);
     const latest = await this.find(id, true);
     requireVersion(latest.version, version);
+    if ((await this.repository.refundedAmount(id)) > 0)
+      throw new ConflictException('Desfaça as devoluções antes da operação original.');
     await this.repository.reverse(id, latest.transferGroupId);
     return { reversed: true };
   }

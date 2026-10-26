@@ -31,6 +31,7 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
+  accounts,
 );
 const backups = new DataExportService(
   accounts,
@@ -287,4 +288,211 @@ it('returns an edited reconciled movement to pending and supports reconciliation
   ).toHaveLength(1);
   const again = await edi(a.id, 'edited-proof', {}, '\n\n');
   expect(again.items[0].action).toBe('review');
+});
+
+async function refund(
+  accountId: string,
+  reference: string,
+  amount: string,
+  originalId: string,
+  key: string,
+) {
+  const report = await edi(accountId, reference, {
+    TRANSACTION_TYPE: 'REFUND',
+    SETTLEMENT_NET_AMOUNT: amount,
+    IS_RELEASED: 'true',
+    SETTLEMENT_DATE: '2026-10-05T12:00:00-04:00',
+    SETTLEMENT_DATE_SHORT: '2026-10-05',
+  });
+  expect(report.items[0].action).toBe('review');
+  const reviewed = await run(() =>
+    imports.review(
+      report.id,
+      report.items[0].id,
+      { selected: true, transactionType: 'income', refundOfId: originalId },
+      String(report.version),
+    ),
+  );
+  await run(() => imports.confirm(reviewed.id, reviewed.version, key));
+  return reviewed;
+}
+it('records partial refunds as reduced original expenses instead of new income, capped across events', async () => {
+  const a = await account('Partial refunds');
+  const purchase = await edi(a.id, 'original-purchase');
+  await run(() => imports.confirm(purchase.id, purchase.version, 'purchase-refund-base'));
+  const original = (await run(() => ledger.exportRecords())).find((row) => row.accountId === a.id)!;
+  const before = await run(() => ledger.summary('2026-10-01', '2026-11-01'));
+  await refund(a.id, 'refund-part-1', '3.00', original.id, 'partial-first');
+  await refund(a.id, 'refund-part-2', '2.00', original.id, 'partial-second');
+  const after = await run(() => ledger.summary('2026-10-01', '2026-11-01'));
+  expect(after.income).toBe(before.income);
+  expect(after.expense).toBe(before.expense - 500);
+  expect((await run(() => accounts.find(a.id))).balance).toBe(9500);
+  const entries = (await run(() => ledger.exportRecords())).filter((row) => row.accountId === a.id);
+  expect(
+    entries
+      .filter((row) => row.refundOfId === original.id)
+      .map((row) => row.amount)
+      .sort(),
+  ).toEqual([200, 300]);
+  expect(
+    entries
+      .filter((row) => row.refundOfId)
+      .every(
+        (row) => row.transactionType === 'expense' && row.reconciliationStatus === 'reconciled',
+      ),
+  ).toBe(true);
+  const tooMuch = await edi(a.id, 'refund-over-limit', {
+    TRANSACTION_TYPE: 'REFUND',
+    SETTLEMENT_NET_AMOUNT: '6.00',
+    IS_RELEASED: 'true',
+    SETTLEMENT_DATE: '2026-10-05T12:00:00-04:00',
+    SETTLEMENT_DATE_SHORT: '2026-10-05',
+  });
+  await expect(
+    run(() =>
+      imports.review(
+        tooMuch.id,
+        tooMuch.items[0].id,
+        { selected: true, transactionType: 'income', refundOfId: original.id },
+        String(tooMuch.version),
+      ),
+    ),
+  ).rejects.toThrow('original válida');
+  await expect(run(() => ledger.reverse(original.id, String(original.version)))).rejects.toThrow(
+    'devoluções',
+  );
+});
+it('restores linked refund identity and rejects tampered refund arithmetic', async () => {
+  const backup = await run(() => backups.backup());
+  const returned = backup.transactions.find((row) => row.refundOfId)!;
+  expect(returned).toBeDefined();
+  const bad = structuredClone(backup);
+  bad.transactions.find((row) => row.id === returned.id)!.amount = 999999;
+  await expect(run(() => backups.preview(bad))).rejects.toThrow('backup');
+  const workspace = await db.engine.query<{ id: string }>(
+    "INSERT INTO wallet.workspaces(user_id,name) VALUES($1,'Refund restore') RETURNING id",
+    [db.user],
+  );
+  await db.forUser(
+    db.user,
+    async () => {
+      const draft = await backups.preview(backup);
+      await backups.confirm(draft.id);
+      const rows = await ledger.exportRecords();
+      const restored = rows.find((row) => row.sourceOperationId === returned.sourceOperationId)!;
+      expect(restored.refundOfId).not.toBe(returned.refundOfId);
+      expect(rows.find((row) => row.id === restored.refundOfId)?.transactionType).toBe('expense');
+    },
+    false,
+    workspace.rows[0].id,
+  );
+});
+it('initializes an empty account from statement evidence atomically without asking for manual opening values', async () => {
+  const a = await run(() =>
+    accounts.create({
+      name: 'Automatic first statement',
+      institution: 'mercado_pago',
+      type: 'checking',
+      openingBalance: 0,
+      openingDate: '2026-10-20',
+    }),
+  );
+  const draft = await statement(a.id, 'automatic-opening');
+  expect(draft.willInitializeOpening).toBe(true);
+  expect((await run(() => accounts.find(a.id))).openingBalance).toBe(0);
+  await run(() => imports.confirm(draft.id, draft.version, 'auto-first-confirm'));
+  expect(await run(() => accounts.find(a.id))).toMatchObject({
+    openingBalance: 10000,
+    openingDate: '2026-10-03',
+    balance: 9000,
+  });
+  const next = await run(() =>
+    imports.upload(a.id, Buffer.from('conflicting-later-source'), 'later.pdf', {
+      openingBalance: 555,
+      closingBalance: 455,
+      items: [
+        {
+          sourceRow: 1,
+          sourcePage: 1,
+          sourceOperationId: 'later',
+          description: 'Another purchase',
+          transactionDate: '2026-10-10',
+          amount: -100,
+          balanceAfter: 455,
+        },
+      ],
+    }),
+  );
+  expect(next.willInitializeOpening).toBe(false);
+  await run(() => imports.confirm(next.id, next.version, 'keep-opening-and-import'));
+  expect((await run(() => accounts.find(a.id))).balance).toBe(8900);
+  expect((await run(() => accounts.find(a.id))).openingBalance).toBe(10000);
+});
+
+it('links an already imported refund to its original without posting cash twice', async () => {
+  const a = await account('Statement refund first');
+  const purchase = await edi(a.id, 'purchase-returned');
+  await run(() => imports.confirm(purchase.id, purchase.version, 'refund-first-purchase'));
+  const original = (await run(() => ledger.exportRecords())).find((row) => row.accountId === a.id)!;
+  const fromStatement = await run(() =>
+    imports.upload(a.id, Buffer.from('refund-statement-proof'), 'statement.pdf', {
+      openingBalance: 9000,
+      closingBalance: 9300,
+      items: [
+        {
+          sourceRow: 1,
+          sourcePage: 1,
+          transactionDate: '2026-10-05',
+          sourceOperationId: 'refunded-legacy',
+          description: 'Refund already in statement',
+          amount: 300,
+          balanceAfter: 9300,
+        },
+      ],
+    }),
+  );
+  await run(() => imports.confirm(fromStatement.id, fromStatement.version, 'existing-refund-cash'));
+  const cashBefore = (await run(() => accounts.find(a.id))).balance;
+  await refund(a.id, 'refunded-legacy', '3.00', original.id, 'reclassify-existing-refund');
+  expect((await run(() => accounts.find(a.id))).balance).toBe(cashBefore);
+  const rows = (await run(() => ledger.exportRecords())).filter((row) => row.accountId === a.id);
+  expect(rows).toHaveLength(2);
+  expect(rows.find((row) => row.amount === 300)).toMatchObject({
+    transactionType: 'expense',
+    refundOfId: original.id,
+    reconciliationStatus: 'reconciled',
+  });
+});
+
+it('keeps installment events pending when source net differs from the released installment amount', async () => {
+  const a = await account('Installment amount check');
+  const report = await edi(a.id, 'installment-different-net', {
+    SETTLEMENT_NET_AMOUNT: '10.00',
+    IS_RELEASED: 'true',
+    INSTALLMENT_NET_AMOUNT: '3.33',
+  });
+  expect(report.items[0]).toMatchObject({ action: 'review', selected: false });
+  expect(report.items[0].actionReason).toContain('valor da parcela');
+  expect((await run(() => accounts.find(a.id))).balance).toBe(10000);
+});
+
+it('initializes only the date for an empty account when EDI has no opening balance', async () => {
+  const a = await run(() =>
+    accounts.create({
+      name: 'EDI historical first date',
+      institution: 'mercado_pago',
+      type: 'checking',
+      openingBalance: 12345,
+      openingDate: '2026-10-20',
+    }),
+  );
+  const report = await edi(a.id, 'earlier-edi-date');
+  expect(report.willInitializeOpening).toBe(true);
+  await run(() => imports.confirm(report.id, report.version, 'earlier-edi-first'));
+  expect(await run(() => accounts.find(a.id))).toMatchObject({
+    openingDate: '2026-10-03',
+    openingBalance: 12345,
+    balance: 11345,
+  });
 });

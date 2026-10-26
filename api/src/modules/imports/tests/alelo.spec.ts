@@ -31,6 +31,7 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
+  accounts,
 );
 const run = <T>(fn: () => Promise<T>) => db.forUser(db.user, fn);
 beforeAll(() => db.initialize());

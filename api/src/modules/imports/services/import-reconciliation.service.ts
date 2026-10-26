@@ -1,3 +1,5 @@
+import { importActionReason } from './import-action-reason.js';
+import { isEdiRefund } from '../mappers/mercado-pago/edi-event.js';
 import { reconciliationCandidates } from './reconciliation-candidates.js';
 import { Inject, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { sourceEvidenceKey, type SourceEvidence } from '../../../core/integration/index.js';
@@ -33,6 +35,17 @@ export class ImportReconciliationService {
       : [];
     if (candidates.length > 20000)
       throw new UnprocessableEntityException('Use um período menor para conciliar os movimentos.');
+    const refundOrigins =
+      reportType === 'settlement' &&
+      items.some((item) => item.metadata && isEdiRefund(item.metadata.eventType)) &&
+      dates.length
+        ? await this.repository.refundOrigins(accountId, dates.at(-1)!)
+        : [];
+    if (refundOrigins.length > 20000)
+      throw new UnprocessableEntityException(
+        'Use um período menor ou revise a origem das devoluções.',
+      );
+    const refundClaims = new Map<string, number>();
     const indexed = reconciliationCandidates(candidates);
     const benefitOccurrences = new Map<string, number>();
     const seen = new Set<string>();
@@ -132,7 +145,7 @@ export class ImportReconciliationService {
       if (reportType === 'benefit_statement' && explicit) action = 'reconcile';
       if (item.confirmNew && !linked && !occurrenceRepeated) action = 'create';
       const metadata = item.metadata;
-      const transactionType =
+      let transactionType =
         reportType === 'settlement' && item.transactionType === 'unclassified' && metadata
           ? ediFinancialType(metadata, item.amount)
           : item.transactionType;
@@ -146,24 +159,50 @@ export class ImportReconciliationService {
       if (linked?.modified && reportType === 'settlement') action = 'review';
       if (linked && claimed.has(linked.id) && claimed.get(linked.id) !== key) action = 'review';
       if (linked && action !== 'review') claimed.set(linked.id, key);
+      const refundable =
+        metadata && isEdiRefund(metadata.eventType)
+          ? refundOrigins
+              .filter(
+                (origin) =>
+                  origin.amount * item.amount < 0 &&
+                  origin.date <= item.transactionDate &&
+                  origin.remaining >= Math.abs(item.amount),
+              )
+              .sort(
+                (a, b) =>
+                  Number(b.reference === item.sourceOperationId) -
+                  Number(a.reference === item.sourceOperationId),
+              )
+          : [];
+      const refundOrigin = item.refundOfId
+        ? refundable.find((origin) => origin.id === item.refundOfId)
+        : undefined;
+      if (metadata && isEdiRefund(metadata.eventType) && !known) {
+        if (refundOrigin && (linked || ediCanPost(metadata, item.amount))) {
+          const total = (refundClaims.get(refundOrigin.id) ?? 0) + Math.abs(item.amount);
+          action = total <= refundOrigin.remaining ? (linked ? 'reconcile' : 'create') : 'review';
+          if (item.selected && (action === 'create' || action === 'reconcile'))
+            refundClaims.set(refundOrigin.id, total);
+          transactionType = refundOrigin.transactionType;
+        } else action = 'review';
+      }
       if (!item.amount) action = 'ignore';
-      const reason =
-        linked?.modified && reportType === 'settlement'
-          ? 'O valor ou a data do lançamento foi alterado. Confira a diferença antes de conciliar; suas alterações serão preservadas.'
-          : reportType === 'benefit_statement' && action === 'review'
-            ? 'O PDF não fornece ID por compra. Confira as ocorrências antes de vincular; compras iguais no mesmo dia podem ser legítimas.'
-            : action === 'create'
-              ? 'Novo movimento identificado na fonte.'
-              : action === 'reconcile'
-                ? 'Vincular ao lançamento existente, preservando seus valores e categorias.'
-                : action === 'recorded'
-                  ? 'Esta operação já está registrada.'
-                  : action === 'ignore'
-                    ? 'Registro repetido ou sem efeito financeiro.'
-                    : 'Confira classificação, disponibilidade ou um possível lançamento já existente.';
+      const reason = importActionReason({
+        action,
+        reportType,
+        metadata: item.metadata,
+        amount: item.amount,
+        modified: !!linked?.modified,
+      });
       return {
         ...item,
         transactionType,
+        categoryId: refundOrigin ? refundOrigin.categoryId : item.categoryId,
+        refundOfId: refundOrigin?.id ?? item.refundOfId ?? null,
+        refundCandidates: refundable.slice(0, 20).map((origin) => ({
+          id: origin.id,
+          description: `${origin.description} · ${origin.date} · disponível para devolver: R$ ${(origin.remaining / 100).toFixed(2).replace('.', ',')}`,
+        })),
         sourceEvidence: source,
         action,
         actionReason: reason,

@@ -631,6 +631,7 @@ export interface components {
       reason: string;
     };
     TransactionResourceDto: {
+      refundOfId?: string | null;
       balanceAdjustment?: components['schemas']['BalanceAdjustmentResourceDto'] | null;
       /** @enum {string} */
       reconciliationStatus: 'pending' | 'reconciled';
@@ -762,6 +763,8 @@ export interface components {
       lastFourDigits: string | null;
     };
     ImportItemResourceDto: {
+      refundOfId?: string | null;
+      refundCandidates: components['schemas']['ReconciliationCandidateResourceDto'][];
       confirmNew: boolean;
       /** @enum {string} */
       action: 'create' | 'reconcile' | 'recorded' | 'review' | 'ignore';
@@ -785,6 +788,7 @@ export interface components {
       categoryId: string | null;
     };
     ImportBatchResourceDto: {
+      willInitializeOpening?: boolean;
       institution: string;
       /** @enum {string} */
       reconciliationCapability: 'running_balance' | 'partial';
@@ -822,6 +826,7 @@ export interface components {
       metadata: components['schemas']['SettlementMetadataResourceDto'];
     };
     ReviewItemDto: {
+      refundOfId?: string | null;
       confirmNew?: boolean;
       linkedTransactionId?: string | null;
       selected: boolean;

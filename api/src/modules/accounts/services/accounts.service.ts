@@ -40,6 +40,13 @@ export class AccountsService implements AccountReads {
     const id = await this.repository.create(input);
     return this.find(id);
   }
+  async initializeFromStatement(id: string, balance: number, date: string) {
+    const account = await this.find(id, true);
+    if (account.archived || (await this.repository.hasTransactions(id)))
+      throw new ConflictException('A posição inicial de uma conta com movimentos será preservada.');
+    dateOnly(date);
+    await this.repository.update(id, { ...account, openingBalance: balance, openingDate: date });
+  }
   async update(id: string, input: CreateAccountDto, version: string) {
     const account = await this.find(id, true);
     requireVersion(account.version, version);

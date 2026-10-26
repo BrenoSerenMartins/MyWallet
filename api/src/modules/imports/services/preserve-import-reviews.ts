@@ -47,6 +47,7 @@ export function preserveImportReviews(
       selected: old?.selected ?? true,
       linkedTransactionId: old?.linkedTransactionId ?? null,
       confirmNew: old?.confirmNew ?? false,
+      refundOfId: old?.refundOfId ?? null,
       categoryId: old?.transactionType === transactionType ? old.categoryId : null,
       transactionType,
       duplicateCandidate: false,

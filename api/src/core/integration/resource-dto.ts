@@ -33,6 +33,7 @@ export class BalanceAdjustmentResourceDto {
   @ApiProperty({ type: String }) reason!: string;
 }
 export class TransactionResourceDto {
+  @ApiPropertyOptional({ type: String, nullable: true }) refundOfId?: string | null;
   @ApiPropertyOptional({ type: () => BalanceAdjustmentResourceDto, nullable: true })
   balanceAdjustment?: BalanceAdjustmentResourceDto | null;
   @ApiProperty({ type: String, enum: ['pending', 'reconciled'] }) reconciliationStatus!:
@@ -80,6 +81,9 @@ export class ReconciliationCandidateResourceDto {
   @ApiProperty({ type: String }) description!: string;
 }
 export class ImportItemResourceDto {
+  @ApiPropertyOptional({ type: String, nullable: true }) refundOfId?: string | null;
+  @ApiProperty({ type: () => [ReconciliationCandidateResourceDto] })
+  refundCandidates!: ReconciliationCandidateResourceDto[];
   @ApiProperty({ type: Boolean }) confirmNew!: boolean;
   @ApiProperty({ type: String, enum: ['create', 'reconcile', 'recorded', 'review', 'ignore'] })
   action!: 'create' | 'reconcile' | 'recorded' | 'review' | 'ignore';
@@ -112,6 +116,7 @@ export class PreviousImportResourceDto {
   @ApiProperty({ type: String }) lastDate!: string;
 }
 export class ImportBatchResourceDto {
+  @ApiPropertyOptional({ type: Boolean }) willInitializeOpening?: boolean;
   @ApiProperty({ type: String }) institution!: string;
   @ApiProperty({ type: String, enum: ['running_balance', 'partial'] }) reconciliationCapability!:
     'running_balance' | 'partial';

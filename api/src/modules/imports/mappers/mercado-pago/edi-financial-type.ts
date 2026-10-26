@@ -18,6 +18,13 @@ export function ediFinancialType(
 }
 export function ediCanPost(metadata: SettlementMetadata, amount: number) {
   if (!amount) return false;
+  if (
+    ['SETTLEMENT', 'SETTLEMENT_SHIPPING'].includes(metadata.eventType) &&
+    metadata.installmentNumber != null &&
+    metadata.installmentNetAmount != null &&
+    Math.abs(metadata.installmentNetAmount) !== Math.abs(amount)
+  )
+    return false;
   // Outgoing cash already has an observed net effect. Positive unavailable receipts
   // remain pending until the source proves availability or an existing cash entry matches.
   return amount < 0 || metadata.isReleased === true;

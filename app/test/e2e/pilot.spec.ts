@@ -967,14 +967,14 @@ test('a later statement points to unfinished history without proposing a new acc
   await page.route(`**/v1/imports/${priorId}`, (route) => route.fulfill({ json: prior }));
   await page.goto(`/imports/${currentId}`);
   await expect(
-    page.getByText('Falta conciliar o período anterior a este extrato.', { exact: true }),
+    page.getByText('Diferença no histórico · a importação pode continuar', { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Revisar posição inicial', exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await expect(
     page.getByRole('link', { name: 'Conferir movimentações da conta', exact: true }),
   ).toHaveAttribute('href', `/accounts/${account.id}`);
@@ -1485,3 +1485,123 @@ for (const width of [390, 1440])
       true,
     );
   });
+
+test('first statement initializes opening automatically and refund review links original spending', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 1100 });
+  const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab';
+  const item = {
+    ...transaction,
+    id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    sourceRow: 1,
+    sourceOperationId: 'mp-refund',
+    metadata: null,
+    selected: true,
+    action: 'create',
+    actionReason: 'Novo movimento',
+    duplicateLocked: false,
+    duplicateCandidate: false,
+    categoryId: null,
+    linkedTransactionId: null,
+    confirmNew: false,
+    refundOfId: null,
+    refundCandidates: [],
+    candidateDescriptions: [],
+  };
+  const opening = {
+    id,
+    accountId: account.id,
+    fileName: 'first.csv',
+    status: 'draft',
+    version: 1,
+    canIntegrate: true,
+    reportType: 'account_statement',
+    sourceFormat: 'csv',
+    willInitializeOpening: true,
+    openingMismatch: true,
+    openingDateMismatch: true,
+    openingBalance: 10000,
+    closingBalance: 9000,
+    recordedOpeningBalance: 0,
+    statementStartDate: '2026-01-01',
+    items: [{ ...item, amount: -1000 }],
+  };
+  await page.route(`**/v1/imports/${id}`, (route) => route.fulfill({ json: opening }));
+  await page.goto(`/imports/${id}`);
+  await expect(
+    page.getByText('Posição inicial identificada no extrato', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByText('A posição inicial da conta precisa de revisão.', { exact: true }),
+  ).toHaveCount(0);
+  const metadata = {
+    eventType: 'REFUND',
+    transactionTimestamp: '2026-10-02T12:00:00-03:00',
+    settlementTimestamp: '2026-10-05T12:00:00-03:00',
+    grossAmount: 1000,
+    netAmount: 300,
+    realAmount: null,
+    fees: 0,
+    taxes: 0,
+    paymentMethod: null,
+    paymentMethodType: null,
+    brand: null,
+    installments: null,
+    installmentNumber: null,
+    lastFourDigits: null,
+    isReleased: true,
+  };
+  const edi = {
+    ...opening,
+    reportType: 'settlement',
+    willInitializeOpening: false,
+    openingMismatch: false,
+    openingDateMismatch: false,
+    openingBalance: null,
+    closingBalance: null,
+    items: [
+      {
+        ...item,
+        amount: 300,
+        transactionType: 'unclassified',
+        selected: false,
+        action: 'review',
+        metadata,
+        refundCandidates: [
+          {
+            id: transaction.id,
+            description: 'Compra original · disponível para devolver: R$ 10,00',
+          },
+        ],
+      },
+    ],
+  };
+  await page.route(`**/v1/imports/${id}`, (route) => route.fulfill({ json: edi }));
+  await page.route(`**/v1/imports/${id}/items/${item.id}`, (route) => {
+    expect(route.request().postDataJSON().refundOfId).toBe(transaction.id);
+    edi.version++;
+    Object.assign(edi.items[0], {
+      refundOfId: transaction.id,
+      transactionType: 'expense',
+      selected: true,
+      action: 'create',
+    });
+    return route.fulfill({ json: edi });
+  });
+  await page.reload();
+  await page.getByLabel('Origem da devolução 1').selectOption(transaction.id);
+  await expect(
+    page.getByText('Devolução vinculada · reduz a categoria original', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Tipo do movimento 1')).toHaveValue('expense');
+  await expect(page.getByLabel('Tipo do movimento 1')).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: 'Confirmar EDI e conciliar', exact: true }),
+  ).toBeEnabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

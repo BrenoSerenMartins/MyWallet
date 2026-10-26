@@ -1,3 +1,4 @@
+import { OpeningInitialization } from './opening-initialization';
 import { SettlementReview } from './settlement-review';
 import { ReprocessImport } from './reprocess-import';
 import { ImportSourceSummary } from './import-source-summary';
@@ -72,6 +73,7 @@ export function ImportReview({
         }}
       />
       <ImportSourceSummary batch={batch} />
+      <OpeningInitialization batch={batch} />
       {batch.reportType === 'benefit_statement' && (
         <div className="review-banner">
           <div>
@@ -87,8 +89,9 @@ export function ImportReview({
           </div>
         </div>
       )}
-      {batch.status === 'draft' &&
+      {batch.status !== 'reversed' &&
         canIntegrate &&
+        !batch.willInitializeOpening &&
         (batch.openingMismatch || batch.openingDateMismatch) && (
           <OpeningPositionReview batch={batch} refresh={refresh} />
         )}
@@ -290,7 +293,7 @@ export function ImportReview({
               busy ||
               !!unresolved ||
               (!selected.length && !duplicates.length) ||
-              (!!selected.length && (batch.openingMismatch || batch.openingDateMismatch)) ||
+              (!!selected.length && !batch.willInitializeOpening && batch.openingDateMismatch) ||
               !navigator.onLine
             }
             onClick={() => void confirm()}

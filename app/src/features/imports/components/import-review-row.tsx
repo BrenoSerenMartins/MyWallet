@@ -16,7 +16,12 @@ export function ImportReviewRow({
     change: Partial<
       Pick<
         ImportItem,
-        'selected' | 'transactionType' | 'categoryId' | 'linkedTransactionId' | 'confirmNew'
+        | 'selected'
+        | 'transactionType'
+        | 'categoryId'
+        | 'linkedTransactionId'
+        | 'confirmNew'
+        | 'refundOfId'
       >
     >,
   ) => Promise<void>;
@@ -50,6 +55,29 @@ export function ImportReviewRow({
               }[item.action]
             }
           </span>
+        )}
+        {!!item.refundCandidates?.length && !item.duplicateLocked && (
+          <label>
+            Operação original da devolução
+            <select
+              aria-label={`Origem da devolução ${item.sourceRow}`}
+              value={item.refundOfId ?? ''}
+              disabled={locked}
+              onChange={(event) =>
+                void onReview(item, { refundOfId: event.target.value || null, selected: true })
+              }
+            >
+              <option value="">Selecione a compra ou receita original</option>
+              {item.refundCandidates.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.description}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {item.refundOfId && (
+          <span className="badge">Devolução vinculada · reduz a categoria original</span>
         )}
         {item.actionReason && <p className="field-help">{item.actionReason}</p>}
         {item.action === 'review' && !!item.candidateDescriptions?.length && (
@@ -101,7 +129,7 @@ export function ImportReviewRow({
         <select
           aria-label={`Tipo do movimento ${item.sourceRow}`}
           value={item.transactionType}
-          disabled={locked}
+          disabled={locked || !!item.refundOfId}
           onChange={(e) =>
             void onReview(item, {
               transactionType: e.target.value as ImportItem['transactionType'],
@@ -110,6 +138,11 @@ export function ImportReviewRow({
             })
           }
         >
+          {item.refundOfId && (
+            <option value={item.transactionType}>
+              {item.transactionType === 'expense' ? 'Devolução de despesa' : 'Devolução de receita'}
+            </option>
+          )}
           {item.transactionType === 'unclassified' && (
             <option value="unclassified">A revisar</option>
           )}
@@ -126,7 +159,7 @@ export function ImportReviewRow({
             categories={categories}
             type={item.transactionType}
             value={item.categoryId ?? ''}
-            disabled={locked}
+            disabled={locked || !!item.refundOfId}
             onChange={(e) => void onReview(item, { categoryId: e.target.value || null })}
           />
         )}

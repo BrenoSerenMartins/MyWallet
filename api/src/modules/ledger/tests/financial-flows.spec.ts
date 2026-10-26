@@ -42,6 +42,7 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
+  accounts,
 );
 let first: string;
 let second: string;
@@ -265,7 +266,7 @@ describe('Financial integrity with PostgreSQL RLS', () => {
     ).rejects.toThrow('Nested financial failure');
     expect(await db.forUser(db.user, async () => (await accounts.list()).length)).toBe(count);
   });
-  it('blocks confirmation when the account opening position differs from the source statement', async () => {
+  it('automatically initializes an empty account from its first confirmed statement', async () => {
     await db.forUser(db.user, async () => {
       const a = await accounts.create({
         name: 'Opening check',
@@ -295,7 +296,9 @@ describe('Financial integrity with PostgreSQL RLS', () => {
         false,
       );
       expect((await imports.preview(id)).openingMismatch).toBe(true);
-      await expect(imports.confirm(id, 1, 'opening-mismatch')).rejects.toThrow('posição inicial');
+      expect((await imports.preview(id)).willInitializeOpening).toBe(true);
+      await imports.confirm(id, 1, 'opening-mismatch');
+      expect((await accounts.find(a.id)).openingBalance).toBe(500);
     });
   });
 });

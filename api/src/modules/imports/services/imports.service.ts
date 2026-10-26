@@ -15,6 +15,8 @@ import {
 import { createHash } from 'node:crypto';
 import {
   ACCOUNT_READS,
+  ACCOUNT_OPENING_POSITIONS,
+  type AccountOpeningPositions,
   LEDGER_WRITES,
   LEDGER_READS,
   type LedgerReads,
@@ -60,6 +62,7 @@ export class ImportsService {
     @Inject(LEDGER_READS) private readonly ledgerReads: LedgerReads,
     @Inject(ImportReconciliationService)
     private readonly reconciliation: ImportReconciliationService,
+    @Inject(ACCOUNT_OPENING_POSITIONS) private readonly openingPositions: AccountOpeningPositions,
   ) {}
   async sourceAccount(accountId: string) {
     const account = await this.accounts.find(accountId);
@@ -125,6 +128,13 @@ export class ImportsService {
         ? await this.repository.previousImports(account.id, statementStartDate, id)
         : [];
     return {
+      willInitializeOpening:
+        !!account.canEditOpeningPosition &&
+        !account.archived &&
+        b.status === 'draft' &&
+        !!statementStartDate &&
+        ((b.report_type === 'account_statement' && openingMismatch) ||
+          statementStartDate < account.openingDate),
       canAdjustOpeningPosition: !!account.canEditOpeningPosition && !account.archived,
       openingDifference:
         b.opening_balance_minor === null
@@ -198,12 +208,16 @@ export class ImportsService {
       throw new ConflictException(
         'Esta duplicata foi excluída automaticamente e não pode ser selecionada.',
       );
+    if (input.refundOfId && !item.refundCandidates.some((origin) => origin.id === input.refundOfId))
+      throw new UnprocessableEntityException('Escolha uma operação original válida desta conta.');
     if (
-      (input.transactionType === 'income' && item.amount < 0) ||
-      (input.transactionType === 'expense' && item.amount > 0)
+      !input.refundOfId &&
+      ((input.transactionType === 'income' && item.amount < 0) ||
+        (input.transactionType === 'expense' && item.amount > 0))
     )
       throw new UnprocessableEntityException('O tipo não corresponde ao sinal do valor.');
-    if (input.categoryId) await this.categories.validate(input.categoryId, input.transactionType);
+    if (input.categoryId && !input.refundOfId)
+      await this.categories.validate(input.categoryId, input.transactionType);
     await this.repository.updateItem(id, itemId, input);
     return this.preview(id);
   }
@@ -231,13 +245,26 @@ export class ImportsService {
       if (batch.status === 'confirmed') return { id, status: 'confirmed' };
       this.assertDraft(batch);
       requireVersion(batch.version, version);
-      const preview = await this.preview(id);
+      let preview = await this.preview(id);
+      if (
+        preview.willInitializeOpening &&
+        preview.items.some((item) => item.selected && item.action === 'create')
+      ) {
+        await this.openingPositions.initializeFromStatement(
+          batch.account_id,
+          batch.opening_balance_minor === null
+            ? preview.recordedOpeningBalance
+            : Number(batch.opening_balance_minor),
+          preview.statementStartDate!,
+        );
+        preview = await this.preview(id);
+      }
       const selected = preview.items.filter((i) => i.selected);
       const skippedDuplicates = preview.items.filter((i) => i.duplicateLocked).length;
       const creating = selected.filter((item) => item.action === 'create');
       if (selected.some((item) => item.action === 'review'))
         throw new ConflictException('Resolva as pendências de conciliação antes de confirmar.');
-      if (creating.length && (preview.openingMismatch || preview.openingDateMismatch))
+      if (creating.length && preview.openingDateMismatch)
         throw new ConflictException(
           preview.canAdjustOpeningPosition
             ? 'A posição inicial da conta não confere com o extrato. Revise o cadastro inicial antes de confirmar.'
@@ -254,6 +281,8 @@ export class ImportsService {
         (item) => item.selected || item.action === 'recorded',
       )) {
         if (item.linkedTransactionId) {
+          if (item.refundOfId)
+            await this.ledger.attachRefund(item.linkedTransactionId, item.refundOfId);
           if (item.originalSource)
             await this.ledger.recordEvidence(
               item.linkedTransactionId,
@@ -278,6 +307,7 @@ export class ImportsService {
           {
             accountId: batch.account_id,
             categoryId: item.categoryId,
+            refundOfId: item.refundOfId,
             transactionDate: item.transactionDate,
             description: item.description,
             amount: item.amount,

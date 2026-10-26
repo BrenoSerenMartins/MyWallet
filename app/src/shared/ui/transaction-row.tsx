@@ -34,8 +34,12 @@ export function TransactionRow({
       <div className="transaction-description">
         <strong>{t.description}</strong>
         <span>
-          {t.balanceAdjustment ? 'Ajuste de saldo' : labels[t.transactionType]} ·{' '}
-          {shortDate(t.transactionDate)}
+          {t.balanceAdjustment
+            ? 'Ajuste de saldo'
+            : t.refundOfId
+              ? 'Devolução vinculada'
+              : labels[t.transactionType]}{' '}
+          · {shortDate(t.transactionDate)}
           {t.importBatchId ? ' · Importado' : ''}
           {t.reconciliationStatus === 'reconciled'
             ? ' · Conciliada pelo EDI'

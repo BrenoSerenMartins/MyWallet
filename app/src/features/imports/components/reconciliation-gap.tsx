@@ -3,11 +3,11 @@ import type { ImportBatch } from '../../../shared/api/resources';
 import { money, shortDate } from '../../../shared/formatting/money';
 export function ReconciliationGap({ batch }: { batch: ImportBatch }) {
   return (
-    <div className="form-error reconciliation-gap" role="alert">
+    <div className="review-banner reconciliation-gap" role="status">
       <strong>
         {batch.openingDateMismatch
           ? 'Este extrato é anterior ao início cadastrado da conta.'
-          : 'Falta conciliar o período anterior a este extrato.'}
+          : 'Diferença no histórico · a importação pode continuar'}
       </strong>
       <p>
         O extrato começa com{' '}
@@ -25,7 +25,7 @@ export function ReconciliationGap({ batch }: { batch: ImportBatch }) {
       <p>
         {batch.openingDateMismatch
           ? 'A conta já tem movimentações. Este arquivo pode ser guardado para consulta; a data de abertura não será alterada por esta importação.'
-          : 'A abertura da conta será mantida. Conclua os extratos anteriores e confira se houve movimentos desmarcados, faltantes ou alterados. Enviar um arquivo ou salvá-lo para consulta ainda não o inclui no saldo.'}
+          : 'Os movimentos novos podem ser confirmados sem alterar a abertura. O saldo continuará calculado pelo histórico registrado, sem garantia de coincidir com o banco. Confira os arquivos anteriores ou use Corrigir saldo na conta para registrar uma diferença conhecida.'}
       </p>
       {!!batch.previousImports?.length && (
         <div className="previous-imports">

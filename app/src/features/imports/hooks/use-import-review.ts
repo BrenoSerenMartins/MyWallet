@@ -24,7 +24,12 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
     change: Partial<
       Pick<
         ImportItem,
-        'selected' | 'transactionType' | 'categoryId' | 'linkedTransactionId' | 'confirmNew'
+        | 'selected'
+        | 'transactionType'
+        | 'categoryId'
+        | 'linkedTransactionId'
+        | 'confirmNew'
+        | 'refundOfId'
       >
     >,
   ) {
@@ -40,6 +45,7 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
           categoryId: item.categoryId,
           linkedTransactionId: item.linkedTransactionId,
           confirmNew: item.confirmNew,
+          refundOfId: item.refundOfId,
           ...change,
         }),
       });
