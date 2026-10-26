@@ -46,6 +46,19 @@ beforeAll(async () => {
 });
 afterAll(() => db.close());
 describe('Settlement v2 consultation report', () => {
+  it('explains empty exports without mistaking valid headers for an unsupported layout', async () => {
+    const { rows, buffer } = settlementFixture();
+    const headerOnly = buffer.subarray(0, buffer.indexOf('\n') + 1);
+    await expect(extractMercadoPagoStatement(headerOnly, 'settlement.csv')).rejects.toThrow(
+      'sem transações para importar',
+    );
+    expect(() => parseSettlementTable([rows[0], rows[0].map(() => '')])).toThrow(
+      'sem transações para importar',
+    );
+    expect(() => parseSettlementTable([['SOURCE_ID', 'SETTLEMENT_NET_AMOUNT']])).toThrow(
+      'Cabeçalho settlement_v2 inválido',
+    );
+  });
   it('extracts net impact and payment metadata without inventing running balances or executing metadata', async () => {
     const statement = await extractMercadoPagoStatement(
       settlementFixture().buffer,

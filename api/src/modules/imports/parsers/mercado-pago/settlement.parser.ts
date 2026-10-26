@@ -83,7 +83,6 @@ export function parseSettlementTable(rows: StatementCell[][]): SettlementSourceR
   if (
     required.some((name) => !headers.includes(name)) ||
     new Set(headers).size !== headers.length ||
-    rows.length < 2 ||
     rows.length > 10001
   )
     throw new UnprocessableEntityException(
@@ -117,6 +116,8 @@ export function parseSettlementTable(rows: StatementCell[][]): SettlementSourceR
     return [{ sourceRow: index + 2, sourceOperationId, description, metadata: metadata(get) }];
   });
   if (!records.length)
-    throw new UnprocessableEntityException('O relatório de liquidações está vazio.');
+    throw new UnprocessableEntityException(
+      'Este relatório contém apenas o cabeçalho, sem transações para importar. Gere outro relatório no Mercado Pago com um período que contenha movimentações.',
+    );
   return records;
 }
