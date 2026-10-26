@@ -35,6 +35,7 @@
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "openapi": "npm run openapi -w @mywallet/api",
     "db:setup": "node --env-file=.env.local scripts/setup-database.mjs",
+    "db:diagnose": "node --env-file=.env.local scripts/diagnose-account-balance.mjs",
     "db:cleanup": "node --env-file=.env.local scripts/cleanup-drafts.mjs",
     "start": "npm run start -w @mywallet/api",
     "format": "prettier --write app/src api/src scripts app/test api/test *.ts *.json",

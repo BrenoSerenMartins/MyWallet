@@ -277,3 +277,5 @@ Investimentos, patrimônio consolidado, reserva de emergência, metas, cartões,
 - [Modelo de banco](knowledge/maps/database.md)
 
 Os relatórios `settlement_v2` do Mercado Pago complementam os detalhes dos movimentos já confirmados por extrato. A revisão mostra correspondências e ambiguidades; salve o relatório para consultar os detalhes na movimentação. Esse cruzamento preserva valores e categorias e ainda não cria lançamentos financeiros a partir do settlement. Para recuperar os novos campos de liberação em relatórios antigos, use o reprocessamento com o arquivo original.
+
+Para investigar uma diferença de saldo sem alterar dados, execute `npm run db:diagnose -- --balance=703.31` (valor exibido no app, com ponto decimal) ou `npm run db:diagnose -- --account=<uuid>`. O comando usa `.env.local`, verifica TLS e imprime valores em centavos, posição inicial, movimentos manuais/importados e diferenças para os últimos extratos confirmados. Ele não corrige saldos automaticamente.
