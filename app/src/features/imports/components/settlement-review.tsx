@@ -173,8 +173,8 @@ export function SettlementReview({
       )}
       {unresolved > 0 && batch.status === 'draft' && (
         <p className="field-help">
-          Resolva ou desmarque os registros pendentes antes de confirmar. Valores positivos ainda
-          não liberados não são lançados como saldo disponível.
+          Resolva os registros pendentes antes de confirmar. Pagamentos com liberação pendente
+          continuam em revisão; eventos de saldo reconhecidos entram pelo valor líquido do EDI.
         </p>
       )}
     </>

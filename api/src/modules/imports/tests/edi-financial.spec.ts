@@ -496,3 +496,35 @@ it('initializes only the date for an empty account when EDI has no opening balan
     balance: 11345,
   });
 });
+
+it('selects positive direct-balance EDI events, creates income and preserves cross-file idempotency', async () => {
+  const a = await account('Direct balance inflow');
+  const fields = {
+    TRANSACTION_AMOUNT: '0.19',
+    SETTLEMENT_NET_AMOUNT: '0.19',
+    REAL_AMOUNT: '0.19',
+    FEE_AMOUNT: '0.00',
+    TAXES_AMOUNT: '0.00',
+    PAYMENT_METHOD: '',
+    PAYMENT_METHOD_TYPE: '',
+    FRANCHISE: '',
+    LAST_FOUR_DIGITS: '',
+    INSTALLMENTS: '1',
+    INSTALLMENT_NUMBER: '',
+    IS_RELEASED: 'false',
+  };
+  const report = await edi(a.id, 'direct-balance-event', fields);
+  expect(report.items[0]).toMatchObject({
+    action: 'create',
+    selected: true,
+    transactionType: 'income',
+  });
+  await run(() => imports.confirm(report.id, report.version, 'direct-balance-confirm'));
+  expect((await run(() => accounts.find(a.id))).balance).toBe(10019);
+  const repeated = await edi(a.id, 'direct-balance-event', fields, '\n');
+  expect(repeated.items[0].action).toBe('recorded');
+  await run(() => imports.confirm(repeated.id, repeated.version, 'direct-balance-copy'));
+  expect(
+    (await run(() => ledger.exportRecords())).filter((row) => row.accountId === a.id),
+  ).toHaveLength(1);
+});

@@ -1,3 +1,4 @@
+import { isDirectEdiBalanceEvent } from './edi-balance-event.js';
 import type { ImportEntry, SettlementMetadata } from '../../contracts/statement.js';
 const cashEvents = new Set(['SETTLEMENT', 'SETTLEMENT_SHIPPING', 'PAYOUT', 'PAYOUTS', 'CASHBACK']);
 const transferEvents = new Set([
@@ -25,7 +26,6 @@ export function ediCanPost(metadata: SettlementMetadata, amount: number) {
     Math.abs(metadata.installmentNetAmount) !== Math.abs(amount)
   )
     return false;
-  // Outgoing cash already has an observed net effect. Positive unavailable receipts
-  // remain pending until the source proves availability or an existing cash entry matches.
-  return amount < 0 || metadata.isReleased === true;
+  // Payment availability and direct balance events are distinct source concepts.
+  return amount < 0 || metadata.isReleased === true || isDirectEdiBalanceEvent(metadata);
 }

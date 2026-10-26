@@ -9,7 +9,7 @@ export function importSourceEvidence(
 ): SourceEvidence | null {
   if (!item.sourceOperationId) return null;
   return {
-    ruleVersion: reportType === 'settlement' ? 'mercado-pago/edi/2' : 'mercado-pago/account/2',
+    ruleVersion: reportType === 'settlement' ? 'mercado-pago/edi/3' : 'mercado-pago/account/2',
     reportType,
     reference: item.sourceOperationId,
     date: item.transactionDate,

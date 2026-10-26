@@ -18,7 +18,12 @@ export function importActionReason(input: {
   )
     return 'O valor líquido do evento difere do valor da parcela. Confira o extrato de liberação; o total da compra não será lançado como uma única parcela.';
   if (action === 'review' && metadata) {
-    const explanation = ediEventExplanation(metadata.eventType, metadata.isReleased, amount);
+    const explanation = ediEventExplanation(
+      metadata.eventType,
+      metadata.isReleased,
+      amount,
+      metadata,
+    );
     if (explanation) return explanation;
   }
   if (modified && reportType === 'settlement')
