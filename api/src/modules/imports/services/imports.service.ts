@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import {
+  COUNTERPARTY_RULES,
+  type CounterpartyRules,
   ACCOUNT_READS,
   ACCOUNT_OPENING_POSITIONS,
   type AccountOpeningPositions,
@@ -63,6 +65,7 @@ export class ImportsService {
     @Inject(ImportReconciliationService)
     private readonly reconciliation: ImportReconciliationService,
     @Inject(ACCOUNT_OPENING_POSITIONS) private readonly openingPositions: AccountOpeningPositions,
+    @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
   ) {}
   async sourceAccount(accountId: string) {
     const account = await this.accounts.find(accountId);
@@ -98,7 +101,18 @@ export class ImportsService {
           ? classifyMercadoPagoMovement(item)
           : item.transactionType,
     }));
-    return this.reconciliation.plan(accountId, reportType, normalized);
+    const planned = await this.reconciliation.plan(accountId, reportType, normalized);
+    const suggestions = await this.counterparties.suggest(
+      accountId,
+      reportType,
+      planned.map((item) => ({ ...item, sourceStoreId: item.metadata?.storeId })),
+    );
+    return planned.map((item, index) => ({
+      counterpartyId: null,
+      classificationRuleId: null,
+      ...item,
+      ...(item.refundOfId ? {} : suggestions[index]),
+    }));
   }
 
   async preview(id: string) {
@@ -218,6 +232,10 @@ export class ImportsService {
       throw new UnprocessableEntityException('O tipo não corresponde ao sinal do valor.');
     if (input.categoryId && !input.refundOfId)
       await this.categories.validate(input.categoryId, input.transactionType);
+    if ((input.rememberCategory || input.counterpartyName) && item.action !== 'create')
+      throw new UnprocessableEntityException(
+        'Edite a relação no lançamento existente depois de conciliar.',
+      );
     await this.repository.updateItem(id, itemId, input);
     return this.preview(id);
   }
@@ -300,6 +318,12 @@ export class ImportsService {
         const created = await this.ledger.create(
           {
             accountId: batch.account_id,
+            sourceKind: batch.report_type,
+            sourceStoreId: item.metadata?.storeId,
+            counterpartyName: item.counterpartyName ?? undefined,
+            rememberCategory: item.rememberCategory,
+            counterpartyId: item.counterpartyId ?? undefined,
+            classificationRuleId: item.classificationRuleId,
             categoryId: item.categoryId,
             refundOfId: item.refundOfId,
             transactionDate: item.transactionDate,

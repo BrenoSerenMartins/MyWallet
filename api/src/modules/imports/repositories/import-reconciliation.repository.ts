@@ -37,7 +37,7 @@ export class ImportReconciliationRepository {
     const rows = await this.db.query(
       `SELECT t.id,t.description,t.amount_minor AS current_amount,t.transaction_date AS current_date,coalesce(i.source_operation_id,t.source_operation_id) AS reference,
        coalesce(i.transaction_date,t.transaction_date) AS original_date,coalesce(i.amount_minor,t.amount_minor) AS original_amount,
-       i.balance_after_minor,b.report_type,i.report_metadata,
+       i.balance_after_minor,b.report_type,i.report_metadata,coalesce(i.description,t.description) AS original_description,
        coalesce((SELECT jsonb_agg(jsonb_build_object('key',s.source_key,'data',s.source_data)) FROM wallet.transaction_sources s WHERE s.transaction_id=t.id),'[]'::jsonb) AS evidence
        FROM wallet.transactions t LEFT JOIN wallet.import_items i ON i.batch_id=t.import_batch_id AND i.source_row=t.source_row
        LEFT JOIN wallet.import_batches b ON b.id=t.import_batch_id
@@ -53,6 +53,10 @@ export class ImportReconciliationRepository {
         row.reference && row.report_type
           ? {
               reportType: row.report_type,
+              description: row.original_description,
+              ...(row.report_type === 'settlement' && row.report_metadata?.storeId
+                ? { storeId: row.report_metadata.storeId }
+                : {}),
               reference: row.reference,
               date: isoDate(row.original_date),
               amount: Number(row.original_amount),

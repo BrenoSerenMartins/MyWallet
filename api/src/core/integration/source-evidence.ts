@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 export interface SourceEvidence {
+  storeId?: string;
   ruleVersion?: string;
   reportType: 'account_statement' | 'settlement' | 'benefit_statement';
   institution?: 'mercado_pago' | 'alelo';

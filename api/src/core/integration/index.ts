@@ -1,3 +1,5 @@
+export * from './counterparty-identifier.js';
+export * from './counterparties.js';
 export const ACCOUNT_OPENING_POSITIONS = Symbol('ACCOUNT_OPENING_POSITIONS');
 export interface AccountOpeningPositions {
   initializeFromStatement(accountId: string, balance: number, date: string): Promise<void>;
@@ -43,6 +45,12 @@ export interface BalanceAdjustment {
   reason: string;
 }
 export interface TransactionInput {
+  sourceStoreId?: string;
+  counterpartyId?: string | null;
+  counterpartyName?: string | null;
+  rememberCategory?: boolean;
+  classificationRuleId?: string | null;
+  sourceKind?: import('./counterparties.js').SourceKind;
   refundOfId?: string | null;
   balanceAdjustment?: BalanceAdjustment | null;
   accountId: string;
@@ -65,6 +73,7 @@ export interface CategoryReads {
   validate(id: string, type: string): Promise<void>;
 }
 export interface LedgerWrites {
+  applyClassificationRule(ruleId: string): Promise<{ updated: number }>;
   attachRefund(transactionId: string, refundOfId: string): Promise<void>;
   create(input: TransactionInput, imported?: boolean): Promise<{ id: string }>;
   recordEvidence(transactionId: string, accountId: string, evidence: SourceEvidence): Promise<void>;
@@ -116,6 +125,9 @@ export interface BackupCategory {
   color: string;
 }
 export interface BackupTransaction {
+  counterpartyId?: string | null;
+  classificationRuleId?: string | null;
+  sourceKind?: import('./counterparties.js').SourceKind;
   refundOfId?: string | null;
   balanceAdjustment?: BalanceAdjustment | null;
   id: string;
@@ -131,7 +143,8 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'mywallet';
-  version: 1 | 2 | 3 | 4;
+  version: 1 | 2 | 3 | 4 | 5;
+  counterparties?: import('./counterparties.js').CounterpartySnapshot;
   categoryGroups?: CategoryGroupResource[];
   monthlyPlans?: BackupMonthlyPlan[];
   currency: 'BRL';
@@ -156,6 +169,7 @@ export interface LedgerBackup {
     records: BackupTransaction[],
     accounts: Map<string, string>,
     categories: Map<string, string>,
+    identities?: { agents: Map<string, string>; rules: Map<string, string> },
   ): Promise<void>;
 }
 

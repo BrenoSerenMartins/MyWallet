@@ -26,6 +26,8 @@ export interface ImportEntry extends StatementRow {
 }
 
 export interface SettlementMetadata {
+  storeName?: string;
+  storeId?: string;
   isReleased?: boolean | null;
   releaseTimestamp?: string | null;
   installmentNetAmount?: number | null;
@@ -46,7 +48,13 @@ export interface SettlementMetadata {
   lastFourDigits: string | null;
 }
 
-export interface SavedImportItem extends Omit<StatementRow, 'sourcePage' | 'metadata'> {
+export interface CounterpartyIntent {
+  counterpartyId?: string | null;
+  counterpartyName?: string | null;
+  rememberCategory?: boolean;
+}
+export interface SavedImportItem
+  extends CounterpartyIntent, Omit<StatementRow, 'sourcePage' | 'metadata'> {
   id: string;
   metadata: SettlementMetadata | null;
   transactionType: ImportEntry['transactionType'];
@@ -57,7 +65,7 @@ export interface SavedImportItem extends Omit<StatementRow, 'sourcePage' | 'meta
   confirmNew?: boolean;
   refundOfId?: string | null;
 }
-export interface ReprocessedImportEntry extends ImportEntry {
+export interface ReprocessedImportEntry extends CounterpartyIntent, ImportEntry {
   id: string;
   selected: boolean;
   duplicateCandidate: boolean;

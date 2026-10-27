@@ -1647,3 +1647,200 @@ test('account forms use automatic defaults and preserve existing baseline amount
     openingDate: account.openingDate,
   });
 });
+
+const automationCategory = {
+  id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
+  name: 'Mercado',
+  type: 'expense',
+  color: '#ff8899',
+};
+const automationAgent = {
+  id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
+  name: 'Supermercado Exemplo',
+  enabled: true,
+  version: 1,
+  identifiers: [
+    {
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3',
+      counterpartyId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
+      accountId: account.id,
+      sourceKind: 'settlement',
+      identifierKind: 'store_id',
+      value: 'STORE-TEST',
+      enabled: true,
+    },
+  ],
+  rules: [
+    {
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4',
+      counterpartyId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
+      accountId: account.id,
+      transactionType: 'expense',
+      categoryId: automationCategory.id,
+      enabled: true,
+      version: 1,
+    },
+  ],
+};
+
+test('a transaction can explicitly remember an agent category without imposing a registration-date cutoff', async ({
+  page,
+}) => {
+  await signedIn(page);
+  let saved: Record<string, unknown> | undefined;
+  await page.route('**/v1/counterparties', (r) => r.fulfill({ json: [] }));
+  await page.route('**/v1/categories', (r) => r.fulfill({ json: [automationCategory] }));
+  await page.route('**/v1/transactions', async (r) => {
+    if (r.request().method() === 'POST') {
+      saved = r.request().postDataJSON();
+      return r.fulfill({ json: { ...transaction, ...saved } });
+    }
+    return r.fulfill({ json: { items: [transaction], nextCursor: null } });
+  });
+  await page.goto('/transactions?new=1');
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Valor (R$)').fill('12,50');
+  await dialog.getByLabel('Descrição', { exact: true }).fill('Supermercado Exemplo');
+  await dialog.getByLabel('Data', { exact: true }).fill('2025-01-01');
+  await expect(dialog.getByLabel('Data', { exact: true })).not.toHaveAttribute('min', /.+/);
+  await dialog
+    .getByRole('combobox', { name: 'Categoria', exact: true })
+    .selectOption(automationCategory.id);
+  await dialog.getByText('Pessoa ou estabelecimento', { exact: true }).click();
+  await dialog.getByRole('combobox', { name: 'Agente', exact: true }).selectOption('new');
+  await dialog.getByLabel('Nome do agente').fill('Supermercado Exemplo');
+  await dialog.getByLabel(/Usar esta categoria neste agente/).check();
+  await dialog.getByRole('button', { name: 'Registrar movimento', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(saved).toMatchObject({
+    counterpartyName: 'Supermercado Exemplo',
+    rememberCategory: true,
+    categoryId: automationCategory.id,
+    transactionDate: '2025-01-01',
+    amount: -1250,
+  });
+});
+for (const width of [390, 1440])
+  test(`agent table applies a merchant ID relation to history at ${width}px`, async ({ page }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1100 });
+    let related = false;
+    await page.route('**/v1/counterparties', (r) => r.fulfill({ json: [automationAgent] }));
+    await page.route('**/v1/categories', (r) => r.fulfill({ json: [automationCategory] }));
+    await page.route(`**/v1/counterparties/${automationAgent.id}/relations`, async (r) => {
+      expect(r.request().postDataJSON()).toMatchObject({
+        identifierKind: 'store_id',
+        sourceKind: 'settlement',
+        value: 'STORE-NEW',
+        accountId: account.id,
+        categoryId: automationCategory.id,
+      });
+      related = true;
+      return r.fulfill({ json: { id: automationAgent.rules[0].id, updated: 7 } });
+    });
+    await page.goto('/counterparties');
+    await expect(
+      page.getByRole('heading', { name: 'Agentes e regras', exact: true }),
+    ).toBeVisible();
+    await page.getByText(automationAgent.name, { exact: true }).click();
+    await page.getByText('Relacionar uma origem e aplicar ao histórico', { exact: true }).click();
+    await page
+      .getByRole('combobox', { name: 'Conta da relação', exact: true })
+      .selectOption(account.id);
+    await page
+      .getByRole('combobox', { name: 'Tipo de identificação', exact: true })
+      .selectOption('store_id');
+    await page.getByLabel('ID da loja (STORE_ID)', { exact: true }).fill('STORE-NEW');
+    await page
+      .getByRole('combobox', { name: 'Categoria da relação', exact: true })
+      .selectOption(automationCategory.id);
+    await page
+      .getByRole('button', { name: 'Relacionar e aplicar ao histórico', exact: true })
+      .click();
+    await expect(
+      page.getByRole('status').filter({ hasText: '7 lançamentos atualizados' }),
+    ).toBeVisible();
+    expect(related).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: `/tmp/mywallet-counterparty-${width}.png`, fullPage: true });
+    await page.getByRole('button', { name: 'Tema claro', exact: true }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+
+test('import review saves learning intent for confirmation and shows the automatic category explanation', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const batch = {
+    id,
+    accountId: account.id,
+    fileName: 'agent-statement.pdf',
+    sourceFormat: 'pdf',
+    reportType: 'account_statement',
+    status: 'draft',
+    version: 1,
+    canIntegrate: true,
+    openingMismatch: false,
+    openingDateMismatch: false,
+    openingBalance: 10000,
+    closingBalance: 9000,
+    items: [
+      {
+        ...transaction,
+        id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        sourceRow: 1,
+        selected: true,
+        duplicateCandidate: false,
+        duplicateLocked: false,
+        action: 'create',
+        sourceOperationId: 'synthetic-agent-operation',
+        balanceAfter: 9000,
+        categoryId: automationCategory.id,
+        classificationRuleId: automationAgent.rules[0].id as string | null,
+        counterpartyId: automationAgent.id as string | null,
+        counterpartyName: null as string | null,
+        rememberCategory: false,
+      },
+    ],
+  };
+  let learned = false;
+  await page.route('**/v1/counterparties', (r) => r.fulfill({ json: [automationAgent] }));
+  await page.route('**/v1/categories', (r) => r.fulfill({ json: [automationCategory] }));
+  await page.route(`**/v1/imports/${id}`, (r) => r.fulfill({ json: batch }));
+  await page.route(`**/v1/imports/${id}/items/${batch.items[0].id}`, async (r) => {
+    const body = r.request().postDataJSON();
+    expect(body).toMatchObject({
+      counterpartyId: automationAgent.id,
+      rememberCategory: true,
+      categoryId: automationCategory.id,
+    });
+    learned = true;
+    Object.assign(batch.items[0], body);
+    batch.version++;
+    return r.fulfill({ json: batch });
+  });
+  await page.goto(`/imports/${id}`);
+  await expect(
+    page.getByText('Categoria automática · regra do agente', { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole('combobox', { name: 'Agente', exact: true })
+    .selectOption(automationAgent.id);
+  await page.getByLabel(/Usar esta categoria neste agente/).check();
+  await page
+    .getByRole('button', { name: 'Salvar relação para a confirmação', exact: true })
+    .click();
+  await expect(page.getByRole('button', { name: 'Atualizar relação', exact: true })).toBeVisible();
+  expect(learned).toBe(true);
+  await expect(
+    page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByText('Categoria automática · regra do agente', { exact: true }),
+  ).toBeVisible();
+});

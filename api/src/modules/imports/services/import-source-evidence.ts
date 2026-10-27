@@ -3,14 +3,16 @@ import type { SavedImportItem } from '../contracts/statement.js';
 export function importSourceEvidence(
   item: Pick<
     SavedImportItem,
-    'sourceOperationId' | 'transactionDate' | 'amount' | 'balanceAfter' | 'metadata'
+    'sourceOperationId' | 'transactionDate' | 'amount' | 'balanceAfter' | 'metadata' | 'description'
   >,
   reportType: SourceEvidence['reportType'],
 ): SourceEvidence | null {
   if (!item.sourceOperationId) return null;
   return {
-    ruleVersion: reportType === 'settlement' ? 'mercado-pago/edi/3' : 'mercado-pago/account/2',
+    ruleVersion: reportType === 'settlement' ? 'mercado-pago/edi/4' : 'mercado-pago/account/2',
     reportType,
+    description: item.description,
+    ...(item.metadata?.storeId ? { storeId: item.metadata.storeId } : {}),
     reference: item.sourceOperationId,
     date: item.transactionDate,
     amount: item.amount,

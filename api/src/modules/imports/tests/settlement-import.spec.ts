@@ -1,3 +1,5 @@
+import { CounterpartiesService } from '../../counterparties/services/counterparties.service.js';
+import { CounterpartiesRepository } from '../../counterparties/repositories/counterparties.repository.js';
 import { ImportReconciliationService } from '../services/import-reconciliation.service.js';
 import { ImportReconciliationRepository } from '../repositories/import-reconciliation.repository.js';
 import { SettlementMatchingService } from '../services/settlement-matching.service.js';
@@ -24,7 +26,18 @@ const db = new TestDatabase();
 const accounts = new AccountsService(new AccountsRepository(db.service));
 const categories = new CategoriesService(new CategoriesRepository(db.service));
 const receipts = new IdempotencyService(db.service);
-const ledger = new LedgerService(new LedgerRepository(db.service), accounts, categories, receipts);
+const counterparties = new CounterpartiesService(
+  new CounterpartiesRepository(db.service),
+  accounts,
+  categories,
+);
+const ledger = new LedgerService(
+  new LedgerRepository(db.service),
+  accounts,
+  categories,
+  receipts,
+  counterparties,
+);
 const imports = new ImportsService(
   new ImportsRepository(db.service),
   accounts,
@@ -34,6 +47,7 @@ const imports = new ImportsService(
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
   accounts,
+  counterparties,
 );
 let accountId: string;
 beforeAll(async () => {

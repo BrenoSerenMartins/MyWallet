@@ -5,6 +5,8 @@ export function SettlementDetails({ metadata }: { metadata: ImportItem['metadata
   const amount = (value: number | null) => (value === null ? 'Não informado' : money(value));
   const fields = [
     ['Evento', metadata.eventType],
+    ['Nome da loja no relatório', metadata.storeName ?? 'Não informado'],
+    ['ID da loja no relatório', metadata.storeId ?? 'Não informado'],
     ['Data de origem', metadata.transactionTimestamp],
     ['Data de aprovação', metadata.settlementTimestamp],
     ['Valor bruto', amount(metadata.grossAmount)],

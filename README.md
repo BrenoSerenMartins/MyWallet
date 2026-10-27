@@ -12,6 +12,7 @@ O projeto está em fase de **piloto**. O dashboard mostra os saldos das contas c
 - **Contas:** cadastro simples por instituição e tipo, importação de histórico e acompanhamento do saldo registrado.
 - **Planejamento mensal:** receitas/despesas previstas por categoria, cards com previsto, realizado e diferença; lançamentos sem categoria incluídos em Outros, intenção de aporte, notas e cópia revisada do mês anterior.
 - **Grupos e categorias:** organize Casa → Luz/Água e Alimentação → Mercado/Comer fora; abas de grupos com Geral primeiro, lista compacta de categorias, busca, edição e exclusão revisada. O grupo padrão Geral recebe categorias ainda não organizadas.
+- **Agentes e regras:** pessoas e estabelecimentos com nomes/descrições e IDs de loja por origem; categorias automáticas para histórico e próximos movimentos, preservando escolhas manuais.
 - **Movimentações:** receitas, despesas, categorias agrupadas, filtros recolhíveis, abas por tipo, correções e estornos.
 - **Transferências:** lançamento das duas movimentações entre contas na mesma transação.
 - **Extratos:** importação de extratos de conta do Mercado Pago em PDF, CSV e XLSX, classificação automática de entradas/saídas, conferência de saldos, revisão, exclusão automática e bloqueio de duplicatas identificadas, revisão em abas e confirmação com proteção contra repetição.
@@ -297,3 +298,13 @@ Ao confirmar o primeiro arquivo de uma conta vazia, a data inicial é ajustada a
 Em contas que já possuem movimentos, uma diferença de abertura é um aviso: a importação dos novos movimentos pode continuar sem alterar a posição inicial ou inventar ajustes. O saldo continua calculado pelo histórico registrado e pode precisar de conferência. Arquivos e lançamentos manuais podem ter qualquer data válida, inclusive anterior ao cadastro da conta. O cadastro não exige data nem saldo inicial; os campos legados continuam internos para preservar contas e backups existentes.
 
 No EDI, devoluções podem ser vinculadas à compra ou receita original. O app conserva a categoria, controla o total já devolvido e reduz a receita/despesa na data da devolução. Se o dinheiro já entrou por um extrato, a revisão vincula e corrige a natureza do movimento sem lançá-lo novamente. Operações com devoluções exigem desfazer os retornos antes de alterar a origem. Parcelas com valores líquidos incompatíveis e eventos ainda não liberados continuam sinalizados para revisão.
+
+### Agentes, identificações e categorias automáticas
+
+Em **Agentes e regras**, cadastre uma pessoa ou estabelecimento e relacione a descrição do extrato, o nome usado no EDI ou o **ID da loja (`STORE_ID`)**. A relação vale para a conta e para o tipo de movimento escolhidos. Uma ação aplica a categoria ao histórico reconhecido sem categoria ou já classificado por regra e informa quantos lançamentos foram atualizados. Escolhas manuais, valores, datas e conciliação são preservados. Alterar a categoria da regra atualiza os lançamentos que a seguem.
+
+Também é possível marcar **Usar esta categoria neste agente** ao registrar/editar um lançamento ou durante a revisão de uma importação. Na revisão, a intenção só cria o agente/regra ao confirmar os movimentos. Regras e agentes podem ser desativados; remover uma identificação interrompe seu reconhecimento sem apagar o histórico.
+
+Um agente pode ter várias identificações. Uma operação já conciliada entre extrato e EDI pode associar as duas descrições e o ID de loja fornecido pelo relatório. Nomes iguais, valores parecidos ou o `SOURCE_ID` de um pagamento não identificam automaticamente um estabelecimento. Campos genéricos como SETTLEMENT não viram identificações. `STORE_NAME` e `STORE_ID` são preservados quando fornecidos; relatórios sem esses dados não permitem inventá-los.
+
+As migrations `202610260005_counterparty_rules.sql` e `202610260006_counterparty_external_identifiers.sql` criam os vínculos protegidos por espaço. O backup financeiro JSON v5 preserva agentes, identificações ativas/desativadas, regras e a origem da classificação, com remapeamento de IDs na restauração; backups v1–v4 continuam aceitos.

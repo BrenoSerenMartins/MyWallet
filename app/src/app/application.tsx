@@ -34,6 +34,11 @@ const CategoriesPage = lazy(() =>
     default: module.CategoriesPage,
   })),
 );
+const CounterpartiesPage = lazy(() =>
+  import('../features/counterparties/counterparties-page').then((module) => ({
+    default: module.CounterpartiesPage,
+  })),
+);
 export function Application() {
   const { session, loading } = useAuth();
   if (loading)
@@ -66,6 +71,7 @@ export function Application() {
                     <Route path="imports" element={<ImportsPage key="upload" />} />
                     <Route path="imports/:importId" element={<ImportsPage key="review" />} />
                     <Route path="categories" element={<CategoriesPage />} />
+                    <Route path="counterparties" element={<CounterpartiesPage />} />
                     <Route
                       path="settings/categories"
                       element={<Navigate to="/categories" replace />}

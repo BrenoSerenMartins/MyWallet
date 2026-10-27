@@ -1,3 +1,4 @@
+import { ImportCounterpartyEditor } from './import-counterparty-editor';
 import type { ImportItem, Category } from '../../../shared/api/resources';
 import { CategorySelect } from '../../../shared/ui/category-select';
 import { money, shortDate } from '../../../shared/formatting/money';
@@ -16,6 +17,9 @@ export function ImportReviewRow({
     change: Partial<
       Pick<
         ImportItem,
+        | 'counterpartyId'
+        | 'counterpartyName'
+        | 'rememberCategory'
         | 'selected'
         | 'transactionType'
         | 'categoryId'
@@ -79,6 +83,15 @@ export function ImportReviewRow({
         {item.refundOfId && (
           <span className="badge">Devolução vinculada · reduz a categoria original</span>
         )}
+        {item.classificationRuleId && (
+          <span className="badge">Categoria automática · regra do agente</span>
+        )}
+        {item.action === 'create' &&
+          !locked &&
+          !item.refundOfId &&
+          ['income', 'expense'].includes(item.transactionType) && (
+            <ImportCounterpartyEditor item={item} onReview={onReview} />
+          )}
         {item.actionReason && <p className="field-help">{item.actionReason}</p>}
         {item.action === 'review' && !!item.candidateDescriptions?.length && (
           <label>

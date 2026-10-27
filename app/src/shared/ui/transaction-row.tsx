@@ -41,6 +41,7 @@ export function TransactionRow({
               : labels[t.transactionType]}{' '}
           · {shortDate(t.transactionDate)}
           {t.importBatchId ? ' · Importado' : ''}
+          {t.classificationRuleId ? ' · Categoria automática' : ''}
           {t.reconciliationStatus === 'reconciled'
             ? ' · Conciliada pelo EDI'
             : ' · Pendente de conciliação'}

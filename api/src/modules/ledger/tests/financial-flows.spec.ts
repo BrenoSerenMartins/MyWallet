@@ -1,3 +1,5 @@
+import { CounterpartiesService } from '../../counterparties/services/counterparties.service.js';
+import { CounterpartiesRepository } from '../../counterparties/repositories/counterparties.repository.js';
 import { ImportReconciliationService } from '../../imports/services/import-reconciliation.service.js';
 import { ImportReconciliationRepository } from '../../imports/repositories/import-reconciliation.repository.js';
 import 'reflect-metadata';
@@ -18,11 +20,17 @@ import { ImportsRepository } from '../../imports/repositories/imports.repository
 const db = new TestDatabase();
 const accounts = new AccountsService(new AccountsRepository(db.service));
 const categories = new CategoriesService(new CategoriesRepository(db.service));
+const counterparties = new CounterpartiesService(
+  new CounterpartiesRepository(db.service),
+  accounts,
+  categories,
+);
 const ledger = new LedgerService(
   new LedgerRepository(db.service),
   accounts,
   categories,
   new IdempotencyService(db.service),
+  counterparties,
 );
 import { PlanningRepository } from '../../planning/repositories/planning.repository.js';
 import { PlanningService } from '../../planning/services/planning.service.js';
@@ -33,6 +41,7 @@ const backups = new DataExportService(
   new IdempotencyService(db.service),
   new RestoreRepository(db.service),
   new PlanningService(new PlanningRepository(db.service), categories, ledger),
+  counterparties,
 );
 const imports = new ImportsService(
   new ImportsRepository(db.service),
@@ -43,6 +52,7 @@ const imports = new ImportsService(
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
   accounts,
+  counterparties,
 );
 let first: string;
 let second: string;

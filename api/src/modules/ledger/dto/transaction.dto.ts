@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsIn,
   IsInt,
   IsISO8601,
@@ -12,6 +13,14 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class TransactionDto {
+  @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() counterpartyId?:
+    string | null;
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsString()
+  @Length(1, 150)
+  counterpartyName?: string;
+  @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() rememberCategory?: boolean;
   @ApiProperty({ type: String }) @IsUUID() accountId!: string;
   @ApiPropertyOptional({ type: String }) @IsOptional() @IsUUID() categoryId?: string | null;
   @ApiProperty({ type: String }) @IsISO8601({ strict: true }) transactionDate!: string;

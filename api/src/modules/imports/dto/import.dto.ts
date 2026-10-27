@@ -1,6 +1,14 @@
-import { IsBoolean, IsIn, IsInt, IsOptional, IsUUID, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Length, IsUUID, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class ReviewItemDto {
+  @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() counterpartyId?:
+    string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
+  @IsString()
+  @Length(1, 150)
+  counterpartyName?: string | null;
+  @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() rememberCategory?: boolean;
   @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() refundOfId?:
     string | null;
   @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() confirmNew?: boolean;

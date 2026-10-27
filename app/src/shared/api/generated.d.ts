@@ -36,6 +36,86 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/counterparties': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['CounterpartiesController_list'];
+    put?: never;
+    post: operations['CounterpartiesController_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/counterparties/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['CounterpartiesController_update'];
+    trace?: never;
+  };
+  '/v1/counterparties/{id}/relations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CounterpartiesController_relate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/counterparties/{agent}/identifiers/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations['CounterpartiesController_removeIdentifier'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/counterparties/rules/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['CounterpartiesController_toggleRule'];
+    trace?: never;
+  };
   '/v1/accounts': {
     parameters: {
       query?: never;
@@ -568,6 +648,57 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    IdentifierResourceDto: {
+      /** @enum {string} */
+      identifierKind?: 'description' | 'store_id';
+      enabled: boolean;
+      id: string;
+      counterpartyId: string;
+      accountId: string;
+      /** @enum {string} */
+      sourceKind: 'manual' | 'account_statement' | 'settlement' | 'benefit_statement';
+      value: string;
+    };
+    RuleResourceDto: {
+      id: string;
+      counterpartyId: string;
+      accountId: string;
+      /** @enum {string} */
+      transactionType: 'income' | 'expense';
+      categoryId: string;
+      enabled: boolean;
+      version: number;
+    };
+    CounterpartyResourceDto: {
+      id: string;
+      name: string;
+      enabled: boolean;
+      version: number;
+      identifiers: components['schemas']['IdentifierResourceDto'][];
+      rules: components['schemas']['RuleResourceDto'][];
+    };
+    CreateCounterpartyDto: {
+      name: string;
+    };
+    UpdateCounterpartyDto: {
+      name: string;
+      enabled: boolean;
+    };
+    CounterpartyRelationDto: {
+      /** @enum {string} */
+      identifierKind?: 'description' | 'store_id';
+      accountId: string;
+      /** @enum {string} */
+      sourceKind: 'manual' | 'account_statement' | 'settlement' | 'benefit_statement';
+      value: string;
+      /** @enum {string} */
+      transactionType: 'income' | 'expense';
+      categoryId: string;
+    };
+    ToggleRuleDto: {
+      categoryId?: string;
+      enabled: boolean;
+    };
     AccountResourceDto: {
       canEditOpeningPosition: boolean;
       id: string;
@@ -631,6 +762,9 @@ export interface components {
       reason: string;
     };
     TransactionResourceDto: {
+      counterpartyId?: string | null;
+      classificationRuleId?: string | null;
+      sourceKind?: string;
       refundOfId?: string | null;
       balanceAdjustment?: components['schemas']['BalanceAdjustmentResourceDto'] | null;
       /** @enum {string} */
@@ -658,6 +792,9 @@ export interface components {
       nextCursor: string | null;
     };
     TransactionDto: {
+      counterpartyId?: string | null;
+      counterpartyName?: string;
+      rememberCategory?: boolean;
       accountId: string;
       categoryId?: string;
       transactionDate: string;
@@ -743,6 +880,8 @@ export interface components {
       description: string;
     };
     SettlementMetadataResourceDto: {
+      storeName?: string;
+      storeId?: string;
       isReleased?: boolean | null;
       releaseTimestamp?: string | null;
       installmentNetAmount?: number | null;
@@ -763,6 +902,10 @@ export interface components {
       lastFourDigits: string | null;
     };
     ImportItemResourceDto: {
+      counterpartyName?: string | null;
+      rememberCategory?: boolean;
+      counterpartyId?: string | null;
+      classificationRuleId?: string | null;
       refundOfId?: string | null;
       refundCandidates: components['schemas']['ReconciliationCandidateResourceDto'][];
       confirmNew: boolean;
@@ -826,6 +969,9 @@ export interface components {
       metadata: components['schemas']['SettlementMetadataResourceDto'];
     };
     ReviewItemDto: {
+      counterpartyId?: string | null;
+      counterpartyName?: string | null;
+      rememberCategory?: boolean;
       refundOfId?: string | null;
       confirmNew?: boolean;
       linkedTransactionId?: string | null;
@@ -900,6 +1046,126 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  CounterpartiesController_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CounterpartyResourceDto'][];
+        };
+      };
+    };
+  };
+  CounterpartiesController_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateCounterpartyDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  CounterpartiesController_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateCounterpartyDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  CounterpartiesController_relate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CounterpartyRelationDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  CounterpartiesController_removeIdentifier: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  CounterpartiesController_toggleRule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ToggleRuleDto'];
+      };
+    };
     responses: {
       200: {
         headers: {

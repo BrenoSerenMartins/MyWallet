@@ -4,7 +4,7 @@ export function mercadoPagoMapperVersion(
   format: 'pdf' | 'csv' | 'xlsx',
   reportType = 'account_statement',
 ) {
-  if (reportType === 'settlement') return 'mercado-pago/settlement-csv/3';
+  if (reportType === 'settlement') return 'mercado-pago/settlement-csv/4';
   return `mercado-pago/account-${format}/2`;
 }
 export function classifyMercadoPagoMovement(item: {

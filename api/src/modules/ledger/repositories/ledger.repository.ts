@@ -35,10 +35,60 @@ export class LedgerRepository {
         row.source_evidence as import('../../../core/integration/index.js').SourceEvidence[],
     }));
   }
+  async applyClassificationRule(
+    rule: import('../../../core/integration/index.js').ClassificationRule,
+  ) {
+    const rows = await this.db.query(
+      `
+    WITH descriptions AS (
+      SELECT t.id,t.source_kind,'description' AS identifier_kind,lower(regexp_replace(btrim(normalize(t.description,NFKC)), '[[:space:]]+', ' ', 'g')) AS value
+      FROM wallet.transactions t WHERE t.user_id=$1 AND t.account_id=$2 AND t.reversed_at IS NULL
+      UNION
+      SELECT s.transaction_id,s.source_data->>'reportType','description',lower(regexp_replace(btrim(normalize(s.source_data->>'description',NFKC)), '[[:space:]]+', ' ', 'g'))
+      FROM wallet.transaction_sources s WHERE s.user_id=$1 AND s.account_id=$2 AND s.source_data->>'description' IS NOT NULL
+      UNION
+      SELECT s.transaction_id,'settlement','store_id',btrim(s.source_data->>'storeId') FROM wallet.transaction_sources s WHERE s.user_id=$1 AND s.account_id=$2 AND s.source_data->>'reportType'='settlement' AND s.source_data->>'storeId' IS NOT NULL
+    ), observed AS (
+      SELECT d.id,i.counterparty_id FROM descriptions d
+      JOIN wallet.counterparty_identifiers i ON i.user_id=$1 AND i.account_id=$2 AND i.enabled AND i.source_kind=d.source_kind AND i.identifier_kind=d.identifier_kind AND i.normalized_value=d.value
+      JOIN wallet.counterparties c ON c.id=i.counterparty_id AND c.enabled
+    ), recognized AS (SELECT id,min(counterparty_id::text)::uuid AS counterparty_id FROM observed GROUP BY id HAVING count(DISTINCT counterparty_id)=1)
+    UPDATE wallet.transactions t SET counterparty_id=$3,category_id=$4,classification_rule_id=$5,version=t.version+1,updated_at=now()
+    WHERE t.user_id=$1 AND t.account_id=$2 AND t.transaction_type=$6 AND t.reversed_at IS NULL
+      AND t.refund_of_id IS NULL AND t.balance_adjustment IS NULL AND t.transfer_group_id IS NULL
+      AND NOT EXISTS(SELECT 1 FROM wallet.transactions r WHERE r.refund_of_id=t.id AND r.reversed_at IS NULL)
+      AND (t.category_id IS NULL OR t.classification_rule_id IS NOT NULL)
+      AND (t.counterparty_id=$3 OR (t.counterparty_id IS NULL AND EXISTS(SELECT 1 FROM recognized x WHERE x.id=t.id AND x.counterparty_id=$3)))
+      AND (t.category_id IS DISTINCT FROM $4 OR t.counterparty_id IS DISTINCT FROM $3 OR t.classification_rule_id IS DISTINCT FROM $5)
+    RETURNING t.id`,
+      [
+        this.db.userId,
+        rule.accountId,
+        rule.counterpartyId,
+        rule.categoryId,
+        rule.id,
+        rule.transactionType,
+      ],
+    );
+    return { updated: rows.length };
+  }
+  async evidence(id: string) {
+    const rows = await this.db.query(
+      'SELECT source_data FROM wallet.transaction_sources WHERE user_id=$1 AND transaction_id=$2',
+      [this.db.userId, id],
+    );
+    return rows.map((row) => row.source_data as SourceEvidence);
+  }
+  async bindCounterparty(id: string, agent: string) {
+    await this.db.query(
+      'UPDATE wallet.transactions SET counterparty_id=$3 WHERE user_id=$1 AND id=$2 AND counterparty_id IS NULL',
+      [this.db.userId, id, agent],
+    );
+  }
   async recordEvidence(transactionId: string, accountId: string, evidence: SourceEvidence) {
     const inserted = await this.db.query(
       `INSERT INTO wallet.transaction_sources(user_id,account_id,transaction_id,source_key,source_data) VALUES($1,$2,$3,$4,$5)
-      ON CONFLICT(user_id,workspace_id,account_id,source_key) DO UPDATE SET transaction_id=excluded.transaction_id,source_data=excluded.source_data
+      ON CONFLICT(user_id,workspace_id,account_id,source_key) DO UPDATE SET transaction_id=excluded.transaction_id,source_data=wallet.transaction_sources.source_data || excluded.source_data
       WHERE wallet.transaction_sources.transaction_id=excluded.transaction_id
       OR EXISTS(SELECT 1 FROM wallet.transactions t WHERE t.id=wallet.transaction_sources.transaction_id AND t.reversed_at IS NOT NULL) RETURNING transaction_id`,
       [
@@ -75,7 +125,7 @@ export class LedgerRepository {
   }
   async insert(input: TransactionInput) {
     const rows = await this.db.query(
-      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment,refund_of_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment,refund_of_id,counterparty_id,classification_rule_id,source_kind) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
       [
         randomUUID(),
         this.db.userId,
@@ -91,6 +141,9 @@ export class LedgerRepository {
         input.transferGroupId ?? null,
         input.balanceAdjustment ? JSON.stringify(input.balanceAdjustment) : null,
         input.refundOfId ?? null,
+        input.counterpartyId ?? null,
+        input.classificationRuleId ?? null,
+        input.sourceKind ?? 'manual',
       ],
     );
     return transactionResource(rows[0]);
@@ -138,7 +191,7 @@ export class LedgerRepository {
   }
   async update(id: string, input: TransactionInput) {
     await this.db.query(
-      'UPDATE wallet.transactions SET category_id=$3,transaction_date=$4,description=$5,amount_minor=$6,transaction_type=$7,version=version+1,updated_at=now() WHERE user_id=$1 AND id=$2',
+      'UPDATE wallet.transactions SET category_id=$3,transaction_date=$4,description=$5,amount_minor=$6,transaction_type=$7,counterparty_id=$8,classification_rule_id=$9,version=version+1,updated_at=now() WHERE user_id=$1 AND id=$2',
       [
         this.db.userId,
         id,
@@ -147,6 +200,8 @@ export class LedgerRepository {
         input.description.trim(),
         input.amount,
         input.transactionType,
+        input.counterpartyId ?? null,
+        input.classificationRuleId ?? null,
       ],
     );
     return this.find(id);

@@ -24,6 +24,9 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
     change: Partial<
       Pick<
         ImportItem,
+        | 'counterpartyId'
+        | 'counterpartyName'
+        | 'rememberCategory'
         | 'selected'
         | 'transactionType'
         | 'categoryId'
@@ -40,6 +43,9 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
         method: 'PATCH',
         headers: { 'If-Match': String(batch.version) },
         body: jsonBody({
+          counterpartyId: item.counterpartyId,
+          counterpartyName: item.counterpartyName,
+          rememberCategory: item.rememberCategory,
           selected: item.selected,
           transactionType: item.transactionType,
           categoryId: item.categoryId,

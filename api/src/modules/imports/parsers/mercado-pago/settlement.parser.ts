@@ -69,7 +69,13 @@ function metadata(get: (name: string) => string): SettlementMetadata {
     if (releaseTimestamp && get('MONEY_RELEASE_DATE_SHORT') !== releaseTimestamp.slice(0, 10))
       throw new UnprocessableEntityException('As datas de liberação não conferem.');
   }
+  const storeName = get('STORE_NAME'),
+    storeId = get('STORE_ID');
+  if (storeName.length > 200 || storeId.length > 100)
+    throw new UnprocessableEntityException('Identificação da loja fora dos limites.');
   return {
+    ...(storeName ? { storeName } : {}),
+    ...(storeId ? { storeId } : {}),
     isReleased: released ? released === 'true' : null,
     releaseTimestamp,
     installmentNetAmount: optionalAmount('INSTALLMENT_NET_AMOUNT'),

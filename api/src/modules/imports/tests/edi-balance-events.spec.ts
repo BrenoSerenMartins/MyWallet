@@ -35,6 +35,8 @@ it('accepts direct balance inflows even when the payment release flag is false o
 });
 it('does not confuse scheduled receipts, payment events, fees or installments with direct balance events', () => {
   const cases: Record<string, string>[] = [
+    { STORE_NAME: 'Synthetic Store' },
+    { STORE_ID: 'store-1' },
     { PAYMENT_METHOD_TYPE: 'credit_card' },
     { PAYMENT_METHOD: 'visa' },
     { FRANCHISE: 'Visa' },
@@ -59,4 +61,8 @@ it('preserves released-payment, outgoing and zero-value policies', () => {
   expect(
     ediCanPost(metadata({ TRANSACTION_AMOUNT: '0.00', SETTLEMENT_NET_AMOUNT: '0.00' }), 0),
   ).toBe(false);
+});
+it('preserves optional store identity without treating a transaction ID as a merchant ID', () => {
+  const source = metadata({ STORE_NAME: 'Loja Exemplo', STORE_ID: 'store-123' });
+  expect(source).toMatchObject({ storeName: 'Loja Exemplo', storeId: 'store-123' });
 });

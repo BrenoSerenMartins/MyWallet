@@ -25,6 +25,156 @@
         "tags": ["Health"]
       }
     },
+    "/v1/counterparties": {
+      "get": {
+        "operationId": "CounterpartiesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CounterpartyResourceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Counterparties"]
+      },
+      "post": {
+        "operationId": "CounterpartiesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCounterpartyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Counterparties"]
+      }
+    },
+    "/v1/counterparties/{id}": {
+      "patch": {
+        "operationId": "CounterpartiesController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCounterpartyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Counterparties"]
+      }
+    },
+    "/v1/counterparties/{id}/relations": {
+      "post": {
+        "operationId": "CounterpartiesController_relate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CounterpartyRelationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Counterparties"]
+      }
+    },
+    "/v1/counterparties/{agent}/identifiers/{id}": {
+      "delete": {
+        "operationId": "CounterpartiesController_removeIdentifier",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Counterparties"]
+      }
+    },
+    "/v1/counterparties/rules/{id}": {
+      "patch": {
+        "operationId": "CounterpartiesController_toggleRule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Counterparties"]
+      }
+    },
     "/v1/accounts": {
       "get": {
         "operationId": "AccountsController_list",
@@ -1218,6 +1368,161 @@
       }
     },
     "schemas": {
+      "IdentifierResourceDto": {
+        "type": "object",
+        "properties": {
+          "identifierKind": {
+            "type": "string",
+            "enum": ["description", "store_id"]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "counterpartyId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "sourceKind": {
+            "type": "string",
+            "enum": ["manual", "account_statement", "settlement", "benefit_statement"]
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": ["enabled", "id", "counterpartyId", "accountId", "sourceKind", "value"]
+      },
+      "RuleResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "counterpartyId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "counterpartyId",
+          "accountId",
+          "transactionType",
+          "categoryId",
+          "enabled",
+          "version"
+        ]
+      },
+      "CounterpartyResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "number"
+          },
+          "identifiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IdentifierResourceDto"
+            }
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleResourceDto"
+            }
+          }
+        },
+        "required": ["id", "name", "enabled", "version", "identifiers", "rules"]
+      },
+      "CreateCounterpartyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["name"]
+      },
+      "UpdateCounterpartyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "enabled"]
+      },
+      "CounterpartyRelationDto": {
+        "type": "object",
+        "properties": {
+          "identifierKind": {
+            "type": "string",
+            "enum": ["description", "store_id"]
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "sourceKind": {
+            "type": "string",
+            "enum": ["manual", "account_statement", "settlement", "benefit_statement"]
+          },
+          "value": {
+            "type": "string"
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "categoryId": {
+            "type": "string"
+          }
+        },
+        "required": ["accountId", "sourceKind", "value", "transactionType", "categoryId"]
+      },
+      "ToggleRuleDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["enabled"]
+      },
       "AccountResourceDto": {
         "type": "object",
         "properties": {
@@ -1426,6 +1731,17 @@
       "TransactionResourceDto": {
         "type": "object",
         "properties": {
+          "counterpartyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "classificationRuleId": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceKind": {
+            "type": "string"
+          },
           "refundOfId": {
             "type": "string",
             "nullable": true
@@ -1541,6 +1857,16 @@
       "TransactionDto": {
         "type": "object",
         "properties": {
+          "counterpartyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "counterpartyName": {
+            "type": "string"
+          },
+          "rememberCategory": {
+            "type": "boolean"
+          },
           "accountId": {
             "type": "string"
           },
@@ -1837,6 +2163,12 @@
       "SettlementMetadataResourceDto": {
         "type": "object",
         "properties": {
+          "storeName": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
           "isReleased": {
             "type": "boolean",
             "nullable": true
@@ -1925,6 +2257,21 @@
       "ImportItemResourceDto": {
         "type": "object",
         "properties": {
+          "counterpartyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "rememberCategory": {
+            "type": "boolean"
+          },
+          "counterpartyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "classificationRuleId": {
+            "type": "string",
+            "nullable": true
+          },
           "refundOfId": {
             "type": "string",
             "nullable": true
@@ -2179,6 +2526,17 @@
       "ReviewItemDto": {
         "type": "object",
         "properties": {
+          "counterpartyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "counterpartyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "rememberCategory": {
+            "type": "boolean"
+          },
           "refundOfId": {
             "type": "string",
             "nullable": true

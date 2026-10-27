@@ -1,3 +1,4 @@
+import { CounterpartyFields } from '../../counterparties/components/counterparty-fields';
 import { CategorySelect } from '../../../shared/ui/category-select';
 import { useState, type FormEvent } from 'react';
 import type { Account, Category, Transaction } from '../../../shared/api/resources';
@@ -24,6 +25,9 @@ export function TransactionForm({
     entry ? String(Math.abs(entry.amount) / 100).replace('.', ',') : '',
   );
   const [category, setCategory] = useState(entry?.categoryId ?? '');
+  const [agent, setAgent] = useState(entry?.counterpartyId ?? '');
+  const [agentName, setAgentName] = useState('');
+  const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [key] = useState(() => crypto.randomUUID());
@@ -51,6 +55,9 @@ export function TransactionForm({
           method: entry ? 'PATCH' : 'POST',
           headers: entry ? { 'If-Match': String(entry.version) } : undefined,
           body: jsonBody({
+            counterpartyId: agent === 'new' ? null : agent || (entry ? null : undefined),
+            counterpartyName: agent === 'new' ? agentName : undefined,
+            rememberCategory: remember && !!category && !!agent,
             accountId: account,
             description,
             transactionDate: date,
@@ -145,13 +152,7 @@ export function TransactionForm({
         </label>
         <label>
           Data
-          <input
-            required
-            type="date"
-            value={date}
-            min={accounts.find((a) => a.id === account)?.openingDate}
-            onChange={(e) => setDate(e.target.value)}
-          />
+          <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
       </div>
       {kind === 'transfer' ? (
@@ -178,6 +179,18 @@ export function TransactionForm({
             onChange={(e) => setCategory(e.target.value)}
           />
         </label>
+      )}
+      {kind !== 'transfer' && !entry?.balanceAdjustment && !entry?.refundOfId && (
+        <CounterpartyFields
+          agent={agent}
+          name={agentName}
+          remember={remember}
+          category={category}
+          automatic={!!entry?.classificationRuleId}
+          onAgent={setAgent}
+          onName={setAgentName}
+          onRemember={setRemember}
+        />
       )}
       {error && (
         <p className="form-error" role="alert">

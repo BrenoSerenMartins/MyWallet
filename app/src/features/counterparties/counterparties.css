@@ -1,0 +1,62 @@
+.counterparties-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.counterparties-page > .panel {
+  padding: 24px;
+}
+.counterparties-page > .page-heading {
+  margin-bottom: 0;
+}
+.counterparties-page .form-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.counterparty-panel h3 {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.counterparty-rule > .form-grid {
+  flex: 1 1 24rem;
+  max-width: 100%;
+  min-width: 0;
+}
+.counterparty-panel > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  padding: 1rem;
+  flex-wrap: wrap;
+}
+.counterparty-panel > .form-stack {
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+.counterparty-panel .form-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.counterparty-rule {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.counterparty-rule span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.counterparty-rule small {
+  display: block;
+  margin-top: 0.3rem;
+}

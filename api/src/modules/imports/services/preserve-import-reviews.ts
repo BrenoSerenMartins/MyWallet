@@ -43,6 +43,10 @@ export function preserveImportReviews(
         : item.transactionType;
     return {
       ...item,
+      counterpartyId: old?.counterpartyId,
+      counterpartyName: old?.counterpartyName,
+      rememberCategory:
+        !resetClassification && old?.transactionType === transactionType && old?.rememberCategory,
       id: old?.id ?? randomUUID(),
       selected: old?.selected ?? true,
       linkedTransactionId: old?.linkedTransactionId ?? null,

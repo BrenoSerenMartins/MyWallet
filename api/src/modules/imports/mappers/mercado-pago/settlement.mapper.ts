@@ -13,7 +13,8 @@ export function mapMercadoPagoSettlements(rows: SettlementSourceRow[]): ParsedSt
       transactionDate: row.metadata.settlementTimestamp.slice(0, 10),
       amount: row.metadata.netAmount,
       balanceAfter: null,
-      description: row.description ?? `Mercado Pago · ${row.metadata.eventType}`,
+      description:
+        row.description ?? row.metadata.storeName ?? `Mercado Pago · ${row.metadata.eventType}`,
       metadata: row.metadata,
     })),
   };

@@ -33,6 +33,9 @@ export class BalanceAdjustmentResourceDto {
   @ApiProperty({ type: String }) reason!: string;
 }
 export class TransactionResourceDto {
+  @ApiPropertyOptional({ type: String, nullable: true }) counterpartyId?: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) classificationRuleId?: string | null;
+  @ApiPropertyOptional({ type: String }) sourceKind?: string;
   @ApiPropertyOptional({ type: String, nullable: true }) refundOfId?: string | null;
   @ApiPropertyOptional({ type: () => BalanceAdjustmentResourceDto, nullable: true })
   balanceAdjustment?: BalanceAdjustmentResourceDto | null;
@@ -57,6 +60,8 @@ export class TransactionResourceDto {
   @ApiProperty({ type: String, nullable: true }) sourceOperationId!: string | null;
 }
 export class SettlementMetadataResourceDto {
+  @ApiPropertyOptional({ type: String }) storeName?: string;
+  @ApiPropertyOptional({ type: String }) storeId?: string;
   @ApiPropertyOptional({ type: Boolean, nullable: true }) isReleased?: boolean | null;
   @ApiPropertyOptional({ type: String, nullable: true }) releaseTimestamp?: string | null;
   @ApiPropertyOptional({ type: Number, nullable: true }) installmentNetAmount?: number | null;
@@ -81,6 +86,10 @@ export class ReconciliationCandidateResourceDto {
   @ApiProperty({ type: String }) description!: string;
 }
 export class ImportItemResourceDto {
+  @ApiPropertyOptional({ type: String, nullable: true }) counterpartyName?: string | null;
+  @ApiPropertyOptional({ type: Boolean }) rememberCategory?: boolean;
+  @ApiPropertyOptional({ type: String, nullable: true }) counterpartyId?: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) classificationRuleId?: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) refundOfId?: string | null;
   @ApiProperty({ type: () => [ReconciliationCandidateResourceDto] })
   refundCandidates!: ReconciliationCandidateResourceDto[];

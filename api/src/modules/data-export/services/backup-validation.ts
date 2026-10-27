@@ -1,3 +1,4 @@
+import { validateCounterpartyBackup } from './validate-counterparty-backup.js';
 import { sourceEvidenceKey } from '../../../core/integration/index.js';
 import { UnprocessableEntityException } from '@nestjs/common';
 import type { BackupPayload } from '../../../core/integration/index.js';
@@ -14,7 +15,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   const b = raw as BackupPayload;
   if (
     b.format !== 'mywallet' ||
-    ![1, 2, 3, 4].includes(b.version) ||
+    ![1, 2, 3, 4, 5].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||
@@ -72,6 +73,7 @@ export function validateBackup(raw: unknown): BackupPayload {
     )
       fail();
   }
+  validateCounterpartyBackup(b, unique);
   const accounts = new Map(b.accounts.map((a) => [a.id, a]));
   const categories = new Map(b.categories.map((c) => [c.id, c]));
   const groups = new Map<string, typeof b.transactions>();
@@ -133,6 +135,12 @@ export function validateBackup(raw: unknown): BackupPayload {
             : text(evidence.reference, 160))
         )
           fail();
+        if (
+          evidence.storeId !== undefined &&
+          (evidence.reportType !== 'settlement' || !text(evidence.storeId, 100))
+        )
+          fail();
+        if (evidence.description !== undefined && !text(evidence.description, 500)) fail();
         if (evidence.ruleVersion !== undefined && !text(evidence.ruleVersion, 80)) fail();
         dateOnly(evidence.date);
         if (evidence.originDate != null) dateOnly(evidence.originDate);

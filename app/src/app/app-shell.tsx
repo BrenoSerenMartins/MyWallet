@@ -2,6 +2,7 @@ import { useWorkspace } from '../features/workspaces/workspace-provider';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
+  UsersRound,
   CalendarDays,
   FolderTree,
   Menu,
@@ -26,6 +27,7 @@ const navigation = [
   { to: '/planning', label: 'Planejamento', mobile: 'Planejar', Icon: CalendarDays },
   { to: '/imports', label: 'Importar extrato', mobile: 'Importar', Icon: Upload },
   { to: '/categories', label: 'Grupos e categorias', mobile: 'Categorias', Icon: FolderTree },
+  { to: '/counterparties', label: 'Agentes e regras', mobile: 'Agentes', Icon: UsersRound },
   { to: '/settings', label: 'Preferências', mobile: 'Mais', Icon: Settings2 },
 ];
 export function AppShell() {
@@ -206,7 +208,7 @@ export function AppShell() {
           onClick={() => setMore(true)}
           aria-haspopup="dialog"
           className={
-            ['/categories', '/imports', '/settings'].some((path) =>
+            ['/categories', '/imports', '/counterparties', '/settings'].some((path) =>
               location.pathname.startsWith(path),
             )
               ? 'active'
@@ -220,7 +222,9 @@ export function AppShell() {
       <Modal open={more} onOpenChange={setMore} title="Explorar seu espaço">
         <nav className="more-menu" aria-label="Mais funções">
           {navigation
-            .filter((n) => ['/imports', '/categories', '/settings'].includes(n.to))
+            .filter((n) =>
+              ['/imports', '/categories', '/counterparties', '/settings'].includes(n.to),
+            )
             .map(({ to, label, Icon }) => (
               <NavLink to={to} key={to} onClick={() => setMore(false)}>
                 <Icon size={21} />

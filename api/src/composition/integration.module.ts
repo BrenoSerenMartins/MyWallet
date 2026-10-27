@@ -1,5 +1,7 @@
+import { CounterpartiesModule, CounterpartiesService } from '../modules/counterparties/index.js';
 import { Global, Module } from '@nestjs/common';
 import {
+  COUNTERPARTY_RULES,
   PLANNING_BACKUP,
   ACCOUNT_READS,
   ACCOUNT_OPENING_POSITIONS,
@@ -16,6 +18,7 @@ import { CategoriesModule, CategoriesService } from '../modules/categories/index
 import { LedgerModule, LedgerService, IdempotencyService } from '../modules/ledger/index.js';
 import { PlanningModule, PlanningService } from '../modules/planning/index.js';
 const bindings = [
+  { provide: COUNTERPARTY_RULES, useExisting: CounterpartiesService },
   { provide: ACCOUNT_OPENING_POSITIONS, useExisting: AccountsService },
   { provide: PLANNING_BACKUP, useExisting: PlanningService },
   { provide: ACCOUNT_BACKUP, useExisting: AccountsService },
@@ -29,7 +32,7 @@ const bindings = [
 ];
 @Global()
 @Module({
-  imports: [AccountsModule, CategoriesModule, LedgerModule, PlanningModule],
+  imports: [CounterpartiesModule, AccountsModule, CategoriesModule, LedgerModule, PlanningModule],
   providers: bindings,
   exports: bindings.map((b) => b.provide),
 })

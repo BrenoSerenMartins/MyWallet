@@ -1,6 +1,9 @@
 import { isoDate } from '../../../core/rest/index.js';
 export function transactionResource(row: Record<string, any>) {
   return {
+    counterpartyId: row.counterparty_id ?? null,
+    classificationRuleId: row.classification_rule_id ?? null,
+    sourceKind: row.source_kind ?? 'manual',
     reconciliationStatus: row.reconciled ? ('reconciled' as const) : ('pending' as const),
     balanceAdjustment: row.balance_adjustment ?? null,
     refundOfId: row.refund_of_id ?? null,

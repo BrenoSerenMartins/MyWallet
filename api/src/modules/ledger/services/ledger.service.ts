@@ -6,6 +6,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  COUNTERPARTY_RULES,
+  type CounterpartyRules,
   ACCOUNT_READS,
   CATEGORY_READS,
   type AccountReads,
@@ -25,6 +27,7 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     @Inject(ACCOUNT_READS) private readonly accounts: AccountReads,
     @Inject(CATEGORY_READS) private readonly categories: CategoryReads,
     @Inject(IdempotencyService) private readonly receipts: IdempotencyService,
+    @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
   ) {}
   exportRecords() {
     return this.repository.exportRecords();
@@ -33,6 +36,7 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     records: import('../../../core/integration/index.js').BackupTransaction[],
     accounts: Map<string, string>,
     categories: Map<string, string>,
+    identities?: { agents: Map<string, string>; rules: Map<string, string> },
   ) {
     const groups = new Map<string, string>();
     const restoredIds = new Map<string, string>();
@@ -49,6 +53,12 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       const restored = await this.create(
         {
           ...entry,
+          counterpartyId: entry.counterpartyId
+            ? identities?.agents.get(entry.counterpartyId)
+            : null,
+          classificationRuleId: entry.classificationRuleId
+            ? identities?.rules.get(entry.classificationRuleId)
+            : null,
           importBatchId: undefined,
           sourceRow: undefined,
           refundOfId: entry.refundOfId ? restoredIds.get(entry.refundOfId) : null,
@@ -57,18 +67,68 @@ export class LedgerService implements LedgerWrites, LedgerReads {
           transferGroupId,
         },
         true,
+        false,
       );
       restoredIds.set(entry.id, restored.id);
       for (const evidence of entry.sourceEvidence ?? [])
-        await this.recordEvidence(restored.id, accounts.get(entry.accountId)!, evidence);
+        await this.repository.recordEvidence(restored.id, accounts.get(entry.accountId)!, evidence);
     }
   }
-  recordEvidence(
+  async recordEvidence(
     transactionId: string,
     accountId: string,
     evidence: import('../../../core/integration/index.js').SourceEvidence,
   ) {
-    return this.repository.recordEvidence(transactionId, accountId, evidence);
+    await this.repository.recordEvidence(transactionId, accountId, evidence);
+    const entry = await this.find(transactionId);
+    let counterpartyId = entry.counterpartyId;
+    if (!counterpartyId && (evidence.description || evidence.storeId)) {
+      const [suggestion] = await this.counterparties.suggest(accountId, evidence.reportType, [
+        {
+          ...entry,
+          counterpartyId: undefined,
+          description: evidence.description ?? entry.description,
+          sourceStoreId: evidence.storeId,
+        },
+      ]);
+      counterpartyId = suggestion.counterpartyId;
+      if (counterpartyId) await this.repository.bindCounterparty(transactionId, counterpartyId);
+    }
+    if (counterpartyId)
+      for (const source of await this.repository.evidence(transactionId)) {
+        if (source.description || source.storeId)
+          await this.counterparties.observe(
+            counterpartyId,
+            accountId,
+            source.reportType,
+            source.description ?? '',
+            source.storeId,
+          );
+      }
+    if (counterpartyId) await this.applyRememberedRule({ ...entry, counterpartyId });
+  }
+  async applyClassificationRule(ruleId: string) {
+    const state = await this.counterparties.snapshot();
+    const rule = state.rules.find((rule) => rule.id === ruleId);
+    if (
+      !rule ||
+      !rule.enabled ||
+      !state.agents.some((agent) => agent.id === rule.counterpartyId && agent.enabled)
+    )
+      return { updated: 0 };
+    const account = await this.accounts.find(rule.accountId, true);
+    if (account.archived) return { updated: 0 };
+    await this.categories.validate(rule.categoryId, rule.transactionType);
+    return this.repository.applyClassificationRule(rule);
+  }
+  private async applyRememberedRule(input: TransactionInput) {
+    const rule = (await this.counterparties.snapshot()).rules.find(
+      (rule) =>
+        rule.counterpartyId === input.counterpartyId &&
+        rule.accountId === input.accountId &&
+        rule.transactionType === input.transactionType,
+    );
+    if (rule) await this.applyClassificationRule(rule.id);
   }
   list(filter: LedgerFilter) {
     return this.repository.list(filter);
@@ -144,11 +204,15 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     if (refunded + Math.abs(input.amount) > Math.abs(original.amount))
       throw new ConflictException('O total devolvido excede o valor da operação original.');
   }
-  async create(input: TransactionInput, imported = false) {
+  async create(input: TransactionInput, imported = false, automatic = true) {
+    await this.accounts.find(input.accountId, true);
+    input = await this.counterparties.resolve(input, automatic);
     await this.validate(input);
     if (!imported && !['income', 'expense'].includes(input.transactionType))
       throw new UnprocessableEntityException('Use o fluxo de transferência.');
-    return this.repository.insert(input);
+    const created = await this.repository.insert(input);
+    if (input.rememberCategory) await this.applyRememberedRule(input);
+    return created;
   }
   async adjustBalance(
     accountId: string,
@@ -213,8 +277,41 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       throw new ConflictException('Uma transferência deve ser corrigida como um conjunto.');
     if (input.accountId !== current.accountId)
       throw new ConflictException('A conta de um lançamento não pode ser substituída.');
+    const storeIds = new Set(
+      (await this.repository.evidence(id))
+        .map((source) => source.storeId)
+        .filter((value): value is string => !!value),
+    );
+    input = await this.counterparties.resolve(
+      {
+        ...input,
+        sourceKind: current.sourceKind,
+        sourceStoreId: storeIds.size === 1 ? [...storeIds][0] : undefined,
+        counterpartyId:
+          input.counterpartyId === undefined ? current.counterpartyId : input.counterpartyId,
+        classificationRuleId:
+          input.categoryId === current.categoryId &&
+          input.transactionType === current.transactionType &&
+          (input.counterpartyId === undefined || input.counterpartyId === current.counterpartyId)
+            ? current.classificationRuleId
+            : null,
+      },
+      false,
+    );
     await this.validate(input);
-    return this.repository.update(id, input);
+    const updated = await this.repository.update(id, input);
+    if (input.rememberCategory && input.counterpartyId)
+      for (const source of await this.repository.evidence(id))
+        if (source.description || source.storeId)
+          await this.counterparties.observe(
+            input.counterpartyId,
+            input.accountId,
+            source.reportType,
+            source.description ?? '',
+            source.storeId,
+          );
+    if (input.rememberCategory) await this.applyRememberedRule(input);
+    return updated;
   }
   async reverse(id: string, version: string) {
     const current = await this.find(id);

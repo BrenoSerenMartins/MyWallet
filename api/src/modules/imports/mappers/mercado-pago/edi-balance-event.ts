@@ -4,6 +4,8 @@ import type { SettlementMetadata } from '../../contracts/statement.js';
 export function isDirectEdiBalanceEvent(metadata: SettlementMetadata) {
   return (
     metadata.eventType === 'SETTLEMENT' &&
+    !metadata.storeName &&
+    !metadata.storeId &&
     !metadata.paymentMethod &&
     !metadata.paymentMethodType &&
     !metadata.brand &&
