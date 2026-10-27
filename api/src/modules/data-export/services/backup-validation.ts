@@ -87,8 +87,7 @@ export function validateBackup(raw: unknown): BackupPayload {
       !account ||
       !text(t.description, 500) ||
       !t.amount ||
-      !['income', 'expense', 'transfer', 'unclassified'].includes(t.transactionType) ||
-      t.transactionDate < account.openingDate
+      !['income', 'expense', 'transfer', 'unclassified'].includes(t.transactionType)
     )
       fail();
     if (t.categoryId && (!category || category.type !== t.transactionType)) fail();

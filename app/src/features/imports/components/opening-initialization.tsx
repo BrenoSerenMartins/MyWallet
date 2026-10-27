@@ -6,13 +6,13 @@ export function OpeningInitialization({ batch }: { batch: ImportBatch }) {
       <div>
         <strong>
           {batch.openingBalance === null
-            ? 'Data inicial identificada no arquivo'
-            : 'Posição inicial identificada no extrato'}
+            ? 'Histórico pronto para importar'
+            : 'Saldo anterior ao período identificado no extrato'}
         </strong>
         <p>
           {batch.openingBalance === null
-            ? 'Ao confirmar, o app usará a primeira data do arquivo como início desta conta vazia. O saldo inicial cadastrado será preservado, pois o arquivo não fornece esse valor.'
-            : 'Ao confirmar o primeiro extrato, o app usará o saldo inicial e a primeira data do arquivo para iniciar esta conta. Você não precisa preencher esses valores novamente.'}
+            ? 'Você pode confirmar movimentos antigos sem configurar uma data de início. Este arquivo não informa o saldo anterior ao período; o app não vai inventar esse valor.'
+            : 'O app identificou o saldo que já existia antes dos movimentos deste primeiro extrato. Ele será considerado automaticamente ao confirmar, sem preencher valores manualmente.'}
         </p>
       </div>
     </div>

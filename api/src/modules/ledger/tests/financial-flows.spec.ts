@@ -101,7 +101,7 @@ describe('Financial integrity with PostgreSQL RLS', () => {
       );
     });
   });
-  it('rolls back partial writes after invalid destination date', async () => {
+  it('rolls back partial writes when the destination account is archived', async () => {
     const future = await db.forUser(db.user, () =>
       accounts.create({
         name: 'Future',
@@ -111,6 +111,9 @@ describe('Financial integrity with PostgreSQL RLS', () => {
         openingDate: '2026-12-01',
       }),
     );
+    await db.engine.query('UPDATE wallet.financial_accounts SET archived_at=now() WHERE id=$1', [
+      future.id,
+    ]);
     const count = await db.forUser(db.user, async () => (await ledger.exportRecords()).length);
     await expect(
       db.forUser(db.user, () =>
@@ -119,7 +122,7 @@ describe('Financial integrity with PostgreSQL RLS', () => {
             fromAccountId: first,
             toAccountId: future.id,
             amount: 2000,
-            description: 'Invalid date',
+            description: 'Archived destination',
             transactionDate: '2026-02-01',
           },
           'bad-transfer',

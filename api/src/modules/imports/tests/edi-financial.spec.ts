@@ -41,6 +41,7 @@ const backups = new DataExportService(
   new RestoreRepository(db.service),
   new PlanningService(new PlanningRepository(db.service), categories, ledger),
 );
+
 beforeAll(() => db.initialize());
 afterAll(() => db.close());
 const run = <T>(fn: () => Promise<T>) => db.forUser(db.user, fn);
@@ -527,4 +528,65 @@ it('selects positive direct-balance EDI events, creates income and preserves cro
   expect(
     (await run(() => ledger.exportRecords())).filter((row) => row.accountId === a.id),
   ).toHaveLength(1);
+});
+
+it('imports older statements and EDI into an established account without changing its baseline and restores the history', async () => {
+  const a = await account('Migration history');
+  const recent = await edi(a.id, 'migration-recent');
+  await run(() => imports.confirm(recent.id, recent.version, 'migration-recent-confirm'));
+  const older = await run(() =>
+    imports.upload(a.id, Buffer.from('migration-old-statement'), 'june.pdf', {
+      openingBalance: 5000,
+      closingBalance: 4800,
+      items: [
+        {
+          sourceRow: 1,
+          sourcePage: 1,
+          transactionDate: '2026-06-01',
+          description: 'Older purchase',
+          sourceOperationId: 'migration-june',
+          amount: -200,
+          balanceAfter: 4800,
+        },
+      ],
+    }),
+  );
+  expect(older).toMatchObject({ openingDateMismatch: true, willInitializeOpening: false });
+  expect((await run(() => accounts.find(a.id))).balance).toBe(9000);
+  await run(() => imports.confirm(older.id, older.version, 'migration-old-confirm'));
+  await run(() => imports.confirm(older.id, older.version, 'migration-old-confirm'));
+  const oldest = await edi(a.id, 'migration-old-edi', {
+    TRANSACTION_DATE: '2026-05-01T12:00:00-03:00',
+    TRANSACTION_DATE_SHORT: '2026-05-01',
+    SETTLEMENT_DATE: '2026-05-01T12:00:00-03:00',
+    SETTLEMENT_DATE_SHORT: '2026-05-01',
+  });
+  await run(() => imports.confirm(oldest.id, oldest.version, 'migration-edi-confirm'));
+  expect(await run(() => accounts.find(a.id))).toMatchObject({
+    openingBalance: 10000,
+    openingDate: '2026-10-01',
+    balance: 7800,
+  });
+  const records = (await run(() => ledger.exportRecords())).filter((row) => row.accountId === a.id);
+  expect(records).toHaveLength(3);
+  expect(records.reduce((net, row) => net + row.amount, 0)).toBe(-2200);
+  const backup = await run(() => backups.backup());
+  const workspace = await db.engine.query<{ id: string }>(
+    "INSERT INTO wallet.workspaces(user_id,name) VALUES($1,'Migration history restore') RETURNING id",
+    [db.user],
+  );
+  await db.forUser(
+    db.user,
+    async () => {
+      const draft = await backups.preview(backup);
+      await backups.confirm(draft.id);
+      const restored = (await accounts.list()).find((row) => row.name === a.name)!;
+      expect(restored).toMatchObject({ openingBalance: 10000, balance: 7800 });
+      expect(
+        (await ledger.exportRecords()).filter((row) => row.accountId === restored.id),
+      ).toHaveLength(3);
+    },
+    false,
+    workspace.rows[0].id,
+  );
 });

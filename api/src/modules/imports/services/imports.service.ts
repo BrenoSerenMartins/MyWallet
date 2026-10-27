@@ -264,10 +264,6 @@ export class ImportsService {
       const creating = selected.filter((item) => item.action === 'create');
       if (selected.some((item) => item.action === 'review'))
         throw new ConflictException('Resolva as pendências de conciliação antes de confirmar.');
-      if (creating.length && preview.openingDateMismatch)
-        throw new ConflictException(
-          `O arquivo começa em ${preview.statementStartDate}, antes da data de início cadastrada da conta (${preview.accountOpeningDate}). Esses movimentos ainda não podem ser confirmados. Você pode guardar o arquivo apenas para consulta.`,
-        );
       if (!selected.length && !skippedDuplicates)
         throw new UnprocessableEntityException('Selecione ao menos um movimento.');
       if (creating.some((i) => i.transactionType === 'unclassified'))

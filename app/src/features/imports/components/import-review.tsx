@@ -5,7 +5,7 @@ import { ImportSourceSummary } from './import-source-summary';
 import { ViewSwitcher } from '../../../shared/ui/view-switcher';
 import { ImportReviewRow } from './import-review-row';
 import { useState } from 'react';
-import { OpeningPositionReview } from './opening-position-review';
+import { ReconciliationGap } from './reconciliation-gap';
 import { useImportReview } from '../hooks/use-import-review';
 import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ImportBatch } from '../../../shared/api/resources';
@@ -79,8 +79,9 @@ export function ImportReview({
           <div>
             <strong>Alelo Alimentação · histórico parcial</strong>
             <p>
-              Este PDF não informa saldo inicial nem saldo após cada compra. Confira a posição
-              inicial cadastrada: o saldo será calculado pelos movimentos confirmados.
+              Este PDF não informa o saldo anterior ao período nem o saldo após cada compra. O saldo
+              será calculado pelos movimentos confirmados; use Corrigir saldo se precisar registrar
+              uma diferença conhecida.
             </p>
             <p>
               A importação fica pendente de conciliação. Revise possíveis compras repetidas antes de
@@ -92,9 +93,7 @@ export function ImportReview({
       {batch.status !== 'reversed' &&
         canIntegrate &&
         !batch.willInitializeOpening &&
-        (batch.openingMismatch || batch.openingDateMismatch) && (
-          <OpeningPositionReview batch={batch} refresh={refresh} />
-        )}
+        batch.openingMismatch && <ReconciliationGap batch={batch} />}
       {canIntegrate && duplicates.length > 0 && (
         <div className="review-banner duplicate-banner" role="status">
           <div>
@@ -112,10 +111,7 @@ export function ImportReview({
         </div>
       )}
       {batch.status === 'draft' && (
-        <details
-          className="secondary-disclosure"
-          open={!canIntegrate || batch.openingMismatch || batch.openingDateMismatch || undefined}
-        >
+        <details className="secondary-disclosure" open={!canIntegrate || undefined}>
           <summary>Guardar apenas para consulta</summary>
           <div className="review-banner">
             <div>
@@ -290,11 +286,7 @@ export function ImportReview({
           </p>
           <Button
             disabled={
-              busy ||
-              !!unresolved ||
-              (!selected.length && !duplicates.length) ||
-              (!!selected.length && !batch.willInitializeOpening && batch.openingDateMismatch) ||
-              !navigator.onLine
+              busy || !!unresolved || (!selected.length && !duplicates.length) || !navigator.onLine
             }
             onClick={() => void confirm()}
           >

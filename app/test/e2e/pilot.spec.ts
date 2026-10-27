@@ -102,6 +102,8 @@ for (const width of [360, 390, 768, 1440])
     await expect(page.getByRole('heading', { name: 'Minhas contas', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('dialog').getByLabel('Saldo inicial (R$)')).toHaveCount(0);
+    await expect(page.getByRole('dialog').getByLabel('Data inicial')).toHaveCount(0);
     await page.getByRole('dialog').getByLabel('Nome da conta').fill('Nova conta');
     await page.getByRole('button', { name: 'Tema claro', exact: true }).isVisible();
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
@@ -328,9 +330,12 @@ test('old statement can be retained for consultation and searched without confir
     return route.fulfill({ json: batch });
   });
   await page.goto(`/imports/${id}`);
-  await expect(page.getByText('A posição inicial da conta precisa de revisão.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Confirmar 1 movimento' })).toBeDisabled();
+  await expect(
+    page.getByText('Diferença no histórico · a importação pode continuar'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Confirmar 1 movimento' })).toBeEnabled();
   page.once('dialog', (dialog) => dialog.accept());
+  await page.getByText('Guardar apenas para consulta', { exact: true }).click();
   await page.getByRole('button', { name: 'Salvar apenas como histórico' }).click();
   await expect(page.getByText('Histórico para consulta · não afeta seus saldos')).toBeVisible();
   expect(history).toBe(true);
@@ -1531,7 +1536,7 @@ test('first statement initializes opening automatically and refund review links 
   await page.route(`**/v1/imports/${id}`, (route) => route.fulfill({ json: opening }));
   await page.goto(`/imports/${id}`);
   await expect(
-    page.getByText('Posição inicial identificada no extrato', { exact: true }),
+    page.getByText('Saldo anterior ao período identificado no extrato', { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
@@ -1604,4 +1609,41 @@ test('first statement initializes opening automatically and refund review links 
     page.getByRole('button', { name: 'Confirmar EDI e conciliar', exact: true }),
   ).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('account forms use automatic defaults and preserve existing baseline amounts on edits', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const writes: Record<string, unknown>[] = [];
+  await page.route('**/v1/accounts', async (route) => {
+    if (route.request().method() === 'POST') {
+      writes.push(route.request().postDataJSON());
+      return route.fulfill({ json: { ...account, ...writes.at(-1) } });
+    }
+    return route.fulfill({ json: [account] });
+  });
+  await page.route(`**/v1/accounts/${account.id}`, async (route) => {
+    writes.push(route.request().postDataJSON());
+    return route.fulfill({ json: { ...account, ...writes.at(-1) } });
+  });
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Saldo inicial (R$)')).toHaveCount(0);
+  await expect(dialog.getByLabel('Data inicial')).toHaveCount(0);
+  await dialog.getByLabel('Nome da conta').fill('Imported wallet');
+  await dialog.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(writes[0]).toMatchObject({ name: 'Imported wallet', openingBalance: 0 });
+  expect(writes[0].openingDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  await dialog.getByLabel('Nome da conta').fill('Renamed account');
+  await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(writes[1]).toMatchObject({
+    name: 'Renamed account',
+    openingBalance: account.openingBalance,
+    openingDate: account.openingDate,
+  });
 });

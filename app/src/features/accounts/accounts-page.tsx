@@ -152,7 +152,7 @@ export function AccountsPage() {
         open={open}
         onOpenChange={setOpen}
         title={editing ? 'Editar conta' : 'Adicionar conta'}
-        description="O saldo inicial representa a posição antes do primeiro dia de movimentos."
+        description="Identifique a conta e importe seu histórico ou adicione movimentos."
       >
         <AccountForm
           key={editing?.id ?? 'new'}

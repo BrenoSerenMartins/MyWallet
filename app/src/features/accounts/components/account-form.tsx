@@ -1,16 +1,12 @@
 import type { Account } from '../../../shared/api/resources';
 import { useState, type FormEvent } from 'react';
 import { request, jsonBody } from '../../../shared/api/client';
-import { dateToday, parseMoney } from '../../../shared/formatting/money';
+import { dateToday } from '../../../shared/formatting/money';
 import { Button } from '../../../shared/ui/primitives';
 export function AccountForm({ onSaved, account }: { onSaved: () => void; account?: Account }) {
   const [name, setName] = useState(account?.name ?? '');
   const [institution, setInstitution] = useState(account?.institution ?? 'mercado_pago');
   const [type, setType] = useState(account?.type ?? 'checking');
-  const [opening, setOpening] = useState(
-    account ? String(account.openingBalance / 100).replace('.', ',') : '0,00',
-  );
-  const [date, setDate] = useState(account?.openingDate ?? dateToday());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function save(event: FormEvent) {
@@ -25,8 +21,8 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
           name,
           institution,
           type,
-          openingBalance: parseMoney(opening),
-          openingDate: date,
+          openingBalance: account?.openingBalance ?? 0,
+          openingDate: account?.openingDate ?? dateToday(),
         }),
       });
       onSaved();
@@ -86,25 +82,10 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
           </select>
         </label>
       </div>
-      <div className="form-grid">
-        <label>
-          Saldo inicial (R$)
-          <input
-            required
-            inputMode="decimal"
-            value={opening}
-            onChange={(e) => setOpening(e.target.value)}
-          />
-        </label>
-        <label>
-          Data inicial
-          <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </label>
-      </div>
       <p className="field-help">
         {institution === 'alelo'
-          ? 'Benefício não é limite de crédito nem dinheiro livre. Informe a posição conhecida antes dos movimentos; o saldo atual no PDF não define o saldo inicial. A importação validada é para Alimentação.'
-          : 'No primeiro extrato de uma conta vazia, o app identifica a data e o saldo inicial automaticamente ao confirmar. Para registros manuais, informe a posição inicial conhecida.'}
+          ? 'Benefício não é limite de crédito nem dinheiro livre. A importação validada é para Alimentação. Importe seu histórico e use Corrigir saldo se precisar registrar uma diferença.'
+          : 'Importe seu histórico em qualquer ordem ou adicione movimentos manualmente. Se precisar ajustar o valor registrado, use Corrigir saldo na conta.'}
       </p>
       {error && (
         <p className="form-error" role="alert">

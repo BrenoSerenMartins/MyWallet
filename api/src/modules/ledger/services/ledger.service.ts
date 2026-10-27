@@ -91,8 +91,8 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     const account = await this.accounts.find(input.accountId, true);
     dateOnly(input.transactionDate);
     exactAmount(input.amount);
-    if (account.archived || input.transactionDate < account.openingDate)
-      throw new UnprocessableEntityException('A data deve respeitar a posição inicial da conta.');
+    if (account.archived)
+      throw new UnprocessableEntityException('Não é possível lançar em uma conta arquivada.');
     if (!input.amount || !input.description.trim())
       throw new UnprocessableEntityException('Informe valor e descrição.');
     if (input.refundOfId) await this.validateRefund(input);
