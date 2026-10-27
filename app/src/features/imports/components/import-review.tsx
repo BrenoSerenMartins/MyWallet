@@ -23,6 +23,8 @@ export function ImportReview({
     setPage,
     busy,
     error,
+    status,
+    awaitingConfirmationRefresh,
     selected,
     unresolved,
     review,
@@ -64,7 +66,7 @@ export function ImportReview({
   return (
     <>
       <ReprocessImport
-        batch={batch}
+        batch={{ ...batch, status }}
         onProcessed={async () => {
           await refresh();
           setPage(0);
@@ -90,7 +92,7 @@ export function ImportReview({
           </div>
         </div>
       )}
-      {batch.status !== 'reversed' &&
+      {status !== 'reversed' &&
         canIntegrate &&
         !batch.willInitializeOpening &&
         batch.openingMismatch && <ReconciliationGap batch={batch} />}
@@ -110,7 +112,7 @@ export function ImportReview({
           </div>
         </div>
       )}
-      {batch.status === 'draft' && (
+      {status === 'draft' && (
         <details className="secondary-disclosure" open={!canIntegrate || undefined}>
           <summary>Guardar apenas para consulta</summary>
           <div className="review-banner">
@@ -131,7 +133,7 @@ export function ImportReview({
           </div>
         </details>
       )}
-      {batch.status === 'history' && (
+      {status === 'history' && (
         <div className="review-banner">
           <div>
             <strong>Histórico para consulta · não afeta seus saldos</strong>
@@ -151,7 +153,7 @@ export function ImportReview({
           )}
         </div>
       )}
-      {batch.status === 'draft' && canIntegrate ? (
+      {status === 'draft' && canIntegrate ? (
         <div className="review-banner">
           <div>
             <strong>
@@ -170,22 +172,31 @@ export function ImportReview({
             </Button>
           )}
         </div>
-      ) : batch.status !== 'draft' ? (
+      ) : status !== 'draft' ? (
         <div className="review-banner">
           <strong>
-            {batch.status === 'confirmed'
+            {status === 'confirmed'
               ? 'Revisão concluída. Somente movimentos novos foram adicionados.'
-              : batch.status === 'history'
+              : status === 'history'
                 ? 'Extrato salvo apenas para consulta.'
                 : 'Importação desfeita.'}
           </strong>
-          {batch.status === 'confirmed' && (
-            <Button className="secondary" disabled={busy} onClick={() => void reverse()}>
+          {status === 'confirmed' && (
+            <Button
+              className="secondary"
+              disabled={busy || awaitingConfirmationRefresh}
+              onClick={() => void reverse()}
+            >
               Desfazer importação
             </Button>
           )}
         </div>
       ) : null}
+      {awaitingConfirmationRefresh && (
+        <p className="field-help" role="status">
+          Confirmação concluída. Atualize o relatório para carregar os detalhes mais recentes.
+        </p>
+      )}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -246,7 +257,7 @@ export function ImportReview({
               <ImportReviewRow
                 key={item.id}
                 item={item}
-                disabled={busy || batch.status !== 'draft' || !canIntegrate}
+                disabled={busy || status !== 'draft' || !canIntegrate}
                 categories={categories.data ?? []}
                 onReview={review}
               />
@@ -277,7 +288,7 @@ export function ImportReview({
           </div>
         </div>
       </div>
-      {batch.status === 'draft' && canIntegrate && (
+      {status === 'draft' && canIntegrate && (
         <div className="review-confirm">
           <p>
             {batch.items.some((item) => !item.selected && !item.duplicateLocked)

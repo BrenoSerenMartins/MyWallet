@@ -283,3 +283,9 @@ Proved statement/EDI matches can learn each other's specific descriptions and su
 JSON v5 exports/restores the counterparty snapshot and transaction provenance with account/category/agent/rule remapping. Restore validates ownership references, alias uniqueness/kinds and rule scope and does not replay category automation. Migrations 005/006 add RLS-protected metadata/constraints and scoped transaction references; existing financial values are untouched.
 
 User confirmed both migrations and restricted runtime setup before deployment. Verification: 123 domain/database tests, 36 browser scenarios, full verify, generated-contract drift and formatting checks passed. Mobile/desktop layouts were inspected; hosted acceptance remains separate from local mocked-browser verification.
+
+
+## Confirmation responses and refresh failures
+Financial confirmation and subsequent report refresh have separate outcomes. A successful confirmation receipt immediately locks the review controls locally, even when report refresh fails. Reversal remains unavailable until the fresh version is loaded. Cached report data remains visible on refetch errors with an explicit refresh action. On a network/5xx confirmation response, the client reads the batch once and accepts success only if the persisted status is confirmed; it never automatically repeats the POST. A failed status check reports uncertainty. Existing server idempotency and transaction rollback remain authoritative.
+
+Unexpected API failures log only an allowlisted error code and request ID; exception messages, SQL, parameters and credentials are omitted. The reported production EDI issue could not be queried directly because local database DNS returned EAI_AGAIN; these safeguards are verified locally and do not establish the original production cause.

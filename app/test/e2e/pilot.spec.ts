@@ -523,61 +523,142 @@ test('leaving the upload screen stops subsequent submissions', async ({ page }) 
   await expect(page).toHaveURL(/\/accounts$/);
 });
 
-test('EDI reconciles existing movements and preserves source details', async ({ page }) => {
-  await signedIn(page);
-  await page.setViewportSize({ width: 390, height: 1000 });
-  const id = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
-  const batch = {
-    id,
-    accountId: account.id,
-    fileName: 'settlement_v2-synthetic.csv',
-    status: 'draft',
-    version: 1,
-    reportType: 'settlement',
-    canIntegrate: true,
-    sourceFormat: 'csv',
-    openingBalance: null,
-    closingBalance: null,
-    openingMismatch: false,
-    openingDateMismatch: false,
-    items: [
-      {
-        ...transaction,
-        id: '99999999-9999-4999-8999-999999999999',
-        sourceRow: 2,
-        selected: true,
-        transactionType: 'income',
-        action: 'reconcile',
-        actionReason: 'Vincular ao lançamento existente.',
-        linkedTransactionId: transaction.id,
-        confirmNew: false,
-        candidateDescriptions: [],
-        duplicateLocked: false,
-        duplicateCandidate: false,
-        balanceAfter: null,
-        metadata: {
-          eventType: 'SETTLEMENT',
-          isReleased: true,
-          transactionTimestamp: '2026-10-01T12:00:00-03:00',
-          settlementTimestamp: '2026-10-02T12:00:00-03:00',
-          grossAmount: 10000,
-          netAmount: 9500,
-          realAmount: null,
-          fees: -500,
-          taxes: null,
-          paymentMethod: 'visa',
-          paymentMethodType: 'credit_card',
-          brand: 'Visa',
-          installments: 3,
-          installmentNumber: 1,
-          lastFourDigits: '0042',
+for (const outcome of ['normal', 'lost-response', 'refresh-failure', 'rejected'] as const)
+  test(`EDI confirmation handles ${outcome} without duplicating movements`, async ({ page }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width: 390, height: 1000 });
+    const id = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+    const batch = {
+      id,
+      accountId: account.id,
+      fileName: 'settlement_v2-synthetic.csv',
+      status: 'draft',
+      version: 1,
+      reportType: 'settlement',
+      canIntegrate: true,
+      sourceFormat: 'csv',
+      openingBalance: null,
+      closingBalance: null,
+      openingMismatch: false,
+      openingDateMismatch: false,
+      items: [
+        {
+          ...transaction,
+          id: '99999999-9999-4999-8999-999999999999',
+          sourceRow: 2,
+          selected: true,
+          transactionType: 'income',
+          action: 'reconcile',
+          actionReason: 'Vincular ao lançamento existente.',
+          linkedTransactionId: transaction.id,
+          confirmNew: false,
+          candidateDescriptions: [],
+          duplicateLocked: false,
+          duplicateCandidate: false,
+          balanceAfter: null,
+          metadata: {
+            eventType: 'SETTLEMENT',
+            isReleased: true,
+            transactionTimestamp: '2026-10-01T12:00:00-03:00',
+            settlementTimestamp: '2026-10-02T12:00:00-03:00',
+            grossAmount: 10000,
+            netAmount: 9500,
+            realAmount: null,
+            fees: -500,
+            taxes: null,
+            paymentMethod: 'visa',
+            paymentMethodType: 'credit_card',
+            brand: 'Visa',
+            installments: 3,
+            installmentNumber: 1,
+            lastFourDigits: '0042',
+          },
         },
-      },
-    ],
-  };
-  await page.route(`**/v1/imports/${id}**`, async (route) => {
-    if (new URL(route.request().url()).pathname.endsWith('/matches'))
-      return route.fulfill({
+      ],
+    };
+    let confirmations = 0;
+    await page.route(`**/v1/imports/${id}**`, async (route) => {
+      if (new URL(route.request().url()).pathname.endsWith('/matches'))
+        return route.fulfill({
+          json: [
+            {
+              itemId: batch.items[0].id,
+              batchId: id,
+              fileName: batch.fileName,
+              status: 'matched',
+              transactionId: transaction.id,
+              reason: 'Referência, data e valor correspondem.',
+              metadata: batch.items[0].metadata,
+            },
+          ],
+        });
+      if (route.request().method() === 'POST') {
+        expect(new URL(route.request().url()).pathname).toBe(`/v1/imports/${id}/confirmations`);
+        expect(route.request().headers()['idempotency-key']).toBeTruthy();
+        confirmations++;
+        if (outcome === 'rejected')
+          return route.fulfill({
+            status: 500,
+            json: { title: 'Falha sintética antes de confirmar.' },
+          });
+        batch.status = 'confirmed';
+        batch.version++;
+        if (outcome === 'lost-response') return route.abort('failed');
+      } else if (batch.status === 'confirmed' && outcome === 'refresh-failure') {
+        return route.fulfill({ status: 500, json: { title: 'Falha sintética ao atualizar.' } });
+      }
+      return route.fulfill({ json: batch });
+    });
+    await page.goto(`/imports/${id}`);
+    await expect(
+      page.getByText('EDI Mercado Pago · fonte de conciliação', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('0 novos · 1 a conciliar', { exact: false })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Confirmar .* movimentos/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Classificar entradas e saídas' })).toHaveCount(
+      0,
+    );
+    await expect(page.getByLabel('Tipo do movimento 2')).toBeEnabled();
+    await page.getByText('Detalhes da liquidação', { exact: true }).click();
+    await expect(page.getByText('0042', { exact: true })).toBeVisible();
+    await expect(page.getByText('Visa', { exact: true })).toBeVisible();
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Confirmar EDI e conciliar' }).click();
+    if (outcome === 'rejected') {
+      await expect(page.getByRole('alert')).toContainText('Falha sintética antes de confirmar.');
+      await expect(page.getByRole('button', { name: 'Confirmar EDI e conciliar' })).toBeEnabled();
+      await expect(
+        page.getByText('EDI confirmado. Operações vinculadas aos lançamentos financeiros.'),
+      ).toHaveCount(0);
+      expect(confirmations).toBe(1);
+      return;
+    }
+    await expect(
+      page.getByText('EDI confirmado. Operações vinculadas aos lançamentos financeiros.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Revisar para integrar às contas' })).toHaveCount(
+      0,
+    );
+    expect(confirmations).toBe(1);
+    await expect(page.getByRole('button', { name: 'Confirmar EDI e conciliar' })).toHaveCount(0);
+    if (outcome === 'refresh-failure') {
+      await expect(page.getByRole('button', { name: 'Atualizar relatório' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Desfazer importação' })).toBeDisabled();
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.route(`**/v1/transactions/${transaction.id}`, (route) =>
+      route.fulfill({
+        json: {
+          ...transaction,
+          reconciliationStatus: 'reconciled',
+          sourceOperationId: 'mp-external-123',
+        },
+      }),
+    );
+    await page.route(`**/v1/imports/transaction-sources/${transaction.id}`, (route) =>
+      route.fulfill({
         json: [
           {
             itemId: batch.items[0].id,
@@ -585,75 +666,24 @@ test('EDI reconciles existing movements and preserves source details', async ({ 
             fileName: batch.fileName,
             status: 'matched',
             transactionId: transaction.id,
-            reason: 'Referência, data e valor correspondem.',
+            reason: 'Correspondente',
             metadata: batch.items[0].metadata,
           },
         ],
-      });
-    if (route.request().method() === 'POST') {
-      expect(new URL(route.request().url()).pathname).toBe(`/v1/imports/${id}/confirmations`);
-      expect(route.request().headers()['idempotency-key']).toBeTruthy();
-      batch.status = 'confirmed';
-      batch.version++;
-    }
-    return route.fulfill({ json: batch });
+      }),
+    );
+    await page.goto(`/transactions?transaction=${transaction.id}`);
+    await expect(page.getByRole('dialog', { name: 'Detalhes do movimento' })).toBeVisible();
+    await expect(page.getByText('Detalhes do Mercado Pago', { exact: true })).toBeVisible();
+    await expect(page.getByText('Conciliada pelo EDI', { exact: true })).toBeVisible();
+    await expect(page.getByText('ID externo: mp-external-123', { exact: true })).toBeVisible();
+    await page.getByText('Detalhes da liquidação', { exact: true }).click();
+    await expect(page.getByText('0042', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ver relatório de origem' })).toHaveAttribute(
+      'href',
+      `/imports/${id}`,
+    );
   });
-  await page.goto(`/imports/${id}`);
-  await expect(
-    page.getByText('EDI Mercado Pago · fonte de conciliação', { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByText('0 novos · 1 a conciliar', { exact: false })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Confirmar .* movimentos/ })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Classificar entradas e saídas' })).toHaveCount(0);
-  await expect(page.getByLabel('Tipo do movimento 2')).toBeEnabled();
-  await page.getByText('Detalhes da liquidação', { exact: true }).click();
-  await expect(page.getByText('0042', { exact: true })).toBeVisible();
-  await expect(page.getByText('Visa', { exact: true })).toBeVisible();
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: 'Confirmar EDI e conciliar' }).click();
-  await expect(
-    page.getByText('EDI confirmado. Operações vinculadas aos lançamentos financeiros.'),
-  ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Revisar para integrar às contas' })).toHaveCount(
-    0,
-  );
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.route(`**/v1/transactions/${transaction.id}`, (route) =>
-    route.fulfill({
-      json: {
-        ...transaction,
-        reconciliationStatus: 'reconciled',
-        sourceOperationId: 'mp-external-123',
-      },
-    }),
-  );
-  await page.route(`**/v1/imports/transaction-sources/${transaction.id}`, (route) =>
-    route.fulfill({
-      json: [
-        {
-          itemId: batch.items[0].id,
-          batchId: id,
-          fileName: batch.fileName,
-          status: 'matched',
-          transactionId: transaction.id,
-          reason: 'Correspondente',
-          metadata: batch.items[0].metadata,
-        },
-      ],
-    }),
-  );
-  await page.goto(`/transactions?transaction=${transaction.id}`);
-  await expect(page.getByRole('dialog', { name: 'Detalhes do movimento' })).toBeVisible();
-  await expect(page.getByText('Detalhes do Mercado Pago', { exact: true })).toBeVisible();
-  await expect(page.getByText('Conciliada pelo EDI', { exact: true })).toBeVisible();
-  await expect(page.getByText('ID externo: mp-external-123', { exact: true })).toBeVisible();
-  await page.getByText('Detalhes da liquidação', { exact: true }).click();
-  await expect(page.getByText('0042', { exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Ver relatório de origem' })).toHaveAttribute(
-    'href',
-    `/imports/${id}`,
-  );
-});
 
 for (const width of [390, 1440])
   test(`category groups create, organize and select nested categories at ${width}px`, async ({

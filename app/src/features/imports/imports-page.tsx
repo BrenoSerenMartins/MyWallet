@@ -61,14 +61,27 @@ export function ImportsPage() {
       {importId ? (
         batch.isPending ? (
           <Loading />
-        ) : batch.isError ? (
-          <ErrorState error={batch.error} />
+        ) : batch.isError && !batch.data ? (
+          <ErrorState error={batch.error} retry={() => void batch.refetch()} />
         ) : (
-          <ImportReview
-            key={batch.data.id}
-            batch={batch.data}
-            refresh={() => client.invalidateQueries()}
-          />
+          <>
+            {batch.isError && (
+              <div className="review-banner" role="status">
+                <p>
+                  Não foi possível atualizar o relatório. Os últimos dados carregados continuam
+                  visíveis.
+                </p>
+                <Button className="secondary" onClick={() => void batch.refetch()}>
+                  Atualizar relatório
+                </Button>
+              </div>
+            )}
+            <ImportReview
+              key={batch.data!.id}
+              batch={batch.data!}
+              refresh={() => client.invalidateQueries()}
+            />
+          </>
         )
       ) : (
         <>

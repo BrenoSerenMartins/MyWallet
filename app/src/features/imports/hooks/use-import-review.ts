@@ -1,11 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../auth/auth-provider';
 import type { Category } from '../../../shared/api/resources';
 import { useState } from 'react';
-import { jsonBody, request } from '../../../shared/api/client';
+import { ApiError, jsonBody, request } from '../../../shared/api/client';
 import type { ImportBatch, ImportItem } from '../../../shared/api/resources';
 export function useImportReview(batch: ImportBatch, refresh: () => Promise<unknown>) {
   const { session } = useAuth();
+  const client = useQueryClient();
   const categories = useQuery({
     queryKey: [session?.user.id, 'categories'],
     queryFn: () => request<Category[]>('/categories'),
@@ -13,6 +14,9 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [confirmationSucceeded, setConfirmationSucceeded] = useState(false);
+  const status = confirmationSucceeded && batch.status === 'draft' ? 'confirmed' : batch.status;
+  const awaitingConfirmationRefresh = confirmationSucceeded && batch.status === 'draft';
   const [key] = useState(() => crypto.randomUUID());
   const selected = batch.items.filter((i) => i.selected);
   const unresolved = selected.filter(
@@ -63,6 +67,7 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
     }
   }
   async function confirm() {
+    if (busy || status !== 'draft') return;
     if (
       !window.confirm(
         selected.length
@@ -74,12 +79,32 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
     setBusy(true);
     setError('');
     try {
-      await request(`/imports/${batch.id}/confirmations`, {
-        method: 'POST',
-        headers: { 'Idempotency-Key': key },
-        body: jsonBody({ version: batch.version }),
-      });
-      await refresh();
+      try {
+        await request(`/imports/${batch.id}/confirmations`, {
+          method: 'POST',
+          headers: { 'Idempotency-Key': key },
+          body: jsonBody({ version: batch.version }),
+        });
+      } catch (failure) {
+        // A lost response does not tell us whether the server committed. Read the
+        // batch before offering another confirmation; never send a second POST here.
+        if (failure instanceof ApiError && failure.status > 0 && failure.status < 500)
+          throw failure;
+        let current: ImportBatch;
+        try {
+          current = await request<ImportBatch>(`/imports/${batch.id}`);
+        } catch {
+          throw new Error(
+            'Não foi possível verificar se a confirmação terminou. Atualize o relatório para conferir o status antes de tentar novamente.',
+          );
+        }
+        if (current.status !== 'confirmed') throw failure;
+        client.setQueryData([session?.user.id, 'import', batch.id], current);
+      }
+      setConfirmationSucceeded(true);
+      // Confirmation has already committed. A refresh failure must not turn it
+      // into a failed financial operation or re-enable the confirmation button.
+      await refresh().catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível confirmar.');
     } finally {
@@ -121,6 +146,7 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
         method: 'POST',
         headers: { 'If-Match': String(batch.version) },
       });
+      setConfirmationSucceeded(false);
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível desfazer.');
@@ -160,6 +186,8 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
     setPage,
     busy,
     error,
+    status,
+    awaitingConfirmationRefresh,
     selected,
     unresolved,
     review,

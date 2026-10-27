@@ -19,6 +19,8 @@ export function SettlementReview({
     setPage,
     busy,
     error,
+    status,
+    awaitingConfirmationRefresh,
     unresolved,
     review,
     confirm,
@@ -39,7 +41,7 @@ export function SettlementReview({
   return (
     <>
       <ReprocessImport
-        batch={batch}
+        batch={{ ...batch, status }}
         onProcessed={async () => {
           await refresh();
           setPage(0);
@@ -60,7 +62,7 @@ export function SettlementReview({
           </p>
         </div>
       </div>
-      {batch.status === 'history' && (
+      {status === 'history' && (
         <div className="review-banner">
           <strong>Relatório guardado no histórico, sem confirmação financeira.</strong>
           <Button disabled={busy} onClick={() => void reopenHistory()}>
@@ -68,13 +70,22 @@ export function SettlementReview({
           </Button>
         </div>
       )}
-      {batch.status === 'confirmed' && (
+      {status === 'confirmed' && (
         <div className="review-banner">
           <strong>EDI confirmado. Operações vinculadas aos lançamentos financeiros.</strong>
-          <Button className="secondary" disabled={busy} onClick={() => void reverse()}>
+          <Button
+            className="secondary"
+            disabled={busy || awaitingConfirmationRefresh}
+            onClick={() => void reverse()}
+          >
             Desfazer importação
           </Button>
         </div>
+      )}
+      {awaitingConfirmationRefresh && (
+        <p className="field-help" role="status">
+          Confirmação concluída. Atualize o relatório para carregar os detalhes mais recentes.
+        </p>
       )}
       {error && (
         <p role="alert" className="form-error">
@@ -123,7 +134,7 @@ export function SettlementReview({
               <ImportReviewRow
                 key={item.id}
                 item={item}
-                disabled={busy || batch.status !== 'draft'}
+                disabled={busy || status !== 'draft'}
                 categories={categories.data ?? []}
                 onReview={review}
               />
@@ -149,7 +160,7 @@ export function SettlementReview({
           </div>
         </div>
       </div>
-      {batch.status === 'draft' && (
+      {status === 'draft' && (
         <div className="review-confirm">
           <Button
             className="secondary"
@@ -171,7 +182,7 @@ export function SettlementReview({
           </Button>
         </div>
       )}
-      {unresolved > 0 && batch.status === 'draft' && (
+      {unresolved > 0 && status === 'draft' && (
         <p className="field-help">
           Resolva os registros pendentes antes de confirmar. Pagamentos com liberação pendente
           continuam em revisão; eventos de saldo reconhecidos entram pelo valor líquido do EDI.

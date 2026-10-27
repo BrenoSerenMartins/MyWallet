@@ -1,4 +1,4 @@
-import { ArgumentsHost, Catch, HttpException, type ExceptionFilter } from '@nestjs/common';
+import { ArgumentsHost, Catch, HttpException, Logger, type ExceptionFilter } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -20,6 +20,7 @@ export async function validateInput<T extends object>(
 }
 @Catch()
 export class SafeErrorFilter implements ExceptionFilter {
+  private readonly logger = new Logger(SafeErrorFilter.name);
   catch(error: unknown, host: ArgumentsHost) {
     const http = host.switchToHttp();
     const response = http.getResponse<Response>();
@@ -28,6 +29,15 @@ export class SafeErrorFilter implements ExceptionFilter {
     let status = error instanceof HttpException ? error.getStatus() : 500;
     if (['23503', '23514', '22P02', '22007', '22008'].includes(code ?? '')) status = 422;
     if (code === '23505') status = 409;
+    if (status >= 500) {
+      // Never log messages, SQL, parameters, headers or URLs: they can contain private data.
+      const diagnosticCode =
+        typeof code === 'string' && /^(?:[0-9A-Z]{5}|E[A-Z_]{2,40})$/.test(code)
+          ? code
+          : 'INTERNAL_ERROR';
+      const requestId = String(response.getHeader('X-Request-Id') ?? 'unknown');
+      this.logger.error(`Request failed: code=${diagnosticCode}; requestId=${requestId}.`);
+    }
     const raw = error instanceof HttpException ? error.getResponse() : null;
     const message =
       typeof raw === 'string'
