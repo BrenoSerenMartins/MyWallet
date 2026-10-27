@@ -77,6 +77,70 @@
         "tags": ["Counterparties"]
       }
     },
+    "/v1/counterparties/suggestions": {
+      "post": {
+        "operationId": "CounterpartiesController_suggestions",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CounterpartyLookupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CounterpartyCandidateDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Counterparties"]
+      }
+    },
+    "/v1/counterparties/{id}/identifiers": {
+      "post": {
+        "operationId": "CounterpartiesController_link",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CounterpartyIdentifierDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Counterparties"]
+      }
+    },
     "/v1/counterparties/{id}": {
       "patch": {
         "operationId": "CounterpartiesController_update",
@@ -1472,6 +1536,54 @@
         },
         "required": ["name"]
       },
+      "CounterpartyLookupDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "sourceKind": {
+            "type": "string",
+            "enum": ["manual", "account_statement", "benefit_statement"]
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": ["accountId", "sourceKind", "value"]
+      },
+      "CounterpartyCandidateDto": {
+        "type": "object",
+        "properties": {
+          "counterpartyId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": ["name", "abbreviation", "similar_description"]
+          }
+        },
+        "required": ["counterpartyId", "name", "reason"]
+      },
+      "CounterpartyIdentifierDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "sourceKind": {
+            "type": "string",
+            "enum": ["manual", "account_statement", "benefit_statement"]
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": ["accountId", "sourceKind", "value"]
+      },
       "UpdateCounterpartyDto": {
         "type": "object",
         "properties": {
@@ -1867,6 +1979,9 @@
             "type": "string"
           },
           "rememberCategory": {
+            "type": "boolean"
+          },
+          "rememberCounterparty": {
             "type": "boolean"
           },
           "accountId": {
@@ -2266,6 +2381,15 @@
           "rememberCategory": {
             "type": "boolean"
           },
+          "rememberCounterparty": {
+            "type": "boolean"
+          },
+          "counterpartySuggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CounterpartyCandidateDto"
+            }
+          },
           "counterpartyId": {
             "type": "string",
             "nullable": true
@@ -2537,6 +2661,9 @@
             "nullable": true
           },
           "rememberCategory": {
+            "type": "boolean"
+          },
+          "rememberCounterparty": {
             "type": "boolean"
           },
           "refundOfId": {

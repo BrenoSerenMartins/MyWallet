@@ -299,12 +299,14 @@ Saldos fornecidos pelo banco são dados opcionais para conferência, dentro dos 
 
 Devoluções vinculadas mantêm o controle da compra/receita original e a categoria. Vínculos e fatos bancários legados continuam preservados nos backups; retirar o EDI do envio não apaga lançamentos financeiros.
 
-### Agentes, identificações e categorias automáticas
+### Pessoas, estabelecimentos e reconhecimento de descrições
 
-Em **Agentes e regras**, cadastre uma pessoa ou estabelecimento e relacione a descrição apresentada no extrato. A relação vale para a conta e para o tipo de movimento escolhidos. Uma ação aplica a categoria ao histórico reconhecido sem categoria ou já classificado por regra e informa quantos lançamentos foram atualizados. Escolhas manuais, valores, datas e conciliação são preservados. Alterar a categoria da regra atualiza os lançamentos que a seguem.
+Em **Pessoas e estabelecimentos**, mantenha um cadastro para cada pessoa ou empresa e vincule várias descrições de origem. **Adicionar descrição de reconhecimento** relaciona uma nova descrição ao histórico e aos próximos movimentos da conta sem exigir categoria. Regras de categoria continuam separadas por conta e tipo (receita/despesa); escolhas manuais, valores, datas e conciliação são preservados.
 
-Também é possível marcar **Usar esta categoria neste agente** ao registrar/editar um lançamento ou durante a revisão de uma importação. Na revisão, a intenção só cria o agente/regra ao confirmar os movimentos. Regras e agentes podem ser desativados; remover uma identificação interrompe seu reconhecimento sem apagar o histórico.
+Descrições já vinculadas são reconhecidas mesmo com diferenças de acento, pontuação, maiúsculas e espaços. Mudanças de Pix para cartão, nomes abreviados e pequenas diferenças de escrita podem gerar **Possível pessoa ou estabelecimento**. O app mostra até três opções para você conferir; semelhança nunca cria um vínculo automaticamente. Nomes ambíguos ou genéricos e IDs de operações não comprovam identidade.
 
-Um agente pode ter várias descrições de origem. Nomes parecidos, valores iguais e o ID de uma operação não identificam automaticamente um estabelecimento. As relações são exatas e específicas por conta/origem; relações antigas de EDI/loja continuam armazenadas por compatibilidade, sem oferecer EDI como origem para novas relações no formulário.
+Ao selecionar **Vincular … e reconhecer esta descrição**, salve o lançamento ou a revisão e confirme o extrato para gravar a relação. Na revisão, nada é aprendido antes da confirmação financeira. A opção de reconhecer a descrição é independente de **Usar esta categoria para esta pessoa ou estabelecimento neste tipo de movimento**. Assim, a mesma pessoa pode aparecer em receitas e despesas sem impor a mesma categoria.
+
+Cadastros/regras podem ser desativados e descrições removidas sem apagar histórico. Relações antigas de EDI/loja ficam preservadas por compatibilidade. O backup JSON v5 mantém os vínculos, inclusive ambiguidades antigas que o reconhecimento não pode decidir sozinho. Esta melhoria não exige migration extra.
 
 As migrations `202610260005_counterparty_rules.sql` e `202610260006_counterparty_external_identifiers.sql` criam os vínculos protegidos por espaço. O backup financeiro JSON v5 preserva agentes, identificações ativas/desativadas, regras e a origem da classificação, com remapeamento de IDs na restauração; backups v1–v4 continuam aceitos.

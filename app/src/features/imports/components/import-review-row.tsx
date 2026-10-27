@@ -5,11 +5,15 @@ import { money, shortDate } from '../../../shared/formatting/money';
 import { SettlementDetails } from '../../../shared/ui/settlement-details';
 export function ImportReviewRow({
   item,
+  accountId,
+  sourceKind,
   disabled,
   categories,
   onReview,
 }: {
   item: ImportItem;
+  accountId: string;
+  sourceKind: string;
   disabled: boolean;
   categories: Category[];
   onReview: (
@@ -20,6 +24,7 @@ export function ImportReviewRow({
         | 'counterpartyId'
         | 'counterpartyName'
         | 'rememberCategory'
+        | 'rememberCounterparty'
         | 'selected'
         | 'transactionType'
         | 'categoryId'
@@ -84,13 +89,19 @@ export function ImportReviewRow({
           <span className="badge">Devolução vinculada · reduz a categoria original</span>
         )}
         {item.classificationRuleId && (
-          <span className="badge">Categoria automática · regra do agente</span>
+          <span className="badge">Categoria automática · regra salva</span>
         )}
         {item.action === 'create' &&
           !locked &&
           !item.refundOfId &&
           ['income', 'expense'].includes(item.transactionType) && (
-            <ImportCounterpartyEditor item={item} onReview={onReview} />
+            <ImportCounterpartyEditor
+              key={`${item.id}-${item.counterpartyId ?? ''}`}
+              item={item}
+              accountId={accountId}
+              sourceKind={sourceKind}
+              onReview={onReview}
+            />
           )}
         {item.actionReason && <p className="field-help">{item.actionReason}</p>}
         {item.action === 'review' && !!item.candidateDescriptions?.length && (

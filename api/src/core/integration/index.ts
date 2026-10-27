@@ -46,6 +46,7 @@ export interface TransactionInput {
   counterpartyId?: string | null;
   counterpartyName?: string | null;
   rememberCategory?: boolean;
+  rememberCounterparty?: boolean;
   classificationRuleId?: string | null;
   sourceKind?: import('./counterparties.js').SourceKind;
   refundOfId?: string | null;
@@ -70,6 +71,10 @@ export interface CategoryReads {
   validate(id: string, type: string): Promise<void>;
 }
 export interface LedgerWrites {
+  applyCounterpartyRelation(
+    accountId: string,
+    counterpartyId: string,
+  ): Promise<{ linked: number; categorized: number }>;
   applyClassificationRule(ruleId: string): Promise<{ updated: number }>;
   attachRefund(transactionId: string, refundOfId: string): Promise<void>;
   create(input: TransactionInput, imported?: boolean): Promise<{ id: string }>;

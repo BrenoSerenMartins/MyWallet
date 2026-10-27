@@ -20,6 +20,9 @@ import { requireUuid } from '../../../core/rest/index.js';
 import { CounterpartiesService } from '../services/counterparties.service.js';
 import {
   CounterpartyResourceDto,
+  CounterpartyIdentifierDto,
+  CounterpartyLookupDto,
+  CounterpartyCandidateDto,
   CreateCounterpartyDto,
   UpdateCounterpartyDto,
   ToggleRuleDto,
@@ -44,6 +47,19 @@ export class CounterpartiesController {
   ) {
     const input = await validateInput(CreateCounterpartyDto, body);
     return this.db.forUser(r.identity.id, () => this.service.create(input.name));
+  }
+  @Post('suggestions')
+  @ApiBody({ type: CounterpartyLookupDto })
+  @ApiOkResponse({ type: [CounterpartyCandidateDto] })
+  async suggestions(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
+    const input = await validateInput(CounterpartyLookupDto, body);
+    return this.db.forUser(r.identity.id, () => this.service.candidates(input), true);
+  }
+  @Post(':id/identifiers')
+  @ApiBody({ type: CounterpartyIdentifierDto })
+  async link(@Req() r: AuthenticatedRequest, @Param('id') id: string, @Body() body: unknown) {
+    const input = await validateInput(CounterpartyIdentifierDto, body);
+    return this.db.forUser(r.identity.id, () => this.rules.link(requireUuid(id), input));
   }
   @Patch(':id') @ApiBody({ type: UpdateCounterpartyDto }) async update(
     @Req() r: AuthenticatedRequest,

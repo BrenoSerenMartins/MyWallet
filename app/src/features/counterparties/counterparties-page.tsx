@@ -28,12 +28,19 @@ export function CounterpartiesPage() {
     setBusy(true);
     setError('');
     try {
-      const result = await request<{ updated?: number }>(path, {
-        method,
-        headers: version ? { 'If-Match': String(version) } : undefined,
-        body: body ? jsonBody(body) : undefined,
-      });
-      if (result.updated !== undefined)
+      const result = await request<{ updated?: number; linked?: number; categorized?: number }>(
+        path,
+        {
+          method,
+          headers: version ? { 'If-Match': String(version) } : undefined,
+          body: body ? jsonBody(body) : undefined,
+        },
+      );
+      if (result.linked !== undefined)
+        setNotice(
+          `${result.linked} lançamentos vinculados; ${result.categorized ?? 0} categorias atualizadas pelas regras existentes. Valores e escolhas manuais preservados.`,
+        );
+      else if (result.updated !== undefined)
         setNotice(
           `${result.updated} lançamentos atualizados. Escolhas manuais e valores foram preservados.`,
         );
@@ -56,7 +63,7 @@ export function CounterpartiesPage() {
     <div className="counterparties-page">
       <header className="page-heading">
         <div>
-          <h1>Agentes e regras</h1>
+          <h1>Pessoas e estabelecimentos</h1>
           <p>Pessoas, estabelecimentos e as relações que simplificam seus próximos lançamentos.</p>
         </div>
       </header>
@@ -68,7 +75,7 @@ export function CounterpartiesPage() {
         }}
       >
         <label>
-          Novo agente
+          Novo cadastro
           <input
             required
             maxLength={150}
@@ -78,7 +85,7 @@ export function CounterpartiesPage() {
           />
         </label>
         <div className="form-actions">
-          <Button disabled={busy || !newName.trim()}>Criar agente</Button>
+          <Button disabled={busy || !newName.trim()}>Cadastrar</Button>
         </div>
       </form>
       {notice && (
@@ -87,7 +94,7 @@ export function CounterpartiesPage() {
         </p>
       )}
       <label>
-        Buscar agente ou identificação
+        Buscar pessoa, estabelecimento ou descrição
         <input
           type="search"
           value={search}
@@ -102,10 +109,10 @@ export function CounterpartiesPage() {
       )}
       {!filtered.length && (
         <div className="panel">
-          <h2>Nenhum agente encontrado</h2>
+          <h2>Nenhuma pessoa ou estabelecimento encontrado</h2>
           <p>
-            Abra um lançamento, escolha a pessoa ou estabelecimento e marque a opção de lembrar a
-            categoria. A regra será aplicada aos próximos movimentos reconhecidos.
+            Abra um lançamento, escolha a pessoa ou estabelecimento e marque a opção de reconhecer a
+            descrição. A regra será aplicada aos próximos movimentos reconhecidos.
           </p>
         </div>
       )}
@@ -133,6 +140,7 @@ export function CounterpartiesPage() {
             )
           }
           relate={(value) => save(`/counterparties/${agent.id}/relations`, 'POST', value)}
+          link={(value) => save(`/counterparties/${agent.id}/identifiers`, 'POST', value)}
           toggleRule={(id, enabled, version, categoryId) =>
             void save(`/counterparties/rules/${id}`, 'PATCH', { enabled, categoryId }, version)
           }

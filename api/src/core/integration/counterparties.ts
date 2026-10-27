@@ -60,7 +60,13 @@ export interface CounterpartyRules {
     categories: Map<string, string>,
   ): Promise<{ agents: Map<string, string>; rules: Map<string, string> }>;
 }
+export interface CounterpartyCandidate {
+  counterpartyId: string;
+  name: string;
+  reason: 'name' | 'abbreviation' | 'similar_description';
+}
 export interface ClassificationSuggestion {
+  counterpartySuggestions?: CounterpartyCandidate[];
   counterpartyId: string | null;
   categoryId: string | null;
   classificationRuleId: string | null;

@@ -1739,10 +1739,15 @@ test('a transaction can explicitly remember an agent category without imposing a
   await dialog
     .getByRole('combobox', { name: 'Categoria', exact: true })
     .selectOption(automationCategory.id);
-  await dialog.getByText('Pessoa ou estabelecimento', { exact: true }).click();
-  await dialog.getByRole('combobox', { name: 'Agente', exact: true }).selectOption('new');
-  await dialog.getByLabel('Nome do agente').fill('Supermercado Exemplo');
-  await dialog.getByLabel(/Usar esta categoria neste agente/).check();
+  await dialog
+    .locator('summary')
+    .filter({ hasText: /^Pessoa ou estabelecimento/ })
+    .click();
+  await dialog
+    .getByRole('combobox', { name: 'Pessoa ou estabelecimento', exact: true })
+    .selectOption('new');
+  await dialog.getByLabel('Nome da pessoa ou estabelecimento').fill('Supermercado Exemplo');
+  await dialog.getByLabel(/Usar esta categoria para esta pessoa/).check();
   await dialog.getByRole('button', { name: 'Registrar movimento', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(saved).toMatchObject({
@@ -1775,7 +1780,7 @@ for (const width of [390, 1440])
     });
     await page.goto('/counterparties');
     await expect(
-      page.getByRole('heading', { name: 'Agentes e regras', exact: true }),
+      page.getByRole('heading', { name: 'Pessoas e estabelecimentos', exact: true }),
     ).toBeVisible();
     await page.getByText(automationAgent.name, { exact: true }).click();
     await page.getByText('Relacionar uma origem e aplicar ao histórico', { exact: true }).click();
@@ -1864,13 +1869,11 @@ test('import review saves learning intent for confirmation and shows the automat
     return r.fulfill({ json: batch });
   });
   await page.goto(`/imports/${id}`);
-  await expect(
-    page.getByText('Categoria automática · regra do agente', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('Categoria automática · regra salva', { exact: true })).toBeVisible();
   await page
-    .getByRole('combobox', { name: 'Agente', exact: true })
+    .getByRole('combobox', { name: 'Pessoa ou estabelecimento', exact: true })
     .selectOption(automationAgent.id);
-  await page.getByLabel(/Usar esta categoria neste agente/).check();
+  await page.getByLabel(/Usar esta categoria para esta pessoa/).check();
   await page
     .getByRole('button', { name: 'Salvar relação para a confirmação', exact: true })
     .click();
@@ -1879,9 +1882,7 @@ test('import review saves learning intent for confirmation and shows the automat
   await expect(
     page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
   ).toBeEnabled();
-  await expect(
-    page.getByText('Categoria automática · regra do agente', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('Categoria automática · regra salva', { exact: true })).toBeVisible();
 });
 
 test('retained EDI is read-only and cannot post or reprocess new movements', async ({ page }) => {
@@ -1917,4 +1918,104 @@ test('retained EDI is read-only and cannot post or reprocess new movements', asy
   await expect(page.getByRole('button', { name: /Confirmar|Reprocessar/ })).toHaveCount(0);
   await expect(page.getByLabel('Tipo do movimento 1')).toBeDisabled();
   expect(mutations).toBe(0);
+});
+
+for (const width of [390, 1440])
+  test(`accepts a suggested identity without forcing a category at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1100 });
+    const maria = { ...automationAgent, name: 'Maria Oliveira', identifiers: [], rules: [] };
+    await page.route('**/v1/counterparties', (route) => route.fulfill({ json: [maria] }));
+    await page.route('**/v1/counterparties/suggestions', (route) => {
+      expect(route.request().method()).toBe('POST');
+      const input = route.request().postDataJSON();
+      return route.fulfill({
+        json: input.value.includes('Maria')
+          ? [{ counterpartyId: maria.id, name: maria.name, reason: 'abbreviation' }]
+          : [],
+      });
+    });
+    let saved: Record<string, unknown> | undefined;
+    await page.route('**/v1/transactions', (route) => {
+      if (route.request().method() === 'POST') {
+        saved = route.request().postDataJSON();
+        return route.fulfill({ json: { ...transaction, ...saved } });
+      }
+      return route.fulfill({ json: { items: [], nextCursor: null } });
+    });
+    await page.goto('/transactions?new=1');
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Valor (R$)').fill('25,00');
+    await dialog.getByLabel('Descrição', { exact: true }).fill('Pagamento cartão Maria Oliv');
+    await expect(
+      dialog.getByText('Possível pessoa ou estabelecimento', { exact: true }),
+    ).toBeVisible();
+    expect(saved).toBeUndefined();
+    await dialog
+      .getByRole('button', {
+        name: 'Vincular Maria Oliveira e reconhecer esta descrição',
+        exact: true,
+      })
+      .click();
+    await expect(
+      dialog.getByRole('combobox', { name: 'Pessoa ou estabelecimento', exact: true }),
+    ).toHaveValue(maria.id);
+    await expect(
+      dialog.getByLabel(
+        'Reconhecer esta descrição no histórico e nos próximos movimentos desta conta',
+      ),
+    ).toBeChecked();
+    await expect(
+      dialog.getByLabel(
+        'Usar esta categoria para esta pessoa ou estabelecimento neste tipo de movimento',
+      ),
+    ).not.toBeChecked();
+    await dialog.getByRole('button', { name: 'Registrar movimento', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(saved).toMatchObject({
+      counterpartyId: maria.id,
+      rememberCounterparty: true,
+      rememberCategory: false,
+      categoryId: null,
+      amount: -2500,
+    });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+
+test('links an additional statement description from the person page without requiring a category', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.route('**/v1/counterparties', (route) =>
+    route.fulfill({ json: [{ ...automationAgent, name: 'Maria Oliveira' }] }),
+  );
+  let input: Record<string, unknown> | undefined;
+  await page.route(`**/v1/counterparties/${automationAgent.id}/identifiers`, (route) => {
+    input = route.request().postDataJSON();
+    return route.fulfill({ json: { linked: 3, categorized: 0 } });
+  });
+  await page.goto('/counterparties');
+  await page.getByText('Maria Oliveira', { exact: true }).click();
+  await page.getByText('Adicionar descrição de reconhecimento', { exact: true }).click();
+  await page
+    .getByRole('combobox', { name: 'Conta da descrição', exact: true })
+    .selectOption(account.id);
+  await page
+    .getByLabel('Nova descrição do extrato', { exact: true })
+    .fill('Pagamento cartão Maria Oliveira');
+  await page
+    .getByRole('button', { name: 'Vincular descrição e aplicar ao histórico', exact: true })
+    .click();
+  await expect(page.getByRole('status')).toContainText(
+    '3 lançamentos vinculados; 0 categorias atualizadas',
+  );
+  expect(input).toEqual({
+    accountId: account.id,
+    sourceKind: 'account_statement',
+    value: 'Pagamento cartão Maria Oliveira',
+  });
 });

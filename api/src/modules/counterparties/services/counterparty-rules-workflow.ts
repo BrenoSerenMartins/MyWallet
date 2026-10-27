@@ -6,7 +6,11 @@ import {
   type LedgerWrites,
 } from '../../../core/integration/index.js';
 import { CounterpartiesService } from './counterparties.service.js';
-import type { CounterpartyRelationDto, ToggleRuleDto } from '../dto/counterparty.dto.js';
+import type {
+  CounterpartyIdentifierDto,
+  CounterpartyRelationDto,
+  ToggleRuleDto,
+} from '../dto/counterparty.dto.js';
 @Injectable()
 export class CounterpartyRulesWorkflow {
   constructor(
@@ -14,6 +18,11 @@ export class CounterpartyRulesWorkflow {
     @Inject(ACCOUNT_READS) private readonly accounts: AccountReads,
     @Inject(LEDGER_WRITES) private readonly ledger: LedgerWrites,
   ) {}
+  async link(agentId: string, input: CounterpartyIdentifierDto) {
+    await this.accounts.find(input.accountId, true);
+    await this.agents.linkIdentifier(agentId, input);
+    return this.ledger.applyCounterpartyRelation(input.accountId, agentId);
+  }
   async relate(agentId: string, input: CounterpartyRelationDto) {
     await this.accounts.find(input.accountId, true);
     const id = await this.agents.relate(agentId, input);

@@ -163,6 +163,7 @@ export class ImportsRepository {
         counterpartyId: item.counterpartyId,
         counterpartyName: item.counterpartyName,
         rememberCategory: item.rememberCategory,
+        rememberCounterparty: item.rememberCounterparty,
       },
     }));
     await this.db.query('DELETE FROM wallet.import_items WHERE user_id=$1 AND batch_id=$2', [
@@ -208,6 +209,7 @@ export class ImportsRepository {
       counterpartyId?: string | null;
       counterpartyName?: string | null;
       rememberCategory?: boolean;
+      rememberCounterparty?: boolean;
       selected: boolean;
       transactionType: string;
       categoryId?: string | null;
@@ -232,6 +234,7 @@ export class ImportsRepository {
           counterpartyId: input.counterpartyId,
           counterpartyName: input.counterpartyName,
           rememberCategory: input.rememberCategory,
+          rememberCounterparty: input.rememberCounterparty,
         }),
       ],
     );

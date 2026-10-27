@@ -1,3 +1,4 @@
+import { CounterpartyCandidateDto } from './counterparty-candidate-dto.js';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class AccountResourceDto {
   @ApiProperty({ type: Boolean }) canEditOpeningPosition!: boolean;
@@ -88,6 +89,9 @@ export class ReconciliationCandidateResourceDto {
 export class ImportItemResourceDto {
   @ApiPropertyOptional({ type: String, nullable: true }) counterpartyName?: string | null;
   @ApiPropertyOptional({ type: Boolean }) rememberCategory?: boolean;
+  @ApiPropertyOptional({ type: Boolean }) rememberCounterparty?: boolean;
+  @ApiPropertyOptional({ type: () => [CounterpartyCandidateDto] })
+  counterpartySuggestions?: CounterpartyCandidateDto[];
   @ApiPropertyOptional({ type: String, nullable: true }) counterpartyId?: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) classificationRuleId?: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) refundOfId?: string | null;

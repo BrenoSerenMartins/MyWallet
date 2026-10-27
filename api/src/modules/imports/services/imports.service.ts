@@ -239,7 +239,10 @@ export class ImportsService {
       throw new UnprocessableEntityException('O tipo não corresponde ao sinal do valor.');
     if (input.categoryId && !input.refundOfId)
       await this.categories.validate(input.categoryId, input.transactionType);
-    if ((input.rememberCategory || input.counterpartyName) && item.action !== 'create')
+    if (
+      (input.rememberCategory || input.rememberCounterparty || input.counterpartyName) &&
+      item.action !== 'create'
+    )
       throw new UnprocessableEntityException(
         'Edite a relação no lançamento existente depois de conciliar.',
       );
@@ -316,6 +319,7 @@ export class ImportsService {
             sourceStoreId: item.metadata?.storeId,
             counterpartyName: item.counterpartyName ?? undefined,
             rememberCategory: item.rememberCategory,
+            rememberCounterparty: item.rememberCounterparty,
             counterpartyId: item.counterpartyId ?? undefined,
             classificationRuleId: item.classificationRuleId,
             categoryId: item.categoryId,

@@ -107,6 +107,37 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       }
     if (counterpartyId) await this.applyRememberedRule({ ...entry, counterpartyId });
   }
+  async applyCounterpartyRelation(accountId: string, counterpartyId: string) {
+    const account = await this.accounts.find(accountId, true);
+    const state = await this.counterparties.snapshot();
+    if (
+      account.archived ||
+      !state.agents.some((agent) => agent.id === counterpartyId && agent.enabled)
+    )
+      throw new UnprocessableEntityException(
+        'Escolha uma pessoa ou estabelecimento e uma conta ativos.',
+      );
+    const linked = await this.repository.applyCounterpartyRelation(accountId, counterpartyId);
+    let categorized = 0;
+    for (const rule of state.rules.filter(
+      (rule) =>
+        rule.counterpartyId === counterpartyId && rule.accountId === accountId && rule.enabled,
+    )) {
+      // Archived categories do not block learning a person's identity.
+      const categories = await this.categories.list();
+      if (
+        !categories.some(
+          (category) =>
+            category.id === rule.categoryId &&
+            !category.archived &&
+            category.type === rule.transactionType,
+        )
+      )
+        continue;
+      categorized += (await this.repository.applyClassificationRule(rule)).updated;
+    }
+    return { linked, categorized };
+  }
   async applyClassificationRule(ruleId: string) {
     const state = await this.counterparties.snapshot();
     const rule = state.rules.find((rule) => rule.id === ruleId);
@@ -211,8 +242,10 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     if (!imported && !['income', 'expense'].includes(input.transactionType))
       throw new UnprocessableEntityException('Use o fluxo de transferência.');
     const created = await this.repository.insert(input);
+    if (input.rememberCounterparty && input.counterpartyId)
+      await this.applyCounterpartyRelation(input.accountId, input.counterpartyId);
     if (input.rememberCategory) await this.applyRememberedRule(input);
-    return created;
+    return input.rememberCounterparty ? this.find(created.id) : created;
   }
   async adjustBalance(
     accountId: string,
@@ -300,7 +333,8 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     );
     await this.validate(input);
     const updated = await this.repository.update(id, input);
-    if (input.rememberCategory && input.counterpartyId)
+    if (!updated) throw new NotFoundException('Lançamento não encontrado.');
+    if ((input.rememberCategory || input.rememberCounterparty) && input.counterpartyId)
       for (const source of await this.repository.evidence(id))
         if (source.description || source.storeId)
           await this.counterparties.observe(
@@ -310,8 +344,10 @@ export class LedgerService implements LedgerWrites, LedgerReads {
             source.description ?? '',
             source.storeId,
           );
+    if (input.rememberCounterparty && input.counterpartyId)
+      await this.applyCounterpartyRelation(input.accountId, input.counterpartyId);
     if (input.rememberCategory) await this.applyRememberedRule(input);
-    return updated;
+    return input.rememberCounterparty ? this.find(updated.id) : updated;
   }
   async reverse(id: string, version: string) {
     const current = await this.find(id);

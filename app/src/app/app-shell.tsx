@@ -27,7 +27,12 @@ const navigation = [
   { to: '/planning', label: 'Planejamento', mobile: 'Planejar', Icon: CalendarDays },
   { to: '/imports', label: 'Importar extrato', mobile: 'Importar', Icon: Upload },
   { to: '/categories', label: 'Grupos e categorias', mobile: 'Categorias', Icon: FolderTree },
-  { to: '/counterparties', label: 'Agentes e regras', mobile: 'Agentes', Icon: UsersRound },
+  {
+    to: '/counterparties',
+    label: 'Pessoas e estabelecimentos',
+    mobile: 'Pessoas',
+    Icon: UsersRound,
+  },
   { to: '/settings', label: 'Preferências', mobile: 'Mais', Icon: Settings2 },
 ];
 export function AppShell() {

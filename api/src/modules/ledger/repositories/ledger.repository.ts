@@ -1,3 +1,4 @@
+import { recognizedCounterpartiesSql } from './counterparty-recognition-sql.js';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../../../core/database/index.js';
@@ -35,24 +36,25 @@ export class LedgerRepository {
         row.source_evidence as import('../../../core/integration/index.js').SourceEvidence[],
     }));
   }
+  async applyCounterpartyRelation(accountId: string, counterpartyId: string) {
+    const rows = await this.db.query(
+      `${recognizedCounterpartiesSql}
+      UPDATE wallet.transactions t SET counterparty_id=$3,version=t.version+1,updated_at=now()
+      WHERE t.user_id=$1 AND t.account_id=$2 AND t.counterparty_id IS NULL AND t.reversed_at IS NULL
+        AND t.transaction_type IN ('income','expense') AND t.refund_of_id IS NULL
+        AND t.balance_adjustment IS NULL AND t.transfer_group_id IS NULL
+        AND EXISTS(SELECT 1 FROM recognized x WHERE x.id=t.id AND x.counterparty_id=$3)
+      RETURNING t.id`,
+      [this.db.userId, accountId, counterpartyId],
+    );
+    return rows.length;
+  }
   async applyClassificationRule(
     rule: import('../../../core/integration/index.js').ClassificationRule,
   ) {
     const rows = await this.db.query(
       `
-    WITH descriptions AS (
-      SELECT t.id,t.source_kind,'description' AS identifier_kind,lower(regexp_replace(btrim(normalize(t.description,NFKC)), '[[:space:]]+', ' ', 'g')) AS value
-      FROM wallet.transactions t WHERE t.user_id=$1 AND t.account_id=$2 AND t.reversed_at IS NULL
-      UNION
-      SELECT s.transaction_id,s.source_data->>'reportType','description',lower(regexp_replace(btrim(normalize(s.source_data->>'description',NFKC)), '[[:space:]]+', ' ', 'g'))
-      FROM wallet.transaction_sources s WHERE s.user_id=$1 AND s.account_id=$2 AND s.source_data->>'description' IS NOT NULL
-      UNION
-      SELECT s.transaction_id,'settlement','store_id',btrim(s.source_data->>'storeId') FROM wallet.transaction_sources s WHERE s.user_id=$1 AND s.account_id=$2 AND s.source_data->>'reportType'='settlement' AND s.source_data->>'storeId' IS NOT NULL
-    ), observed AS (
-      SELECT d.id,i.counterparty_id FROM descriptions d
-      JOIN wallet.counterparty_identifiers i ON i.user_id=$1 AND i.account_id=$2 AND i.enabled AND i.source_kind=d.source_kind AND i.identifier_kind=d.identifier_kind AND i.normalized_value=d.value
-      JOIN wallet.counterparties c ON c.id=i.counterparty_id AND c.enabled
-    ), recognized AS (SELECT id,min(counterparty_id::text)::uuid AS counterparty_id FROM observed GROUP BY id HAVING count(DISTINCT counterparty_id)=1)
+    ${recognizedCounterpartiesSql}
     UPDATE wallet.transactions t SET counterparty_id=$3,category_id=$4,classification_rule_id=$5,version=t.version+1,updated_at=now()
     WHERE t.user_id=$1 AND t.account_id=$2 AND t.transaction_type=$6 AND t.reversed_at IS NULL
       AND t.refund_of_id IS NULL AND t.balance_adjustment IS NULL AND t.transfer_group_id IS NULL

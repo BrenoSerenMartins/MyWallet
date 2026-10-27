@@ -28,6 +28,7 @@ export function TransactionForm({
   const [agent, setAgent] = useState(entry?.counterpartyId ?? '');
   const [agentName, setAgentName] = useState('');
   const [remember, setRemember] = useState(false);
+  const [rememberIdentity, setRememberIdentity] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [key] = useState(() => crypto.randomUUID());
@@ -58,6 +59,7 @@ export function TransactionForm({
             counterpartyId: agent === 'new' ? null : agent || (entry ? null : undefined),
             counterpartyName: agent === 'new' ? agentName : undefined,
             rememberCategory: remember && !!category && !!agent,
+            rememberCounterparty: rememberIdentity && !!agent,
             accountId: account,
             description,
             transactionDate: date,
@@ -182,6 +184,11 @@ export function TransactionForm({
       )}
       {kind !== 'transfer' && !entry?.balanceAdjustment && !entry?.refundOfId && (
         <CounterpartyFields
+          accountId={account}
+          description={description}
+          sourceKind={entry?.sourceKind ?? 'manual'}
+          rememberIdentity={rememberIdentity}
+          onRememberIdentity={setRememberIdentity}
           agent={agent}
           name={agentName}
           remember={remember}

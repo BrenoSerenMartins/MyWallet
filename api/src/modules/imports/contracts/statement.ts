@@ -52,6 +52,7 @@ export interface CounterpartyIntent {
   counterpartyId?: string | null;
   counterpartyName?: string | null;
   rememberCategory?: boolean;
+  rememberCounterparty?: boolean;
 }
 export interface SavedImportItem
   extends CounterpartyIntent, Omit<StatementRow, 'sourcePage' | 'metadata'> {

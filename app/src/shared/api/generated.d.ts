@@ -52,6 +52,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/counterparties/suggestions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CounterpartiesController_suggestions'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/counterparties/{id}/identifiers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CounterpartiesController_link'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/counterparties/{id}': {
     parameters: {
       query?: never;
@@ -680,6 +712,24 @@ export interface components {
     CreateCounterpartyDto: {
       name: string;
     };
+    CounterpartyLookupDto: {
+      accountId: string;
+      /** @enum {string} */
+      sourceKind: 'manual' | 'account_statement' | 'benefit_statement';
+      value: string;
+    };
+    CounterpartyCandidateDto: {
+      counterpartyId: string;
+      name: string;
+      /** @enum {string} */
+      reason: 'name' | 'abbreviation' | 'similar_description';
+    };
+    CounterpartyIdentifierDto: {
+      accountId: string;
+      /** @enum {string} */
+      sourceKind: 'manual' | 'account_statement' | 'benefit_statement';
+      value: string;
+    };
     UpdateCounterpartyDto: {
       name: string;
       enabled: boolean;
@@ -797,6 +847,7 @@ export interface components {
       counterpartyId?: string | null;
       counterpartyName?: string;
       rememberCategory?: boolean;
+      rememberCounterparty?: boolean;
       accountId: string;
       categoryId?: string;
       transactionDate: string;
@@ -906,6 +957,8 @@ export interface components {
     ImportItemResourceDto: {
       counterpartyName?: string | null;
       rememberCategory?: boolean;
+      rememberCounterparty?: boolean;
+      counterpartySuggestions?: components['schemas']['CounterpartyCandidateDto'][];
       counterpartyId?: string | null;
       classificationRuleId?: string | null;
       refundOfId?: string | null;
@@ -974,6 +1027,7 @@ export interface components {
       counterpartyId?: string | null;
       counterpartyName?: string | null;
       rememberCategory?: boolean;
+      rememberCounterparty?: boolean;
       refundOfId?: string | null;
       confirmNew?: boolean;
       linkedTransactionId?: string | null;
@@ -1086,6 +1140,50 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': components['schemas']['CreateCounterpartyDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  CounterpartiesController_suggestions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CounterpartyLookupDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CounterpartyCandidateDto'][];
+        };
+      };
+    };
+  };
+  CounterpartiesController_link: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CounterpartyIdentifierDto'];
       };
     };
     responses: {

@@ -9,6 +9,7 @@ export class ReviewItemDto {
   @Length(1, 150)
   counterpartyName?: string | null;
   @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() rememberCategory?: boolean;
+  @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() rememberCounterparty?: boolean;
   @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() refundOfId?:
     string | null;
   @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() confirmNew?: boolean;

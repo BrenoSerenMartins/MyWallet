@@ -31,6 +31,7 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
         | 'counterpartyId'
         | 'counterpartyName'
         | 'rememberCategory'
+        | 'rememberCounterparty'
         | 'selected'
         | 'transactionType'
         | 'categoryId'
@@ -50,6 +51,7 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
           counterpartyId: item.counterpartyId,
           counterpartyName: item.counterpartyName,
           rememberCategory: item.rememberCategory,
+          rememberCounterparty: item.rememberCounterparty,
           selected: item.selected,
           transactionType: item.transactionType,
           categoryId: item.categoryId,

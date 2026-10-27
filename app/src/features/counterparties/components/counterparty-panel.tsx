@@ -1,3 +1,4 @@
+import { CounterpartyIdentityForm } from './counterparty-identity-form';
 import { CounterpartyRelationForm } from './counterparty-relation-form';
 import { ClassificationRuleEditor } from './classification-rule-editor';
 import { useState } from 'react';
@@ -13,6 +14,7 @@ export function CounterpartyPanel({
   toggleRule,
   removeIdentifier,
   relate,
+  link,
 }: {
   agent: Counterparty;
   accounts: Account[];
@@ -22,6 +24,7 @@ export function CounterpartyPanel({
   toggle: () => void;
   toggleRule: (id: string, enabled: boolean, version: number, categoryId?: string) => void;
   relate: (value: unknown) => Promise<void>;
+  link: (value: unknown) => Promise<void>;
   removeIdentifier: (id: string) => void;
 }) {
   const [name, setName] = useState(agent.name);
@@ -43,7 +46,7 @@ export function CounterpartyPanel({
       <div className="form-stack">
         <div className="form-grid">
           <label>
-            Nome do agente
+            Nome
             <input maxLength={150} value={name} onChange={(e) => setName(e.target.value)} />
           </label>
           <div className="form-actions">
@@ -55,17 +58,20 @@ export function CounterpartyPanel({
               Salvar nome
             </Button>
             <Button className="secondary compact" disabled={busy} onClick={toggle}>
-              {agent.enabled ? 'Desativar agente' : 'Ativar agente'}
+              {agent.enabled ? 'Desativar cadastro' : 'Ativar cadastro'}
             </Button>
           </div>
         </div>
         {agent.enabled && (
-          <CounterpartyRelationForm
-            accounts={accounts}
-            categories={categories}
-            busy={busy}
-            onSave={relate}
-          />
+          <>
+            <CounterpartyIdentityForm accounts={accounts} busy={busy} onSave={link} />
+            <CounterpartyRelationForm
+              accounts={accounts}
+              categories={categories}
+              busy={busy}
+              onSave={relate}
+            />
+          </>
         )}
         <div>
           <h3>Regras de categoria</h3>
@@ -98,10 +104,10 @@ export function CounterpartyPanel({
           ))}
         </div>
         <div>
-          <h3>Identificações por origem</h3>
+          <h3>Descrições de reconhecimento</h3>
           <p className="field-help">
-            Nomes, descrições e IDs de loja vinculados por você ou por uma operação já conciliada.
-            Remover uma identificação afeta apenas o reconhecimento futuro.
+            Várias descrições podem representar a mesma pessoa ou estabelecimento. Acentos, espaços
+            e pontuação não alteram o reconhecimento. Remover um vínculo preserva o histórico.
           </p>
           {agent.identifiers.map((identifier) => (
             <div className="counterparty-rule" key={identifier.id}>

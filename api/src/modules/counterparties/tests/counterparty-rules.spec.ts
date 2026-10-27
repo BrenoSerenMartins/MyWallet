@@ -258,7 +258,7 @@ it('rejects conflicting learned aliases, invalid categories and generic identifi
         rememberCategory: true,
       }),
     ),
-  ).rejects.toThrow('outro agente');
+  ).rejects.toThrow('outra pessoa ou estabelecimento');
   await expect(
     run(() =>
       ledger.create({
@@ -493,4 +493,315 @@ it('learns a store identifier when EDI arrives first and a later statement suppl
   expect(
     (await run(() => ledger.exportRecords())).filter((t) => t.accountId === a.id),
   ).toHaveLength(1);
+});
+
+it('links identity separately from categories, applies existing directional rules retroactively and preserves money and manual choices', async () => {
+  const { CounterpartyRulesWorkflow } = await import('../services/counterparty-rules-workflow.js');
+  const workflow = new CounterpartyRulesWorkflow(counterparties, accounts, ledger);
+  const a = await account('Identity and category separation');
+  const person = await run(() => counterparties.create('Maria Oliveira'));
+  const expenses = await category('Maria expenses');
+  const income = await run(() =>
+    categories.save({ name: 'Maria income', type: 'income', color: '#00aa88' }),
+  );
+  const manual = await category('Manually selected expense');
+  await run(() =>
+    counterparties.relate(person.id, {
+      accountId: a.id,
+      sourceKind: 'account_statement',
+      value: 'Pix enviado Maria Oliveira',
+      transactionType: 'expense',
+      categoryId: expenses.id,
+    }),
+  );
+  await run(() =>
+    counterparties.relate(person.id, {
+      accountId: a.id,
+      sourceKind: 'account_statement',
+      value: 'Pix recebido Maria Oliveira',
+      transactionType: 'income',
+      categoryId: income.id,
+    }),
+  );
+  const base = {
+    ...movement(a.id, 'Pagamento cartão Maria Oliveira'),
+    sourceKind: 'account_statement' as const,
+  };
+  const missing = await run(() => ledger.create(base));
+  const explicit = await run(() => ledger.create({ ...base, categoryId: manual.id }));
+  const incoming = await run(() =>
+    ledger.create({ ...base, amount: 100, transactionType: 'income' }),
+  );
+  expect(missing.counterpartyId).toBeNull();
+  const before = await run(() => accounts.find(a.id));
+  expect(
+    await run(() =>
+      workflow.link(person.id, {
+        accountId: a.id,
+        sourceKind: 'account_statement',
+        value: 'Pagamento cartão Maria Oliveira',
+      }),
+    ),
+  ).toEqual({ linked: 3, categorized: 2 });
+  expect(await run(() => ledger.find(missing.id))).toMatchObject({
+    counterpartyId: person.id,
+    categoryId: expenses.id,
+    amount: -100,
+  });
+  expect(await run(() => ledger.find(incoming.id))).toMatchObject({
+    counterpartyId: person.id,
+    categoryId: income.id,
+    amount: 100,
+  });
+  expect(await run(() => ledger.find(explicit.id))).toMatchObject({
+    counterpartyId: person.id,
+    categoryId: manual.id,
+    classificationRuleId: null,
+  });
+  expect((await run(() => accounts.find(a.id))).balance).toBe(before.balance);
+  const future = await run(() =>
+    ledger.create({ ...base, description: 'PAGAMENTO: CARTÃO MARIA-OLIVEIRA!' }),
+  );
+  expect(future).toMatchObject({ counterpartyId: person.id, categoryId: expenses.id });
+  expect(
+    await run(() =>
+      workflow.link(person.id, {
+        accountId: a.id,
+        sourceKind: 'account_statement',
+        value: 'Pagamento cartão Maria Oliveira',
+      }),
+    ),
+  ).toEqual({ linked: 0, categorized: 0 });
+});
+
+it('suggests a person in a draft without learning until confirmation and preserves identity intent through reprocessing', async () => {
+  const a = await account('Suggested identity import');
+  const person = await run(() => counterparties.create('José Ávila'));
+  const original = await statement(a.id, 'identity-intent-only', 'Pagamento cartão José Ávila');
+  expect(original.items[0]).toMatchObject({
+    counterpartyId: null,
+    categoryId: null,
+    counterpartySuggestions: [{ counterpartyId: person.id, name: person.name, reason: 'name' }],
+  });
+  let draft = await run(() =>
+    imports.review(
+      original.id,
+      original.items[0].id,
+      {
+        selected: true,
+        transactionType: 'expense',
+        categoryId: null,
+        counterpartyId: person.id,
+        rememberCounterparty: true,
+      },
+      String(original.version),
+    ),
+  );
+  expect(
+    (await run(() => counterparties.snapshot())).identifiers.some(
+      (alias) => alias.counterpartyId === person.id,
+    ),
+  ).toBe(false);
+  draft = await run(() =>
+    reprocessing.reprocess(draft.id, draft.version, { resetClassification: true }),
+  );
+  expect(draft.items[0].rememberCounterparty).toBe(true);
+  await run(() => imports.confirm(draft.id, draft.version, 'identity-only-confirmation'));
+  const aliases = (await run(() => counterparties.snapshot())).identifiers.filter(
+    (alias) => alias.counterpartyId === person.id,
+  );
+  expect(aliases).toHaveLength(1);
+  expect(
+    (await run(() => counterparties.snapshot())).rules.some(
+      (rule) => rule.counterpartyId === person.id,
+    ),
+  ).toBe(false);
+  const next = await run(() =>
+    ledger.create({
+      ...movement(a.id, 'PAGAMENTO: CARTAO JOSE-AVILA'),
+      sourceKind: 'account_statement',
+    }),
+  );
+  expect(next).toMatchObject({ counterpartyId: person.id, categoryId: null });
+});
+
+it('uses the same accent and punctuation recognition in SQL history and future imports while rejecting canonical conflicts', async () => {
+  const { CounterpartyRulesWorkflow } = await import('../services/counterparty-rules-workflow.js');
+  const workflow = new CounterpartyRulesWorkflow(counterparties, accounts, ledger);
+  const a = await account('Canonical historical matching');
+  const person = await run(() => counterparties.create('José D’Ávila'));
+  const old = await run(() =>
+    ledger.create({
+      ...movement(a.id, 'PIX: recebido — JOSE D AVILA!'),
+      sourceKind: 'account_statement',
+    }),
+  );
+  expect(
+    (
+      await run(() =>
+        workflow.link(person.id, {
+          accountId: a.id,
+          sourceKind: 'account_statement',
+          value: 'Pix recebido José D’Ávila',
+        }),
+      )
+    ).linked,
+  ).toBe(1);
+  expect((await run(() => ledger.find(old.id))).counterpartyId).toBe(person.id);
+  const other = await run(() => counterparties.create('Another identity'));
+  await expect(
+    run(() =>
+      workflow.link(other.id, {
+        accountId: a.id,
+        sourceKind: 'account_statement',
+        value: 'PIX RECEBIDO JOSE-D-AVILA',
+      }),
+    ),
+  ).rejects.toThrow('outra pessoa');
+  expect(
+    (await run(() => counterparties.snapshot())).identifiers.some(
+      (alias) => alias.counterpartyId === other.id,
+    ),
+  ).toBe(false);
+});
+
+it('rolls back a learned identity when the financial write fails and refuses disabled or foreign-account acceptance', async () => {
+  const a = await account('Identity rollback');
+  const person = await run(() => counterparties.create('Rollback Identity'));
+  await expect(
+    run(() =>
+      ledger.create({
+        ...movement(a.id, 'Pix enviado Rollback Identity'),
+        counterpartyId: person.id,
+        rememberCounterparty: true,
+        amount: -100,
+        transactionType: 'income',
+      }),
+    ),
+  ).rejects.toThrow();
+  expect(
+    (await run(() => counterparties.snapshot())).identifiers.some(
+      (alias) => alias.counterpartyId === person.id,
+    ),
+  ).toBe(false);
+  await run(() => counterparties.update(person.id, person.name, false, person.version));
+  expect(
+    await run(() =>
+      counterparties.candidates({
+        accountId: a.id,
+        sourceKind: 'manual',
+        value: 'Pix enviado Rollback Identity',
+      }),
+    ),
+  ).toEqual([]);
+  await expect(
+    run(() =>
+      counterparties.linkIdentifier(person.id, {
+        accountId: a.id,
+        sourceKind: 'manual',
+        value: 'Pix enviado Rollback Identity',
+      }),
+    ),
+  ).rejects.toThrow('ativos');
+  const foreign = await db.forUser(db.other, () =>
+    accounts.create({
+      name: 'Foreign identity account',
+      institution: 'mercado_pago',
+      type: 'checking',
+    }),
+  );
+  await expect(
+    run(() =>
+      counterparties.candidates({
+        accountId: foreign.id,
+        sourceKind: 'manual',
+        value: 'Pix enviado Rollback Identity',
+      }),
+    ),
+  ).rejects.toThrow('Conta não encontrada');
+});
+
+it('preserves old canonical collisions during restore and refuses automatic identity/category selection', async () => {
+  const a = await account('Legacy alias collisions');
+  const market = await category('Ambiguous categories');
+  const ids = await run(() =>
+    counterparties.restore(
+      {
+        agents: [
+          { id: 'old-first', name: 'José Avila', enabled: true, version: 1 },
+          { id: 'old-second', name: 'Jose Avila', enabled: true, version: 1 },
+        ],
+        identifiers: [
+          {
+            id: 'old-alias-a',
+            counterpartyId: 'old-first',
+            accountId: 'old-account',
+            sourceKind: 'account_statement',
+            value: 'Pix recebido José Avila',
+            enabled: true,
+          },
+          {
+            id: 'old-alias-b',
+            counterpartyId: 'old-second',
+            accountId: 'old-account',
+            sourceKind: 'account_statement',
+            value: 'PIX recebido Jose-Avila',
+            enabled: true,
+          },
+        ],
+        rules: [],
+      },
+      new Map([['old-account', a.id]]),
+      new Map(),
+    ),
+  );
+  const aliases = (await run(() => counterparties.snapshot())).identifiers.filter(
+    (alias) => alias.accountId === a.id,
+  );
+  expect(aliases).toHaveLength(2);
+  const row = await run(() =>
+    ledger.create({
+      ...movement(a.id, 'PIX RECEBIDO: JOSE AVILA!'),
+      sourceKind: 'account_statement',
+    }),
+  );
+  expect(row.counterpartyId).toBeNull();
+  const [suggestion] = await run(() => counterparties.suggest(a.id, 'account_statement', [row]));
+  expect(suggestion.counterpartyId).toBeNull();
+  const rule = await run(() =>
+    new CounterpartiesRepository(db.service).saveRule(
+      ids.agents.get('old-first')!,
+      a.id,
+      'expense',
+      market.id,
+    ),
+  );
+  expect(await run(() => ledger.applyClassificationRule(rule))).toEqual({ updated: 0 });
+  expect((await run(() => ledger.find(row.id))).categoryId).toBeNull();
+});
+
+it('returns the latest category and version after learning identity from a transaction edit', async () => {
+  const a = await account('Accepted edit response');
+  const person = await run(() => counterparties.create('Person edit response'));
+  const target = await category('Person existing rule');
+  await run(() =>
+    counterparties.relate(person.id, {
+      accountId: a.id,
+      sourceKind: 'manual',
+      value: 'Known person description',
+      transactionType: 'expense',
+      categoryId: target.id,
+    }),
+  );
+  const original = await run(() => ledger.create(movement(a.id, 'New person description')));
+  const accepted = await run(() =>
+    ledger.update(
+      original.id,
+      { ...original, counterpartyId: person.id, rememberCounterparty: true },
+      String(original.version),
+    ),
+  );
+  expect(accepted).toMatchObject({ counterpartyId: person.id, categoryId: target.id });
+  expect(accepted.classificationRuleId).toBeTruthy();
+  expect(accepted).toEqual(await run(() => ledger.find(original.id)));
 });

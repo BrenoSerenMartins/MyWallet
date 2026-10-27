@@ -248,6 +248,8 @@ export function ImportReview({
           <tbody>
             {items.slice(page * 25, (page + 1) * 25).map((item) => (
               <ImportReviewRow
+                accountId={batch.accountId}
+                sourceKind={batch.reportType ?? 'account_statement'}
                 key={item.id}
                 item={item}
                 disabled={busy || status !== 'draft' || !canIntegrate}

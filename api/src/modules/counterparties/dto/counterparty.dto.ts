@@ -1,3 +1,4 @@
+export { CounterpartyCandidateDto } from '../../../core/integration/counterparty-candidate-dto.js';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsString, Length, IsOptional, IsUUID, IsIn } from 'class-validator';
 export class CreateCounterpartyDto {
@@ -57,3 +58,12 @@ export class CounterpartyRelationDto {
   transactionType!: 'income' | 'expense';
   @ApiProperty({ type: String }) @IsUUID() categoryId!: string;
 }
+
+export class CounterpartyIdentifierDto {
+  @ApiProperty({ type: String }) @IsUUID() accountId!: string;
+  @ApiProperty({ enum: ['manual', 'account_statement', 'benefit_statement'] })
+  @IsIn(['manual', 'account_statement', 'benefit_statement'])
+  sourceKind!: 'manual' | 'account_statement' | 'benefit_statement';
+  @ApiProperty({ type: String }) @IsString() @Length(3, 500) value!: string;
+}
+export class CounterpartyLookupDto extends CounterpartyIdentifierDto {}
