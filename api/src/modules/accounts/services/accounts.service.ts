@@ -36,16 +36,14 @@ export class AccountsService implements AccountReads {
   }
   async create(input: CreateAccountDto) {
     this.validateProduct(input);
-    dateOnly(input.openingDate);
-    const id = await this.repository.create(input);
+    const normalized = {
+      ...input,
+      openingBalance: input.openingBalance ?? 0,
+      openingDate: input.openingDate ?? new Date().toISOString().slice(0, 10),
+    };
+    dateOnly(normalized.openingDate);
+    const id = await this.repository.create(normalized);
     return this.find(id);
-  }
-  async initializeFromStatement(id: string, balance: number, date: string) {
-    const account = await this.find(id, true);
-    if (account.archived || (await this.repository.hasTransactions(id)))
-      throw new ConflictException('A posição inicial de uma conta com movimentos será preservada.');
-    dateOnly(date);
-    await this.repository.update(id, { ...account, openingBalance: balance, openingDate: date });
   }
   async update(id: string, input: CreateAccountDto, version: string) {
     const account = await this.find(id, true);
@@ -57,8 +55,13 @@ export class AccountsService implements AccountReads {
       throw new ConflictException(
         'A instituição e o tipo de uma conta com movimentos devem ser preservados. Crie outra conta e revise os registros.',
       );
+    input = {
+      ...input,
+      openingBalance: input.openingBalance ?? account.openingBalance,
+      openingDate: input.openingDate ?? account.openingDate,
+    };
     this.validateProduct(input);
-    dateOnly(input.openingDate);
+    dateOnly(input.openingDate!);
     if (
       (account.openingBalance !== input.openingBalance ||
         account.openingDate !== input.openingDate) &&

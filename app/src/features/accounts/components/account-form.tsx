@@ -1,7 +1,6 @@
 import type { Account } from '../../../shared/api/resources';
 import { useState, type FormEvent } from 'react';
 import { request, jsonBody } from '../../../shared/api/client';
-import { dateToday } from '../../../shared/formatting/money';
 import { Button } from '../../../shared/ui/primitives';
 export function AccountForm({ onSaved, account }: { onSaved: () => void; account?: Account }) {
   const [name, setName] = useState(account?.name ?? '');
@@ -21,8 +20,6 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
           name,
           institution,
           type,
-          openingBalance: account?.openingBalance ?? 0,
-          openingDate: account?.openingDate ?? dateToday(),
         }),
       });
       onSaved();

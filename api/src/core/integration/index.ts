@@ -1,9 +1,6 @@
 export * from './counterparty-identifier.js';
 export * from './counterparties.js';
-export const ACCOUNT_OPENING_POSITIONS = Symbol('ACCOUNT_OPENING_POSITIONS');
-export interface AccountOpeningPositions {
-  initializeFromStatement(accountId: string, balance: number, date: string): Promise<void>;
-}
+
 import type { SourceEvidence } from './source-evidence.js';
 export * from './source-evidence.js';
 export const ACCOUNT_READS = Symbol('ACCOUNT_READS');

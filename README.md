@@ -257,7 +257,7 @@ Entradas são classificadas automaticamente como receitas e saídas como despesa
 
 Na revisão, duplicatas identificadas pela referência, data, valor e saldo de origem ficam bloqueadas e são revalidadas antes da confirmação, inclusive entre arquivos enviados antes de confirmar. Coincidências sem origem suficiente aparecem em pendências para conferência; descrições e valores iguais podem representar gastos legítimos. Editar um lançamento importado preserva a identificação do movimento bancário original; estorná-lo permite reimportar.
 
-O EDI Mercado Pago `settlement_v2` em CSV é a fonte de conciliação das movimentações. Ele cria lançamentos novos ou vincula os existentes, preservando categorias e evitando duplicação. Movimentos confirmados pelo EDI ficam **conciliados**; lançamentos manuais e por extrato ficam **pendentes de conciliação** até o vínculo. IDs externos e fatos de origem ficam registrados. Pagamentos com liberação pendente, eventos desconhecidos e correspondências ambíguas continuam em revisão; eventos de saldo reconhecidos, como o padrão encontrado nos rendimentos, usam o valor líquido mesmo quando o indicador de liberação do pagamento está falso. A confirmação financeira continua necessária. O saldo da conta continua calculado pelos lançamentos e a posição inicial: conciliar a transação pelo EDI não equivale a conferir um saldo bancário final. A migration `202610260001_edi_source_of_truth.sql` deve ser aplicada antes do deploy; o usuário confirmou sua aplicação via `npm run db:setup`.
+O fluxo de importação usa **extratos de conta**, não relatórios EDI. Mercado Pago aceita extratos em PDF, CSV e XLSX; Alelo Alimentação aceita o PDF do Meu Alelo. Arquivos EDI novos são recusados com orientação para usar o extrato. EDIs antigos e seus lançamentos são preservados para consulta e desfazimento; não podem criar nem conciliar novos movimentos pela API pública. Extratos confirmados fornecem a evidência dos movimentos sem depender de outro arquivo; isso não comprova que todo o histórico ou saldo bancário esteja completo.
 
 O arquivo original (PDF, CSV ou XLSX) não é armazenado. O histórico conserva o nome e o hash do arquivo, além da origem dos lançamentos. Rascunhos expiram após 24 horas e podem ser removidos com `db:cleanup`. Extratos já salvos como histórico de consulta ficam protegidos dessa limpeza, inclusive se forem reabertos para uma revisão financeira.
 
@@ -277,13 +277,13 @@ Investimentos, patrimônio consolidado, reserva de emergência, metas, cartões,
 - [Mapa de rotas](knowledge/maps/routes.md)
 - [Modelo de banco](knowledge/maps/database.md)
 
-Em **Movimentações**, o filtro de conciliação separa pendentes e conciliadas. Nos detalhes, confira o ID externo e os relatórios vinculados. Para recuperar campos antes descartados em relatórios antigos, reprocese com o arquivo original; relatórios guardados no histórico podem voltar à revisão e ser confirmados financeiramente.
+Em **Movimentações**, o filtro de conciliação separa pendentes e conciliadas. Nos detalhes, confira o ID externo e os relatórios vinculados. Para recuperar campos antes descartados em extratos antigos, reprocese com o arquivo original; relatórios guardados no histórico podem voltar à revisão e ser confirmados financeiramente.
 
 Para investigar uma diferença de saldo sem alterar dados, execute `npm run db:diagnose -- --balance=703.31` (valor exibido no app, com ponto decimal) ou `npm run db:diagnose -- --account=<uuid>`. O comando usa `.env.local`, verifica TLS e imprime valores em centavos, posição inicial, movimentos manuais/importados e diferenças para os últimos extratos confirmados. Ele não corrige saldos automaticamente.
 
 ### Alelo e saldo atual
 
-Cadastre a instituição **Alelo** com o tipo **Vale-alimentação** ou **Vale-refeição**, separando os saldos. O importador validado aceita o PDF com texto de **Alelo Alimentação** do Meu Alelo. Ele importa créditos e compras, mantém compras iguais como ocorrências distintas e exige revisão de arquivos sobrepostos. O PDF não informa saldo inicial nem saldos por movimento: a cobertura é parcial e os movimentos permanecem pendentes de conciliação. O EDI do MP não confirma operações da Alelo. Refeição ainda precisa de um modelo compatível para importação.
+Cadastre a instituição **Alelo** com o tipo **Vale-alimentação** ou **Vale-refeição**, separando os saldos. O importador validado aceita o PDF com texto de **Alelo Alimentação** do Meu Alelo. Ele importa créditos e compras, mantém compras iguais como ocorrências distintas e exige revisão de arquivos sobrepostos. O PDF não informa saldo inicial nem saldos por movimento: a cobertura de saldo é parcial, mas os movimentos confirmados ficam conferidos pelo próprio arquivo. Não é preciso fornecer data nem saldo inicial. Refeição ainda precisa de um modelo compatível para importação.
 
 A visão geral separa dinheiro disponível, benefícios e reservas registradas. Entradas/saídas mensais incluem todas as contas; em Planejamento, o filtro permite ver o realizado com ou sem benefícios, sem alterar o plano salvo.
 
@@ -291,20 +291,20 @@ Em **Minhas contas → Corrigir saldo**, informe o saldo atual correto e o motiv
 
 As migrations `202610260002_alelo_benefit_imports.sql` e `202610260003_manual_balance_adjustments.sql` foram aplicadas pelo usuário antes do deploy.
 
-### Início automático e devoluções
+### Histórico sem configuração inicial e devoluções
 
-Ao confirmar o primeiro arquivo de uma conta vazia, a data inicial é ajustada ao histórico. Se for um extrato com saldo de abertura, o app usa esse saldo; se for EDI ou Alelo sem saldo inicial, conserva o valor cadastrado. Você não precisa copiar o saldo inicial de um extrato bancário manualmente. A operação ocorre apenas ao confirmar os movimentos.
+O cadastro de contas pede nome, instituição e tipo. A API também aceita criar/editar sem data ou saldo inicial. Importações podem ter qualquer data válida, em qualquer ordem. Confirmar um extrato registra os movimentos selecionados sem copiar o saldo inicial do arquivo para a conta nem mudar uma data de início.
 
-Em contas que já possuem movimentos, uma diferença de abertura é um aviso: a importação dos novos movimentos pode continuar sem alterar a posição inicial ou inventar ajustes. O saldo continua calculado pelo histórico registrado e pode precisar de conferência. Arquivos e lançamentos manuais podem ter qualquer data válida, inclusive anterior ao cadastro da conta. O cadastro não exige data nem saldo inicial; os campos legados continuam internos para preservar contas e backups existentes.
+Saldos fornecidos pelo banco são dados opcionais para conferência, dentro dos detalhes do arquivo. Modelos sem esses dados, como Alelo, também funcionam. O saldo exibido usa os movimentos registrados e preserva valores legados já existentes nas contas. Para alinhar um histórico parcial a um saldo atual conhecido, use **Corrigir saldo**; o ajuste fica documentado sem inventar gastos ou receitas.
 
-No EDI, devoluções podem ser vinculadas à compra ou receita original. O app conserva a categoria, controla o total já devolvido e reduz a receita/despesa na data da devolução. Se o dinheiro já entrou por um extrato, a revisão vincula e corrige a natureza do movimento sem lançá-lo novamente. Operações com devoluções exigem desfazer os retornos antes de alterar a origem. Parcelas com valores líquidos incompatíveis e eventos ainda não liberados continuam sinalizados para revisão.
+Devoluções vinculadas mantêm o controle da compra/receita original e a categoria. Vínculos e fatos bancários legados continuam preservados nos backups; retirar o EDI do envio não apaga lançamentos financeiros.
 
 ### Agentes, identificações e categorias automáticas
 
-Em **Agentes e regras**, cadastre uma pessoa ou estabelecimento e relacione a descrição do extrato, o nome usado no EDI ou o **ID da loja (`STORE_ID`)**. A relação vale para a conta e para o tipo de movimento escolhidos. Uma ação aplica a categoria ao histórico reconhecido sem categoria ou já classificado por regra e informa quantos lançamentos foram atualizados. Escolhas manuais, valores, datas e conciliação são preservados. Alterar a categoria da regra atualiza os lançamentos que a seguem.
+Em **Agentes e regras**, cadastre uma pessoa ou estabelecimento e relacione a descrição apresentada no extrato. A relação vale para a conta e para o tipo de movimento escolhidos. Uma ação aplica a categoria ao histórico reconhecido sem categoria ou já classificado por regra e informa quantos lançamentos foram atualizados. Escolhas manuais, valores, datas e conciliação são preservados. Alterar a categoria da regra atualiza os lançamentos que a seguem.
 
 Também é possível marcar **Usar esta categoria neste agente** ao registrar/editar um lançamento ou durante a revisão de uma importação. Na revisão, a intenção só cria o agente/regra ao confirmar os movimentos. Regras e agentes podem ser desativados; remover uma identificação interrompe seu reconhecimento sem apagar o histórico.
 
-Um agente pode ter várias identificações. Uma operação já conciliada entre extrato e EDI pode associar as duas descrições e o ID de loja fornecido pelo relatório. Nomes iguais, valores parecidos ou o `SOURCE_ID` de um pagamento não identificam automaticamente um estabelecimento. Campos genéricos como SETTLEMENT não viram identificações. `STORE_NAME` e `STORE_ID` são preservados quando fornecidos; relatórios sem esses dados não permitem inventá-los.
+Um agente pode ter várias descrições de origem. Nomes parecidos, valores iguais e o ID de uma operação não identificam automaticamente um estabelecimento. As relações são exatas e específicas por conta/origem; relações antigas de EDI/loja continuam armazenadas por compatibilidade, sem oferecer EDI como origem para novas relações no formulário.
 
 As migrations `202610260005_counterparty_rules.sql` e `202610260006_counterparty_external_identifiers.sql` criam os vínculos protegidos por espaço. O backup financeiro JSON v5 preserva agentes, identificações ativas/desativadas, regras e a origem da classificação, com remapeamento de IDs na restauração; backups v1–v4 continuam aceitos.

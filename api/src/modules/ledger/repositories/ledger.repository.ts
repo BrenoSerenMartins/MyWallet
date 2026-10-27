@@ -6,7 +6,7 @@ import { sourceEvidenceKey, type SourceEvidence } from '../../../core/integratio
 import { transactionResource } from '../mappers/transaction.mapper.js';
 function reconciliationSql(alias = 'wallet.transactions') {
   return `EXISTS(SELECT 1 FROM wallet.transaction_sources proof
-    WHERE proof.transaction_id=${alias}.id AND proof.source_data->>'reportType'='settlement'
+    WHERE proof.transaction_id=${alias}.id AND proof.source_data->>'reportType' IN ('account_statement','benefit_statement','settlement')
     AND (proof.source_data->>'amount')::bigint=${alias}.amount_minor
     AND ${alias}.transaction_date IN ((proof.source_data->>'date')::date,(proof.source_data->>'originDate')::date))`;
 }

@@ -1,11 +1,10 @@
-import { OpeningInitialization } from './opening-initialization';
 import { useState } from 'react';
 import { useImportReview } from '../hooks/use-import-review';
 import type { ImportBatch } from '../../../shared/api/resources';
 import { Button } from '../../../shared/ui/primitives';
-import { ViewSwitcher } from '../../../shared/ui/view-switcher';
 import { ImportReviewRow } from './import-review-row';
-import { ReprocessImport } from './reprocess-import';
+
+// Retained only to inspect or undo imports created before statement-only ingestion.
 export function SettlementReview({
   batch,
   refresh,
@@ -13,101 +12,35 @@ export function SettlementReview({
   batch: ImportBatch;
   refresh: () => Promise<unknown>;
 }) {
-  const {
-    categories,
-    page,
-    setPage,
-    busy,
-    error,
-    status,
-    awaitingConfirmationRefresh,
-    unresolved,
-    review,
-    confirm,
-    retainHistory,
-    reopenHistory,
-    reverse,
-  } = useImportReview(batch, refresh);
-  const [view, setView] = useState('all');
+  const { categories, page, setPage, busy, error, reverse } = useImportReview(batch, refresh);
   const [search, setSearch] = useState('');
-  const count = (action: string) => batch.items.filter((item) => item.action === action).length;
-  const items = batch.items.filter(
-    (item) =>
-      (view === 'all' || item.action === view) &&
-      `${item.description} ${item.transactionDate} ${item.sourceOperationId ?? ''}`
-        .toLocaleLowerCase('pt-BR')
-        .includes(search.toLocaleLowerCase('pt-BR')),
+  const items = batch.items.filter((item) =>
+    `${item.description} ${item.transactionDate} ${item.sourceOperationId ?? ''}`
+      .toLocaleLowerCase('pt-BR')
+      .includes(search.toLocaleLowerCase('pt-BR')),
   );
   return (
     <>
-      <ReprocessImport
-        batch={{ ...batch, status }}
-        onProcessed={async () => {
-          await refresh();
-          setPage(0);
-        }}
-      />
-      <OpeningInitialization batch={batch} />
-      <div className="review-banner">
+      <div className="review-banner" role="status">
         <div>
-          <strong>EDI Mercado Pago · fonte de conciliação</strong>
+          <strong>Relatório EDI antigo · disponível para consulta</strong>
           <p>
-            {count('create')} novos · {count('reconcile')} a conciliar · {count('recorded')} já
-            registrados · {count('review')} pendências.
-          </p>
-          <p>
-            Movimentos novos confirmados pelo EDI entram conciliados. Os existentes são vinculados
-            sem duplicar valores ou substituir categorias. O saldo continua calculado a partir da
-            posição inicial e dos lançamentos.
+            O app agora importa extratos de conta. Este relatório e os lançamentos já confirmados
+            foram preservados. O EDI não pode criar ou conciliar novos lançamentos.
           </p>
         </div>
-      </div>
-      {status === 'history' && (
-        <div className="review-banner">
-          <strong>Relatório guardado no histórico, sem confirmação financeira.</strong>
-          <Button disabled={busy} onClick={() => void reopenHistory()}>
-            Revisar para integrar às contas
-          </Button>
-        </div>
-      )}
-      {status === 'confirmed' && (
-        <div className="review-banner">
-          <strong>EDI confirmado. Operações vinculadas aos lançamentos financeiros.</strong>
-          <Button
-            className="secondary"
-            disabled={busy || awaitingConfirmationRefresh}
-            onClick={() => void reverse()}
-          >
+        {batch.status === 'confirmed' && (
+          <Button className="secondary" disabled={busy} onClick={() => void reverse()}>
             Desfazer importação
           </Button>
-        </div>
-      )}
-      {awaitingConfirmationRefresh && (
-        <p className="field-help" role="status">
-          Confirmação concluída. Atualize o relatório para carregar os detalhes mais recentes.
-        </p>
-      )}
+        )}
+      </div>
       {error && (
         <p role="alert" className="form-error">
           {error}
         </p>
       )}
-      <ViewSwitcher
-        label="Ações do EDI"
-        value={view}
-        onChange={(value) => {
-          setView(value);
-          setPage(0);
-        }}
-        options={[
-          { value: 'all', label: 'Todos', count: batch.items.length },
-          { value: 'create', label: 'Novos', count: count('create') },
-          { value: 'reconcile', label: 'A conciliar', count: count('reconcile') },
-          { value: 'review', label: 'Pendências', count: count('review') },
-          { value: 'recorded', label: 'Já registrados', count: count('recorded') },
-        ]}
-      />
-      <label className="import-search">
+      <label>
         Buscar no relatório
         <input
           type="search"
@@ -124,7 +57,7 @@ export function SettlementReview({
           <thead>
             <tr>
               <th>Usar</th>
-              <th>Data / evento / conciliação</th>
+              <th>Data / evento</th>
               <th>Tipo financeiro</th>
               <th>Valor líquido</th>
             </tr>
@@ -134,9 +67,9 @@ export function SettlementReview({
               <ImportReviewRow
                 key={item.id}
                 item={item}
-                disabled={busy || status !== 'draft'}
+                disabled
                 categories={categories.data ?? []}
-                onReview={review}
+                onReview={async () => {}}
               />
             ))}
           </tbody>
@@ -160,34 +93,6 @@ export function SettlementReview({
           </div>
         </div>
       </div>
-      {status === 'draft' && (
-        <div className="review-confirm">
-          <Button
-            className="secondary"
-            disabled={busy || !navigator.onLine}
-            onClick={() => void retainHistory()}
-          >
-            Guardar apenas no histórico
-          </Button>
-          <Button
-            disabled={
-              busy ||
-              !!unresolved ||
-              !batch.items.some((item) => item.selected || item.duplicateLocked) ||
-              !navigator.onLine
-            }
-            onClick={() => void confirm()}
-          >
-            {busy ? 'Aguarde…' : 'Confirmar EDI e conciliar'}
-          </Button>
-        </div>
-      )}
-      {unresolved > 0 && status === 'draft' && (
-        <p className="field-help">
-          Resolva os registros pendentes antes de confirmar. Pagamentos com liberação pendente
-          continuam em revisão; eventos de saldo reconhecidos entram pelo valor líquido do EDI.
-        </p>
-      )}
     </>
   );
 }

@@ -41,7 +41,6 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
-  accounts,
   counterparties,
 );
 let account: string, batch: string;
@@ -83,7 +82,7 @@ describe('Older statements and consultation history', () => {
     expect(preview.openingDateMismatch).toBe(true);
     expect(preview.statementStartDate).toBe('2026-01-05');
     expect((await db.forUser(db.user, () => accounts.find(account))).balance).toBe(0);
-    expect(preview.willInitializeOpening).toBe(true);
+    expect(preview.willInitializeOpening).toBe(false);
   });
   it('retains history without transactions and returns the same uploaded file', async () => {
     const history = await db.forUser(db.user, () => imports.retainHistory(batch, 1));

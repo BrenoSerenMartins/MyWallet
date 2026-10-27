@@ -85,3 +85,5 @@ Import previews add willInitializeOpening for empty-account automatic date/balan
 
 ## Counterparty automation
 Frontend `/counterparties` manages agents, source identifiers and category rules. REST `/v1/counterparties` lists/creates agents; PATCH `/:id` renames/enables/disables; POST `/:id/relations` saves a scoped relation and applies recognized history; PATCH `/rules/:id` configures/enables/disables a rule with If-Match; DELETE `/:agent/identifiers/:id` disables recognition. Transaction writes and import review accept explicit counterparty/remember choices; read resources expose rule provenance.
+
+2026-10-27 policy: uploads reject EDI with an account-statement instruction. Public import confirmation and both reprocess routes reject retained EDI batches; reads and reversal remain. Account create/update opening fields are optional/deprecated for legacy compatibility.

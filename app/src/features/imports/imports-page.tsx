@@ -106,8 +106,8 @@ export function ImportsPage() {
                   sem começar do zero.
                 </h2>
                 <p>
-                  Mercado Pago: extratos PDF, CSV, XLSX e EDI para conciliação. Alelo Alimentação:
-                  PDF com texto, com revisão da cobertura e dos movimentos.
+                  Mercado Pago: extratos PDF, CSV e XLSX. Alelo Alimentação: PDF com texto, com
+                  revisão da cobertura e dos movimentos.
                 </p>
                 {accounts.isPending ? (
                   <Loading />
@@ -174,8 +174,8 @@ export function ImportsPage() {
                       </Link>
                     }
                   >
-                    Cadastre sua conta Mercado Pago ou Alelo Alimentação com a posição inicial
-                    conhecida.
+                    Cadastre sua conta Mercado Pago ou Alelo Alimentação. Não precisa informar saldo
+                    nem data de início.
                   </EmptyState>
                 )}
               </section>

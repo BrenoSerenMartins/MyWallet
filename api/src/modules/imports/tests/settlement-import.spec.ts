@@ -46,7 +46,6 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
-  accounts,
   counterparties,
 );
 let accountId: string;
@@ -70,7 +69,7 @@ describe('Settlement v2 consultation report', () => {
     const { rows, buffer } = settlementFixture();
     const headerOnly = buffer.subarray(0, buffer.indexOf('\n') + 1);
     await expect(extractMercadoPagoStatement(headerOnly, 'settlement.csv')).rejects.toThrow(
-      'sem transações para importar',
+      'Importe o extrato de conta',
     );
     expect(() => parseSettlementTable([rows[0], rows[0].map(() => '')])).toThrow(
       'sem transações para importar',
@@ -80,10 +79,7 @@ describe('Settlement v2 consultation report', () => {
     );
   });
   it('extracts net impact and payment metadata without inventing running balances or executing metadata', async () => {
-    const statement = await extractMercadoPagoStatement(
-      settlementFixture().buffer,
-      'settlement.csv',
-    );
+    const statement = mapMercadoPagoSettlements(parseSettlementTable(settlementFixture().rows));
     expect(statement.reportType).toBe('settlement');
     expect(statement.openingBalance).toBeNull();
     expect(statement.closingBalance).toBeNull();
@@ -147,11 +143,11 @@ describe('Settlement v2 consultation report', () => {
   });
   it('persists a consultation report and never changes ledger balance, including direct confirmation attempts', async () => {
     const fixture = settlementFixture();
-    const parsed = await extractMercadoPagoStatement(fixture.buffer, 'settlement.csv');
+    const parsed = mapMercadoPagoSettlements(parseSettlementTable(fixture.rows));
     const preview = await db.forUser(db.user, () =>
       imports.upload(accountId, fixture.buffer, 'settlement.csv', parsed),
     );
-    expect(preview.canIntegrate).toBe(true);
+    expect(preview.canIntegrate).toBe(false);
     expect(preview.sourceFormat).toBe('csv');
     expect(preview.openingBalance).toBeNull();
     expect(preview.items[0].action).toBe('review');
@@ -176,7 +172,7 @@ describe('Settlement v2 consultation report', () => {
 
 it('reprocesses retained settlement data while preserving consultation status and no-ledger semantics', async () => {
   const fixture = settlementFixture();
-  const parsed = await extractMercadoPagoStatement(fixture.buffer, 'settlement.csv');
+  const parsed = mapMercadoPagoSettlements(parseSettlementTable(fixture.rows));
   const draft = await db.forUser(db.user, () =>
     imports.upload(
       accountId,
@@ -195,7 +191,7 @@ it('reprocesses retained settlement data while preserving consultation status an
     service.reprocess(history.id, history.version, { resetClassification: true }),
   );
   expect(result.status).toBe('history');
-  expect(result.canIntegrate).toBe(true);
+  expect(result.canIntegrate).toBe(false);
   expect(result.openingBalance).toBeNull();
   expect(result.items[0]).toMatchObject({
     transactionType: 'income',
@@ -216,7 +212,7 @@ async function uploadEvidence(reference: string) {
     MONEY_RELEASE_DATE: '2026-10-05T12:00:00-04:00',
     INSTALLMENT_NET_AMOUNT: '32.33',
   });
-  const parsed = await extractMercadoPagoStatement(fixture.buffer, 'evidence.csv');
+  const parsed = mapMercadoPagoSettlements(parseSettlementTable(fixture.rows));
   return db.forUser(db.user, () =>
     imports.upload(accountId, fixture.buffer, 'evidence.csv', parsed),
   );
@@ -330,4 +326,39 @@ it('finds retained settlement evidence when the account statement arrives later,
   expect(
     (await db.forUser(db.user, () => matching.transactionSources(transaction.id)))[0].transactionId,
   ).toBe(transaction.id);
+});
+
+it('rejects new consumer EDI uploads and API confirmation without changing retained history', async () => {
+  const { ImportsController } = await import('../controllers/imports.controller.js');
+  const fixture = settlementFixture();
+  await expect(imports.extract(db.user, fixture.buffer, 'settlement.csv')).rejects.toThrow(
+    'Importe o extrato de conta',
+  );
+  const retained = await db.forUser(db.user, () =>
+    imports.upload(
+      accountId,
+      fixture.buffer,
+      'legacy-edi.csv',
+      mapMercadoPagoSettlements(parseSettlementTable(fixture.rows)),
+    ),
+  );
+  const controller = new ImportsController(
+    undefined as never,
+    db.service,
+    imports,
+    undefined as never,
+  );
+  const before = await db.forUser(db.user, () => accounts.find(accountId));
+  await expect(
+    db.forUser(db.user, () =>
+      controller.confirm(
+        { identity: { id: db.user } } as never,
+        retained.id,
+        'consumer-edi-denied',
+        { version: retained.version },
+      ),
+    ),
+  ).rejects.toThrow('Importe o extrato de conta');
+  expect((await db.forUser(db.user, () => imports.get(retained.id))).status).toBe(retained.status);
+  expect((await db.forUser(db.user, () => accounts.find(accountId))).balance).toBe(before.balance);
 });

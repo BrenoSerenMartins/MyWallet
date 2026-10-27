@@ -43,7 +43,7 @@ export function TransactionRow({
           {t.importBatchId ? ' · Importado' : ''}
           {t.classificationRuleId ? ' · Categoria automática' : ''}
           {t.reconciliationStatus === 'reconciled'
-            ? ' · Conciliada pelo EDI'
+            ? ' · Conferida por arquivo'
             : ' · Pendente de conciliação'}
         </span>
         {categoryLabel && <span className="transaction-category">{categoryLabel}</span>}

@@ -213,3 +213,6 @@ Next increment delivered: automatic first-source account initialization (bank op
 
 ## Counterparty automation increment
 Delivered scope: agents and source/account aliases (description and supplied MP store IDs), explicit category learning during transaction editing/import review, agent/rule management, retroactive uncategorized/rule-managed category application, proved statement/EDI alias enrichment in both arrival orders, and portable JSON v5 relations. Unknown counterparties are not guessed. Broader tags/goals/recurring classification actions remain later increments; no generic rules engine is introduced.
+
+## Consumer statements without starting setup (2026-10-27)
+Current policy supersedes the EDI source-of-truth plan: account/benefit statements are the user-facing import source. No new EDI ingestion or posting. Date and initial amount are not required to create accounts or import old transactions, and confirmation no longer sets them from source files. Existing balances retain compatibility baselines; source balances are optional checking facts. Partial history may require an explicit current-balance correction. Transaction evidence from a statement can be confirmed independently of full account-balance coverage.

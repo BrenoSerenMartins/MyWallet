@@ -154,7 +154,7 @@ export function TransactionsPage() {
               >
                 <option value="">Todas</option>
                 <option value="pending">Pendentes</option>
-                <option value="reconciled">Conciliadas pelo EDI</option>
+                <option value="reconciled">Conferidas por arquivo</option>
               </select>
             </label>
             <label>
@@ -263,7 +263,7 @@ export function TransactionsPage() {
             <div>
               <strong>
                 {selected.reconciliationStatus === 'reconciled'
-                  ? 'Conciliada pelo EDI'
+                  ? 'Conferida por arquivo'
                   : 'Pendente de conciliação'}
               </strong>
               <p>ID externo: {selected.sourceOperationId ?? 'Ainda não vinculado'}</p>

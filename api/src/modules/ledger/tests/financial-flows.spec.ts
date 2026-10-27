@@ -51,7 +51,6 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
-  accounts,
   counterparties,
 );
 let first: string;
@@ -279,7 +278,7 @@ describe('Financial integrity with PostgreSQL RLS', () => {
     ).rejects.toThrow('Nested financial failure');
     expect(await db.forUser(db.user, async () => (await accounts.list()).length)).toBe(count);
   });
-  it('automatically initializes an empty account from its first confirmed statement', async () => {
+  it('keeps account starting data unchanged when confirming source balances', async () => {
     await db.forUser(db.user, async () => {
       const a = await accounts.create({
         name: 'Opening check',
@@ -309,9 +308,9 @@ describe('Financial integrity with PostgreSQL RLS', () => {
         false,
       );
       expect((await imports.preview(id)).openingMismatch).toBe(true);
-      expect((await imports.preview(id)).willInitializeOpening).toBe(true);
+      expect((await imports.preview(id)).willInitializeOpening).toBe(false);
       await imports.confirm(id, 1, 'opening-mismatch');
-      expect((await accounts.find(a.id)).openingBalance).toBe(500);
+      expect((await accounts.find(a.id)).openingBalance).toBe(0);
     });
   });
 });
@@ -427,4 +426,37 @@ it('round-trips balance-correction evidence and excludes it from all planning ac
     false,
     space.rows[0].id,
   );
+});
+
+it('creates and renames accounts without starting fields while preserving legacy values on edits', async () => {
+  const { validateInput } = await import('../../../core/http/index.js');
+  const { CreateAccountDto } = await import('../../accounts/dto/create-account.dto.js');
+  const input = await validateInput(CreateAccountDto, {
+    name: 'No starting setup',
+    institution: 'mercado_pago',
+    type: 'checking',
+  });
+  await db.forUser(db.user, async () => {
+    const a = await accounts.create(input);
+    expect(a.balance).toBe(0);
+    const updated = await accounts.update(
+      a.id,
+      { ...input, name: 'Renamed without defaults' },
+      String(a.version),
+    );
+    expect(updated.openingDate).toBe(a.openingDate);
+    expect(updated.balance).toBe(0);
+    const legacy = await accounts.create({
+      ...input,
+      name: 'Existing legacy account',
+      openingBalance: 5500,
+      openingDate: '2020-01-01',
+    });
+    const preserved = await accounts.update(legacy.id, input, String(legacy.version));
+    expect(preserved).toMatchObject({
+      openingBalance: 5500,
+      openingDate: '2020-01-01',
+      balance: 5500,
+    });
+  });
 });

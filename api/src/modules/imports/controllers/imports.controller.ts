@@ -121,9 +121,11 @@ export class ImportsController {
     @Body() body: unknown,
   ) {
     const input = await validateInput(ConfirmImportDto, body);
-    return this.db.forUser(r.identity.id, () =>
-      this.imports.confirm(requireUuid(id), input.version, key),
-    );
+    return this.db.forUser(r.identity.id, async () => {
+      requireUuid(id);
+      await this.imports.requireStatementImport(id);
+      return this.imports.confirm(id, input.version, key);
+    });
   }
   @Post(':id/history')
   @ApiBody({ type: ConfirmImportDto })
@@ -164,11 +166,13 @@ export class ImportsController {
   @ApiOkResponse({ type: ImportBatchResourceDto })
   async reprocess(@Req() r: AuthenticatedRequest, @Param('id') id: string, @Body() body: unknown) {
     const input = await validateInput(ReprocessImportDto, body);
-    return this.db.forUser(r.identity.id, () =>
-      this.reprocessing.reprocess(requireUuid(id), input.version, {
+    return this.db.forUser(r.identity.id, async () => {
+      requireUuid(id);
+      await this.imports.requireStatementImport(id);
+      return this.reprocessing.reprocess(id, input.version, {
         resetClassification: input.resetClassification,
-      }),
-    );
+      });
+    });
   }
   @Post(':id/reprocess-file')
   @HttpCode(200)
@@ -210,9 +214,10 @@ export class ImportsController {
                   : resetClassification,
           }),
     });
-    await this.db.forUser(r.identity.id, () =>
-      this.reprocessing.validateSource(id, input.version, file.buffer),
-    );
+    await this.db.forUser(r.identity.id, async () => {
+      await this.imports.requireStatementImport(id);
+      await this.reprocessing.validateSource(id, input.version, file.buffer);
+    });
     const account = await this.db.forUser(
       r.identity.id,
       async () => this.imports.sourceAccount((await this.imports.get(id)).account_id),

@@ -15,7 +15,8 @@ import { ImportsService } from '../services/imports.service.js';
 import { ImportReconciliationService } from '../services/import-reconciliation.service.js';
 import { ImportReconciliationRepository } from '../repositories/import-reconciliation.repository.js';
 import { settlementFixture } from './settlement-fixture.js';
-import { extractMercadoPagoStatement } from '../parsers/mercado-pago/extract-statement.js';
+import { parseSettlementTable } from '../parsers/mercado-pago/settlement.parser.js';
+import { mapMercadoPagoSettlements } from '../mappers/mercado-pago/settlement.mapper.js';
 import { DataExportService } from '../../data-export/services/data-export.service.js';
 import { RestoreRepository } from '../../data-export/repositories/restore.repository.js';
 import { PlanningService } from '../../planning/services/planning.service.js';
@@ -44,7 +45,6 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
-  accounts,
   counterparties,
 );
 const backups = new DataExportService(
@@ -83,7 +83,7 @@ async function edi(
     IS_RELEASED: 'false',
     ...overrides,
   });
-  const parsed = await extractMercadoPagoStatement(fixture.buffer, 'edi.csv');
+  const parsed = mapMercadoPagoSettlements(parseSettlementTable(fixture.rows));
   return run(() =>
     imports.upload(
       accountId,
@@ -113,12 +113,12 @@ async function statement(accountId: string, reference: string) {
     imports.upload(accountId, Buffer.from(accountId + reference), 'statement.pdf', parsed),
   );
 }
-it('creates pending statement entries, then reconciles with EDI without duplicating or replacing categories', async () => {
+it('confirms statement evidence without requiring EDI and preserves legacy links and categories', async () => {
   const a = await account('statement first');
   const draft = await statement(a.id, 'edi-reference');
   await run(() => imports.confirm(draft.id, draft.version, 'statement-first'));
   const entry = (await run(() => ledger.exportRecords())).find((t) => t.accountId === a.id)!;
-  expect((await run(() => ledger.find(entry.id))).reconciliationStatus).toBe('pending');
+  expect((await run(() => ledger.find(entry.id))).reconciliationStatus).toBe('reconciled');
   const category = await run(() =>
     categories.save({ name: 'EDI preserved category', type: 'expense', color: '#f28a97' }),
   );
@@ -196,14 +196,14 @@ it('keeps portable source identity after backup/restore and blocks repeated EDI 
       SETTLEMENT_NET_AMOUNT: '-10.00',
       IS_RELEASED: 'false',
     });
-    const parsed = await extractMercadoPagoStatement(fixture.buffer, 'edi.csv');
+    const parsed = mapMercadoPagoSettlements(parseSettlementTable(fixture.rows));
     const again = await imports.upload(restored.id, fixture.buffer, 'edi.csv', parsed);
     expect(again.items[0].action).toBe('recorded');
     await imports.confirm(again.id, again.version, 'restored-edi-confirm');
     expect((await accounts.find(restored.id)).balance).toBe(9000);
   });
 });
-it('preserves repeated source confirmations and only removes reconciliation when the last supporting EDI is undone', async () => {
+it('preserves statement confirmation when supplementary legacy EDI links are undone', async () => {
   const a = await account('Evidence reversal');
   const original = await statement(a.id, 'reversal-ref');
   await run(() => imports.confirm(original.id, original.version, 'pending-original'));
@@ -216,7 +216,7 @@ it('preserves repeated source confirmations and only removes reconciliation when
   await run(() => imports.reverse(second.id, String(second.version + 1)));
   expect((await run(() => ledger.find(entry.id))).reconciliationStatus).toBe('reconciled');
   await run(() => imports.reverse(first.id, String(first.version + 1)));
-  expect((await run(() => ledger.find(entry.id))).reconciliationStatus).toBe('pending');
+  expect((await run(() => ledger.find(entry.id))).reconciliationStatus).toBe('reconciled');
   expect((await run(() => accounts.find(a.id))).balance).toBe(9000);
 });
 it('retains external IDs when reconciling manual entries and rejects foreign account links', async () => {
@@ -404,7 +404,7 @@ it('restores linked refund identity and rejects tampered refund arithmetic', asy
     workspace.rows[0].id,
   );
 });
-it('initializes an empty account from statement evidence atomically without asking for manual opening values', async () => {
+it('imports statement movements without copying source opening values into the account', async () => {
   const a = await run(() =>
     accounts.create({
       name: 'Automatic first statement',
@@ -415,13 +415,13 @@ it('initializes an empty account from statement evidence atomically without aski
     }),
   );
   const draft = await statement(a.id, 'automatic-opening');
-  expect(draft.willInitializeOpening).toBe(true);
+  expect(draft.willInitializeOpening).toBe(false);
   expect((await run(() => accounts.find(a.id))).openingBalance).toBe(0);
   await run(() => imports.confirm(draft.id, draft.version, 'auto-first-confirm'));
   expect(await run(() => accounts.find(a.id))).toMatchObject({
-    openingBalance: 10000,
-    openingDate: '2026-10-03',
-    balance: 9000,
+    openingBalance: 0,
+    openingDate: '2026-10-20',
+    balance: -1000,
   });
   const next = await run(() =>
     imports.upload(a.id, Buffer.from('conflicting-later-source'), 'later.pdf', {
@@ -442,8 +442,8 @@ it('initializes an empty account from statement evidence atomically without aski
   );
   expect(next.willInitializeOpening).toBe(false);
   await run(() => imports.confirm(next.id, next.version, 'keep-opening-and-import'));
-  expect((await run(() => accounts.find(a.id))).balance).toBe(8900);
-  expect((await run(() => accounts.find(a.id))).openingBalance).toBe(10000);
+  expect((await run(() => accounts.find(a.id))).balance).toBe(-1100);
+  expect((await run(() => accounts.find(a.id))).openingBalance).toBe(0);
 });
 
 it('links an already imported refund to its original without posting cash twice', async () => {
@@ -493,7 +493,7 @@ it('keeps installment events pending when source net differs from the released i
   expect((await run(() => accounts.find(a.id))).balance).toBe(10000);
 });
 
-it('initializes only the date for an empty account when EDI has no opening balance', async () => {
+it('preserves legacy starting data when reading an old EDI internally', async () => {
   const a = await run(() =>
     accounts.create({
       name: 'EDI historical first date',
@@ -504,10 +504,10 @@ it('initializes only the date for an empty account when EDI has no opening balan
     }),
   );
   const report = await edi(a.id, 'earlier-edi-date');
-  expect(report.willInitializeOpening).toBe(true);
+  expect(report.willInitializeOpening).toBe(false);
   await run(() => imports.confirm(report.id, report.version, 'earlier-edi-first'));
   expect(await run(() => accounts.find(a.id))).toMatchObject({
-    openingDate: '2026-10-03',
+    openingDate: '2026-10-20',
     openingBalance: 12345,
     balance: 11345,
   });

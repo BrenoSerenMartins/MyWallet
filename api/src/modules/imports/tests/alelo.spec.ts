@@ -44,7 +44,6 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
-  accounts,
   counterparties,
 );
 const run = <T>(fn: () => Promise<T>) => db.forUser(db.user, fn);
@@ -158,7 +157,7 @@ it('keeps account product/institution consistent and does not silently relocate 
     ),
   ).rejects.toThrow('preservados');
 });
-it('imports partial Alelo history, maintains pending status and refuses another institution or benefit product', async () => {
+it('imports partial Alelo history with statement evidence and refuses another institution or benefit product', async () => {
   const a = await account('Food import');
   const parsed = parseAleloPages(sample());
   const draft = await run(() =>
@@ -175,7 +174,7 @@ it('imports partial Alelo history, maintains pending status and refuses another 
   const rows = (await run(() => ledger.exportRecords())).filter((i) => i.accountId === a.id);
   expect(rows).toHaveLength(3);
   expect(
-    rows.every((i) => i.sourceOperationId === null && i.reconciliationStatus === 'pending'),
+    rows.every((i) => i.sourceOperationId === null && i.reconciliationStatus === 'reconciled'),
   ).toBe(true);
   expect((await run(() => accounts.find(a.id))).balance).toBe(8000);
   const same = await run(() =>

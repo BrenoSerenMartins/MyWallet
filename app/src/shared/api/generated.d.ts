@@ -717,8 +717,10 @@ export interface components {
       institution: string;
       /** @enum {string} */
       type: 'checking' | 'savings' | 'cash' | 'reserve' | 'benefit_food' | 'benefit_meal';
-      openingBalance: number;
-      openingDate: string;
+      /** @deprecated */
+      openingBalance?: number;
+      /** @deprecated */
+      openingDate?: string;
     };
     CategoryResourceDto: {
       groupId: string | null;

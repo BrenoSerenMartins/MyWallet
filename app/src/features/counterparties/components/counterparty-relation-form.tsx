@@ -15,7 +15,6 @@ export function CounterpartyRelationForm({
 }) {
   const [accountId, setAccount] = useState(accounts[0]?.id ?? '');
   const [sourceKind, setSource] = useState('account_statement');
-  const [identifierKind, setIdentifierKind] = useState('description');
   const [transactionType, setType] = useState<'income' | 'expense'>('expense');
   const [value, setValue] = useState('');
   const [categoryId, setCategory] = useState('');
@@ -29,7 +28,7 @@ export function CounterpartyRelationForm({
           void onSave({
             accountId,
             sourceKind,
-            identifierKind,
+            identifierKind: 'description',
             transactionType,
             value,
             categoryId,
@@ -52,46 +51,22 @@ export function CounterpartyRelationForm({
           </label>
           <label>
             Origem da identificação
-            <select
-              disabled={identifierKind === 'store_id'}
-              value={sourceKind}
-              onChange={(e) => setSource(e.target.value)}
-            >
+            <select value={sourceKind} onChange={(e) => setSource(e.target.value)}>
               <option value="account_statement">Extrato bancário</option>
-              <option value="settlement">EDI Mercado Pago</option>
               <option value="benefit_statement">Extrato de benefício</option>
               <option value="manual">Lançamento manual</option>
             </select>
           </label>
         </div>
         <label>
-          Tipo de identificação
-          <select
-            value={identifierKind}
-            onChange={(e) => {
-              setIdentifierKind(e.target.value);
-              if (e.target.value === 'store_id') setSource('settlement');
-            }}
-          >
-            <option value="description">Nome ou descrição na origem</option>
-            <option value="store_id">ID da loja (STORE_ID)</option>
-          </select>
-        </label>
-        <label>
-          {identifierKind === 'store_id'
-            ? 'ID da loja (STORE_ID)'
-            : 'Descrição como aparece na origem'}
+          Descrição como aparece no extrato
           <input
             required
-            minLength={identifierKind === 'store_id' ? 1 : 3}
+            minLength={3}
             maxLength={500}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder={
-              identifierKind === 'store_id'
-                ? 'Identificador da loja, não o SOURCE_ID da operação'
-                : 'Pix enviado Supermercado ABC'
-            }
+            placeholder="Pix enviado Supermercado ABC"
           />
         </label>
         <div className="form-grid">

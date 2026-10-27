@@ -1,5 +1,14 @@
 # Statement imports
 
+## Current consumer import policy (2026-10-27)
+The user superseded the EDI source-of-truth design. New uploads accept account/benefit statements only; EDI is rejected at source detection and the public confirmation/reprocessing routes reject retained settlements. Legacy parser/domain code remains solely for historical compatibility and integrity regression coverage, not a public ingestion path. Retained EDI views are read-only with an undo action for already-confirmed financial records. Existing amounts, proof, categories, identities and backups are preserved.
+
+Account create/update no longer require opening fields. Legacy values remain optional/deprecated API inputs for compatibility and restore; missing values default internally on create and preserve existing values on update. Confirmation never initializes an opening date or amount from statement data. No transaction date cutoff applies. Optional source balances validate source facts only and appear under collapsed source details. The generic normalized validation accepts missing balances and still checks supplied running/final balances and supplied totals. Institution-specific parsers retain their supported layouts; no unsupported generic format is implied.
+
+Statement and benefit source evidence now establish transaction reconciliation when date and amount still match. It does not certify complete historical coverage or the account's current bank balance. Manual balance corrections remain auditable and outside income/expense totals. Agent management offers statement descriptions and manual origins; legacy merchant-ID aliases remain portable. No migration or automatic rewrite of existing balances is required.
+
+Earlier sections below document historical implementation decisions; EDI posting and automatic-opening behavior are superseded by this policy.
+
 ## Purpose
 Convert institution-specific statement data into a consistent financial model. The pilot implements Mercado Pago account-statement PDF, CSV and XLSX parsers feeding one institution mapper and the shared financial contract. The initial schema has been applied by the user.
 

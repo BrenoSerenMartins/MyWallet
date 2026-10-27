@@ -1588,13 +1588,15 @@
             "enum": ["checking", "savings", "cash", "reserve", "benefit_food", "benefit_meal"]
           },
           "openingBalance": {
-            "type": "number"
+            "type": "number",
+            "deprecated": true
           },
           "openingDate": {
-            "type": "string"
+            "type": "string",
+            "deprecated": true
           }
         },
-        "required": ["name", "institution", "type", "openingBalance", "openingDate"]
+        "required": ["name", "institution", "type"]
       },
       "CategoryResourceDto": {
         "type": "object",

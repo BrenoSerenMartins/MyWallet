@@ -17,8 +17,6 @@ import {
   COUNTERPARTY_RULES,
   type CounterpartyRules,
   ACCOUNT_READS,
-  ACCOUNT_OPENING_POSITIONS,
-  type AccountOpeningPositions,
   LEDGER_WRITES,
   LEDGER_READS,
   type LedgerReads,
@@ -50,7 +48,9 @@ export class ImportsService {
       throw new ConflictException('Já existe uma leitura em andamento.');
     this.activeExtractions.add(userId);
     try {
-      return await extractInstitutionStatement(institution, buffer, fileName);
+      const statement = await extractInstitutionStatement(institution, buffer, fileName);
+      this.assertConsumerStatement(statement.reportType);
+      return statement;
     } finally {
       this.activeExtractions.delete(userId);
     }
@@ -64,9 +64,17 @@ export class ImportsService {
     @Inject(LEDGER_READS) private readonly ledgerReads: LedgerReads,
     @Inject(ImportReconciliationService)
     private readonly reconciliation: ImportReconciliationService,
-    @Inject(ACCOUNT_OPENING_POSITIONS) private readonly openingPositions: AccountOpeningPositions,
     @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
   ) {}
+  private assertConsumerStatement(reportType: string | undefined) {
+    if (reportType === 'settlement')
+      throw new UnprocessableEntityException(
+        'Este arquivo é um relatório EDI de liquidações. Importe o extrato de conta do Mercado Pago em PDF, CSV ou XLSX.',
+      );
+  }
+  async requireStatementImport(id: string) {
+    this.assertConsumerStatement((await this.get(id)).report_type);
+  }
   async sourceAccount(accountId: string) {
     const account = await this.accounts.find(accountId);
     if (!['mercado_pago', 'alelo'].includes(account.institution))
@@ -142,26 +150,25 @@ export class ImportsService {
         ? await this.repository.previousImports(account.id, statementStartDate, id)
         : [];
     return {
-      willInitializeOpening:
-        !!account.canEditOpeningPosition &&
-        !account.archived &&
-        b.status === 'draft' &&
-        !!statementStartDate &&
-        ((b.report_type === 'account_statement' && openingMismatch) ||
-          statementStartDate < account.openingDate),
-      canAdjustOpeningPosition: !!account.canEditOpeningPosition && !account.archived,
+      willInitializeOpening: false,
+      canAdjustOpeningPosition: false,
       openingDifference:
         b.opening_balance_minor === null
           ? null
           : Number(b.opening_balance_minor) - recordedOpeningBalance,
       previousImports,
-      canReprocess: ['draft', 'history'].includes(b.status),
+      canReprocess: b.report_type !== 'settlement' && ['draft', 'history'].includes(b.status),
       sourceFormat: mercadoPagoSourceFormat(b.mapper_version),
       reconciliationCapability:
-        b.report_type === 'account_statement' ? 'running_balance' : 'partial',
+        b.report_type === 'account_statement' &&
+        b.opening_balance_minor !== null &&
+        b.closing_balance_minor !== null &&
+        items.every((item) => item.balanceAfter !== null)
+          ? 'running_balance'
+          : 'partial',
       institution: account.institution,
       reportType: b.report_type,
-      canIntegrate: true,
+      canIntegrate: b.report_type !== 'settlement',
       accountOpeningDate: account.openingDate,
       statementStartDate,
       openingDateMismatch: !!statementStartDate && statementStartDate < account.openingDate,
@@ -263,20 +270,7 @@ export class ImportsService {
       if (batch.status === 'confirmed') return { id, status: 'confirmed' };
       this.assertDraft(batch);
       requireVersion(batch.version, version);
-      let preview = await this.preview(id);
-      if (
-        preview.willInitializeOpening &&
-        preview.items.some((item) => item.selected && item.action === 'create')
-      ) {
-        await this.openingPositions.initializeFromStatement(
-          batch.account_id,
-          batch.opening_balance_minor === null
-            ? preview.recordedOpeningBalance
-            : Number(batch.opening_balance_minor),
-          preview.statementStartDate!,
-        );
-        preview = await this.preview(id);
-      }
+      const preview = await this.preview(id);
       const selected = preview.items.filter((i) => i.selected);
       const skippedDuplicates = preview.items.filter((i) => i.duplicateLocked).length;
       const creating = selected.filter((item) => item.action === 'create');

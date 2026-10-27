@@ -1,11 +1,9 @@
-import { OpeningInitialization } from './opening-initialization';
 import { SettlementReview } from './settlement-review';
 import { ReprocessImport } from './reprocess-import';
 import { ImportSourceSummary } from './import-source-summary';
 import { ViewSwitcher } from '../../../shared/ui/view-switcher';
 import { ImportReviewRow } from './import-review-row';
 import { useState } from 'react';
-import { ReconciliationGap } from './reconciliation-gap';
 import { useImportReview } from '../hooks/use-import-review';
 import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ImportBatch } from '../../../shared/api/resources';
@@ -75,7 +73,6 @@ export function ImportReview({
         }}
       />
       <ImportSourceSummary batch={batch} />
-      <OpeningInitialization batch={batch} />
       {batch.reportType === 'benefit_statement' && (
         <div className="review-banner">
           <div>
@@ -86,16 +83,12 @@ export function ImportReview({
               uma diferença conhecida.
             </p>
             <p>
-              A importação fica pendente de conciliação. Revise possíveis compras repetidas antes de
-              confirmar.
+              Os movimentos serão conferidos por este extrato ao confirmar. Isso não comprova o
+              saldo total da conta. Revise possíveis compras repetidas.
             </p>
           </div>
         </div>
       )}
-      {status !== 'reversed' &&
-        canIntegrate &&
-        !batch.willInitializeOpening &&
-        batch.openingMismatch && <ReconciliationGap batch={batch} />}
       {canIntegrate && duplicates.length > 0 && (
         <div className="review-banner duplicate-banner" role="status">
           <div>

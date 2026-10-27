@@ -330,6 +330,7 @@ test('old statement can be retained for consultation and searched without confir
     return route.fulfill({ json: batch });
   });
   await page.goto(`/imports/${id}`);
+  await page.getByText(/^Arquivo e conciliação/).click();
   await expect(
     page.getByText('Diferença no histórico · a importação pode continuar'),
   ).toBeVisible();
@@ -524,7 +525,9 @@ test('leaving the upload screen stops subsequent submissions', async ({ page }) 
 });
 
 for (const outcome of ['normal', 'lost-response', 'refresh-failure', 'rejected'] as const)
-  test(`EDI confirmation handles ${outcome} without duplicating movements`, async ({ page }) => {
+  test(`Statement confirmation handles ${outcome} without duplicating movements`, async ({
+    page,
+  }) => {
     await signedIn(page);
     await page.setViewportSize({ width: 390, height: 1000 });
     const id = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
@@ -534,7 +537,7 @@ for (const outcome of ['normal', 'lost-response', 'refresh-failure', 'rejected']
       fileName: 'settlement_v2-synthetic.csv',
       status: 'draft',
       version: 1,
-      reportType: 'settlement',
+      reportType: 'account_statement',
       canIntegrate: true,
       sourceFormat: 'csv',
       openingBalance: null,
@@ -610,11 +613,7 @@ for (const outcome of ['normal', 'lost-response', 'refresh-failure', 'rejected']
       return route.fulfill({ json: batch });
     });
     await page.goto(`/imports/${id}`);
-    await expect(
-      page.getByText('EDI Mercado Pago · fonte de conciliação', { exact: true }),
-    ).toBeVisible();
-    await expect(page.getByText('0 novos · 1 a conciliar', { exact: false })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Confirmar .* movimentos/ })).toHaveCount(0);
+    await expect(page.getByText('1 selecionado · 0 a classificar', { exact: false })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Classificar entradas e saídas' })).toHaveCount(
       0,
     );
@@ -623,24 +622,24 @@ for (const outcome of ['normal', 'lost-response', 'refresh-failure', 'rejected']
     await expect(page.getByText('0042', { exact: true })).toBeVisible();
     await expect(page.getByText('Visa', { exact: true })).toBeVisible();
     page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Confirmar EDI e conciliar' }).click();
+    await page.getByRole('button', { name: 'Confirmar 1 movimento' }).click();
     if (outcome === 'rejected') {
       await expect(page.getByRole('alert')).toContainText('Falha sintética antes de confirmar.');
-      await expect(page.getByRole('button', { name: 'Confirmar EDI e conciliar' })).toBeEnabled();
+      await expect(page.getByRole('button', { name: 'Confirmar 1 movimento' })).toBeEnabled();
       await expect(
-        page.getByText('EDI confirmado. Operações vinculadas aos lançamentos financeiros.'),
+        page.getByText('Revisão concluída. Somente movimentos novos foram adicionados.'),
       ).toHaveCount(0);
       expect(confirmations).toBe(1);
       return;
     }
     await expect(
-      page.getByText('EDI confirmado. Operações vinculadas aos lançamentos financeiros.'),
+      page.getByText('Revisão concluída. Somente movimentos novos foram adicionados.'),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Revisar para integrar às contas' })).toHaveCount(
       0,
     );
     expect(confirmations).toBe(1);
-    await expect(page.getByRole('button', { name: 'Confirmar EDI e conciliar' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Confirmar 1 movimento' })).toHaveCount(0);
     if (outcome === 'refresh-failure') {
       await expect(page.getByRole('button', { name: 'Atualizar relatório' })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Desfazer importação' })).toBeDisabled();
@@ -675,7 +674,7 @@ for (const outcome of ['normal', 'lost-response', 'refresh-failure', 'rejected']
     await page.goto(`/transactions?transaction=${transaction.id}`);
     await expect(page.getByRole('dialog', { name: 'Detalhes do movimento' })).toBeVisible();
     await expect(page.getByText('Detalhes do Mercado Pago', { exact: true })).toBeVisible();
-    await expect(page.getByText('Conciliada pelo EDI', { exact: true })).toBeVisible();
+    await expect(page.getByText('Conferida por arquivo', { exact: true })).toBeVisible();
     await expect(page.getByText('ID externo: mp-external-123', { exact: true })).toBeVisible();
     await page.getByText('Detalhes da liquidação', { exact: true }).click();
     await expect(page.getByText('0042', { exact: true })).toBeVisible();
@@ -1001,6 +1000,7 @@ test('a later statement points to unfinished history without proposing a new acc
   await page.route(`**/v1/imports/${currentId}`, (route) => route.fulfill({ json: current }));
   await page.route(`**/v1/imports/${priorId}`, (route) => route.fulfill({ json: prior }));
   await page.goto(`/imports/${currentId}`);
+  await page.getByText(/^Arquivo e conciliação/).click();
   await expect(
     page.getByText('Diferença no histórico · a importação pode continuar', { exact: true }),
   ).toBeVisible();
@@ -1567,7 +1567,7 @@ test('first statement initializes opening automatically and refund review links 
   await page.goto(`/imports/${id}`);
   await expect(
     page.getByText('Saldo anterior ao período identificado no extrato', { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
   ).toBeEnabled();
@@ -1593,7 +1593,7 @@ test('first statement initializes opening automatically and refund review links 
   };
   const edi = {
     ...opening,
-    reportType: 'settlement',
+    reportType: 'account_statement',
     willInitializeOpening: false,
     openingMismatch: false,
     openingDateMismatch: false,
@@ -1636,7 +1636,7 @@ test('first statement initializes opening automatically and refund review links 
   await expect(page.getByLabel('Tipo do movimento 1')).toHaveValue('expense');
   await expect(page.getByLabel('Tipo do movimento 1')).toBeDisabled();
   await expect(
-    page.getByRole('button', { name: 'Confirmar EDI e conciliar', exact: true }),
+    page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
   ).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
@@ -1665,16 +1665,19 @@ test('account forms use automatic defaults and preserve existing baseline amount
   await dialog.getByLabel('Nome da conta').fill('Imported wallet');
   await dialog.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  expect(writes[0]).toMatchObject({ name: 'Imported wallet', openingBalance: 0 });
-  expect(writes[0].openingDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(writes[0]).toEqual({
+    name: 'Imported wallet',
+    institution: 'mercado_pago',
+    type: 'checking',
+  });
   await page.getByRole('button', { name: 'Editar', exact: true }).click();
   await dialog.getByLabel('Nome da conta').fill('Renamed account');
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  expect(writes[1]).toMatchObject({
+  expect(writes[1]).toEqual({
     name: 'Renamed account',
-    openingBalance: account.openingBalance,
-    openingDate: account.openingDate,
+    institution: 'mercado_pago',
+    type: 'checking',
   });
 });
 
@@ -1751,7 +1754,9 @@ test('a transaction can explicitly remember an agent category without imposing a
   });
 });
 for (const width of [390, 1440])
-  test(`agent table applies a merchant ID relation to history at ${width}px`, async ({ page }) => {
+  test(`agent table applies a statement description relation to history at ${width}px`, async ({
+    page,
+  }) => {
     await signedIn(page);
     await page.setViewportSize({ width, height: 1100 });
     let related = false;
@@ -1759,9 +1764,9 @@ for (const width of [390, 1440])
     await page.route('**/v1/categories', (r) => r.fulfill({ json: [automationCategory] }));
     await page.route(`**/v1/counterparties/${automationAgent.id}/relations`, async (r) => {
       expect(r.request().postDataJSON()).toMatchObject({
-        identifierKind: 'store_id',
-        sourceKind: 'settlement',
-        value: 'STORE-NEW',
+        identifierKind: 'description',
+        sourceKind: 'account_statement',
+        value: 'Pix enviado Mercado Exemplo',
         accountId: account.id,
         categoryId: automationCategory.id,
       });
@@ -1777,10 +1782,14 @@ for (const width of [390, 1440])
     await page
       .getByRole('combobox', { name: 'Conta da relação', exact: true })
       .selectOption(account.id);
+    await expect(
+      page
+        .getByRole('combobox', { name: 'Origem da identificação', exact: true })
+        .locator('option[value=settlement]'),
+    ).toHaveCount(0);
     await page
-      .getByRole('combobox', { name: 'Tipo de identificação', exact: true })
-      .selectOption('store_id');
-    await page.getByLabel('ID da loja (STORE_ID)', { exact: true }).fill('STORE-NEW');
+      .getByLabel('Descrição como aparece no extrato', { exact: true })
+      .fill('Pix enviado Mercado Exemplo');
     await page
       .getByRole('combobox', { name: 'Categoria da relação', exact: true })
       .selectOption(automationCategory.id);
@@ -1873,4 +1882,39 @@ test('import review saves learning intent for confirmation and shows the automat
   await expect(
     page.getByText('Categoria automática · regra do agente', { exact: true }),
   ).toBeVisible();
+});
+
+test('retained EDI is read-only and cannot post or reprocess new movements', async ({ page }) => {
+  await signedIn(page);
+  const id = 'ffffffff-ffff-4fff-8fff-fffffffffff1';
+  await page.route(`**/v1/imports/${id}`, (route) =>
+    route.fulfill({
+      json: {
+        id,
+        accountId: account.id,
+        fileName: 'legacy-edi.csv',
+        status: 'draft',
+        version: 1,
+        reportType: 'settlement',
+        canIntegrate: false,
+        canReprocess: false,
+        openingBalance: null,
+        closingBalance: null,
+        sourceFormat: 'csv',
+        items: [{ ...transaction, sourceRow: 1, selected: true, action: 'create', metadata: null }],
+      },
+    }),
+  );
+  let mutations = 0;
+  await page.route(`**/v1/imports/${id}/**`, async (route) => {
+    mutations++;
+    await route.fulfill({ status: 500, json: {} });
+  });
+  await page.goto(`/imports/${id}`);
+  await expect(
+    page.getByText('Relatório EDI antigo · disponível para consulta', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: /Confirmar|Reprocessar/ })).toHaveCount(0);
+  await expect(page.getByLabel('Tipo do movimento 1')).toBeDisabled();
+  expect(mutations).toBe(0);
 });

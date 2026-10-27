@@ -28,7 +28,7 @@ export function CounterpartyPanel({
   const sources: Record<string, string> = {
     manual: 'Manual',
     account_statement: 'Extrato',
-    settlement: 'EDI',
+    settlement: 'EDI antigo',
     benefit_statement: 'Benefício',
   };
   return (

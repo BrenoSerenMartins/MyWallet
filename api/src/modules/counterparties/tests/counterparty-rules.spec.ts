@@ -15,7 +15,8 @@ import { ImportReconciliationRepository } from '../../imports/repositories/impor
 import { ImportReprocessingService } from '../../imports/services/import-reprocessing.service.js';
 import { CounterpartiesRepository } from '../repositories/counterparties.repository.js';
 import { CounterpartiesService } from '../services/counterparties.service.js';
-import { extractMercadoPagoStatement } from '../../imports/parsers/mercado-pago/extract-statement.js';
+import { parseSettlementTable } from '../../imports/parsers/mercado-pago/settlement.parser.js';
+import { mapMercadoPagoSettlements } from '../../imports/mappers/mercado-pago/settlement.mapper.js';
 import { settlementFixture } from '../../imports/tests/settlement-fixture.js';
 import { DataExportService } from '../../data-export/services/data-export.service.js';
 import { RestoreRepository } from '../../data-export/repositories/restore.repository.js';
@@ -45,7 +46,6 @@ const imports = new ImportsService(
   categories,
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
-  accounts,
   counterparties,
 );
 const reprocessing = new ImportReprocessingService(
@@ -122,7 +122,7 @@ async function edi(
     SETTLEMENT_DATE_SHORT: '2026-06-01',
     ...overrides,
   });
-  const parsed = await extractMercadoPagoStatement(fixture.buffer, 'edi.csv');
+  const parsed = mapMercadoPagoSettlements(parseSettlementTable(fixture.rows));
   return run(() => imports.upload(accountId, fixture.buffer, 'edi.csv', parsed));
 }
 it('learns only after an explicit choice and respects account, direction and manual overrides', async () => {
