@@ -32,6 +32,7 @@ export class LedgerRepository {
     );
     return rows.map((row) => ({
       ...transactionResource(row),
+      balanceBasisIncluded: row.balance_basis_included,
       sourceEvidence:
         row.source_evidence as import('../../../core/integration/index.js').SourceEvidence[],
     }));
@@ -127,7 +128,7 @@ export class LedgerRepository {
   }
   async insert(input: TransactionInput) {
     const rows = await this.db.query(
-      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment,refund_of_id,counterparty_id,classification_rule_id,source_kind) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
+      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment,refund_of_id,counterparty_id,classification_rule_id,source_kind,balance_basis_included) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
       [
         randomUUID(),
         this.db.userId,
@@ -146,6 +147,7 @@ export class LedgerRepository {
         input.counterpartyId ?? null,
         input.classificationRuleId ?? null,
         input.sourceKind ?? 'manual',
+        input.balanceBasisIncluded ?? false,
       ],
     );
     return transactionResource(rows[0]);
@@ -207,6 +209,13 @@ export class LedgerRepository {
       ],
     );
     return this.find(id);
+  }
+  async transferAccounts(groupId: string) {
+    const rows = await this.db.query(
+      'SELECT DISTINCT account_id FROM wallet.transactions WHERE user_id=$1 AND transfer_group_id=$2 ORDER BY account_id',
+      [this.db.userId, groupId],
+    );
+    return rows.map((row) => row.account_id as string);
   }
   async reverse(id: string, groupId?: string | null) {
     await this.db.query(

@@ -11,6 +11,11 @@ export function BalanceOverview({
   visible: boolean;
   onToggle: () => void;
 }) {
+  const cashAccounts = summary.accounts.filter(
+    (a) => !['benefit_food', 'benefit_meal', 'reserve'].includes(a.type),
+  );
+  const partial = cashAccounts.some((a) => a.balanceBasis?.kind === 'unknown');
+  const review = cashAccounts.some((a) => a.balanceBasis?.reviewRequired);
   const amount = (value: number) => (visible ? money(value) : '••••••');
   return (
     <section className="overview-grid">
@@ -18,7 +23,8 @@ export function BalanceOverview({
         <div className="hero-orbits" aria-hidden="true" />
         <div className="hero-label">
           <span>
-            <span className="status-dot" /> DINHEIRO DISPONÍVEL
+            <span className="status-dot" />{' '}
+            {partial || review ? 'SALDO REGISTRADO' : 'DINHEIRO DISPONÍVEL'}
           </span>
           <button
             className="icon-button"
@@ -30,7 +36,12 @@ export function BalanceOverview({
         </div>
         <div className="hero-balance">{amount(summary.balance)}</div>
         <p className="hero-caption">
-          Saldos registrados · sem benefícios e reservas <span>BRL</span>
+          {review
+            ? 'Saldo precisa de conferência'
+            : partial
+              ? 'Histórico parcial · informe o saldo atual quando quiser'
+              : 'Saldos registrados · sem benefícios e reservas'}{' '}
+          <span>BRL</span>
         </p>
         {summary.accounts.some((account) =>
           ['benefit_food', 'benefit_meal', 'reserve'].includes(account.type),

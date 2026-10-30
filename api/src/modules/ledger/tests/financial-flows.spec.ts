@@ -1,3 +1,5 @@
+import { BalanceBasisService } from '../../accounts/services/balance-basis.service.js';
+import { BalanceBasisRepository } from '../../accounts/repositories/balance-basis.repository.js';
 import { CounterpartiesService } from '../../counterparties/services/counterparties.service.js';
 import { CounterpartiesRepository } from '../../counterparties/repositories/counterparties.repository.js';
 import { ImportReconciliationService } from '../../imports/services/import-reconciliation.service.js';
@@ -18,6 +20,7 @@ import { RestoreRepository } from '../../data-export/repositories/restore.reposi
 import { ImportsService } from '../../imports/services/imports.service.js';
 import { ImportsRepository } from '../../imports/repositories/imports.repository.js';
 const db = new TestDatabase();
+const balanceBasis = new BalanceBasisService(new BalanceBasisRepository(db.service));
 const accounts = new AccountsService(new AccountsRepository(db.service));
 const categories = new CategoriesService(new CategoriesRepository(db.service));
 const counterparties = new CounterpartiesService(
@@ -31,6 +34,7 @@ const ledger = new LedgerService(
   categories,
   new IdempotencyService(db.service),
   counterparties,
+  balanceBasis,
 );
 import { PlanningRepository } from '../../planning/repositories/planning.repository.js';
 import { PlanningService } from '../../planning/services/planning.service.js';
@@ -42,6 +46,7 @@ const backups = new DataExportService(
   new RestoreRepository(db.service),
   new PlanningService(new PlanningRepository(db.service), categories, ledger),
   counterparties,
+  balanceBasis,
 );
 const imports = new ImportsService(
   new ImportsRepository(db.service),
@@ -52,6 +57,7 @@ const imports = new ImportsService(
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
   counterparties,
+  balanceBasis,
 );
 let first: string;
 let second: string;
@@ -278,7 +284,7 @@ describe('Financial integrity with PostgreSQL RLS', () => {
     ).rejects.toThrow('Nested financial failure');
     expect(await db.forUser(db.user, async () => (await accounts.list()).length)).toBe(count);
   });
-  it('keeps account starting data unchanged when confirming source balances', async () => {
+  it('adopts the opening amount supplied by a fully confirmed first statement', async () => {
     await db.forUser(db.user, async () => {
       const a = await accounts.create({
         name: 'Opening check',
@@ -308,14 +314,14 @@ describe('Financial integrity with PostgreSQL RLS', () => {
         false,
       );
       expect((await imports.preview(id)).openingMismatch).toBe(true);
-      expect((await imports.preview(id)).willInitializeOpening).toBe(false);
+      expect((await imports.preview(id)).willInitializeOpening).toBe(true);
       await imports.confirm(id, 1, 'opening-mismatch');
-      expect((await accounts.find(a.id)).openingBalance).toBe(0);
+      expect((await accounts.find(a.id)).openingBalance).toBe(500);
     });
   });
 });
 
-it('records an idempotent manual balance correction without changing income/expense totals or opening position', async () => {
+it('corrects the base idempotently without writing financial transactions or income/expense totals', async () => {
   await db.forUser(db.user, async () => {
     const account = await accounts.create({
       name: 'Balance correction test',
@@ -331,16 +337,14 @@ it('records an idempotent manual balance correction without changing income/expe
       'manual-balance-proof',
     );
     expect(adjustment).toMatchObject({
-      amount: -2500,
-      description: 'Correção de saldo manual',
-      transactionType: 'transfer',
-      balanceAdjustment: {
-        previousBalance: 10000,
-        targetBalance: 7500,
-        reason: 'Historical gap verified manually',
-      },
-      reconciliationStatus: 'pending',
+      operation: 'manual',
+      previousBase: 10000,
+      newBase: 7500,
+      details: { previousBalance: 10000, targetBalance: 7500, difference: -2500 },
     });
+    expect(
+      (await ledger.exportRecords()).filter((row) => row.accountId === account.id),
+    ).toHaveLength(0);
     expect(
       await ledger.adjustBalance(
         account.id,
@@ -348,11 +352,8 @@ it('records an idempotent manual balance correction without changing income/expe
         'manual-balance-proof',
       ),
     ).toEqual(adjustment);
-    expect(await accounts.find(account.id)).toMatchObject({ openingBalance: 10000, balance: 7500 });
+    expect(await accounts.find(account.id)).toMatchObject({ openingBalance: 7500, balance: 7500 });
     expect(await ledger.summary('2026-01-01', '2027-01-01')).toEqual(before);
-    await expect(
-      ledger.update(adjustment.id, { ...adjustment, amount: -1000 }, String(adjustment.version)),
-    ).rejects.toThrow('não são editadas');
   });
 });
 it('rejects stale/zero balance adjustments and reverses corrections without deleting original movements', async () => {
@@ -399,18 +400,23 @@ it('rejects stale/zero balance adjustments and reverses corrections without dele
       'upward-balance',
     ),
   );
-  await db.forUser(db.user, () => ledger.reverse(adjustment.id, String(adjustment.version)));
+  await db.forUser(db.user, async () =>
+    balanceBasis.undo(account.id, adjustment.id, (await accounts.find(account.id)).version),
+  );
   expect((await db.forUser(db.user, () => accounts.find(account.id))).balance).toBe(1000);
 });
-it('round-trips balance-correction evidence and excludes it from all planning actuals', async () => {
+it('round-trips base history separately from financial transactions', async () => {
   const backup = await db.forUser(db.user, () => backups.backup());
-  const adjustment = backup.transactions.find((t) => t.balanceAdjustment);
-  expect(adjustment?.balanceAdjustment?.reason).toBe('Historical gap verified manually');
+  const adjustment = backup.balanceHistory!.find(
+    (row) => row.reason === 'Historical gap verified manually',
+  )!;
+  expect(adjustment.operation).toBe('manual');
+  expect(backup.transactions.some((t) => t.balanceAdjustment)).toBe(false);
   const bad = structuredClone(backup);
-  bad.transactions.find((t) => t.balanceAdjustment)!.balanceAdjustment!.targetBalance++;
+  bad.accounts.find((a) => a.id === adjustment.accountId)!.openingBalance++;
   await expect(db.forUser(db.user, () => backups.preview(bad))).rejects.toThrow('backup');
   const space = await db.engine.query<{ id: string }>(
-    "INSERT INTO wallet.workspaces(user_id,name) VALUES($1,'Correction restore') RETURNING id",
+    "INSERT INTO wallet.workspaces(user_id,name) VALUES($1,'Base restore') RETURNING id",
     [db.user],
   );
   await db.forUser(
@@ -418,10 +424,12 @@ it('round-trips balance-correction evidence and excludes it from all planning ac
     async () => {
       const draft = await backups.preview(backup);
       await backups.confirm(draft.id);
-      const restored = (await ledger.exportRecords()).find(
-        (t) => t.description === 'Correção de saldo manual',
-      );
-      expect(restored?.balanceAdjustment).toEqual(adjustment?.balanceAdjustment);
+      expect(
+        (await balanceBasis.exportHistory()).some((event) => event.reason === adjustment.reason),
+      ).toBe(true);
+      expect(
+        (await accounts.list()).find((a) => a.name === 'Balance correction test')?.balance,
+      ).toBe(7500);
     },
     false,
     space.rows[0].id,

@@ -6,12 +6,16 @@ import { Button } from '../../../shared/ui/primitives';
 export function BalanceAdjustmentForm({
   account,
   onSaved,
+  initial = false,
 }: {
   account: Account;
   onSaved: () => void;
+  initial?: boolean;
 }) {
   const [value, setValue] = useState(String(account.balance / 100).replace('.', ','));
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState(
+    initial ? 'Saldo atual conferido após importar o histórico' : '',
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [key] = useState(() => crypto.randomUUID());
@@ -21,13 +25,21 @@ export function BalanceAdjustmentForm({
   } catch {
     /* Incomplete input is shown as unavailable until valid. */
   }
+  const mayConfirmZero =
+    account.balanceBasis?.kind === 'unknown' || !!account.balanceBasis?.reviewRequired;
   const difference = target === null ? null : target - account.balance;
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (target === null || difference === null || !difference || !reason.trim()) return;
+    if (
+      target === null ||
+      difference === null ||
+      (!difference && !mayConfirmZero) ||
+      !reason.trim()
+    )
+      return;
     if (
       !window.confirm(
-        `Registrar correção de ${money(difference)} para deixar o saldo em ${money(target)}? Seus movimentos existentes serão preservados.`,
+        `Confirmar saldo atual de ${money(target)}? O saldo base será recalculado e seus movimentos existentes serão preservados.`,
       )
     )
       return;
@@ -37,7 +49,12 @@ export function BalanceAdjustmentForm({
       await request(`/accounts/${account.id}/balance-adjustments`, {
         method: 'POST',
         headers: { 'Idempotency-Key': key },
-        body: jsonBody({ targetBalance: target, expectedBalance: account.balance, reason }),
+        body: jsonBody({
+          targetBalance: target,
+          expectedBalance: account.balance,
+          expectedVersion: account.version,
+          reason,
+        }),
       });
       onSaved();
     } catch (cause) {
@@ -77,9 +94,9 @@ export function BalanceAdjustmentForm({
             {difference === null ? 'Informe um valor válido' : money(difference)}
           </strong>
           <p>
-            Será criado um movimento “Correção de saldo manual”. Ele altera o saldo, não entra em
-            receitas ou despesas e não marca a conta como conciliada. Seus registros anteriores
-            continuam preservados.
+            O saldo base será ajustado, com data e motivo no histórico de correções. Nenhum
+            lançamento financeiro será criado. Receitas, despesas e movimentos existentes serão
+            preservados.
           </p>
         </div>
       </div>
@@ -88,8 +105,10 @@ export function BalanceAdjustmentForm({
           {error}
         </p>
       )}
-      <Button disabled={busy || !difference || !reason.trim() || !navigator.onLine}>
-        {busy ? 'Registrando…' : 'Registrar correção de saldo'}
+      <Button
+        disabled={busy || (!difference && !mayConfirmZero) || !reason.trim() || !navigator.onLine}
+      >
+        {busy ? 'Registrando…' : initial ? 'Confirmar saldo atual' : 'Registrar correção de saldo'}
       </Button>
     </form>
   );

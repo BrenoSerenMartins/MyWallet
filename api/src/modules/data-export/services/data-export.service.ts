@@ -1,6 +1,8 @@
 import { GoneException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import {
+  ACCOUNT_BALANCE_BASIS,
+  type AccountBalanceBasis,
   COUNTERPARTY_RULES,
   type CounterpartyRules,
   PLANNING_BACKUP,
@@ -27,11 +29,13 @@ export class DataExportService {
     @Inject(RestoreRepository) private readonly repository: RestoreRepository,
     @Inject(PLANNING_BACKUP) private readonly planning: PlanningBackup,
     @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
+    @Inject(ACCOUNT_BALANCE_BASIS) private readonly balanceBasis: AccountBalanceBasis,
   ) {}
   async backup(): Promise<BackupPayload> {
     return {
       format: 'mywallet',
-      version: 5,
+      version: 6,
+      balanceHistory: await this.balanceBasis.exportHistory(),
       counterparties: await this.counterparties.snapshot(),
       categoryGroups: await this.categories.exportGroups(),
       monthlyPlans: await this.planning.exportRecords(),
@@ -123,7 +127,19 @@ export class DataExportService {
         accounts,
         categories,
       );
-      await this.ledger.restoreRecords(payload.transactions, accounts, categories, identities);
+      const transactionIds = await this.ledger.restoreRecords(
+        payload.transactions,
+        accounts,
+        categories,
+        identities,
+      );
+      await this.balanceBasis.restoreBackup(
+        payload.accounts,
+        payload.transactions,
+        payload.balanceHistory ?? [],
+        accounts,
+        transactionIds,
+      );
       await this.planning.restoreRecords(payload.monthlyPlans ?? [], categories);
       await this.repository.confirm(id);
       return {

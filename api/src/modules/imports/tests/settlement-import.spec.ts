@@ -1,3 +1,5 @@
+import { BalanceBasisService } from '../../accounts/services/balance-basis.service.js';
+import { BalanceBasisRepository } from '../../accounts/repositories/balance-basis.repository.js';
 import { CounterpartiesService } from '../../counterparties/services/counterparties.service.js';
 import { CounterpartiesRepository } from '../../counterparties/repositories/counterparties.repository.js';
 import { ImportReconciliationService } from '../services/import-reconciliation.service.js';
@@ -23,6 +25,7 @@ import { mapMercadoPagoSettlements } from '../mappers/mercado-pago/settlement.ma
 import { mapMercadoPago } from '../mappers/mercado-pago/statement.mapper.js';
 import { settlementFixture } from './settlement-fixture.js';
 const db = new TestDatabase();
+const balanceBasis = new BalanceBasisService(new BalanceBasisRepository(db.service));
 const accounts = new AccountsService(new AccountsRepository(db.service));
 const categories = new CategoriesService(new CategoriesRepository(db.service));
 const receipts = new IdempotencyService(db.service);
@@ -37,6 +40,7 @@ const ledger = new LedgerService(
   categories,
   receipts,
   counterparties,
+  balanceBasis,
 );
 const imports = new ImportsService(
   new ImportsRepository(db.service),
@@ -47,6 +51,7 @@ const imports = new ImportsService(
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
   counterparties,
+  balanceBasis,
 );
 let accountId: string;
 beforeAll(async () => {

@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import {
+  ACCOUNT_BALANCE_BASIS,
+  type AccountBalanceBasis,
   COUNTERPARTY_RULES,
   type CounterpartyRules,
   ACCOUNT_READS,
@@ -65,6 +67,7 @@ export class ImportsService {
     @Inject(ImportReconciliationService)
     private readonly reconciliation: ImportReconciliationService,
     @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
+    @Inject(ACCOUNT_BALANCE_BASIS) private readonly balanceBasis: AccountBalanceBasis,
   ) {}
   private assertConsumerStatement(reportType: string | undefined) {
     if (reportType === 'settlement')
@@ -150,7 +153,11 @@ export class ImportsService {
         ? await this.repository.previousImports(account.id, statementStartDate, id)
         : [];
     return {
-      willInitializeOpening: false,
+      balanceBasis: account.balanceBasis,
+      willInitializeOpening:
+        b.status === 'draft' &&
+        account.balanceBasis?.kind === 'unknown' &&
+        b.opening_balance_minor !== null,
       canAdjustOpeningPosition: false,
       openingDifference:
         b.opening_balance_minor === null
@@ -339,9 +346,11 @@ export class ImportsService {
         await this.reconciliation.link(id, item.id, created.id, item.sourceEvidence);
       }
       await this.repository.mark(id, 'confirmed');
+      const balanceBasisResult = await this.balanceBasis.considerStatement(batch.account_id, id);
       return {
         id,
         status: 'confirmed',
+        balanceBasis: balanceBasisResult,
         count: creating.length,
         reconciled: selected.length - creating.length,
         skippedDuplicates,
@@ -376,6 +385,8 @@ export class ImportsService {
     await this.ledger.reverseBatch(id);
     await this.ledger.removeBatchEvidence(id);
     await this.repository.mark(id, 'reversed');
+    await this.balanceBasis.removeStatement(batch.account_id, id);
+    await this.balanceBasis.refresh(batch.account_id);
     return { id, status: 'reversed' };
   }
 }

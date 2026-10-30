@@ -1,6 +1,8 @@
+import { BalanceBasisDto } from './balance-basis-dto.js';
 import { CounterpartyCandidateDto } from './counterparty-candidate-dto.js';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class AccountResourceDto {
+  @ApiPropertyOptional({ type: () => BalanceBasisDto }) balanceBasis?: BalanceBasisDto;
   @ApiProperty({ type: Boolean }) canEditOpeningPosition!: boolean;
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) name!: string;
@@ -129,6 +131,7 @@ export class PreviousImportResourceDto {
   @ApiProperty({ type: String }) lastDate!: string;
 }
 export class ImportBatchResourceDto {
+  @ApiPropertyOptional({ type: () => BalanceBasisDto }) balanceBasis?: BalanceBasisDto;
   @ApiPropertyOptional({ type: Boolean }) willInitializeOpening?: boolean;
   @ApiProperty({ type: String }) institution!: string;
   @ApiProperty({ type: String, enum: ['running_balance', 'partial'] }) reconciliationCapability!:

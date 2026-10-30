@@ -219,3 +219,6 @@ Current policy supersedes the EDI source-of-truth plan: account/benefit statemen
 
 ## Identity recognition and explicit acceptance
 A person/establishment can have multiple account/source descriptions across payment methods. Typography-normalized confirmed aliases identify future and historical movements; name, abbreviation and minor spelling similarities only suggest a choice. User acceptance is saved with the transaction/import confirmation or via the identity-only description form. Identity does not require a category, and category rules remain directional by account/type. Generic/ambiguous/disabled identities do not auto-bind. Legacy aliases and manual monetary/category choices remain preserved; no operation ID, amount or date becomes a person's identity.
+
+## Audited base policy (2026-10-30)
+Manual corrections change the balance base, not financial movements. A reference can come from a complete bank statement or an optional observed current balance after import. Older history triggers a base recalculation instead of adding already compensated money again; contradictory or temporally ambiguous evidence is flagged. Corrections and undo remain auditable and portable. Legacy corrections are converted without changing the total, and their original records remain. No starting fields are required in normal account setup.

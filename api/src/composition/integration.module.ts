@@ -3,6 +3,7 @@ import { Global, Module } from '@nestjs/common';
 import {
   COUNTERPARTY_RULES,
   PLANNING_BACKUP,
+  ACCOUNT_BALANCE_BASIS,
   ACCOUNT_READS,
   CATEGORY_READS,
   LEDGER_WRITES,
@@ -12,7 +13,7 @@ import {
   CATEGORY_BACKUP,
   LEDGER_BACKUP,
 } from '../core/integration/index.js';
-import { AccountsModule, AccountsService } from '../modules/accounts/index.js';
+import { AccountsModule, AccountsService, BalanceBasisService } from '../modules/accounts/index.js';
 import { CategoriesModule, CategoriesService } from '../modules/categories/index.js';
 import { LedgerModule, LedgerService, IdempotencyService } from '../modules/ledger/index.js';
 import { PlanningModule, PlanningService } from '../modules/planning/index.js';
@@ -22,6 +23,7 @@ const bindings = [
   { provide: ACCOUNT_BACKUP, useExisting: AccountsService },
   { provide: CATEGORY_BACKUP, useExisting: CategoriesService },
   { provide: LEDGER_BACKUP, useExisting: LedgerService },
+  { provide: ACCOUNT_BALANCE_BASIS, useExisting: BalanceBasisService },
   { provide: ACCOUNT_READS, useExisting: AccountsService },
   { provide: CATEGORY_READS, useExisting: CategoriesService },
   { provide: LEDGER_WRITES, useExisting: LedgerService },

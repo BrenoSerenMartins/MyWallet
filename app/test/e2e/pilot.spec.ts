@@ -1447,6 +1447,7 @@ for (const width of [390, 1440])
       expect(route.request().postDataJSON()).toEqual({
         targetBalance: 19220,
         expectedBalance: 12000,
+        expectedVersion: benefit.version,
         reason: 'Saldo conferido no Meu Alelo',
       });
       expect(route.request().headers()['idempotency-key']).toBeTruthy();
@@ -2018,4 +2019,130 @@ test('links an additional statement description from the person page without req
     sourceKind: 'account_statement',
     value: 'Pagamento cartão Maria Oliveira',
   });
+});
+
+for (const width of [390, 1440])
+  test(`corrects and undoes the balance base in its own history at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1100 });
+    const a = {
+      ...account,
+      balance: 4605,
+      openingBalance: 0,
+      balanceBasis: { kind: 'unknown', originId: undefined as string | undefined },
+    };
+    const auditId = '77777777-7777-4777-8777-777777777777';
+    let corrected = false,
+      financialWrites = 0;
+    await page.route('**/v1/accounts', (route) => route.fulfill({ json: [a] }));
+    await page.route('**/v1/transactions', (route) => {
+      if (route.request().method() !== 'GET') financialWrites++;
+      return route.fulfill({ json: { items: [], nextCursor: null } });
+    });
+    await page.route(`**/v1/accounts/${a.id}/balance-adjustments`, (route) => {
+      expect(route.request().postDataJSON()).toMatchObject({
+        targetBalance: 5912,
+        expectedBalance: 4605,
+        expectedVersion: 1,
+      });
+      corrected = true;
+      a.balance = 5912;
+      a.openingBalance = 1307;
+      a.version = 2;
+      a.balanceBasis = { kind: 'manual', originId: auditId };
+      return route.fulfill({
+        json: { id: auditId, operation: 'manual', previousBase: 0, newBase: 1307 },
+      });
+    });
+    await page.route(`**/v1/accounts/${a.id}/balance-history`, (route) =>
+      route.fulfill({
+        json: corrected
+          ? [
+              {
+                id: auditId,
+                accountId: a.id,
+                operation: 'manual',
+                previousBase: 0,
+                newBase: 1307,
+                reason: 'Saldo conferido no banco',
+                createdAt: '2026-10-30T12:00:00Z',
+                details: { targetBalance: 5912 },
+                previousBasis: { kind: 'unknown' },
+                newBasis: { kind: 'manual', originId: auditId },
+                undoOfId: null,
+              },
+            ]
+          : [],
+      }),
+    );
+    await page.route(`**/v1/accounts/${a.id}/balance-adjustments/${auditId}/reversals`, (route) => {
+      expect(route.request().headers()['if-match']).toBe('2');
+      a.balance = 4605;
+      a.openingBalance = 0;
+      a.version = 3;
+      a.balanceBasis = { kind: 'unknown', originId: undefined };
+      return route.fulfill({ json: { id: 'undone' } });
+    });
+    await page.goto('/accounts');
+    await page.getByRole('button', { name: 'Corrigir saldo', exact: true }).click();
+    await page.getByLabel('Saldo atual correto (R$)').fill('59,12');
+    await page.getByLabel('Motivo da correção').fill('Saldo conferido no banco');
+    await expect(page.getByText(/Nenhum lançamento financeiro será criado/)).toBeVisible();
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Registrar correção de saldo', exact: true }).click();
+    await expect(page.getByText('R$ 59,12', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Histórico de saldo', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Histórico de saldo' });
+    await expect(dialog.getByText('Saldo conferido no banco', { exact: true })).toBeVisible();
+    page.once('dialog', (prompt) => prompt.accept());
+    await dialog.getByRole('button', { name: 'Desfazer correção', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText('R$ 46,05', { exact: true })).toBeVisible();
+    expect(financialWrites).toBe(0);
+  });
+
+test('offers optional current balance after a balance-less import without requiring starting fields', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const id = '88888888-8888-4888-8888-888888888888';
+  const a = {
+    ...account,
+    institution: 'alelo',
+    type: 'benefit_food',
+    balance: 70000,
+    balanceBasis: { kind: 'unknown' },
+  };
+  const batch = {
+    id,
+    accountId: a.id,
+    fileName: 'alelo.pdf',
+    version: 2,
+    status: 'confirmed',
+    reportType: 'benefit_statement',
+    canIntegrate: true,
+    canReprocess: false,
+    openingBalance: null,
+    closingBalance: null,
+    openingMismatch: false,
+    balanceBasis: { kind: 'unknown' },
+    items: [],
+  };
+  await page.route(`**/v1/accounts/${a.id}`, (route) => route.fulfill({ json: a }));
+  await page.route(`**/v1/imports/${id}`, (route) => route.fulfill({ json: batch }));
+  let writes = 0;
+  await page.route(`**/v1/accounts/${a.id}/balance-adjustments`, (route) => {
+    writes++;
+    return route.fulfill({ json: { id: 'audit' } });
+  });
+  await page.goto(`/imports/${id}`);
+  await expect(page.getByText('Quer alinhar o saldo da conta?', { exact: true })).toBeVisible();
+  expect(writes).toBe(0);
+  await page.getByRole('button', { name: 'Informar saldo atual (opcional)', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Conferir saldo atual' });
+  await expect(dialog.getByLabel('Saldo atual correto (R$)')).toBeVisible();
+  await expect(dialog.getByLabel('Saldo inicial (R$)')).toHaveCount(0);
+  await expect(dialog.getByLabel('Data inicial')).toHaveCount(0);
 });

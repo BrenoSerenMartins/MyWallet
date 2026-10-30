@@ -354,6 +354,74 @@
         "tags": ["Accounts"]
       }
     },
+    "/v1/accounts/{accountId}/balance-history": {
+      "get": {
+        "operationId": "BalanceBasisController_history",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BalanceHistoryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Account balance"]
+      }
+    },
+    "/v1/accounts/{accountId}/balance-adjustments/{id}/reversals": {
+      "post": {
+        "operationId": "BalanceBasisController_undo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceHistoryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Account balance"]
+      }
+    },
+    "/v1/accounts/{accountId}/balance-basis/imports/{id}": {
+      "post": {
+        "operationId": "BalanceBasisController_statement",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Account balance"]
+      }
+    },
     "/v1/categories": {
       "get": {
         "operationId": "CategoriesController_list",
@@ -743,7 +811,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TransactionResourceDto"
+                  "$ref": "#/components/schemas/BalanceHistoryDto"
                 }
               }
             }
@@ -1635,9 +1703,41 @@
         },
         "required": ["enabled"]
       },
+      "BalanceBasisDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["unknown", "legacy", "statement", "manual"]
+          },
+          "referenceDate": {
+            "type": "string"
+          },
+          "referenceBalance": {
+            "type": "number"
+          },
+          "originId": {
+            "type": "string"
+          },
+          "importId": {
+            "type": "string"
+          },
+          "reviewRequired": {
+            "type": "boolean"
+          },
+          "reviewReason": {
+            "type": "string",
+            "enum": ["same_day", "statement_conflict"]
+          }
+        },
+        "required": ["kind"]
+      },
       "AccountResourceDto": {
         "type": "object",
         "properties": {
+          "balanceBasis": {
+            "$ref": "#/components/schemas/BalanceBasisDto"
+          },
           "canEditOpeningPosition": {
             "type": "boolean"
           },
@@ -1709,6 +1809,60 @@
           }
         },
         "required": ["name", "institution", "type"]
+      },
+      "BalanceHistoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "operation": {
+            "type": "string",
+            "enum": ["manual", "statement", "rebase", "undo", "legacy_conversion"]
+          },
+          "previousBase": {
+            "type": "number"
+          },
+          "newBase": {
+            "type": "number"
+          },
+          "previousBasis": {
+            "$ref": "#/components/schemas/BalanceBasisDto"
+          },
+          "newBasis": {
+            "$ref": "#/components/schemas/BalanceBasisDto"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "undoOfId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "operation",
+          "previousBase",
+          "newBase",
+          "previousBasis",
+          "newBasis",
+          "reason",
+          "details",
+          "undoOfId",
+          "createdAt"
+        ]
       },
       "CategoryResourceDto": {
         "type": "object",
@@ -2009,6 +2163,9 @@
       "BalanceAdjustmentDto": {
         "type": "object",
         "properties": {
+          "expectedVersion": {
+            "type": "number"
+          },
           "targetBalance": {
             "type": "number"
           },
@@ -2504,6 +2661,9 @@
       "ImportBatchResourceDto": {
         "type": "object",
         "properties": {
+          "balanceBasis": {
+            "$ref": "#/components/schemas/BalanceBasisDto"
+          },
           "willInitializeOpening": {
             "type": "boolean"
           },

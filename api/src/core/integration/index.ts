@@ -1,3 +1,4 @@
+export * from './balance-basis.js';
 export * from './counterparty-identifier.js';
 export * from './counterparties.js';
 
@@ -8,6 +9,7 @@ export const CATEGORY_READS = Symbol('CATEGORY_READS');
 export const LEDGER_WRITES = Symbol('LEDGER_WRITES');
 export const LEDGER_READS = Symbol('LEDGER_READS');
 export interface AccountResource {
+  balanceBasis?: import('./balance-basis.js').BalanceBasis;
   canEditOpeningPosition?: boolean;
   id: string;
   name: string;
@@ -42,6 +44,7 @@ export interface BalanceAdjustment {
   reason: string;
 }
 export interface TransactionInput {
+  balanceBasisIncluded?: boolean;
   sourceStoreId?: string;
   counterpartyId?: string | null;
   counterpartyName?: string | null;
@@ -112,6 +115,7 @@ export const ACCOUNT_BACKUP = Symbol('ACCOUNT_BACKUP');
 export const CATEGORY_BACKUP = Symbol('CATEGORY_BACKUP');
 export const LEDGER_BACKUP = Symbol('LEDGER_BACKUP');
 export interface BackupAccount {
+  balanceBasis?: import('./balance-basis.js').BalanceBasis;
   id: string;
   name: string;
   institution: string;
@@ -127,6 +131,7 @@ export interface BackupCategory {
   color: string;
 }
 export interface BackupTransaction {
+  balanceBasisIncluded?: boolean;
   counterpartyId?: string | null;
   classificationRuleId?: string | null;
   sourceKind?: import('./counterparties.js').SourceKind;
@@ -145,7 +150,8 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'mywallet';
-  version: 1 | 2 | 3 | 4 | 5;
+  version: 1 | 2 | 3 | 4 | 5 | 6;
+  balanceHistory?: import('./balance-basis.js').BalanceHistory[];
   counterparties?: import('./counterparties.js').CounterpartySnapshot;
   categoryGroups?: CategoryGroupResource[];
   monthlyPlans?: BackupMonthlyPlan[];
@@ -172,7 +178,7 @@ export interface LedgerBackup {
     accounts: Map<string, string>,
     categories: Map<string, string>,
     identities?: { agents: Map<string, string>; rules: Map<string, string> },
-  ): Promise<void>;
+  ): Promise<Map<string, string>>;
 }
 
 export * from './resource-dto.js';

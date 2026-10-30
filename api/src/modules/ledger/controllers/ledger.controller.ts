@@ -1,3 +1,4 @@
+import { BalanceHistoryDto } from '../../../core/integration/balance-basis-dto.js';
 import { BalanceAdjustmentDto } from '../dto/balance-adjustment.dto.js';
 import { ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
 import {
@@ -98,7 +99,7 @@ export class LedgerController {
   }
   @Post('accounts/:id/balance-adjustments')
   @ApiBody({ type: BalanceAdjustmentDto })
-  @ApiCreatedResponse({ type: TransactionResourceDto })
+  @ApiCreatedResponse({ type: BalanceHistoryDto })
   async adjustBalance(
     @Req() r: AuthenticatedRequest,
     @Param('id') id: string,

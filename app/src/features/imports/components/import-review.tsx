@@ -1,3 +1,4 @@
+import { ImportBalanceSetup } from './import-balance-setup';
 import { SettlementReview } from './settlement-review';
 import { ReprocessImport } from './reprocess-import';
 import { ImportSourceSummary } from './import-source-summary';
@@ -185,6 +186,7 @@ export function ImportReview({
           )}
         </div>
       ) : null}
+      <ImportBalanceSetup batch={batch} refresh={refresh} />
       {awaitingConfirmationRefresh && (
         <p className="field-help" role="status">
           Confirmação concluída. Atualize o relatório para carregar os detalhes mais recentes.

@@ -1,3 +1,5 @@
+import { BalanceBasisService } from '../../accounts/services/balance-basis.service.js';
+import { BalanceBasisRepository } from '../../accounts/repositories/balance-basis.repository.js';
 import { CounterpartiesService } from '../../counterparties/services/counterparties.service.js';
 import { CounterpartiesRepository } from '../../counterparties/repositories/counterparties.repository.js';
 import 'reflect-metadata';
@@ -22,6 +24,7 @@ import { RestoreRepository } from '../../data-export/repositories/restore.reposi
 import { PlanningService } from '../../planning/services/planning.service.js';
 import { PlanningRepository } from '../../planning/repositories/planning.repository.js';
 const db = new TestDatabase();
+const balanceBasis = new BalanceBasisService(new BalanceBasisRepository(db.service));
 const accounts = new AccountsService(new AccountsRepository(db.service));
 const categories = new CategoriesService(new CategoriesRepository(db.service));
 const receipts = new IdempotencyService(db.service);
@@ -36,6 +39,7 @@ const ledger = new LedgerService(
   categories,
   receipts,
   counterparties,
+  balanceBasis,
 );
 const imports = new ImportsService(
   new ImportsRepository(db.service),
@@ -46,6 +50,7 @@ const imports = new ImportsService(
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
   counterparties,
+  balanceBasis,
 );
 const backups = new DataExportService(
   accounts,
@@ -55,6 +60,7 @@ const backups = new DataExportService(
   new RestoreRepository(db.service),
   new PlanningService(new PlanningRepository(db.service), categories, ledger),
   counterparties,
+  balanceBasis,
 );
 
 beforeAll(() => db.initialize());
@@ -184,7 +190,7 @@ it('keeps portable source identity after backup/restore and blocks repeated EDI 
   const report = await edi(a.id, 'portable-id');
   await run(() => imports.confirm(report.id, report.version, 'portable-confirm'));
   const backup = await run(() => backups.backup());
-  expect(backup.version).toBe(5);
+  expect(backup.version).toBe(6);
   await db.forUser(db.other, async () => {
     const draft = await backups.preview(backup);
     await backups.confirm(draft.id);
@@ -404,7 +410,7 @@ it('restores linked refund identity and rejects tampered refund arithmetic', asy
     workspace.rows[0].id,
   );
 });
-it('imports statement movements without copying source opening values into the account', async () => {
+it('learns a source base without requesting manual starting fields', async () => {
   const a = await run(() =>
     accounts.create({
       name: 'Automatic first statement',
@@ -415,13 +421,13 @@ it('imports statement movements without copying source opening values into the a
     }),
   );
   const draft = await statement(a.id, 'automatic-opening');
-  expect(draft.willInitializeOpening).toBe(false);
+  expect(draft.willInitializeOpening).toBe(true);
   expect((await run(() => accounts.find(a.id))).openingBalance).toBe(0);
   await run(() => imports.confirm(draft.id, draft.version, 'auto-first-confirm'));
   expect(await run(() => accounts.find(a.id))).toMatchObject({
-    openingBalance: 0,
+    openingBalance: 10000,
     openingDate: '2026-10-20',
-    balance: -1000,
+    balance: 9000,
   });
   const next = await run(() =>
     imports.upload(a.id, Buffer.from('conflicting-later-source'), 'later.pdf', {
@@ -442,8 +448,8 @@ it('imports statement movements without copying source opening values into the a
   );
   expect(next.willInitializeOpening).toBe(false);
   await run(() => imports.confirm(next.id, next.version, 'keep-opening-and-import'));
-  expect((await run(() => accounts.find(a.id))).balance).toBe(-1100);
-  expect((await run(() => accounts.find(a.id))).openingBalance).toBe(0);
+  expect((await run(() => accounts.find(a.id))).balance).toBe(8900);
+  expect((await run(() => accounts.find(a.id))).openingBalance).toBe(10000);
 });
 
 it('links an already imported refund to its original without posting cash twice', async () => {

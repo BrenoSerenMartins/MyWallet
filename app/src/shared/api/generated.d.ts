@@ -180,6 +180,54 @@ export interface paths {
     patch: operations['AccountsController_update'];
     trace?: never;
   };
+  '/v1/accounts/{accountId}/balance-history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['BalanceBasisController_history'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/accounts/{accountId}/balance-adjustments/{id}/reversals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['BalanceBasisController_undo'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/accounts/{accountId}/balance-basis/imports/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['BalanceBasisController_statement'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/categories': {
     parameters: {
       query?: never;
@@ -749,7 +797,19 @@ export interface components {
       categoryId?: string;
       enabled: boolean;
     };
+    BalanceBasisDto: {
+      /** @enum {string} */
+      kind: 'unknown' | 'legacy' | 'statement' | 'manual';
+      referenceDate?: string;
+      referenceBalance?: number;
+      originId?: string;
+      importId?: string;
+      reviewRequired?: boolean;
+      /** @enum {string} */
+      reviewReason?: 'same_day' | 'statement_conflict';
+    };
     AccountResourceDto: {
+      balanceBasis?: components['schemas']['BalanceBasisDto'];
       canEditOpeningPosition: boolean;
       id: string;
       name: string;
@@ -771,6 +831,22 @@ export interface components {
       openingBalance?: number;
       /** @deprecated */
       openingDate?: string;
+    };
+    BalanceHistoryDto: {
+      id: string;
+      accountId: string;
+      /** @enum {string} */
+      operation: 'manual' | 'statement' | 'rebase' | 'undo' | 'legacy_conversion';
+      previousBase: number;
+      newBase: number;
+      previousBasis: components['schemas']['BalanceBasisDto'];
+      newBasis: components['schemas']['BalanceBasisDto'];
+      reason: string;
+      details: {
+        [key: string]: unknown;
+      };
+      undoOfId: string | null;
+      createdAt: string;
     };
     CategoryResourceDto: {
       groupId: string | null;
@@ -857,6 +933,7 @@ export interface components {
       transactionType: 'income' | 'expense';
     };
     BalanceAdjustmentDto: {
+      expectedVersion?: number;
       targetBalance: number;
       expectedBalance: number;
       reason: string;
@@ -986,6 +1063,7 @@ export interface components {
       categoryId: string | null;
     };
     ImportBatchResourceDto: {
+      balanceBasis?: components['schemas']['BalanceBasisDto'];
       willInitializeOpening?: boolean;
       institution: string;
       /** @enum {string} */
@@ -1359,6 +1437,61 @@ export interface operations {
       };
     };
   };
+  BalanceBasisController_history: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BalanceHistoryDto'][];
+        };
+      };
+    };
+  };
+  BalanceBasisController_undo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BalanceHistoryDto'];
+        };
+      };
+    };
+  };
+  BalanceBasisController_statement: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   CategoriesController_list: {
     parameters: {
       query?: never;
@@ -1661,7 +1794,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['TransactionResourceDto'];
+          'application/json': components['schemas']['BalanceHistoryDto'];
         };
       };
     };

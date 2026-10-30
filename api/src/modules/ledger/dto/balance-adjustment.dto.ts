@@ -1,6 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsString, Length, Min, Max } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsInt, IsOptional, IsString, Length, Min, Max } from 'class-validator';
 export class BalanceAdjustmentDto {
+  @ApiPropertyOptional({ type: Number }) @IsOptional() @IsInt() @Min(1) expectedVersion?: number;
   @ApiProperty({ type: Number })
   @IsInt()
   @Min(-9007199254740991)

@@ -6,6 +6,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  ACCOUNT_BALANCE_BASIS,
+  type AccountBalanceBasis,
   COUNTERPARTY_RULES,
   type CounterpartyRules,
   ACCOUNT_READS,
@@ -28,6 +30,7 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     @Inject(CATEGORY_READS) private readonly categories: CategoryReads,
     @Inject(IdempotencyService) private readonly receipts: IdempotencyService,
     @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
+    @Inject(ACCOUNT_BALANCE_BASIS) private readonly balanceBasis: AccountBalanceBasis,
   ) {}
   exportRecords() {
     return this.repository.exportRecords();
@@ -40,6 +43,7 @@ export class LedgerService implements LedgerWrites, LedgerReads {
   ) {
     const groups = new Map<string, string>();
     const restoredIds = new Map<string, string>();
+    records = records.filter((entry) => !entry.balanceAdjustment);
     for (const entry of [
       ...records.filter((entry) => !entry.refundOfId),
       ...records.filter((entry) => entry.refundOfId),
@@ -73,7 +77,9 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       for (const evidence of entry.sourceEvidence ?? [])
         await this.repository.recordEvidence(restored.id, accounts.get(entry.accountId)!, evidence);
     }
+    return restoredIds;
   }
+
   async recordEvidence(
     transactionId: string,
     accountId: string,
@@ -236,6 +242,8 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       throw new ConflictException('O total devolvido excede o valor da operação original.');
   }
   async create(input: TransactionInput, imported = false, automatic = true) {
+    if (input.balanceAdjustment)
+      throw new UnprocessableEntityException('Use a correção de saldo base da conta.');
     await this.accounts.find(input.accountId, true);
     input = await this.counterparties.resolve(input, automatic);
     await this.validate(input);
@@ -245,6 +253,11 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     if (input.rememberCounterparty && input.counterpartyId)
       await this.applyCounterpartyRelation(input.accountId, input.counterpartyId);
     if (input.rememberCategory) await this.applyRememberedRule(input);
+    if (automatic)
+      await this.balanceBasis.refresh(
+        input.accountId,
+        imported ? input.transactionDate : undefined,
+      );
     return input.rememberCounterparty ? this.find(created.id) : created;
   }
   async adjustBalance(
@@ -252,46 +265,9 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     input: import('../dto/balance-adjustment.dto.js').BalanceAdjustmentDto,
     key: string,
   ) {
-    return this.receipts.execute('balance-adjustment', key, { accountId, ...input }, async () => {
-      const account = await this.accounts.find(accountId, true);
-      const date = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'America/Sao_Paulo',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(new Date());
-      if (account.archived) throw new ConflictException('Esta conta está arquivada.');
-      if (account.balance !== input.expectedBalance)
-        throw new ConflictException(
-          'O saldo mudou. Atualize a conta e confira a diferença novamente.',
-        );
-      if (await this.repository.hasFutureEntries(accountId, date))
-        throw new ConflictException(
-          'Existem lançamentos futuros nesta conta. Revise-os antes de corrigir o saldo atual.',
-        );
-      const amount = input.targetBalance - account.balance;
-      exactAmount(amount);
-      if (!amount)
-        throw new UnprocessableEntityException('O saldo já corresponde ao valor informado.');
-      if (!input.reason.trim())
-        throw new UnprocessableEntityException('Informe o motivo da correção.');
-      return this.create(
-        {
-          accountId,
-          amount,
-          transactionType: 'transfer',
-          description: 'Correção de saldo manual',
-          transactionDate: date,
-          categoryId: null,
-          balanceAdjustment: {
-            previousBalance: account.balance,
-            targetBalance: input.targetBalance,
-            reason: input.reason.trim(),
-          },
-        },
-        true,
-      );
-    });
+    return this.receipts.execute('balance-adjustment', key, { accountId, ...input }, () =>
+      this.balanceBasis.correct(accountId, input),
+    );
   }
   async update(id: string, input: TransactionInput, version: string) {
     const original = await this.find(id);
@@ -347,17 +323,22 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     if (input.rememberCounterparty && input.counterpartyId)
       await this.applyCounterpartyRelation(input.accountId, input.counterpartyId);
     if (input.rememberCategory) await this.applyRememberedRule(input);
+    await this.balanceBasis.refresh(input.accountId);
     return input.rememberCounterparty ? this.find(updated.id) : updated;
   }
   async reverse(id: string, version: string) {
     const current = await this.find(id);
-    await this.accounts.find(current.accountId, true);
+    const accountIds = current.transferGroupId
+      ? await this.repository.transferAccounts(current.transferGroupId)
+      : [current.accountId];
+    for (const accountId of accountIds.sort()) await this.accounts.find(accountId, true);
     const latest = await this.find(id, true);
     requireVersion(latest.version, version);
     if ((await this.repository.refundedAmount(id)) > 0)
       throw new ConflictException('Desfaça as devoluções antes da operação original.');
     await this.repository.reverse(id, latest.transferGroupId);
-    return { reversed: true };
+    for (const accountId of accountIds) await this.balanceBasis.refresh(accountId);
+    return { id, status: 'reversed' };
   }
   async transfer(input: TransferDto, key: string) {
     return this.receipts.execute('transfer', key, input, async () => {
@@ -384,6 +365,8 @@ export class LedgerService implements LedgerWrites, LedgerReads {
         accountId: input.toAccountId,
         amount: input.amount,
       });
+      await this.balanceBasis.refresh(input.fromAccountId);
+      await this.balanceBasis.refresh(input.toAccountId);
       return { id: group, from, to };
     });
   }

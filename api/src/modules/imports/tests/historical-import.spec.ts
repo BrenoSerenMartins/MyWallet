@@ -1,3 +1,5 @@
+import { BalanceBasisService } from '../../accounts/services/balance-basis.service.js';
+import { BalanceBasisRepository } from '../../accounts/repositories/balance-basis.repository.js';
 import { CounterpartiesService } from '../../counterparties/services/counterparties.service.js';
 import { CounterpartiesRepository } from '../../counterparties/repositories/counterparties.repository.js';
 import { ImportReconciliationService } from '../services/import-reconciliation.service.js';
@@ -18,6 +20,7 @@ import { IdempotencyService } from '../../ledger/services/idempotency.service.js
 import { ImportsService } from '../services/imports.service.js';
 import { ImportsRepository } from '../repositories/imports.repository.js';
 const db = new TestDatabase();
+const balanceBasis = new BalanceBasisService(new BalanceBasisRepository(db.service));
 const accounts = new AccountsService(new AccountsRepository(db.service));
 const categories = new CategoriesService(new CategoriesRepository(db.service));
 const receipts = new IdempotencyService(db.service);
@@ -32,6 +35,7 @@ const ledger = new LedgerService(
   categories,
   receipts,
   counterparties,
+  balanceBasis,
 );
 const imports = new ImportsService(
   new ImportsRepository(db.service),
@@ -42,6 +46,7 @@ const imports = new ImportsService(
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
   counterparties,
+  balanceBasis,
 );
 let account: string, batch: string;
 beforeAll(async () => {
@@ -82,7 +87,7 @@ describe('Older statements and consultation history', () => {
     expect(preview.openingDateMismatch).toBe(true);
     expect(preview.statementStartDate).toBe('2026-01-05');
     expect((await db.forUser(db.user, () => accounts.find(account))).balance).toBe(0);
-    expect(preview.willInitializeOpening).toBe(false);
+    expect(preview.willInitializeOpening).toBe(true);
   });
   it('retains history without transactions and returns the same uploaded file', async () => {
     const history = await db.forUser(db.user, () => imports.retainHistory(batch, 1));
@@ -142,9 +147,14 @@ describe('Older statements and consultation history', () => {
       await db.forUser(db.user, () => ledger.summary('2026-01-01', '2026-02-01')),
     ).toMatchObject({ expense: 1000 });
     await expect(
-      db.forUser(db.user, () =>
-        accounts.update(account, { ...current, openingDate: '2025-01-01' }, '2'),
-      ),
+      db.forUser(db.user, async () => {
+        const fresh = await accounts.find(account);
+        return accounts.update(
+          account,
+          { ...fresh, openingDate: '2025-01-01' },
+          String(fresh.version),
+        );
+      }),
     ).rejects.toThrow('reconciliação');
   });
 });

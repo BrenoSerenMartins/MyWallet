@@ -35,3 +35,5 @@ Counterparties provides the COUNTERPARTY_RULES port for batch suggestions, expli
 Consumer import policy removes the ACCOUNT_OPENING_POSITIONS integration port and its account initializer. Imports retain ACCOUNT_READS, LEDGER_READS/WRITES and COUNTERPARTY_RULES; legacy EDI readers do not expose new public financial ingestion.
 
 Counterparties owns deterministic name/alias suggestion policy and canonical alias acceptance. Ledger owns historical identity/category writes through the new LEDGER_WRITES.applyCounterpartyRelation port. Both repositories use core/database/normalized-text for SQL comparison aligned with core/integration comparableCounterpartyIdentifier; neither reads another module implementation. Candidate DTO/intent remain additive integration contracts.
+
+Account BalanceBasisService/Repository owns base references, audit and safe rebasing projections. ACCOUNT_BALANCE_BASIS is consumed through core by Ledger, Imports and DataExport; no sibling service implementation import is added. Ledger backup restoration returns the transaction ID map for audit snapshot remapping. The accounts and post-import forms share optional balance calibration UI.

@@ -1,3 +1,4 @@
+import { BalanceHistoryPanel } from './components/balance-history-panel';
 import { BalanceAdjustmentForm } from './components/balance-adjustment-form';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { AccountForm } from './components/account-form';
@@ -16,6 +17,7 @@ export function AccountsPage() {
   const [scope, setScope] = useState('all');
   const [open, setOpen] = useState(false);
   const [adjusting, setAdjusting] = useState<Account>();
+  const [historyAccount, setHistoryAccount] = useState<Account>();
   const [editing, setEditing] = useState<Account>();
   const accounts = useQuery({
     queryKey: [session?.user.id, 'accounts'],
@@ -92,10 +94,19 @@ export function AccountsPage() {
                 </p>
                 <span className="eyebrow">SALDO REGISTRADO</span>
                 <strong className="account-card-balance">{money(a.balance)}</strong>
+                {a.balanceBasis?.kind === 'unknown' && (
+                  <small>Histórico parcial · saldo atual ainda não conferido</small>
+                )}
+                {a.balanceBasis?.reviewRequired && (
+                  <small role="status">Confira o saldo após as novas importações.</small>
+                )}
                 <div className="account-card-footer">
                   <Link to={`/accounts/${a.id}`}>
                     Ver movimentações <ArrowUpRight size={16} />
                   </Link>
+                  <button className="text-button" onClick={() => setHistoryAccount(a)}>
+                    Histórico de saldo
+                  </button>
                   <button className="text-button" onClick={() => setAdjusting(a)}>
                     Corrigir saldo
                   </button>
@@ -132,6 +143,21 @@ export function AccountsPage() {
           </EmptyState>
         </div>
       )}
+      <Modal
+        open={!!historyAccount}
+        onOpenChange={(value) => !value && setHistoryAccount(undefined)}
+        title="Histórico de saldo"
+      >
+        {historyAccount && (
+          <BalanceHistoryPanel
+            account={historyAccount}
+            onChanged={() => {
+              setHistoryAccount(undefined);
+              void client.invalidateQueries();
+            }}
+          />
+        )}
+      </Modal>
       <Modal
         open={!!adjusting}
         onOpenChange={(value) => !value && setAdjusting(undefined)}

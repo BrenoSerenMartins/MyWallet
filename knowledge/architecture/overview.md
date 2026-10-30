@@ -99,3 +99,6 @@ Account creation no longer asks for opening date or amount. Legacy fields remain
 
 ## Counterparties and category relations
 Agents can carry source-specific description/store-ID aliases and account/type-scoped category rules. Explicit relations drive past and future recognized entries, preserving manual categories and all financial values. Proved statement/EDI links can enrich agent aliases in either arrival order; transaction reconciliation remains independent. JSON v5 preserves/remaps relations and classification provenance. See statement-imports.md for boundaries and safety rules.
+
+## Balance-basis delivery status (2026-10-30)
+Audited base correction, complete-bank-source adoption, optional current balance after balance-less import, chronological rebase/undo, legacy conversion and JSON v6 are implemented locally. Verification passed with 152 domain/database tests plus production build/contracts/format checks. New migrations 202610300001/002 must precede deployment; remote setup failed with DNS EAI_AGAIN and application remains unconfirmed. Browser assertions are prepared but the environment blocked browser/server startup.

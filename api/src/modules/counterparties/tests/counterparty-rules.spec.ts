@@ -1,3 +1,5 @@
+import { BalanceBasisService } from '../../accounts/services/balance-basis.service.js';
+import { BalanceBasisRepository } from '../../accounts/repositories/balance-basis.repository.js';
 import 'reflect-metadata';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { TestDatabase } from '../../../../test/database-harness.js';
@@ -23,6 +25,7 @@ import { RestoreRepository } from '../../data-export/repositories/restore.reposi
 import { PlanningService } from '../../planning/services/planning.service.js';
 import { PlanningRepository } from '../../planning/repositories/planning.repository.js';
 const db = new TestDatabase();
+const balanceBasis = new BalanceBasisService(new BalanceBasisRepository(db.service));
 const accounts = new AccountsService(new AccountsRepository(db.service));
 const categories = new CategoriesService(new CategoriesRepository(db.service));
 const counterparties = new CounterpartiesService(
@@ -37,6 +40,7 @@ const ledger = new LedgerService(
   categories,
   receipts,
   counterparties,
+  balanceBasis,
 );
 const imports = new ImportsService(
   new ImportsRepository(db.service),
@@ -47,6 +51,7 @@ const imports = new ImportsService(
   ledger,
   new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
   counterparties,
+  balanceBasis,
 );
 const reprocessing = new ImportReprocessingService(
   new ImportsRepository(db.service),
@@ -61,6 +66,7 @@ const backups = new DataExportService(
   new RestoreRepository(db.service),
   new PlanningService(new PlanningRepository(db.service), categories, ledger),
   counterparties,
+  balanceBasis,
 );
 const run = <T>(fn: () => Promise<T>) => db.forUser(db.user, fn);
 beforeAll(() => db.initialize());
@@ -430,7 +436,7 @@ it('learns an EDI store ID from a proved statement match so generic future EDI r
 
 it('backs up and restores agents, aliases, rules and transaction provenance without relearning', async () => {
   const backup = await run(() => backups.backup());
-  expect(backup.version).toBe(5);
+  expect(backup.version).toBe(6);
   expect(backup.counterparties!.rules.length).toBeGreaterThan(0);
   const bad = structuredClone(backup);
   bad.counterparties!.rules[0].accountId = '00000000-0000-4000-8000-000000000001';

@@ -1,3 +1,5 @@
+import { BalanceBasisService } from '../../accounts/services/balance-basis.service.js';
+import { BalanceBasisRepository } from '../../accounts/repositories/balance-basis.repository.js';
 import { CounterpartiesService } from '../../counterparties/services/counterparties.service.js';
 import { CounterpartiesRepository } from '../../counterparties/repositories/counterparties.repository.js';
 import 'reflect-metadata';
@@ -22,6 +24,7 @@ import { planningPeriod } from '../services/planning-period.js';
 import { validateInput } from '../../../core/http/index.js';
 import { SaveMonthlyPlanDto } from '../dto/planning.dto.js';
 const db = new TestDatabase();
+const balanceBasis = new BalanceBasisService(new BalanceBasisRepository(db.service));
 const accounts = new AccountsService(new AccountsRepository(db.service));
 const categories = new CategoriesService(new CategoriesRepository(db.service));
 const receipts = new IdempotencyService(db.service);
@@ -36,6 +39,7 @@ const ledger = new LedgerService(
   categories,
   receipts,
   counterparties,
+  balanceBasis,
 );
 const planning = new PlanningService(new PlanningRepository(db.service), categories, ledger);
 const backups = new DataExportService(
@@ -46,6 +50,7 @@ const backups = new DataExportService(
   new RestoreRepository(db.service),
   planning,
   counterparties,
+  balanceBasis,
 );
 let income: string, expense: string, zero: string, account: string, otherSpace: string;
 beforeAll(async () => {
@@ -248,7 +253,7 @@ describe('Monthly planning financial invariants', () => {
       return created;
     });
     const backup = await db.forUser(db.user, () => backups.backup(), true);
-    expect(backup.version).toBe(5);
+    expect(backup.version).toBe(6);
     expect(backup.categoryGroups?.[0].id).toBe(group.id);
     expect(backup.monthlyPlans).toHaveLength(2);
     await db.forUser(db.other, async () => {

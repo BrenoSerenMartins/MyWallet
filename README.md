@@ -287,15 +287,17 @@ Cadastre a instituição **Alelo** com o tipo **Vale-alimentação** ou **Vale-r
 
 A visão geral separa dinheiro disponível, benefícios e reservas registradas. Entradas/saídas mensais incluem todas as contas; em Planejamento, o filtro permite ver o realizado com ou sem benefícios, sem alterar o plano salvo.
 
-Em **Minhas contas → Corrigir saldo**, informe o saldo atual correto e o motivo. O app mostra a diferença e registra uma **Correção de saldo manual**, preservando os movimentos anteriores. O ajuste não entra em receitas/despesas e não marca a conta como conciliada. Ele pode ser desfeito pelo histórico; seu registro e motivo ficam no backup. Se houver lançamentos futuros ou o saldo mudar durante a confirmação, revise antes de tentar novamente. Não some o saldo atual ao saldo de abertura: a correção calcula apenas a diferença.
+Em **Minhas contas → Corrigir saldo**, informe o saldo atual correto e o motivo. O app ajusta o **saldo base**, sem criar receita, despesa ou transferência. O histórico de saldo registra a base anterior, a nova base, a referência e o motivo; a correção manual ativa pode ser desfeita por ali. Movimentos financeiros existentes ficam preservados. Importações antigas recalculam a base para não repetir uma diferença já compensada pela conferência manual. Novos movimentos na mesma data da conferência podem exigir nova conferência, pois o extrato pode não informar o horário. Lançamentos futuros e telas com saldo/versão desatualizados impedem uma correção inconsistente.
 
 As migrations `202610260002_alelo_benefit_imports.sql` e `202610260003_manual_balance_adjustments.sql` foram aplicadas pelo usuário antes do deploy.
 
 ### Histórico sem configuração inicial e devoluções
 
-O cadastro de contas pede nome, instituição e tipo. A API também aceita criar/editar sem data ou saldo inicial. Importações podem ter qualquer data válida, em qualquer ordem. Confirmar um extrato registra os movimentos selecionados sem copiar o saldo inicial do arquivo para a conta nem mudar uma data de início.
+O cadastro de contas pede nome, instituição e tipo, sem exigir saldo nem data inicial. O primeiro extrato bancário integralmente confirmado pode fornecer o saldo base automaticamente. Um extrato mais antigo substitui a referência quando os movimentos registrados conciliam as duas bases. Informações que contradizem uma conferência existente ficam sinalizadas sem sobrescrevê-la silenciosamente.
 
-Saldos fornecidos pelo banco são dados opcionais para conferência, dentro dos detalhes do arquivo. Modelos sem esses dados, como Alelo, também funcionam. O saldo exibido usa os movimentos registrados e preserva valores legados já existentes nas contas. Para alinhar um histórico parcial a um saldo atual conhecido, use **Corrigir saldo**; o ajuste fica documentado sem inventar gastos ou receitas.
+No Alelo e em arquivos sem saldo anterior, o app oferece **Informar saldo atual (opcional)** depois da importação. A base é calculada a partir do saldo atual e dos movimentos já conhecidos. Você também pode continuar com histórico parcial; a interface sinaliza que o saldo ainda não foi conferido. Em um extrato já confirmado, a opção **Usar saldo informado no extrato** pode aproveitar uma referência antiga elegível.
+
+As migrations `202610300001_account_balance_basis.sql` e `202610300002_retire_ledger_balance_adjustments.sql` convertem correções antigas para a base, preservam os saldos e seus registros originais e impedem novas correções financeiras durante a troca de versão. Devem ser aplicadas antes deste deploy. O backup **JSON v6** inclui referências, histórico de saldo e os movimentos conhecidos na conferência; lê versões v1–v5 e converte as correções antigas sem repeti-las.
 
 Devoluções vinculadas mantêm o controle da compra/receita original e a categoria. Vínculos e fatos bancários legados continuam preservados nos backups; retirar o EDI do envio não apaga lançamentos financeiros.
 
@@ -307,6 +309,6 @@ Descrições já vinculadas são reconhecidas mesmo com diferenças de acento, p
 
 Ao selecionar **Vincular … e reconhecer esta descrição**, salve o lançamento ou a revisão e confirme o extrato para gravar a relação. Na revisão, nada é aprendido antes da confirmação financeira. A opção de reconhecer a descrição é independente de **Usar esta categoria para esta pessoa ou estabelecimento neste tipo de movimento**. Assim, a mesma pessoa pode aparecer em receitas e despesas sem impor a mesma categoria.
 
-Cadastros/regras podem ser desativados e descrições removidas sem apagar histórico. Relações antigas de EDI/loja ficam preservadas por compatibilidade. O backup JSON v5 mantém os vínculos, inclusive ambiguidades antigas que o reconhecimento não pode decidir sozinho. Esta melhoria não exige migration extra.
+Cadastros/regras podem ser desativados e descrições removidas sem apagar histórico. Relações antigas de EDI/loja ficam preservadas por compatibilidade. O backup JSON v6 mantém os vínculos, inclusive ambiguidades antigas que o reconhecimento não pode decidir sozinho. Esta melhoria não exige migration extra.
 
-As migrations `202610260005_counterparty_rules.sql` e `202610260006_counterparty_external_identifiers.sql` criam os vínculos protegidos por espaço. O backup financeiro JSON v5 preserva agentes, identificações ativas/desativadas, regras e a origem da classificação, com remapeamento de IDs na restauração; backups v1–v4 continuam aceitos.
+As migrations `202610260005_counterparty_rules.sql` e `202610260006_counterparty_external_identifiers.sql` criam os vínculos protegidos por espaço. O backup financeiro JSON v6 preserva agentes, identificações ativas/desativadas, regras e a origem da classificação, com remapeamento de IDs na restauração; backups v1–v5 continuam aceitos.
