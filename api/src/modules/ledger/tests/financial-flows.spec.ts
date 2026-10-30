@@ -111,6 +111,7 @@ describe('Financial integrity with PostgreSQL RLS', () => {
         expense: 0,
         unclassified: 0,
         expenseGroups: [],
+        expenseCategories: [],
       });
       await expect(ledger.transfer({ ...input, amount: 1 }, 'transfer-one')).rejects.toThrow(
         'outra operação',

@@ -12,6 +12,8 @@ interface WorkspaceContextValue {
   error: unknown;
   select: (id: string | null) => void;
   reload: () => void;
+  archive: (id: string) => Promise<void>;
+  restore: (id: string) => Promise<void>;
   create: (input: { name: string; description: string; color: string }) => Promise<Workspace>;
 }
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -38,7 +40,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       try {
         saved = localStorage.getItem(storageKey);
       } catch {}
-      select(query.data.some((w) => w.id === saved) ? saved : null);
+      select(
+        query.data.some((w) => w.id === saved)
+          ? saved
+          : query.data.length === 1
+            ? query.data[0].id
+            : null,
+      );
       setRestored(true);
     } else if (selectedId && !query.data.some((w) => w.id === selectedId)) select(null);
   }, [query.data, restored, selectedId, storageKey]);
@@ -52,6 +60,24 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     select(workspace.id);
     return workspace;
   }
+  async function archive(id: string) {
+    await request(`/workspaces/${id}`, { method: 'DELETE' });
+    if (selectedId === id) select(null);
+    client.setQueryData<Workspace[]>(key, (previous) =>
+      previous?.filter((workspace) => workspace.id !== id),
+    );
+    await Promise.all([
+      client.invalidateQueries({ queryKey: key }),
+      client.invalidateQueries({ queryKey: ['workspace-trash', session!.user.id] }),
+    ]);
+  }
+  async function restore(id: string) {
+    await request(`/workspaces/${id}/restorations`, { method: 'POST' });
+    await Promise.all([
+      client.invalidateQueries({ queryKey: key }),
+      client.invalidateQueries({ queryKey: ['workspace-trash', session!.user.id] }),
+    ]);
+  }
   return (
     <WorkspaceContext.Provider
       value={{
@@ -61,6 +87,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         error: query.error,
         select,
         create,
+        archive,
+        restore,
         reload: () => void query.refetch(),
       }}
     >

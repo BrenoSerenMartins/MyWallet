@@ -37,9 +37,9 @@ const transaction = {
   importBatchId: null,
   transferGroupId: null,
 };
-async function signedIn(page: Page) {
+async function signedIn(page: Page, rememberSpace = true) {
   await page.addInitScript(
-    ({ user }) => {
+    ({ user, rememberSpace }) => {
       const session = {
         access_token: 'synthetic-test-token',
         refresh_token: 'synthetic-refresh',
@@ -50,9 +50,14 @@ async function signedIn(page: Page) {
       };
       localStorage.setItem('sb-hlcrjoqmyohfbajvafhh-auth-token', JSON.stringify(session));
       localStorage.setItem('mywallet-theme', 'dark');
-      localStorage.setItem('mywallet-workspace:' + user.id, '44444444-4444-4444-8444-444444444444');
+      if (rememberSpace)
+        localStorage.setItem(
+          'mywallet-workspace:' + user.id,
+          '44444444-4444-4444-8444-444444444444',
+        );
+      else localStorage.removeItem('mywallet-workspace:' + user.id);
     },
-    { user },
+    { user, rememberSpace },
   );
   await page.route('https://*.supabase.co/**', (route) => route.fulfill({ json: { user } }));
   await page.route('**/v1/**', (route) => {
@@ -63,6 +68,11 @@ async function signedIn(page: Page) {
     else if (path.startsWith('/v1/planning/')) data = monthlyPlan(path.split('/').pop()!, 0);
     else if (path === '/v1/categories') data = [];
     else if (path === '/v1/transactions') data = { items: [transaction], nextCursor: null };
+    else if (path === '/v1/dashboard/history')
+      data = historyFixture(
+        new URL(route.request().url()).searchParams.get('month')!,
+        Number(new URL(route.request().url()).searchParams.get('months')),
+      );
     else if (path === '/v1/dashboard')
       data = {
         balance: 345678,
@@ -75,6 +85,21 @@ async function signedIn(page: Page) {
       };
     return route.fulfill({ json: data });
   });
+}
+function historyFixture(month: string, count: number) {
+  const [year, number] = month.split('-').map(Number);
+  return {
+    months: count,
+    from: '',
+    to: '',
+    items: Array.from({ length: count }, (_, index) => ({
+      month: new Date(Date.UTC(year, number - count + index, 1)).toISOString().slice(0, 7),
+      income: index === 0 ? 0 : 100000 + index * 10000,
+      expense: 50000 + index * 5000,
+      count: 2,
+      unclassified: 0,
+    })),
+  };
 }
 async function chooseTheme(page: Page, theme: string) {
   const control = page.getByRole('button', { name: `Tema ${theme}`, exact: true }).first();
@@ -2298,3 +2323,130 @@ for (const width of [390, 1440]) {
     await expect(trigger).toBeFocused();
   });
 }
+
+for (const width of [360, 768, 1440])
+  test(`monthly charts switch range, format and category view while preserving privacy at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    await page.route('**/v1/dashboard?*', (route) =>
+      route.fulfill({
+        json: {
+          balance: 5912,
+          benefitBalance: 0,
+          reserveBalance: 0,
+          income: 100000,
+          expense: 50000,
+          unclassified: 0,
+          accounts: [account],
+          expenseGroups: [{ groupId: 'g', name: 'Casa', amount: 50000, count: 2 }],
+          expenseCategories: [
+            { categoryId: 'c', name: 'Luz', groupName: 'Casa', amount: 50000, count: 2 },
+          ],
+        },
+      }),
+    );
+    await page.goto('/?month=2026-10');
+    const history = page.getByRole('region', { name: 'Evolução mensal', exact: true });
+    await expect(history.locator('svg g[role="button"]')).toHaveCount(4);
+    await history.getByRole('button', { name: '7 meses', exact: true }).click();
+    await expect(history.locator('svg g[role="button"]')).toHaveCount(7);
+    await history.getByRole('button', { name: 'Linhas', exact: true }).click();
+    await expect(history.locator('polyline')).toHaveCount(2);
+    await history.getByRole('button', { name: '12 meses', exact: true }).click();
+    await expect(history.locator('svg g[role="button"]')).toHaveCount(12);
+    await history.getByText('Ver valores mês a mês', { exact: true }).click();
+    await expect(history.locator('tbody tr')).toHaveCount(12);
+    await page
+      .getByRole('group', { name: 'Organização das despesas' })
+      .getByRole('button', { name: 'Categorias', exact: true })
+      .click();
+    await expect(page.locator('.expense-group-list')).toContainText('Luz');
+    await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
+    await expect(history.locator('svg')).toHaveCount(0);
+    await expect(history).not.toContainText('R$');
+    await expect(page.locator('.expense-group-track')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Mostrar valores', exact: true }).click();
+    await expect(history.locator('svg')).toBeVisible();
+    await history.locator('svg g[role="button"]').first().focus();
+    await page.keyboard.press('Enter');
+    await expect(history.locator('.history-selection')).toContainText('novembro de 2025');
+    await history.getByRole('button', { name: 'Abrir mês', exact: true }).click();
+    await expect(page.getByLabel('Mês do resumo')).toHaveValue('2025-11');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+
+test('a sole active space opens automatically without a saved selection; multiple spaces retain selection screen', async ({
+  page,
+}) => {
+  await signedIn(page, false);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Trocar de espaço', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Seus espaços.' })).toBeVisible();
+  await page.route('**/v1/workspaces', (route) =>
+    route.fulfill({
+      json: [
+        workspace,
+        {
+          ...workspace,
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          name: 'Outro',
+          isDefault: false,
+        },
+      ],
+    }),
+  );
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/workspaces$/);
+});
+
+for (const width of [390, 1440])
+  test(`workspace removal has confirmation, retention and restoration at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    let deleted = false;
+    const trashed = {
+      ...workspace,
+      deletedAt: new Date().toISOString(),
+      deleteAfter: new Date(Date.now() + 7 * 86400000).toISOString(),
+    };
+    await page.route('**/v1/workspaces**', (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (route.request().method() === 'DELETE') {
+        deleted = true;
+        return route.fulfill({ json: trashed });
+      }
+      if (path.endsWith('/restorations')) {
+        deleted = false;
+        return route.fulfill({ json: workspace });
+      }
+      if (path.endsWith('/trash')) return route.fulfill({ json: deleted ? [trashed] : [] });
+      return route.fulfill({ json: deleted ? [] : [workspace] });
+    });
+    await page.goto('/workspaces');
+    await page.getByRole('button', { name: 'Excluir espaço Pessoal', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Excluir espaço?' });
+    await expect(dialog).toContainText('7 dias');
+    await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+    expect(deleted).toBe(false);
+    await page.getByRole('button', { name: 'Excluir espaço Pessoal', exact: true }).click();
+    await page.getByRole('button', { name: 'Mover para a lixeira', exact: true }).click();
+    await expect(page.getByRole('link', { name: 'Abrir espaço Pessoal', exact: true })).toHaveCount(
+      0,
+    );
+    await page.locator('.workspace-trash summary').click();
+    await expect(page.locator('.workspace-trash')).toContainText('Disponível para restaurar até');
+    await page.getByRole('button', { name: 'Restaurar', exact: true }).click();
+    await expect(
+      page.getByRole('link', { name: 'Abrir espaço Pessoal', exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });

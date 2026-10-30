@@ -612,6 +612,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/dashboard/history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['DashboardController_history'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/dashboard': {
     parameters: {
       query?: never;
@@ -718,6 +734,54 @@ export interface paths {
     get: operations['WorkspacesController_list'];
     put?: never;
     post: operations['WorkspacesController_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/workspaces/trash': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['WorkspacesController_trash'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/workspaces/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations['WorkspacesController_archive'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/workspaces/{id}/restorations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['WorkspacesController_restore'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1120,6 +1184,26 @@ export interface components {
       version: number;
       resetClassification?: boolean;
     };
+    DashboardHistoryMonthDto: {
+      month: string;
+      income: number;
+      expense: number;
+      count: number;
+      unclassified: number;
+    };
+    DashboardHistoryDto: {
+      items: components['schemas']['DashboardHistoryMonthDto'][];
+      from: string;
+      to: string;
+      months: number;
+    };
+    DashboardExpenseCategoryDto: {
+      categoryId: string | null;
+      name: string;
+      groupName: string | null;
+      amount: number;
+      count: number;
+    };
     DashboardExpenseGroupDto: {
       groupId: string | null;
       name: string;
@@ -1127,6 +1211,7 @@ export interface components {
       count: number;
     };
     DashboardResourceDto: {
+      expenseCategories: components['schemas']['DashboardExpenseCategoryDto'][];
       expenseGroups: components['schemas']['DashboardExpenseGroupDto'][];
       benefitBalance: number;
       reserveBalance: number;
@@ -1146,6 +1231,15 @@ export interface components {
       description: string;
       color: string;
       isDefault: boolean;
+    };
+    TrashedWorkspaceResourceDto: {
+      id: string;
+      name: string;
+      description: string;
+      color: string;
+      isDefault: boolean;
+      deletedAt: string;
+      deleteAfter: string;
     };
     CreateWorkspaceDto: {
       name: string;
@@ -2164,6 +2258,25 @@ export interface operations {
       };
     };
   };
+  DashboardController_history: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DashboardHistoryDto'];
+        };
+      };
+    };
+  };
   DashboardController_summary: {
     parameters: {
       query?: never;
@@ -2301,6 +2414,63 @@ export interface operations {
     };
     responses: {
       201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkspaceResourceDto'];
+        };
+      };
+    };
+  };
+  WorkspacesController_trash: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrashedWorkspaceResourceDto'][];
+        };
+      };
+    };
+  };
+  WorkspacesController_archive: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrashedWorkspaceResourceDto'];
+        };
+      };
+    };
+  };
+  WorkspacesController_restore: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
         headers: {
           [name: string]: unknown;
         };

@@ -99,6 +99,21 @@ try {
     { mode: 0o600 },
   );
   await chmod(envPath, 0o600);
+  const cronInstalled = await admin.query("SELECT 1 FROM pg_extension WHERE extname='pg_cron'");
+  if (cronInstalled.rows.length) {
+    const job = await admin.query(
+      "SELECT schedule,active FROM cron.job WHERE jobname='mywallet-workspace-retention'",
+    );
+    if (!job.rows.some((row) => row.active && row.schedule === '*/10 * * * *'))
+      throw new Error('Workspace retention job is not active.');
+    console.log(
+      'Workspace trash retention: automatic purge scheduled every 10 minutes after the 7-day deadline.',
+    );
+  } else {
+    console.log(
+      'pg_cron is unavailable: expired workspaces are purged on workspace-list access. Enable Supabase Cron for cleanup without app access.',
+    );
+  }
   console.log(
     'Migrations and restricted runtime role configured. Restart the API to load local settings.',
   );

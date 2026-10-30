@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Post, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -8,8 +8,13 @@ import {
 } from '@nestjs/swagger';
 import { AuthenticatedUserGuard, type AuthenticatedRequest } from '../../../core/auth/index.js';
 import { DatabaseService } from '../../../core/database/index.js';
+import { requireUuid } from '../../../core/rest/index.js';
 import { validateInput } from '../../../core/http/index.js';
-import { CreateWorkspaceDto, WorkspaceResourceDto } from '../dto/workspace.dto.js';
+import {
+  CreateWorkspaceDto,
+  WorkspaceResourceDto,
+  TrashedWorkspaceResourceDto,
+} from '../dto/workspace.dto.js';
 import { WorkspacesService } from '../services/workspaces.service.js';
 @ApiTags('Workspaces')
 @ApiBearerAuth()
@@ -22,6 +27,33 @@ export class WorkspacesController {
   ) {}
   @Get() @ApiOkResponse({ type: [WorkspaceResourceDto] }) list(@Req() r: AuthenticatedRequest) {
     return this.db.forUser(r.identity.id, () => this.workspaces.list(), false, null);
+  }
+  @Get('trash') @ApiOkResponse({ type: [TrashedWorkspaceResourceDto] }) trash(
+    @Req() r: AuthenticatedRequest,
+  ) {
+    return this.db.forUser(r.identity.id, () => this.workspaces.trash(), false, null);
+  }
+  @Delete(':id') @ApiOkResponse({ type: TrashedWorkspaceResourceDto }) archive(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.db.forUser(
+      r.identity.id,
+      () => this.workspaces.archive(requireUuid(id)),
+      false,
+      null,
+    );
+  }
+  @Post(':id/restorations') @ApiOkResponse({ type: WorkspaceResourceDto }) restore(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.db.forUser(
+      r.identity.id,
+      () => this.workspaces.restore(requireUuid(id)),
+      false,
+      null,
+    );
   }
   @Post()
   @ApiBody({ type: CreateWorkspaceDto })

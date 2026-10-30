@@ -1314,6 +1314,30 @@
         "tags": ["Imports"]
       }
     },
+    "/v1/dashboard/history": {
+      "get": {
+        "operationId": "DashboardController_history",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardHistoryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Dashboard"]
+      }
+    },
     "/v1/dashboard": {
       "get": {
         "operationId": "DashboardController_summary",
@@ -1464,6 +1488,81 @@
         },
         "responses": {
           "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspaces"]
+      }
+    },
+    "/v1/workspaces/trash": {
+      "get": {
+        "operationId": "WorkspacesController_trash",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrashedWorkspaceResourceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspaces"]
+      }
+    },
+    "/v1/workspaces/{id}": {
+      "delete": {
+        "operationId": "WorkspacesController_archive",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashedWorkspaceResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspaces"]
+      }
+    },
+    "/v1/workspaces/{id}/restorations": {
+      "post": {
+        "operationId": "WorkspacesController_restore",
+        "parameters": [],
+        "responses": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -2870,6 +2969,71 @@
         },
         "required": ["version"]
       },
+      "DashboardHistoryMonthDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string"
+          },
+          "income": {
+            "type": "number"
+          },
+          "expense": {
+            "type": "number"
+          },
+          "count": {
+            "type": "number"
+          },
+          "unclassified": {
+            "type": "number"
+          }
+        },
+        "required": ["month", "income", "expense", "count", "unclassified"]
+      },
+      "DashboardHistoryDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardHistoryMonthDto"
+            }
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "months": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "from", "to", "months"]
+      },
+      "DashboardExpenseCategoryDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "groupName": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "number"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": ["categoryId", "name", "groupName", "amount", "count"]
+      },
       "DashboardExpenseGroupDto": {
         "type": "object",
         "properties": {
@@ -2892,6 +3056,12 @@
       "DashboardResourceDto": {
         "type": "object",
         "properties": {
+          "expenseCategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardExpenseCategoryDto"
+            }
+          },
           "expenseGroups": {
             "type": "array",
             "items": {
@@ -2936,6 +3106,7 @@
           }
         },
         "required": [
+          "expenseCategories",
           "expenseGroups",
           "benefitBalance",
           "reserveBalance",
@@ -2970,6 +3141,33 @@
           }
         },
         "required": ["id", "name", "description", "color", "isDefault"]
+      },
+      "TrashedWorkspaceResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string"
+          },
+          "deleteAfter": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "description", "color", "isDefault", "deletedAt", "deleteAfter"]
       },
       "CreateWorkspaceDto": {
         "type": "object",

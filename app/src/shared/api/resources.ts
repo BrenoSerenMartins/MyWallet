@@ -24,3 +24,7 @@ export type Counterparty = components['schemas']['CounterpartyResourceDto'];
 export type CounterpartyCandidate = components['schemas']['CounterpartyCandidateDto'];
 
 export type BalanceHistory = components['schemas']['BalanceHistoryDto'];
+
+export type DashboardHistory = components['schemas']['DashboardHistoryDto'];
+
+export type TrashedWorkspace = components['schemas']['TrashedWorkspaceResourceDto'];

@@ -19,6 +19,8 @@ O projeto está em fase de **piloto**. O dashboard mostra os saldos das contas c
 - **Histórico de extratos:** salve movimentos antigos apenas para consulta e busque dentro do extrato sem alterar saldos ou gastos. Integração financeira posterior exige revisão e conciliação.
 - **Dados:** exportação em CSV, backup financeiro em JSON com planejamentos e restauração com prévia de impacto.
 - **Acesso:** cadastro, login e recuperação de senha pelo Supabase Auth.
+- **Comparativos:** evolução de receitas e despesas em 2, 4, 7 ou 12 meses, barras/linhas, comparação com o mês anterior e tabela de valores; despesas por grupos ou categorias, incluindo Outros.
+- **Espaços:** entrada direta quando há um único espaço ativo; exclusão com confirmação, lixeira restaurável por 7 dias e remoção definitiva após o prazo.
 - **Interface:** navegação adaptada a desktop e celular, alternância de tema e instalação como PWA.
 
 Cada usuário acessa seus próprios espaços. Compartilhamento, convites e membros ainda não estão implementados. Operações financeiras exigem conexão; o service worker armazena os arquivos estáticos da interface.
@@ -312,3 +314,9 @@ Ao selecionar **Vincular … e reconhecer esta descrição**, salve o lançament
 Cadastros/regras podem ser desativados e descrições removidas sem apagar histórico. Relações antigas de EDI/loja ficam preservadas por compatibilidade. O backup JSON v6 mantém os vínculos, inclusive ambiguidades antigas que o reconhecimento não pode decidir sozinho. Esta melhoria não exige migration extra.
 
 As migrations `202610260005_counterparty_rules.sql` e `202610260006_counterparty_external_identifiers.sql` criam os vínculos protegidos por espaço. O backup financeiro JSON v6 preserva agentes, identificações ativas/desativadas, regras e a origem da classificação, com remapeamento de IDs na restauração; backups v1–v5 continuam aceitos.
+
+### Retenção de espaços excluídos
+
+A migration `202610300003_workspace_trash.sql` adiciona a lixeira e bloqueia o acesso financeiro aos espaços excluídos. Excluir não apaga os lançamentos durante os primeiros 7 dias; restaurar devolve o mesmo espaço com todos os seus dados. Após 168 horas, a próxima limpeza remove definitivamente o espaço e seus dados. A operação não oferece remoção antecipada pela interface.
+
+No Supabase, a migration habilita `pg_cron` e agenda a limpeza a cada 10 minutos, sem depender do processo web do Render. `npm run db:setup` verifica se o agendamento está ativo. Em bancos locais sem a extensão, a limpeza ocorre ao consultar a lista/lixeira; o comando informa essa limitação. Referências: [instalação do Supabase Cron](https://supabase.com/docs/guides/cron/install) e [agendamento de funções SQL](https://supabase.com/docs/guides/cron/quickstart).

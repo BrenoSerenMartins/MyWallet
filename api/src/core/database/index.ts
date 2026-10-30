@@ -96,7 +96,7 @@ export class DatabaseService implements OnModuleDestroy {
         if (!selected) throw new BadRequestException('Selecione um espaço para continuar.');
         requireUuid(selected);
         const access = await connection.query(
-          'SELECT id FROM wallet.workspaces WHERE user_id=$1 AND id=$2',
+          `SELECT id FROM wallet.workspaces w WHERE user_id=$1 AND id=$2 AND to_jsonb(w)->>'deleted_at' IS NULL ${readOnly ? '' : 'FOR SHARE'}`,
           [userId, selected],
         );
         if (!access.rows.length) throw new NotFoundException('Espaço não encontrado.');

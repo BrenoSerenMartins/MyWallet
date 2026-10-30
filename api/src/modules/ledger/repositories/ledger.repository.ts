@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../../../core/database/index.js';
 import type { PlanningActual, TransactionInput } from '../../../core/integration/index.js';
 import { sourceEvidenceKey, type SourceEvidence } from '../../../core/integration/index.js';
+import { exactAmount } from '../../../core/rest/index.js';
 import { transactionResource } from '../mappers/transaction.mapper.js';
 function reconciliationSql(alias = 'wallet.transactions') {
   return `EXISTS(SELECT 1 FROM wallet.transaction_sources proof
@@ -245,6 +246,32 @@ export class LedgerRepository {
     );
     return Number(r.total);
   }
+  async monthlySummary(from: string, to: string) {
+    const rows = await this.db.query(
+      `WITH totals AS (
+        SELECT date_trunc('month',transaction_date)::date AS month,
+          coalesce(sum(amount_minor) FILTER(WHERE transaction_type='income'),0) AS income,
+          coalesce(-sum(amount_minor) FILTER(WHERE transaction_type='expense'),0) AS expense,
+          count(*) FILTER(WHERE transaction_type IN ('income','expense')) AS count,
+          count(*) FILTER(WHERE transaction_type='unclassified') AS unclassified
+        FROM wallet.transactions
+        WHERE user_id=$1 AND reversed_at IS NULL AND transaction_date>=$2 AND transaction_date<$3
+        GROUP BY 1
+      )
+      SELECT to_char(m.month,'YYYY-MM') AS month,coalesce(t.income,0) AS income,
+        coalesce(t.expense,0) AS expense,coalesce(t.count,0) AS count,coalesce(t.unclassified,0) AS unclassified
+      FROM generate_series($2::date,($3::date-interval '1 month')::date,interval '1 month') AS m(month)
+      LEFT JOIN totals t ON t.month=m.month::date ORDER BY m.month`,
+      [this.db.userId, from, to],
+    );
+    return rows.map((row) => ({
+      month: row.month,
+      income: exactAmount(Number(row.income)),
+      expense: exactAmount(Number(row.expense)),
+      count: Number(row.count),
+      unclassified: Number(row.unclassified),
+    }));
+  }
   async summary(from: string, to: string) {
     const [r] = await this.db.query(
       `SELECT coalesce(sum(amount_minor) FILTER(WHERE transaction_type='income'),0) income,coalesce(-sum(amount_minor) FILTER(WHERE transaction_type='expense'),0) expense,count(*) FILTER(WHERE transaction_type='unclassified') unclassified FROM wallet.transactions WHERE user_id=$1 AND reversed_at IS NULL AND transaction_date>=$2 AND transaction_date<$3`,
@@ -261,10 +288,28 @@ export class LedgerRepository {
        GROUP BY g.id,g.name ORDER BY amount DESC, name, g.id`,
       [this.db.userId, from, to],
     );
+    const categories = await this.db.query(
+      `SELECT c.id AS category_id,coalesce(c.name,'Outros') AS name,g.name AS group_name,
+        -sum(t.amount_minor) AS amount,count(*) AS count
+       FROM wallet.transactions t
+       LEFT JOIN wallet.categories c ON c.id=t.category_id AND c.type='expense'
+       LEFT JOIN wallet.category_groups g ON g.id=c.group_id
+       WHERE t.user_id=$1 AND t.reversed_at IS NULL AND t.transaction_type='expense'
+         AND t.transaction_date>=$2 AND t.transaction_date<$3
+       GROUP BY c.id,c.name,g.name ORDER BY amount DESC,name,c.id`,
+      [this.db.userId, from, to],
+    );
     return {
       income: Number(r.income),
       expense: Number(r.expense),
       unclassified: Number(r.unclassified),
+      expenseCategories: categories.map((category) => ({
+        categoryId: category.category_id,
+        name: category.name,
+        groupName: category.group_name,
+        amount: exactAmount(Number(category.amount)),
+        count: Number(category.count),
+      })),
       expenseGroups: groups.map((group) => ({
         groupId: group.group_id,
         name: group.name,

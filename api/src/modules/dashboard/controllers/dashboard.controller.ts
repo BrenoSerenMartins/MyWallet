@@ -1,5 +1,5 @@
 import { ApiOkResponse } from '@nestjs/swagger';
-import { DashboardResourceDto } from '../../../core/integration/index.js';
+import { DashboardHistoryDto, DashboardResourceDto } from '../../../core/integration/index.js';
 import {
   Controller,
   Get,
@@ -23,6 +23,17 @@ export class DashboardController {
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(DashboardService) private readonly dashboard: DashboardService,
   ) {}
+  @Get('history') @ApiOkResponse({ type: DashboardHistoryDto }) history(
+    @Req() r: AuthenticatedRequest,
+    @Query('month') month: string,
+    @Query('months') months?: string,
+  ) {
+    return this.db.forUser(
+      r.identity.id,
+      () => this.dashboard.history(month, months === undefined ? 4 : Number(months)),
+      true,
+    );
+  }
   @Get() @ApiOkResponse({ type: DashboardResourceDto }) summary(
     @Req() r: AuthenticatedRequest,
     @Query('from') from: string,

@@ -160,6 +160,26 @@ export class ImportBatchResourceDto {
   @ApiProperty({ type: Number, nullable: true }) closingBalance!: number | null;
   @ApiProperty({ type: () => [ImportItemResourceDto] }) items!: ImportItemResourceDto[];
 }
+export class DashboardHistoryMonthDto {
+  @ApiProperty({ type: String }) month!: string;
+  @ApiProperty({ type: Number }) income!: number;
+  @ApiProperty({ type: Number }) expense!: number;
+  @ApiProperty({ type: Number }) count!: number;
+  @ApiProperty({ type: Number }) unclassified!: number;
+}
+export class DashboardHistoryDto {
+  @ApiProperty({ type: [DashboardHistoryMonthDto] }) items!: DashboardHistoryMonthDto[];
+  @ApiProperty({ type: String }) from!: string;
+  @ApiProperty({ type: String }) to!: string;
+  @ApiProperty({ type: Number }) months!: number;
+}
+export class DashboardExpenseCategoryDto {
+  @ApiProperty({ type: String, nullable: true }) categoryId!: string | null;
+  @ApiProperty({ type: String }) name!: string;
+  @ApiProperty({ type: String, nullable: true }) groupName!: string | null;
+  @ApiProperty({ type: Number }) amount!: number;
+  @ApiProperty({ type: Number }) count!: number;
+}
 export class DashboardExpenseGroupDto {
   @ApiProperty({ type: String, nullable: true }) groupId!: string | null;
   @ApiProperty({ type: String }) name!: string;
@@ -167,6 +187,8 @@ export class DashboardExpenseGroupDto {
   @ApiProperty({ type: Number }) count!: number;
 }
 export class DashboardResourceDto {
+  @ApiProperty({ type: [DashboardExpenseCategoryDto] })
+  expenseCategories!: DashboardExpenseCategoryDto[];
   @ApiProperty({ type: [DashboardExpenseGroupDto] }) expenseGroups!: DashboardExpenseGroupDto[];
   @ApiProperty({ type: Number }) benefitBalance!: number;
   @ApiProperty({ type: Number }) reserveBalance!: number;

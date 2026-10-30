@@ -8,6 +8,7 @@ import { useDashboard } from './hooks/use-dashboard';
 import { BalanceOverview } from './components/balance-overview';
 import { RecentMovements } from './components/recent-movements';
 import { MonthOverview } from './components/month-overview';
+import { HistoryOverview } from './components/history-overview';
 import { ExpenseGroups } from './components/expense-groups';
 import './dashboard.css';
 export function DashboardPage() {
@@ -122,6 +123,7 @@ export function DashboardPage() {
             </div>
           )}
         </div>
+        <HistoryOverview month={month} visible={visible} onMonthChange={setMonth} />
         <div className="dashboard-lower">
           <RecentMovements
             items={movements.data?.items}
@@ -134,6 +136,7 @@ export function DashboardPage() {
           {!summary.isPending && !summary.isError && (
             <ExpenseGroups
               groups={summary.data.expenseGroups ?? []}
+              categories={summary.data.expenseCategories ?? []}
               visible={visible}
               link={transactionsLink('expense')}
             />

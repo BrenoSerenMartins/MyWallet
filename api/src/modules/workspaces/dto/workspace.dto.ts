@@ -14,3 +14,8 @@ export class WorkspaceResourceDto {
   @ApiProperty({ type: String }) color!: string;
   @ApiProperty({ type: Boolean }) isDefault!: boolean;
 }
+
+export class TrashedWorkspaceResourceDto extends WorkspaceResourceDto {
+  @ApiProperty({ type: String }) deletedAt!: string;
+  @ApiProperty({ type: String }) deleteAfter!: string;
+}

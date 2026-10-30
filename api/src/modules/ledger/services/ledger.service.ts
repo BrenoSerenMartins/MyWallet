@@ -176,6 +176,9 @@ export class LedgerService implements LedgerWrites, LedgerReads {
   planningActuals(from: string, to: string, scope: 'all' | 'cash' | 'benefits' = 'all') {
     return this.repository.planningActuals(from, to, scope);
   }
+  monthlySummary(from: string, to: string) {
+    return this.repository.monthlySummary(from, to);
+  }
   summary(from: string, to: string) {
     return this.repository.summary(from, to);
   }

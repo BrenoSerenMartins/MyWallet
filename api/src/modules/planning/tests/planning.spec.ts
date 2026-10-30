@@ -1,3 +1,4 @@
+import { DashboardService } from '../../dashboard/services/dashboard.service.js';
 import { BalanceBasisService } from '../../accounts/services/balance-basis.service.js';
 import { BalanceBasisRepository } from '../../accounts/repositories/balance-basis.repository.js';
 import { CounterpartiesService } from '../../counterparties/services/counterparties.service.js';
@@ -504,6 +505,15 @@ describe('Overview expense groups', () => {
         expect.objectContaining({ groupId, name: 'Overview group', amount: -300, count: 3 }),
       ]),
     );
+    expect(summary.expenseCategories.reduce((total, category) => total + category.amount, 0)).toBe(
+      summary.expense,
+    );
+    expect(summary.expenseCategories).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Outros', amount: 2000 }),
+        expect.objectContaining({ name: 'Overview food', amount: -800 }),
+      ]),
+    );
     expect(summary.expenseGroups.reduce((total, group) => total + group.amount, 0)).toBe(
       summary.expense,
     );
@@ -520,5 +530,55 @@ describe('Overview expense groups', () => {
     );
     expect(otherWorkspace.expenseGroups).toEqual([]);
     expect(otherUser.expenseGroups).toEqual([]);
+  });
+});
+
+describe('Monthly overview history', () => {
+  const dashboard = new DashboardService(accounts, ledger);
+  it('fills chronological months, preserves signed refunds and matches period summaries without reading other owners/spaces', async () => {
+    const history = await db.forUser(db.user, () => dashboard.history('2027-02', 4), true);
+    expect(history.items.map((item) => item.month)).toEqual([
+      '2026-11',
+      '2026-12',
+      '2027-01',
+      '2027-02',
+    ]);
+    expect(history.items[0]).toMatchObject({ income: 0, expense: 0, count: 0, unclassified: 0 });
+    for (const item of history.items) {
+      const [year, number] = item.month.split('-').map(Number);
+      const to = new Date(Date.UTC(year, number, 1)).toISOString().slice(0, 10);
+      const summary = await db.forUser(db.user, () => ledger.summary(item.month + '-01', to), true);
+      expect(item).toMatchObject({
+        income: summary.income,
+        expense: summary.expense,
+        unclassified: summary.unclassified,
+      });
+    }
+    expect(history.items.at(-1)).toMatchObject({
+      income: 5000,
+      expense: 1700,
+      count: 5,
+      unclassified: 1,
+    });
+    const other = await db.forUser(
+      db.user,
+      () => dashboard.history('2027-02', 4),
+      true,
+      otherSpace,
+    );
+    const otherOwner = await db.forUser(db.other, () => dashboard.history('2027-02', 4), true);
+    expect(other.items.every((item) => item.count === 0)).toBe(true);
+    expect(otherOwner.items.every((item) => item.count === 0)).toBe(true);
+  });
+  it('bounds ranges, rejects malformed periods and returns leap-year months without timezone shifts', async () => {
+    for (const month of ['bad', '2026-13', '1899-12', '9999-01'])
+      await expect(dashboard.history(month, 4)).rejects.toThrow('mês válido');
+    for (const count of [0, 1, 3, 13, NaN, Infinity])
+      await expect(dashboard.history('2026-01', count)).rejects.toThrow('intervalo');
+    const earliest = await db.forUser(db.user, () => dashboard.history('1900-01', 12), true);
+    expect(earliest.items.map((item) => item.month)).toEqual(['1900-01']);
+    const leap = await db.forUser(db.user, () => dashboard.history('2024-03', 2), true);
+    expect(leap).toMatchObject({ from: '2024-02-01', to: '2024-04-01' });
+    expect(leap.items.map((item) => item.month)).toEqual(['2024-02', '2024-03']);
   });
 });

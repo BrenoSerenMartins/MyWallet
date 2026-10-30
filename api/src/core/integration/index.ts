@@ -94,6 +94,18 @@ export interface PlanningActual {
   outflow: number;
 }
 export interface LedgerReads {
+  monthlySummary(
+    from: string,
+    to: string,
+  ): Promise<
+    {
+      month: string;
+      income: number;
+      expense: number;
+      count: number;
+      unclassified: number;
+    }[]
+  >;
   planningActuals(
     from: string,
     to: string,
@@ -107,6 +119,13 @@ export interface LedgerReads {
     income: number;
     expense: number;
     unclassified: number;
+    expenseCategories: {
+      categoryId: string | null;
+      name: string;
+      groupName: string | null;
+      amount: number;
+      count: number;
+    }[];
     expenseGroups: { groupId: string | null; name: string; amount: number; count: number }[];
   }>;
 }
