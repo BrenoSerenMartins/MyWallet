@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { ArrowDownLeft, ArrowUpRight, Eye, EyeOff, Wallet } from 'lucide-react';
+import { ChevronDown, Eye, EyeOff } from 'lucide-react';
 import type { Dashboard } from '../../../shared/api/resources';
 import { money } from '../../../shared/formatting/money';
+import { AccountsOverview } from './accounts-overview';
 export function BalanceOverview({
   summary,
   visible,
@@ -18,86 +19,58 @@ export function BalanceOverview({
   const review = cashAccounts.some((a) => a.balanceBasis?.reviewRequired);
   const amount = (value: number) => (visible ? money(value) : '••••••');
   return (
-    <section className="overview-grid">
-      <div className="balance-hero">
-        <div className="hero-orbits" aria-hidden="true" />
-        <div className="hero-label">
-          <span>
-            <span className="status-dot" />{' '}
-            {partial || review ? 'SALDO REGISTRADO' : 'DINHEIRO DISPONÍVEL'}
-          </span>
-          <button
-            className="icon-button"
-            aria-label={visible ? 'Ocultar valores' : 'Mostrar valores'}
-            onClick={onToggle}
-          >
-            {visible ? <Eye size={18} /> : <EyeOff size={18} />}
-          </button>
+    <section className="current-balances panel" aria-label="Saldos atuais">
+      <div className="balance-topline">
+        <h2>Saldos atuais</h2>
+        <button
+          className="icon-button"
+          aria-label={visible ? 'Ocultar valores' : 'Mostrar valores'}
+          onClick={onToggle}
+        >
+          {visible ? <Eye size={18} /> : <EyeOff size={18} />}
+        </button>
+      </div>
+      <div className="balance-snapshot">
+        <div className="available-balance">
+          <span>{partial || review ? 'Saldo registrado nas contas' : 'Dinheiro disponível'}</span>
+          <strong className="hero-balance">{amount(summary.balance)}</strong>
+          <small>Sem benefícios e reservas</small>
         </div>
-        <div className="hero-balance">{amount(summary.balance)}</div>
-        <p className="hero-caption">
-          {review
-            ? 'Saldo precisa de conferência'
-            : partial
-              ? 'Histórico parcial · informe o saldo atual quando quiser'
-              : 'Saldos registrados · sem benefícios e reservas'}{' '}
-          <span>BRL</span>
-        </p>
-        {summary.accounts.some((account) =>
-          ['benefit_food', 'benefit_meal', 'reserve'].includes(account.type),
-        ) && (
-          <dl className="resource-balances">
-            <div>
-              <dt>Benefícios · uso restrito</dt>
-              <dd>{amount(summary.benefitBalance ?? 0)}</dd>
-            </div>
-            <div>
-              <dt>Reservas registradas</dt>
-              <dd>{amount(summary.reserveBalance ?? 0)}</dd>
-            </div>
-          </dl>
+        {summary.accounts.some((a) => ['benefit_food', 'benefit_meal'].includes(a.type)) && (
+          <div>
+            <span>Benefícios</span>
+            <strong>{amount(summary.benefitBalance)}</strong>
+            <small>Alimentação e refeição · uso restrito</small>
+          </div>
         )}
-        <div className="hero-divider" />
-        <div className="hero-bottom">
+        {summary.accounts.some((a) => a.type === 'reserve') && (
+          <div>
+            <span>Reservas</span>
+            <strong>{amount(summary.reserveBalance)}</strong>
+            <small>Contas de reserva cadastradas</small>
+          </div>
+        )}
+      </div>
+      {(partial || review) && (
+        <p className="balance-warning">
+          {review
+            ? 'Há saldos que precisam de conferência.'
+            : 'Algumas contas têm histórico parcial.'}{' '}
+          <Link to="/accounts">Conferir contas</Link>
+        </p>
+      )}
+      <details className="balance-composition">
+        <summary>
           <span>
-            <Wallet size={16} />
-            {summary.accounts.length} contas no seu controle
+            Composição por conta <span className="badge">{summary.accounts.length}</span>
           </span>
-          <Link to="/accounts">
-            Ver minhas contas <ArrowUpRight size={16} />
-          </Link>
-        </div>
-      </div>
-      <div className="month-summary">
-        <div className="summary-item">
-          <span className="metric-icon positive">
-            <ArrowDownLeft size={21} />
-          </span>
-          <div>
-            <span>Entradas do mês</span>
-            <strong>{amount(summary.income)}</strong>
-          </div>
-        </div>
-        <div className="summary-line" />
-        <div className="summary-item">
-          <span className="metric-icon negative">
-            <ArrowUpRight size={21} />
-          </span>
-          <div>
-            <span>Saídas do mês</span>
-            <strong>{amount(summary.expense)}</strong>
-          </div>
-        </div>
-        <p className="field-help">Entradas e saídas de todas as contas, incluindo benefícios.</p>
-        <div className="summary-foot">
-          <span>Resultado do período</span>
-          <strong
-            className={summary.income - summary.expense >= 0 ? 'positive-text' : 'negative-text'}
-          >
-            {amount(summary.income - summary.expense)}
-          </strong>
-        </div>
-      </div>
+          <ChevronDown size={17} />
+        </summary>
+        <p className="field-help">
+          Saldos calculados pelos dados cadastrados. Não mudam ao selecionar outro mês abaixo.
+        </p>
+        <AccountsOverview accounts={summary.accounts} visible={visible} />
+      </details>
     </section>
   );
 }

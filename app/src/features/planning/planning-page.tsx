@@ -1,6 +1,7 @@
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { validMonth } from '../../shared/formatting/month';
 import { CalendarDays, Copy, Pencil, ArrowRight } from 'lucide-react';
 import { dateToday, money } from '../../shared/formatting/money';
 import { Button, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
@@ -11,7 +12,12 @@ import { PlanForm } from './components/plan-form';
 import { CopyPlanDialog } from './components/copy-plan-dialog';
 import './planning.css';
 export function PlanningPage() {
-  const [month, setMonth] = useState(() => dateToday().slice(0, 7));
+  const [params, setParams] = useSearchParams();
+  const requestedMonth = params.get('month');
+  const month = validMonth(requestedMonth) ? requestedMonth : dateToday().slice(0, 7);
+  const setMonth = (value: string) => {
+    if (validMonth(value)) setParams({ month: value });
+  };
   const [dialog, setDialog] = useState<'edit' | 'copy' | null>(null);
   const [message, setMessage] = useState('');
   const [scope, setScope] = useState('all');

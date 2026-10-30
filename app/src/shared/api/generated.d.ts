@@ -1120,7 +1120,14 @@ export interface components {
       version: number;
       resetClassification?: boolean;
     };
+    DashboardExpenseGroupDto: {
+      groupId: string | null;
+      name: string;
+      amount: number;
+      count: number;
+    };
     DashboardResourceDto: {
+      expenseGroups: components['schemas']['DashboardExpenseGroupDto'][];
       benefitBalance: number;
       reserveBalance: number;
       recordedResources: number;

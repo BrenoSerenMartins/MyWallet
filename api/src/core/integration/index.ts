@@ -103,7 +103,12 @@ export interface LedgerReads {
   summary(
     from: string,
     to: string,
-  ): Promise<{ income: number; expense: number; unclassified: number }>;
+  ): Promise<{
+    income: number;
+    expense: number;
+    unclassified: number;
+    expenseGroups: { groupId: string | null; name: string; amount: number; count: number }[];
+  }>;
 }
 
 export const COMMAND_RECEIPTS = Symbol('COMMAND_RECEIPTS');

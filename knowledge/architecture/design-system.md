@@ -24,10 +24,10 @@ Support `light`, `dark`, and `system`. Start with the system preference and pers
 - Initial contrast checks for the specified main text, muted text, and button pairs exceed 4.5:1. This is a palette check, not a completed interface accessibility audit.
 
 ## Navigation and layout
-- Desktop: sidebar around 240px, top bar with active period/profile/theme controls, and a bounded content area. Home uses a balance hero, quick actions, monthly summary, recent movements, and an account overview.
+- Desktop: compact top navigation with Overview, Transactions, Accounts and Planning; workspace switching, creation and More remain reachable. No permanent sidebar. Home separates current tracked balances from monthly analysis.
 - Tablet: compact navigation and a two-column layout where space permits.
 - Mobile: five bottom destinations: Home, Transactions, Accounts, Planning, and More. Respect safe areas and the on-screen keyboard. Keep the primary create action reachable without covering content.
-- More opens an accessible dialog containing imports, groups/categories, preferences and workspace switching. Desktop navigation has expandable money/organization sections. Future areas join navigation only when functional.
+- More opens an accessible dialog containing imports, groups/categories, people/establishments, preferences, appearance, sign-out and workspace switching. Future areas join navigation only when functional.
 - Detailed views drill into accounts, transaction details, and import batches. Carry period and account filters into the detail view and support browser Back.
 - Use tables for desktop transaction review and compact transaction rows on mobile. Show direction/type, description, date, amount, and review state without horizontal scrolling for the main workflow.
 
@@ -70,3 +70,12 @@ Import review exposes a focused reprocessing dialog for drafts/history: saved da
 The category section uses negative/positive theme tokens for selected switcher state, group icons, subtle card borders and chip backgrounds. Brand navigation and primary actions retain the emerald identity. Custom group/category colors remain secondary identity dots, including previously saved green expense groups; semantic context does not rewrite saved colors. Expense/income explanatory copy follows the active section.
 
 Planning summary cards show Previsto and Realizado together with a labeled variance. Expense overrun is negative and remaining budget positive; no-target states show no comparison. Contribution actual is explicitly unidentified until tracked. Uncategorized typed actuals are displayed as Outros with an inclusion message; reserve review warnings for unknown financial types rather than suggesting uncategorized money is missing from totals.
+
+## Overview/navigation revision — implemented plan (2026-10-30)
+1. Replace the permanent sidebar with compact desktop navigation and retain the five mobile destinations. Preserve workspace, offline/update and dialog behavior.
+2. Keep current tracked balances independent of the selected analysis month; provide an expandable account composition, conditional benefit/reserve balances and privacy controls.
+3. Group period income, expenses and result with plain explanations; place the month picker within that section.
+4. Compare actuals with saved plan targets and show expense groups including uncategorized amounts. Use exact signed ledger aggregation, excluding reversed entries and transfers.
+5. Carry month/type into transaction drilldowns, and month into planning. Validate query isolation, aggregate totals, loading/error/empty states, responsive navigation and both themes. No schema change or financial writes.
+
+The overview uses a compact green-tinted balance panel, conditional secondary balances and native account-composition disclosure. Month cards share an equal visual hierarchy with type-semantic colors, actual amount, planned amount and variance. No-target, loading and failed-plan states remain distinct. Expense groups use labeled horizontal bars with exact text amounts (hidden together with all other monetary values); negative group net values from prior-month refunds remain signed rather than clamped. No claims of bank-complete net worth or inferred monthly opening money are made.

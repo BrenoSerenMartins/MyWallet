@@ -1,0 +1,411 @@
+.dashboard-page {
+  display: grid;
+  gap: 24px;
+}
+.dashboard-heading,
+.monthly-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.dashboard-heading h1 {
+  font-size: 26px;
+  letter-spacing: -0.7px;
+}
+.dashboard-heading .button {
+  min-height: 44px;
+}
+.current-balances {
+  padding: 0 24px;
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--accent-soft) 65%, var(--surface)),
+    var(--surface)
+  );
+}
+.balance-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  gap: 16px;
+}
+.balance-topline h2 {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.balance-snapshot {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 10px 0 24px;
+  flex-wrap: wrap;
+}
+.balance-snapshot > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.balance-snapshot > div + div {
+  border-left: 1px solid var(--border);
+  padding-left: 32px;
+}
+.balance-snapshot span {
+  font-size: 13px;
+  color: var(--muted);
+}
+.balance-snapshot strong {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.balance-snapshot .hero-balance {
+  font-size: 40px;
+  line-height: 1.3;
+  letter-spacing: -1px;
+}
+.balance-snapshot small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.balance-warning {
+  font-size: 12px;
+  color: var(--warning);
+  padding-bottom: 16px;
+}
+.balance-warning a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.balance-composition {
+  border-top: 1px solid var(--border);
+}
+.balance-composition > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  gap: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  list-style: none;
+}
+.balance-composition > summary::-webkit-details-marker {
+  display: none;
+}
+.balance-composition > summary > span {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.balance-composition[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.balance-composition .field-help {
+  padding: 0 0 8px;
+}
+.balance-composition .account-line {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.balance-composition .account-line strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.balance-composition .account-line div span {
+  font-size: 12px;
+}
+.monthly-analysis {
+  min-width: 0;
+}
+.monthly-heading {
+  margin: 8px 0 20px;
+  align-items: flex-start;
+}
+.monthly-heading h2 {
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+.monthly-heading p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+  max-width: 560px;
+}
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.month-navigation .icon-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.month-navigation .period-picker {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+}
+.month-navigation input {
+  min-height: 30px;
+  font-size: 13px;
+  width: 150px;
+  max-width: 100%;
+}
+.monthly-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.month-metric {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.month-metric:hover {
+  border-color: var(--muted);
+}
+.month-metric-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.month-metric-label svg:last-child {
+  margin-left: auto;
+}
+.month-metric.income .month-metric-label svg:first-child {
+  color: var(--positive);
+}
+.month-metric.expense .month-metric-label svg:first-child {
+  color: var(--negative);
+}
+.month-metric > strong {
+  font-size: clamp(22px, 2.5vw, 30px);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+.month-metric dl {
+  margin: 4px 0 0;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 12px;
+}
+.month-metric dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.month-metric dt {
+  color: var(--muted);
+}
+.month-metric dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.month-metric p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.month-metric p.positive-text {
+  color: var(--positive);
+}
+.month-metric p.negative-text {
+  color: var(--negative);
+}
+.month-result-note {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  max-width: 950px;
+}
+.dashboard-plan-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.dashboard-plan-link a {
+  min-height: 44px;
+}
+.plan-load-error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.dashboard-lower {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.dashboard-lower .section-heading h2 {
+  font-size: 15px;
+}
+.dashboard-lower .section-heading p {
+  font-size: 12px;
+}
+.dashboard-lower .section-heading > .text-button {
+  font-size: 12px;
+  min-height: 44px;
+}
+.dashboard-lower .transaction-row {
+  width: 100%;
+}
+.expense-group-list {
+  padding: 0 24px;
+  display: grid;
+  gap: 20px;
+}
+.expense-group > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  font-size: 13px;
+}
+.expense-group > div > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.expense-group small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.expense-group strong {
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.expense-group-track {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--surface-raised);
+  margin-top: 8px;
+  overflow: hidden;
+}
+.expense-group-track span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--negative);
+}
+.more-expense-groups summary {
+  min-height: 44px;
+  padding: 12px 24px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+.group-footnote {
+  padding: 20px 24px;
+  font-size: 11px;
+}
+@media (max-width: 900px) {
+  .dashboard-lower {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .dashboard-page {
+    gap: 20px;
+  }
+  .dashboard-heading {
+    gap: 12px;
+  }
+  .dashboard-heading h1 {
+    font-size: 24px;
+  }
+  .dashboard-heading .button {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .current-balances {
+    padding: 0 16px;
+  }
+  .balance-snapshot {
+    gap: 20px;
+    align-items: start;
+  }
+  .balance-snapshot .available-balance {
+    flex-basis: 100%;
+  }
+  .balance-snapshot > div + div {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .balance-snapshot .hero-balance {
+    font-size: 36px;
+  }
+  .balance-snapshot strong {
+    font-size: 22px;
+  }
+  .monthly-heading {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .month-navigation {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .month-navigation .period-picker {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+  .monthly-metrics {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .month-metric {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+  }
+  .month-metric > strong {
+    font-size: 24px;
+    grid-column: 1/-1;
+  }
+  .month-metric-label {
+    grid-column: 1/-1;
+  }
+  .month-metric dl {
+    margin: 0;
+    border: 0;
+    padding: 0;
+  }
+  .month-metric dl > div {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .month-metric p {
+    text-align: right;
+    align-self: end;
+  }
+  .expense-group-list {
+    padding: 0 16px;
+  }
+  .group-footnote {
+    padding: 20px 16px;
+  }
+}

@@ -375,3 +375,150 @@ it('counts uncategorized income and expenses exactly once and preserves totals w
     expect(after.lines.filter((line) => line.categoryId === null)).toEqual([]);
   });
 });
+
+describe('Overview expense groups', () => {
+  it('keeps group totals equal to signed period expenses across refunds, benefits, reversals and workspace isolation', async () => {
+    const groupId = await db.forUser(db.user, async () => {
+      const group = await categories.saveGroup({
+        name: 'Overview group',
+        type: 'expense',
+        color: '#f28a97',
+      });
+      const firstCategory = (
+        await categories.save({
+          name: 'Overview food',
+          type: 'expense',
+          color: '#f28a97',
+          groupId: group.id,
+        })
+      ).id;
+      const secondCategory = (
+        await categories.save({
+          name: 'Overview leisure',
+          type: 'expense',
+          color: '#f28a97',
+          groupId: group.id,
+        })
+      ).id;
+      const original = await ledger.create({
+        accountId: account,
+        categoryId: firstCategory,
+        amount: -4000,
+        transactionType: 'expense',
+        transactionDate: '2027-01-31',
+        description: 'Prior month purchase',
+      });
+      await ledger.create({
+        accountId: account,
+        categoryId: firstCategory,
+        amount: 1500,
+        transactionType: 'expense',
+        refundOfId: original.id,
+        transactionDate: '2027-02-01',
+        description: 'Current month refund',
+      });
+      await ledger.create({
+        accountId: account,
+        categoryId: secondCategory,
+        amount: -500,
+        transactionType: 'expense',
+        transactionDate: '2027-02-02',
+        description: 'Same group, second category',
+      });
+      await ledger.create({
+        accountId: account,
+        categoryId: null,
+        amount: -2000,
+        transactionType: 'expense',
+        transactionDate: '2027-02-28',
+        description: 'Uncategorized expense',
+      });
+      const benefit = await accounts.create({
+        name: 'Overview benefit',
+        institution: 'alelo',
+        type: 'benefit_food',
+        openingBalance: 0,
+        openingDate: '2026-01-01',
+      });
+      await ledger.create({
+        accountId: benefit.id,
+        categoryId: firstCategory,
+        amount: -700,
+        transactionType: 'expense',
+        transactionDate: '2027-02-03',
+        description: 'Benefit expense',
+      });
+      await ledger.create({
+        accountId: account,
+        amount: 5000,
+        transactionType: 'income',
+        transactionDate: '2027-02-03',
+        description: 'Income excluded from expenses',
+      });
+      await ledger.create(
+        {
+          accountId: account,
+          amount: -300,
+          transactionType: 'unclassified',
+          transactionDate: '2027-02-03',
+          description: 'Unknown excluded from expenses',
+        },
+        true,
+      );
+      await ledger.create(
+        {
+          accountId: account,
+          amount: -1000,
+          transactionType: 'transfer',
+          transactionDate: '2027-02-03',
+          description: 'Transfer excluded from expenses',
+        },
+        true,
+      );
+      const reversed = await ledger.create({
+        accountId: account,
+        amount: -999,
+        transactionType: 'expense',
+        transactionDate: '2027-02-03',
+        description: 'Reversed expense',
+      });
+      await ledger.reverse(reversed.id, '1');
+      await ledger.create({
+        accountId: account,
+        amount: -8000,
+        transactionType: 'expense',
+        transactionDate: '2027-03-01',
+        description: 'Outside exclusive end date',
+      });
+      return group.id;
+    });
+    const summary = await db.forUser(
+      db.user,
+      () => ledger.summary('2027-02-01', '2027-03-01'),
+      true,
+    );
+    expect(summary).toMatchObject({ income: 5000, expense: 1700, unclassified: 1 });
+    expect(summary.expenseGroups).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Outros', groupId: null, amount: 2000, count: 1 }),
+        expect.objectContaining({ groupId, name: 'Overview group', amount: -300, count: 3 }),
+      ]),
+    );
+    expect(summary.expenseGroups.reduce((total, group) => total + group.amount, 0)).toBe(
+      summary.expense,
+    );
+    const otherWorkspace = await db.forUser(
+      db.user,
+      () => ledger.summary('2027-02-01', '2027-03-01'),
+      true,
+      otherSpace,
+    );
+    const otherUser = await db.forUser(
+      db.other,
+      () => ledger.summary('2027-02-01', '2027-03-01'),
+      true,
+    );
+    expect(otherWorkspace.expenseGroups).toEqual([]);
+    expect(otherUser.expenseGroups).toEqual([]);
+  });
+});

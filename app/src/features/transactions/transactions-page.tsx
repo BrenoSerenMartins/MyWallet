@@ -12,6 +12,13 @@ import type { Account, Category, Collection, Transaction } from '../../shared/ap
 import { Button, EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
 import { TransactionRow } from '../../shared/ui/transaction-row';
 import { TransactionForm } from './components/transaction-form';
+function dateFilter(value: string | null) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  const parsed = new Date(value + 'T12:00:00Z');
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+    ? value
+    : '';
+}
 export function TransactionsPage() {
   const { session } = useAuth();
   const { accountId } = useParams();
@@ -24,8 +31,8 @@ export function TransactionsPage() {
   const [kind, setKind] = useState(params.get('type') ?? '');
   const [category, setCategory] = useState('');
   const [reconciliation, setReconciliation] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  const [from, setFrom] = useState(dateFilter(params.get('from')));
+  const [to, setTo] = useState(dateFilter(params.get('to')));
   useEffect(() => {
     setAccount(accountId ?? '');
   }, [accountId]);
@@ -35,6 +42,11 @@ export function TransactionsPage() {
       setOpen(true);
     }
   }, [params]);
+  useEffect(() => {
+    setKind(params.get('type') ?? '');
+    setFrom(dateFilter(params.get('from')));
+    setTo(dateFilter(params.get('to')));
+  }, [params.get('type'), params.get('from'), params.get('to')]);
   const transactionId = params.get('transaction');
   const requestedTransaction = useQuery({
     queryKey: [session?.user.id, 'transaction', transactionId],
@@ -136,7 +148,7 @@ export function TransactionsPage() {
             { value: 'unclassified', label: 'A revisar' },
           ]}
         />
-        <details className="filter-disclosure">
+        <details className="filter-disclosure" open={from || to ? true : undefined}>
           <summary>
             <SlidersHorizontal size={17} />
             Filtros de conta, categoria e período

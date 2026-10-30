@@ -160,7 +160,14 @@ export class ImportBatchResourceDto {
   @ApiProperty({ type: Number, nullable: true }) closingBalance!: number | null;
   @ApiProperty({ type: () => [ImportItemResourceDto] }) items!: ImportItemResourceDto[];
 }
+export class DashboardExpenseGroupDto {
+  @ApiProperty({ type: String, nullable: true }) groupId!: string | null;
+  @ApiProperty({ type: String }) name!: string;
+  @ApiProperty({ type: Number }) amount!: number;
+  @ApiProperty({ type: Number }) count!: number;
+}
 export class DashboardResourceDto {
+  @ApiProperty({ type: [DashboardExpenseGroupDto] }) expenseGroups!: DashboardExpenseGroupDto[];
   @ApiProperty({ type: Number }) benefitBalance!: number;
   @ApiProperty({ type: Number }) reserveBalance!: number;
   @ApiProperty({ type: Number }) recordedResources!: number;

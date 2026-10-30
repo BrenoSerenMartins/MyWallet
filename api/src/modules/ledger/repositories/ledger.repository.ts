@@ -250,10 +250,27 @@ export class LedgerRepository {
       `SELECT coalesce(sum(amount_minor) FILTER(WHERE transaction_type='income'),0) income,coalesce(-sum(amount_minor) FILTER(WHERE transaction_type='expense'),0) expense,count(*) FILTER(WHERE transaction_type='unclassified') unclassified FROM wallet.transactions WHERE user_id=$1 AND reversed_at IS NULL AND transaction_date>=$2 AND transaction_date<$3`,
       [this.db.userId, from, to],
     );
+    const groups = await this.db.query(
+      `SELECT g.id AS group_id, coalesce(g.name,'Outros') AS name,
+        -sum(t.amount_minor) AS amount, count(*) AS count
+       FROM wallet.transactions t
+       LEFT JOIN wallet.categories c ON c.id=t.category_id AND c.type='expense'
+       LEFT JOIN wallet.category_groups g ON g.id=c.group_id
+       WHERE t.user_id=$1 AND t.reversed_at IS NULL AND t.transaction_type='expense'
+         AND t.transaction_date>=$2 AND t.transaction_date<$3
+       GROUP BY g.id,g.name ORDER BY amount DESC, name, g.id`,
+      [this.db.userId, from, to],
+    );
     return {
       income: Number(r.income),
       expense: Number(r.expense),
       unclassified: Number(r.unclassified),
+      expenseGroups: groups.map((group) => ({
+        groupId: group.group_id,
+        name: group.name,
+        amount: Number(group.amount),
+        count: Number(group.count),
+      })),
     };
   }
   async planningActuals(

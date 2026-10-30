@@ -1,5 +1,5 @@
 import { useWorkspace } from '../features/workspaces/workspace-provider';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   UsersRound,
@@ -7,7 +7,6 @@ import {
   FolderTree,
   Menu,
   ArrowDownUp,
-  ArrowUpRight,
   ChevronRight,
   House,
   Landmark,
@@ -41,6 +40,7 @@ export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const [more, setMore] = useState(false);
+  const menuTrigger = useRef<HTMLButtonElement | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const [update, setUpdate] = useState<ServiceWorker | null>(null);
   useEffect(() => {
@@ -63,110 +63,57 @@ export function AppShell() {
       );
     });
   }, []);
-  const current = navigation.find((n) =>
-    n.to === '/' ? location.pathname === '/' : location.pathname.startsWith(n.to),
-  );
   const name =
     session?.user.user_metadata?.full_name?.split(' ')[0] ??
     session?.user.email?.split('@')[0] ??
     'Você';
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <NavLink to="/" className="brand-link">
-          <Logo />
-        </NavLink>
-        <NavLink to="/workspaces" className="workspace-label" aria-label="Trocar de espaço">
-          <span className="workspace-icon">{active?.name.slice(0, 1).toUpperCase()}</span>
-          <div>
-            <strong>{active?.name}</strong>
-            <span>Trocar de espaço</span>
-          </div>
-          <ChevronRight size={15} />
-        </NavLink>
-        <nav aria-label="Navegação principal">
-          {['Seu dinheiro', 'Organização'].map((section, index) => (
-            <details className="nav-group" open key={section}>
-              <summary>
-                {section}
-                <ChevronRight size={14} />
-              </summary>
-              {navigation
-                .filter((item) =>
-                  index === 0
-                    ? ['/', '/transactions', '/accounts'].includes(item.to)
-                    : !['/', '/transactions', '/accounts'].includes(item.to),
-                )
-                .map(({ to, label, Icon }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={to === '/'}
-                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                  >
-                    <Icon size={19} />
-                    <span>{label}</span>
-                  </NavLink>
-                ))}
-            </details>
-          ))}
-        </nav>
-        <div className="sidebar-note">
-          <span className="note-icon">
-            <ArrowUpRight size={20} />
-          </span>
-          <strong>
-            Seu próximo passo
-            <br />
-            começa com clareza.
-          </strong>
-          <p>Organize suas contas e acompanhe cada movimento.</p>
-          <NavLink to="/imports">
-            Importar meu extrato <ArrowUpRight size={14} />
-          </NavLink>
-        </div>
-        <div className="sidebar-user">
-          <span className="avatar">{name.slice(0, 1).toUpperCase()}</span>
-          <div>
-            <strong>{name}</strong>
-            <span>Conta pessoal</span>
-          </div>
-          <button
-            className="icon-button"
-            aria-label="Sair da conta"
-            onClick={() => void authClient.auth.signOut()}
-          >
-            <LogOut size={17} />
-          </button>
-        </div>
-      </aside>
       <div className="app-main">
-        <header className="topbar">
-          <span className="breadcrumb">
-            <NavLink to="/workspaces">{active?.name}</NavLink> <ChevronRight size={13} />
-            <strong>{current?.label ?? 'Detalhes'}</strong>
-          </span>
-          <span className="mobile-logo">
+        <header className="app-header">
+          <NavLink to="/" className="header-brand" aria-label="MyWallet — início">
             <Logo />
-          </span>
-          <div className="topbar-actions">
-            <ThemeSwitcher />
+          </NavLink>
+          <nav className="desktop-navigation" aria-label="Navegação principal">
+            {navigation.slice(0, 4).map(({ to, label }) => (
+              <NavLink key={to} to={to} end={to === '/'}>
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="header-actions">
+            <NavLink
+              to="/workspaces"
+              className="workspace-pill"
+              aria-label="Trocar de espaço"
+              title={active?.name}
+            >
+              <span>{active?.name}</span>
+              <ChevronRight size={14} />
+            </NavLink>
             <Button
-              className="compact"
+              className="compact header-create"
+              aria-label="Novo lançamento"
               onClick={() => navigate('/transactions?new=1')}
               disabled={!online}
             >
-              <Plus size={17} />
+              <Plus size={18} />
               <span>Novo lançamento</span>
             </Button>
+            <button
+              type="button"
+              className={`header-more ${navigation.slice(4).some((n) => location.pathname.startsWith(n.to)) ? 'active' : ''}`}
+              onClick={(event) => {
+                menuTrigger.current = event.currentTarget;
+                setMore(true);
+              }}
+              aria-haspopup="dialog"
+            >
+              <Menu size={18} />
+              <span>Mais</span>
+            </button>
           </div>
         </header>
-        <NavLink to="/workspaces" className="workspace-mobile-link" aria-label="Trocar de espaço">
-          <span>
-            Espaço <strong>{active?.name}</strong>
-          </span>
-          <ChevronRight size={15} />
-        </NavLink>
         {!online && (
           <div className="connection-banner" role="status">
             <WifiOff size={18} /> Você está sem conexão. As alterações ficam indisponíveis até a
@@ -194,10 +141,6 @@ export function AppShell() {
         <main id="main-content" className="page-content">
           <Outlet />
         </main>
-        <footer className="app-footer">
-          <span>MYWALLET</span>
-          <span>Uma visão mais clara. Um passo de cada vez.</span>
-        </footer>
       </div>
       <nav className="bottom-nav" aria-label="Navegação móvel">
         {navigation
@@ -210,7 +153,10 @@ export function AppShell() {
           ))}
         <button
           type="button"
-          onClick={() => setMore(true)}
+          onClick={(event) => {
+            menuTrigger.current = event.currentTarget;
+            setMore(true);
+          }}
           aria-haspopup="dialog"
           className={
             ['/categories', '/imports', '/counterparties', '/settings'].some((path) =>
@@ -224,7 +170,16 @@ export function AppShell() {
           <span>Mais</span>
         </button>
       </nav>
-      <Modal open={more} onOpenChange={setMore} title="Explorar seu espaço">
+      <Modal
+        open={more}
+        onOpenChange={setMore}
+        title="Menu e preferências"
+        description="Importe extratos, organize seus dados e ajuste a aparência."
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          menuTrigger.current?.focus();
+        }}
+      >
         <nav className="more-menu" aria-label="Mais funções">
           {navigation
             .filter((n) =>
@@ -243,6 +198,21 @@ export function AppShell() {
             <ChevronRight size={17} />
           </NavLink>
         </nav>
+        <div className="menu-preferences">
+          <span>Aparência</span>
+          <ThemeSwitcher />
+        </div>
+        <div className="menu-profile">
+          <strong>{name}</strong>
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => void authClient.auth.signOut()}
+          >
+            <LogOut size={17} />
+            Sair da conta
+          </button>
+        </div>
       </Modal>
     </div>
   );

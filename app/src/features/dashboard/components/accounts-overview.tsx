@@ -1,19 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, ChevronRight, Landmark, Plus } from 'lucide-react';
+import { ChevronRight, Landmark, Plus } from 'lucide-react';
 import type { Account } from '../../../shared/api/resources';
 import { money } from '../../../shared/formatting/money';
 export function AccountsOverview({ accounts, visible }: { accounts: Account[]; visible: boolean }) {
   return (
-    <section className="panel account-overview">
-      <div className="section-heading">
-        <div>
-          <h2>Minhas contas</h2>
-          <p>Cada parte do seu dinheiro.</p>
-        </div>
-        <Link to="/accounts" aria-label="Ver contas">
-          <ArrowUpRight size={18} />
-        </Link>
-      </div>
+    <div className="account-overview">
       {accounts.length ? (
         accounts.map((a) => (
           <Link className="account-line" to={`/accounts/${a.id}`} key={a.id}>
@@ -22,7 +13,13 @@ export function AccountsOverview({ accounts, visible }: { accounts: Account[]; v
             </span>
             <div>
               <strong>{a.name}</strong>
-              <span>{a.institution === 'mercado_pago' ? 'Mercado Pago' : a.institution}</span>
+              <span>
+                {['benefit_food', 'benefit_meal'].includes(a.type)
+                  ? 'Benefício · uso restrito'
+                  : a.type === 'reserve'
+                    ? 'Reserva'
+                    : 'Disponível'}
+              </span>
             </div>
             <strong>{visible ? money(a.balance) : '••••••'}</strong>
             <ChevronRight size={15} />
@@ -37,13 +34,6 @@ export function AccountsOverview({ accounts, visible }: { accounts: Account[]; v
           </Link>
         </div>
       )}
-      <div className="coverage-note">
-        <span className="status-dot" />
-        <p>
-          Este saldo considera apenas as contas cadastradas. Investimentos e outros bens chegarão em
-          uma próxima etapa.
-        </p>
-      </div>
-    </section>
+    </div>
   );
 }

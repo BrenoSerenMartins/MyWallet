@@ -60,6 +60,7 @@ async function signedIn(page: Page) {
     let data: unknown = [];
     if (path === '/v1/workspaces') data = [workspace];
     else if (path === '/v1/accounts') data = [account];
+    else if (path.startsWith('/v1/planning/')) data = monthlyPlan(path.split('/').pop()!, 0);
     else if (path === '/v1/categories') data = [];
     else if (path === '/v1/transactions') data = { items: [transaction], nextCursor: null };
     else if (path === '/v1/dashboard')
@@ -68,18 +69,35 @@ async function signedIn(page: Page) {
         income: 1000000,
         expense: 654322,
         unclassified: 0,
+        expenseGroups: [{ groupId: null, name: 'Outros', amount: 654322, count: 1 }],
         accounts: [account],
         coverage: 'tracked-accounts',
       };
     return route.fulfill({ json: data });
   });
 }
+async function chooseTheme(page: Page, theme: string) {
+  const control = page.getByRole('button', { name: `Tema ${theme}`, exact: true }).first();
+  if (await control.isVisible()) {
+    await control.click();
+    return;
+  }
+  await page.getByRole('button', { name: 'Mais', exact: true }).filter({ visible: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Menu e preferências' })
+    .getByRole('button', { name: `Tema ${theme}`, exact: true })
+    .click();
+  await page
+    .getByRole('dialog', { name: 'Menu e preferências' })
+    .getByRole('button', { name: 'Fechar', exact: true })
+    .click();
+}
 test('sign-in themes and accessible form', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Bom ter você por aqui.' })).toBeVisible();
   await page.getByRole('button', { name: 'Tema escuro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.getByRole('button', { name: 'Tema claro', exact: true }).click();
+  await chooseTheme(page, 'claro');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -91,7 +109,7 @@ for (const width of [360, 390, 768, 1440])
     await signedIn(page);
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Um bom dia/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
     await expect(page.getByText('R$ 3.456,78').first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -148,7 +166,7 @@ test('workspace cards open a space and creation uses its scope', async ({ page }
   await page.goto('/workspaces');
   await expect(page.getByRole('heading', { name: 'Seus espaços.' })).toBeVisible();
   await page.getByRole('link', { name: 'Abrir espaço Pessoal' }).click();
-  await expect(page.getByRole('heading', { name: /Um bom dia/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Trocar de espaço', exact: true }).first().click();
   await page.getByRole('button', { name: 'Criar espaço', exact: true }).click();
   await page.getByLabel('Nome do espaço').fill('Meu negócio');
@@ -160,7 +178,7 @@ test('workspace cards open a space and creation uses its scope', async ({ page }
   );
   await page.getByRole('button', { name: 'Criar e abrir espaço' }).click();
   await selectedRequest;
-  await expect(page.getByRole('heading', { name: /Um bom dia/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
   const scope = await page.evaluate(() =>
     localStorage.getItem('mywallet-workspace:11111111-1111-4111-8111-111111111111'),
   );
@@ -278,7 +296,7 @@ for (const width of [360, 1440])
     await expect(page.getByRole('dialog')).toContainText('substituídos');
     await page.getByRole('button', { name: 'Confirmar cópia do planejamento' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Tema claro', exact: true }).click();
+    await chooseTheme(page, 'claro');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -739,10 +757,7 @@ for (const width of [390, 1440])
     ).toBeVisible();
     await expect(page.getByRole('tabpanel').getByText('Luz', { exact: true })).toBeVisible();
     for (const theme of ['claro', 'escuro']) {
-      await page
-        .getByRole('button', { name: `Tema ${theme}`, exact: true })
-        .first()
-        .click();
+      await chooseTheme(page, theme);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );
@@ -1225,10 +1240,7 @@ for (const width of [390, 1440])
       page.getByRole('button', { name: 'Editar categoria Luz', exact: true }),
     ).toBeVisible();
     for (const theme of ['claro', 'escuro']) {
-      await page
-        .getByRole('button', { name: `Tema ${theme}`, exact: true })
-        .first()
-        .click();
+      await chooseTheme(page, theme);
       const dot = page
         .locator('.category-row')
         .filter({ has: page.getByRole('button', { name: 'Editar categoria Luz', exact: true }) })
@@ -1810,7 +1822,7 @@ for (const width of [390, 1440])
       true,
     );
     await page.screenshot({ path: `/tmp/mywallet-counterparty-${width}.png`, fullPage: true });
-    await page.getByRole('button', { name: 'Tema claro', exact: true }).click();
+    await chooseTheme(page, 'claro');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
@@ -2146,3 +2158,143 @@ test('offers optional current balance after a balance-less import without requir
   await expect(dialog.getByLabel('Saldo inicial (R$)')).toHaveCount(0);
   await expect(dialog.getByLabel('Data inicial')).toHaveCount(0);
 });
+
+for (const width of [360, 390, 768, 1440]) {
+  test(`overview separates current balances from month analysis and preserves drilldown at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    const benefit = {
+      ...account,
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      name: 'Alelo',
+      type: 'benefit_food',
+      balance: 23000,
+    };
+    const reserve = {
+      ...account,
+      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      name: 'Cofrinho',
+      type: 'reserve',
+      balance: 20,
+    };
+    await page.route('**/v1/dashboard?*', (route) => {
+      const from = new URL(route.request().url()).searchParams.get('from');
+      return route.fulfill({
+        json: {
+          balance: 5912,
+          benefitBalance: 23000,
+          reserveBalance: 20,
+          income: from === '2026-09-01' ? 10000 : 496635,
+          expense: from === '2026-09-01' ? 12000 : 509704,
+          unclassified: 0,
+          accounts: [{ ...account, balance: 5912 }, benefit, reserve],
+          expenseGroups: [{ groupId: null, name: 'Outros', amount: 12000, count: 3 }],
+          coverage: 'tracked-accounts',
+        },
+      });
+    });
+    await page.route('**/v1/planning/*', (route) =>
+      route.fulfill({
+        json: monthlyPlan(new URL(route.request().url()).pathname.split('/').pop()!),
+      }),
+    );
+    await page.goto('/?month=2026-09');
+    await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
+    await expect(page.locator('.sidebar')).toHaveCount(0);
+    await expect(page.locator('.hero-balance')).toHaveText('R$ 59,12');
+    await expect(page.getByRole('region', { name: 'Saldos atuais' })).toContainText('R$ 230,00');
+    await expect(page.getByRole('region', { name: 'Saldos atuais' })).toContainText('R$ 0,20');
+    await expect(page.getByRole('link', { name: 'Ver movimentos do período' })).toContainText(
+      '-R$ 20,00',
+    );
+    await expect(page.locator('.month-result-note')).toContainText(
+      'As despesas superaram as receitas',
+    );
+    await expect(page.locator('.month-metric.expense')).toContainText('R$ 500,00');
+    await expect(page.locator('.expense-groups')).toContainText('Outros');
+    await page.getByText('Composição por conta', { exact: false }).click();
+    await expect(page.locator('.balance-composition .account-line')).toHaveCount(3);
+    await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
+    await expect(page.locator('.hero-balance')).toHaveText('••••••');
+    await expect(page.locator('.monthly-analysis')).not.toContainText('R$');
+    await expect(page.locator('.balance-composition')).not.toContainText('R$');
+    await page.getByRole('button', { name: 'Mostrar valores', exact: true }).click();
+    await page.getByRole('button', { name: 'Mês anterior', exact: true }).click();
+    await expect(page.getByLabel('Mês do resumo')).toHaveValue('2026-08');
+    await expect(page.locator('.hero-balance')).toHaveText('R$ 59,12');
+    await page.goBack();
+    await expect(page.getByLabel('Mês do resumo')).toHaveValue('2026-09');
+    for (const theme of ['claro', 'escuro']) {
+      await chooseTheme(page, theme);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await page.screenshot({
+        path: `/tmp/mywallet-overview-${width}-${theme}.png`,
+        fullPage: true,
+      });
+    }
+    await page.getByRole('link', { name: 'Ver despesas do período', exact: true }).click();
+    await expect(page).toHaveURL(/from=2026-09-01.*to=2026-09-30.*type=expense/);
+    await expect(page.getByLabel('De', { exact: true })).toHaveValue('2026-09-01');
+    await expect(page.getByLabel('Até', { exact: true })).toHaveValue('2026-09-30');
+    await page.goBack();
+    await page.getByRole('link', { name: 'Abrir planejamento deste mês', exact: true }).click();
+    await expect(page.getByLabel('Mês do planejamento')).toHaveValue('2026-09');
+  });
+}
+
+test('overview preserves balances when historical analysis fails and supports retry', async ({
+  page,
+}) => {
+  await signedIn(page);
+  let failing = true;
+  await page.route('**/v1/dashboard?*', (route) => {
+    if (new URL(route.request().url()).searchParams.get('from') === '2020-02-01' && failing)
+      return route.fulfill({ status: 503, json: { message: 'Synthetic unavailable period' } });
+    return route.fulfill({
+      json: {
+        balance: 5912,
+        benefitBalance: 0,
+        reserveBalance: 0,
+        income: 0,
+        expense: 0,
+        unclassified: 0,
+        accounts: [{ ...account, balance: 5912 }],
+        expenseGroups: [],
+        coverage: 'tracked-accounts',
+      },
+    });
+  });
+  await page.goto('/?month=2020-02');
+  await expect(page.locator('.hero-balance')).toHaveText('R$ 59,12');
+  await expect(page.getByRole('alert')).toContainText('Não foi possível carregar');
+  failing = false;
+  await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
+  await expect(page.locator('.expense-groups')).toContainText('Nenhuma despesa registrada');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+for (const width of [390, 1440]) {
+  test(`navigation menu restores keyboard focus and exposes secondary tools at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/');
+    const trigger = page
+      .getByRole('button', { name: 'Mais', exact: true })
+      .filter({ visible: true });
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    const menu = page.getByRole('dialog', { name: 'Menu e preferências' });
+    await expect(menu.getByRole('link', { name: 'Importar extrato', exact: true })).toBeVisible();
+    await expect(menu.getByRole('button', { name: 'Sair da conta', exact: true })).toBeVisible();
+    await menu.getByRole('button', { name: 'Tema claro', exact: true }).click();
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+}

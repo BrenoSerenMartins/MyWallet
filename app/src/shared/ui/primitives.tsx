@@ -100,18 +100,20 @@ export function Modal({
   title,
   description,
   children,
+  onCloseAutoFocus,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   title: string;
   description?: string;
   children: ReactNode;
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="dialog-content">
+        <Dialog.Content className="dialog-content" onCloseAutoFocus={onCloseAutoFocus}>
           <div className="dialog-heading">
             <div>
               <Dialog.Title>{title}</Dialog.Title>

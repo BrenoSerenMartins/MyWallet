@@ -2870,9 +2870,34 @@
         },
         "required": ["version"]
       },
+      "DashboardExpenseGroupDto": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": ["groupId", "name", "amount", "count"]
+      },
       "DashboardResourceDto": {
         "type": "object",
         "properties": {
+          "expenseGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardExpenseGroupDto"
+            }
+          },
           "benefitBalance": {
             "type": "number"
           },
@@ -2911,6 +2936,7 @@
           }
         },
         "required": [
+          "expenseGroups",
           "benefitBalance",
           "reserveBalance",
           "recordedResources",
