@@ -8,7 +8,8 @@ import {
 import type { AccountReads } from '../../../core/integration/index.js';
 import { dateOnly, requireVersion } from '../../../core/rest/index.js';
 import { AccountsRepository } from '../repositories/accounts.repository.js';
-import type { CreateAccountDto } from '../dto/create-account.dto.js';
+import { SUPPORTED_ACCOUNT_INSTITUTIONS } from '../dto/create-account.dto.js';
+import type { UpdateAccountDto } from '../dto/update-account.dto.js';
 @Injectable()
 export class AccountsService implements AccountReads {
   constructor(@Inject(AccountsRepository) private readonly repository: AccountsRepository) {}
@@ -27,14 +28,14 @@ export class AccountsService implements AccountReads {
     if (!account) throw new NotFoundException('Conta não encontrada.');
     return account;
   }
-  private validateProduct(input: CreateAccountDto) {
+  private validateProduct(input: UpdateAccountDto) {
     const benefit = ['benefit_food', 'benefit_meal'].includes(input.type);
     if ((input.institution === 'alelo') !== benefit)
       throw new UnprocessableEntityException(
         'Use Alelo com o tipo Alimentação ou Refeição, em contas separadas.',
       );
   }
-  async create(input: CreateAccountDto) {
+  async create(input: UpdateAccountDto) {
     this.validateProduct(input);
     const normalized = {
       ...input,
@@ -45,9 +46,16 @@ export class AccountsService implements AccountReads {
     const id = await this.repository.create(normalized);
     return this.find(id);
   }
-  async update(id: string, input: CreateAccountDto, version: string) {
+  async update(id: string, input: UpdateAccountDto, version: string) {
     const account = await this.find(id, true);
     requireVersion(account.version, version);
+    if (
+      account.institution !== input.institution &&
+      !SUPPORTED_ACCOUNT_INSTITUTIONS.some((institution) => institution === input.institution)
+    )
+      throw new UnprocessableEntityException(
+        'Escolha uma instituição disponível: Mercado Pago ou Alelo.',
+      );
     if (
       (account.institution !== input.institution || account.type !== input.type) &&
       (await this.repository.hasTransactions(id))

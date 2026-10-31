@@ -329,7 +329,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateAccountDto"
+                "$ref": "#/components/schemas/UpdateAccountDto"
               }
             }
           }
@@ -1965,6 +1965,31 @@
         ]
       },
       "CreateAccountDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "institution": {
+            "type": "string",
+            "enum": ["mercado_pago", "alelo"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["checking", "savings", "cash", "reserve", "benefit_food", "benefit_meal"]
+          },
+          "openingBalance": {
+            "type": "number",
+            "deprecated": true
+          },
+          "openingDate": {
+            "type": "string",
+            "deprecated": true
+          }
+        },
+        "required": ["name", "institution", "type"]
+      },
+      "UpdateAccountDto": {
         "type": "object",
         "properties": {
           "name": {

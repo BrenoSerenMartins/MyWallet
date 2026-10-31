@@ -1720,6 +1720,14 @@ test('account forms use automatic defaults and preserve existing baseline amount
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByLabel('Saldo inicial (R$)')).toHaveCount(0);
   await expect(dialog.getByLabel('Data inicial')).toHaveCount(0);
+  await expect(dialog.getByLabel('Instituição').locator('option')).toHaveText([
+    'Alelo',
+    'Mercado Pago',
+  ]);
+  await dialog.getByLabel('Instituição').selectOption('alelo');
+  await expect(dialog.getByRole('combobox', { name: /^Tipo/ })).toHaveValue('benefit_food');
+  await dialog.getByLabel('Instituição').selectOption('mercado_pago');
+  await expect(dialog.getByRole('combobox', { name: /^Tipo/ })).toHaveValue('checking');
   await dialog.getByLabel('Nome da conta').fill('Imported wallet');
   await dialog.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
   await expect(dialog).toHaveCount(0);
@@ -2711,4 +2719,24 @@ test('premium accessibility with OS text scaling, reduced motion and narrow refl
   await page.goto('/');
   await expect(page.locator('.current-balances')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('legacy accounts keep their institution and balance when renamed', async ({ page }) => {
+  await signedIn(page);
+  const legacy = { ...account, institution: 'nubank', name: 'Conta anterior' };
+  let saved: Record<string, unknown> | undefined;
+  await page.route('**/v1/accounts', (route) => route.fulfill({ json: [legacy] }));
+  await page.route(`**/v1/accounts/${account.id}`, (route) => {
+    saved = route.request().postDataJSON();
+    return route.fulfill({ json: { ...legacy, ...saved } });
+  });
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Instituição')).toBeDisabled();
+  await expect(dialog.getByLabel('Instituição')).toHaveValue('nubank');
+  await dialog.getByLabel('Nome da conta').fill('Conta preservada');
+  await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(saved).toEqual({ name: 'Conta preservada', institution: 'nubank', type: account.type });
 });

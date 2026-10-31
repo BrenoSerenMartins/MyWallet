@@ -19,6 +19,7 @@ import { validateInput } from '../../../core/http/index.js';
 import { requireUuid } from '../../../core/rest/index.js';
 import { BalanceBasisService } from '../services/balance-basis.service.js';
 import { AccountsService } from '../services/accounts.service.js';
+import { UpdateAccountDto } from '../dto/update-account.dto.js';
 import { CreateAccountDto } from '../dto/create-account.dto.js';
 @ApiTags('Accounts')
 @ApiBearerAuth()
@@ -51,14 +52,14 @@ export class AccountsController {
   }
   @Patch(':id')
   @ApiOkResponse({ type: AccountResourceDto })
-  @ApiBody({ type: CreateAccountDto })
+  @ApiBody({ type: UpdateAccountDto })
   async update(
     @Req() r: AuthenticatedRequest,
     @Param('id') id: string,
     @Headers('if-match') version: string,
     @Body() body: unknown,
   ) {
-    const dto = await validateInput(CreateAccountDto, body);
+    const dto = await validateInput(UpdateAccountDto, body);
     return this.db.forUser(r.identity.id, () =>
       this.accounts.update(requireUuid(id), dto, version),
     );

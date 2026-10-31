@@ -923,6 +923,17 @@ export interface components {
     };
     CreateAccountDto: {
       name: string;
+      /** @enum {string} */
+      institution: 'mercado_pago' | 'alelo';
+      /** @enum {string} */
+      type: 'checking' | 'savings' | 'cash' | 'reserve' | 'benefit_food' | 'benefit_meal';
+      /** @deprecated */
+      openingBalance?: number;
+      /** @deprecated */
+      openingDate?: string;
+    };
+    UpdateAccountDto: {
+      name: string;
       institution: string;
       /** @enum {string} */
       type: 'checking' | 'savings' | 'cash' | 'reserve' | 'benefit_food' | 'benefit_meal';
@@ -1581,7 +1592,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['CreateAccountDto'];
+        'application/json': components['schemas']['UpdateAccountDto'];
       };
     };
     responses: {

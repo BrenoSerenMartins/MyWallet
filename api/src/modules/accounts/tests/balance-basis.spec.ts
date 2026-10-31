@@ -759,3 +759,46 @@ it('keeps an observed bank position but flags an edited covered movement rather 
     balanceBasis: { reviewRequired: true, reviewReason: 'statement_conflict' },
   });
 });
+
+it('preserves legacy institutions restored from backups and prevents changing to unsupported banks', async () => {
+  const id = await run(() =>
+    accounts.restoreRecord({
+      id: randomUUID(),
+      name: 'Legacy bank',
+      institution: 'other',
+      type: 'checking',
+      openingBalance: 1234,
+      openingDate: '2026-01-01',
+    }),
+  );
+  const original = await run(() => accounts.find(id));
+  await run(() =>
+    accounts.update(
+      id,
+      { name: 'Renamed legacy bank', institution: 'other', type: 'checking' },
+      String(original.version),
+    ),
+  );
+  const renamed = await run(() => accounts.find(id));
+  expect(renamed.institution).toBe('other');
+  expect(renamed.balance).toBe(original.balance);
+  await expect(
+    run(() =>
+      accounts.update(
+        id,
+        { name: 'Unsupported', institution: 'nubank', type: 'checking' },
+        String(renamed.version),
+      ),
+    ),
+  ).rejects.toThrow('Mercado Pago ou Alelo');
+  const supported = await account('Mapped bank');
+  await expect(
+    run(() =>
+      accounts.update(
+        supported.id,
+        { name: 'Unsupported', institution: 'other', type: 'checking' },
+        String(supported.version),
+      ),
+    ),
+  ).rejects.toThrow('Mercado Pago ou Alelo');
+});
