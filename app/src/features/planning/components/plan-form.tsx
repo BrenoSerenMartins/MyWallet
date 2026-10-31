@@ -98,9 +98,12 @@ export function PlanForm({
           {error}
         </p>
       )}
-      <Button disabled={busy || !navigator.onLine}>
-        {busy ? 'Salvando…' : 'Salvar planejamento'}
-      </Button>
+      <div className="form-actions">
+        {' '}
+        <Button disabled={busy || !navigator.onLine}>
+          {busy ? 'Salvando…' : 'Salvar planejamento'}
+        </Button>
+      </div>
     </form>
   );
 }

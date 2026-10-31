@@ -43,10 +43,14 @@ export function HistoryChart({
     bottom = 38;
   const plotHeight = height - top - bottom;
   const values = items.flatMap((item) => [item.income, item.expense]);
-  const maximum = Math.max(0, ...values) || 100;
+  const maximum = Math.max(0, ...values);
   const minimum = Math.min(0, ...values);
-  const max = maximum * 1.12,
-    min = minimum * 1.12;
+  const rough = (maximum - minimum || 100) / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(rough));
+  const fraction = rough / magnitude;
+  const tick = (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10) * magnitude;
+  const min = Math.floor(minimum / tick) * tick;
+  const max = Math.ceil(maximum / tick) * tick || (minimum === 0 ? tick : 0);
   const y = (value: number) => top + ((max - value) / (max - min)) * plotHeight;
   const step = (width - left - right) / items.length;
   const x = (index: number) => left + step * (index + 0.5);
@@ -64,22 +68,23 @@ export function HistoryChart({
             : 'Receitas e despesas mensais em linhas'
         }
       >
-        {Array.from({ length: 5 }, (_, index) => max - ((max - min) * index) / 4).map(
-          (value, index) => (
-            <g key={index} aria-hidden="true">
-              <line
-                className="history-gridline"
-                x1={left}
-                x2={width - right}
-                y1={y(value)}
-                y2={y(value)}
-              />
-              <text x={left - 10} y={y(value) + 4} textAnchor="end">
-                {compactMoney.format(value / 100)}
-              </text>
-            </g>
-          ),
-        )}
+        {Array.from(
+          { length: Math.round((max - min) / tick) + 1 },
+          (_, index) => max - tick * index,
+        ).map((value, index) => (
+          <g key={index} aria-hidden="true">
+            <line
+              className="history-gridline"
+              x1={left}
+              x2={width - right}
+              y1={y(value)}
+              y2={y(value)}
+            />
+            <text x={left - 10} y={y(value) + 4} textAnchor="end">
+              {compactMoney.format(value / 100)}
+            </text>
+          </g>
+        ))}
         <line
           className="history-baseline"
           x1={left}

@@ -4,7 +4,10 @@ import { AuthenticatedUserGuard, type AuthenticatedRequest } from '../../../core
 import { DatabaseService } from '../../../core/database/index.js';
 import { requireUuid } from '../../../core/rest/index.js';
 import { BalanceBasisService } from '../services/balance-basis.service.js';
-import { BalanceHistoryDto } from '../../../core/integration/balance-basis-dto.js';
+import {
+  BalanceReferenceResultDto,
+  BalanceHistoryDto,
+} from '../../../core/integration/balance-basis-dto.js';
 @ApiTags('Account balance')
 @ApiBearerAuth()
 @UseGuards(AuthenticatedUserGuard)
@@ -31,7 +34,22 @@ export class BalanceBasisController {
       this.basis.undo(requireUuid(account), requireUuid(id), Number(version)),
     );
   }
+  @Post('balance-reference')
+  @ApiOkResponse({ type: BalanceReferenceResultDto })
+  refreshReference(
+    @Req() r: AuthenticatedRequest,
+    @Param('accountId') account: string,
+    @Headers('if-match') version: string,
+  ) {
+    return this.db.forUser(r.identity.id, async () => {
+      const id = requireUuid(account);
+      // Read through the account lock before checking the displayed version.
+      const result = await this.basis.refreshReference(id, version);
+      return result;
+    });
+  }
   @Post('balance-basis/imports/:id')
+  @ApiOkResponse({ type: BalanceReferenceResultDto })
   statement(
     @Req() r: AuthenticatedRequest,
     @Param('accountId') account: string,

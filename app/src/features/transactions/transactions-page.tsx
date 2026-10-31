@@ -26,27 +26,42 @@ export function TransactionsPage() {
   const client = useQueryClient();
   const [open, setOpen] = useState(params.has('new'));
   const [selected, setSelected] = useState<Transaction>();
-  const [search, setSearch] = useState('');
-  const [account, setAccount] = useState(accountId ?? '');
-  const [kind, setKind] = useState(params.get('type') ?? '');
-  const [category, setCategory] = useState('');
-  const [reconciliation, setReconciliation] = useState('');
-  const [from, setFrom] = useState(dateFilter(params.get('from')));
-  const [to, setTo] = useState(dateFilter(params.get('to')));
-  useEffect(() => {
-    setAccount(accountId ?? '');
-  }, [accountId]);
+  const search = params.get('search') ?? '';
+  const account = params.get('accountId') ?? accountId ?? '';
+  const kind = params.get('type') ?? '';
+  const category = params.get('categoryId') ?? '';
+  const reconciliation = params.get('reconciliation') ?? '';
+  const from = dateFilter(params.get('from'));
+  const to = dateFilter(params.get('to'));
+  function changeFilter(key: string, value: string) {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true, preventScrollReset: true });
+  }
+  const setSearch = (value: string) => changeFilter('search', value);
+  const setAccount = (value: string) => changeFilter('accountId', value);
+  const setKind = (value: string) => {
+    const next = new URLSearchParams(params);
+    next.delete('categoryId');
+    if (value) next.set('type', value);
+    else next.delete('type');
+    setParams(next, { replace: true, preventScrollReset: true });
+  };
+  const setCategory = (value: string) => changeFilter('categoryId', value);
+  const setReconciliation = (value: string) => changeFilter('reconciliation', value);
+  const setFrom = (value: string) => changeFilter('from', value);
+  const setTo = (value: string) => changeFilter('to', value);
   useEffect(() => {
     if (params.has('new')) {
       setSelected(undefined);
       setOpen(true);
+    } else if (params.has('transaction')) setOpen(true);
+    else {
+      setOpen(false);
+      setSelected(undefined);
     }
   }, [params]);
-  useEffect(() => {
-    setKind(params.get('type') ?? '');
-    setFrom(dateFilter(params.get('from')));
-    setTo(dateFilter(params.get('to')));
-  }, [params.get('type'), params.get('from'), params.get('to')]);
   const transactionId = params.get('transaction');
   const requestedTransaction = useQuery({
     queryKey: [session?.user.id, 'transaction', transactionId],
@@ -106,14 +121,14 @@ export function TransactionsPage() {
     <div className="page-enter">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">O CAMINHO DO SEU DINHEIRO</span>
           <h1>{accountName ?? 'Movimentações'}</h1>
-          <p>Um olhar atento para cada entrada, saída e escolha.</p>
+          <p>Consulte, filtre e organize os movimentos registrados.</p>
         </div>
         <Button
           onClick={() => {
-            setSelected(undefined);
-            setOpen(true);
+            const next = new URLSearchParams(params);
+            next.set('new', '1');
+            setParams(next, { preventScrollReset: true });
           }}
         >
           <Plus size={18} />
@@ -138,7 +153,6 @@ export function TransactionsPage() {
           value={kind}
           onChange={(value) => {
             setKind(value);
-            setCategory('');
           }}
           options={[
             { value: '', label: 'Todos' },
@@ -206,11 +220,7 @@ export function TransactionsPage() {
             <button
               className="text-button"
               onClick={() => {
-                setAccount(accountId ?? '');
-                setCategory('');
-                setReconciliation('');
-                setFrom('');
-                setTo('');
+                setParams(new URLSearchParams(), { replace: true, preventScrollReset: true });
               }}
             >
               Limpar filtros
@@ -234,8 +244,11 @@ export function TransactionsPage() {
                       .map((c) => (c.groupName ? `${c.groupName} → ${c.name}` : c.name))[0]
                   }
                   onClick={() => {
-                    setSelected(t);
-                    setOpen(true);
+                    setSelected(undefined);
+                    const next = new URLSearchParams(params);
+                    next.set('transaction', t.id);
+                    next.delete('new');
+                    setParams(next, { preventScrollReset: true });
                   }}
                 />
               ))}
@@ -268,7 +281,8 @@ export function TransactionsPage() {
       <Modal
         open={open}
         onOpenChange={(v) => (v ? setOpen(true) : close())}
-        title={selected ? 'Detalhes do movimento' : 'Novo lançamento'}
+        variant={transactionId ? 'detail' : 'dialog'}
+        title={transactionId ? 'Detalhes do movimento' : 'Novo lançamento'}
       >
         {selected && (
           <div className="review-banner">
@@ -307,7 +321,14 @@ export function TransactionsPage() {
           </div>
         )}
         {selected && <TransactionSources transactionId={selected.id} />}
-        {accounts.isError || categories.isError ? (
+        {transactionId && requestedTransaction.isPending ? (
+          <Loading />
+        ) : requestedTransaction.isError ? (
+          <ErrorState
+            error={requestedTransaction.error}
+            retry={() => void requestedTransaction.refetch()}
+          />
+        ) : accounts.isError || categories.isError ? (
           <ErrorState error={accounts.error ?? categories.error} />
         ) : accounts.isPending || categories.isPending ? (
           <Loading />

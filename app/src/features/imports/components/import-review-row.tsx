@@ -39,13 +39,15 @@ export function ImportReviewRow({
   return (
     <tr className={item.duplicateLocked ? 'duplicate-row' : !item.selected ? 'excluded' : ''}>
       <td data-label="Incluir">
-        <input
-          aria-label={`Selecionar movimento ${item.sourceRow}`}
-          type="checkbox"
-          checked={item.selected}
-          disabled={locked || item.action === 'review'}
-          onChange={(e) => void onReview(item, { selected: e.target.checked })}
-        />
+        <label className="review-select-target">
+          <input
+            aria-label={`Selecionar movimento ${item.sourceRow}`}
+            type="checkbox"
+            checked={item.selected}
+            disabled={locked || item.action === 'review'}
+            onChange={(e) => void onReview(item, { selected: e.target.checked })}
+          />
+        </label>
       </td>
       <td data-label="Movimento">
         <span className="review-date">{shortDate(item.transactionDate)}</span>

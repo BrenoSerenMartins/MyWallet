@@ -1,4 +1,17 @@
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Length, IsUUID, Min } from 'class-validator';
+import {
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  ArrayUnique,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Length,
+  IsUUID,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class ReviewItemDto {
   @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() counterpartyId?:
@@ -29,4 +42,18 @@ export class ConfirmImportDto {
 
 export class ReprocessImportDto extends ConfirmImportDto {
   @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() resetClassification?: boolean;
+}
+
+export class BulkReviewDto extends ConfirmImportDto {
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @ArrayUnique()
+  @IsUUID('all', { each: true })
+  itemIds!: string[];
+  @ApiProperty({ enum: ['selection', 'category'] }) @IsIn(['selection', 'category']) action!:
+    'selection' | 'category';
+  @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() selected?: boolean;
+  @ApiPropertyOptional({ type: String }) @IsOptional() @IsUUID() categoryId?: string;
 }

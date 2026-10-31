@@ -1,4 +1,11 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ButtonHTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { AlertCircle, ArrowUpRight, Wallet, Sun, Moon, Monitor, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useTheme } from '../../app/providers/theme-provider';
@@ -101,6 +108,7 @@ export function Modal({
   description,
   children,
   onCloseAutoFocus,
+  variant = 'dialog',
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -108,12 +116,50 @@ export function Modal({
   description?: string;
   children: ReactNode;
   onCloseAutoFocus?: (event: Event) => void;
+  variant?: 'dialog' | 'detail';
 }) {
+  const previousFocus = useRef<HTMLElement | null>(null);
+  const [viewport, setViewport] = useState<{ height: number; top: number }>();
+  useEffect(() => {
+    if (!open || !window.visualViewport) return;
+    const view = window.visualViewport;
+    const update = () => setViewport({ height: view.height, top: view.offsetTop });
+    update();
+    view.addEventListener('resize', update);
+    view.addEventListener('scroll', update);
+    return () => {
+      view.removeEventListener('resize', update);
+      view.removeEventListener('scroll', update);
+    };
+  }, [open]);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="dialog-content" onCloseAutoFocus={onCloseAutoFocus}>
+        <Dialog.Content
+          style={
+            viewport
+              ? ({
+                  '--dialog-height': `${viewport.height}px`,
+                  '--dialog-top': `${viewport.top}px`,
+                } as CSSProperties)
+              : undefined
+          }
+          className={`dialog-content ${variant === 'detail' ? 'dialog-detail' : ''}`}
+          onOpenAutoFocus={() => {
+            previousFocus.current =
+              document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          }}
+          onCloseAutoFocus={(event) => {
+            if (onCloseAutoFocus) onCloseAutoFocus(event);
+            else if (previousFocus.current?.isConnected) {
+              event.preventDefault();
+              const active = document.activeElement;
+              if (!active || active === document.body || active.closest('[role=dialog]'))
+                previousFocus.current.focus();
+            }
+          }}
+        >
           <div className="dialog-heading">
             <div>
               <Dialog.Title>{title}</Dialog.Title>

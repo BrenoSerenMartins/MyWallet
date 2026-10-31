@@ -91,15 +91,17 @@ export function AppShell() {
               <span>{active?.name}</span>
               <ChevronRight size={14} />
             </NavLink>
-            <Button
-              className="compact header-create"
-              aria-label="Novo lançamento"
-              onClick={() => navigate('/transactions?new=1')}
-              disabled={!online}
-            >
-              <Plus size={18} />
-              <span>Novo lançamento</span>
-            </Button>
+            {location.pathname !== '/transactions' && (
+              <Button
+                className="compact header-create"
+                aria-label="Novo lançamento"
+                onClick={() => navigate('/transactions?new=1')}
+                disabled={!online}
+              >
+                <Plus size={18} />
+                <span>Novo lançamento</span>
+              </Button>
+            )}
             <button
               type="button"
               className={`header-more ${navigation.slice(4).some((n) => location.pathname.startsWith(n.to)) ? 'active' : ''}`}

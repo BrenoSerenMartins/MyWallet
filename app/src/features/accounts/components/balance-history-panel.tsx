@@ -48,7 +48,7 @@ export function BalanceHistoryPanel({
   if (history.isPending) return <Loading />;
   if (history.isError) return <ErrorState error={history.error} />;
   return (
-    <div className="form-stack">
+    <div className="form-stack balance-history">
       <p>
         As correções ajustam o saldo base. Elas ficam neste histórico, separadas de receitas,
         despesas e transferências.
@@ -59,9 +59,20 @@ export function BalanceHistoryPanel({
           <strong>{labels[event.operation] ?? event.operation}</strong>
           <p>{event.reason}</p>
           <small>{new Date(event.createdAt).toLocaleString('pt-BR')}</small>
-          <p>
-            Base anterior: {money(event.previousBase)} · nova base: {money(event.newBase)}
-          </p>
+          {event.newBasis.referenceBalance !== undefined && (
+            <p>
+              Referência: {money(event.newBasis.referenceBalance)}
+              {event.newBasis.referenceDate
+                ? ` · ${new Date(event.newBasis.referenceDate + 'T12:00:00').toLocaleDateString('pt-BR')}`
+                : ''}
+            </p>
+          )}
+          <details>
+            <summary>Detalhes do cálculo</summary>
+            <p>
+              Base anterior: {money(event.previousBase)} · nova base: {money(event.newBase)}
+            </p>
+          </details>
           {typeof event.details.targetBalance === 'number' && (
             <p>Saldo conferido: {money(event.details.targetBalance)}</p>
           )}

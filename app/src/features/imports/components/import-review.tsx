@@ -1,3 +1,5 @@
+import { ImportBulkReview } from './import-bulk-review';
+import { money } from '../../../shared/formatting/money';
 import { ImportBalanceSetup } from './import-balance-setup';
 import { SettlementReview } from './settlement-review';
 import { ReprocessImport } from './reprocess-import';
@@ -18,6 +20,8 @@ export function ImportReview({
 }) {
   const {
     categories,
+    receipt,
+    bulkReview,
     page,
     setPage,
     busy,
@@ -186,6 +190,39 @@ export function ImportReview({
           )}
         </div>
       ) : null}
+      {receipt && status === 'confirmed' && (
+        <section className="import-receipt panel" aria-label="Resultado da confirmação">
+          <h2>Importação confirmada</h2>
+          <p>
+            {receipt.count ?? 0} novos movimentos · {receipt.reconciled ?? 0} vinculados ·{' '}
+            {receipt.skippedDuplicates ?? 0} duplicatas ignoradas
+          </p>
+          {receipt.balanceBefore !== undefined && receipt.balanceAfter !== undefined && (
+            <dl>
+              <div>
+                <dt>Saldo antes</dt>
+                <dd>{money(receipt.balanceBefore)}</dd>
+              </div>
+              <div>
+                <dt>Saldo registrado agora</dt>
+                <dd>{money(receipt.balanceAfter)}</dd>
+              </div>
+            </dl>
+          )}
+          <p className="field-help">
+            {receipt.referenceStatus === 'applied'
+              ? 'A referência foi atualizada pelo saldo final do extrato Mercado Pago.'
+              : receipt.referenceStatus === 'applied_review' ||
+                  receipt.referenceStatus === 'conflict'
+                ? 'Há movimentos ou referências de saldo que precisam de conferência.'
+                : receipt.referenceStatus === 'manual_preserved'
+                  ? 'Sua conferência manual foi preservada; o arquivo não comprova um saldo posterior.'
+                  : receipt.referenceStatus === 'unavailable'
+                    ? 'O arquivo não fornece uma nova referência automática. A conferência manual foi preservada.'
+                    : 'A referência atual foi mantida.'}
+          </p>
+        </section>
+      )}
       <ImportBalanceSetup batch={batch} refresh={refresh} />
       {awaitingConfirmationRefresh && (
         <p className="field-help" role="status">
@@ -237,6 +274,14 @@ export function ImportReview({
           Nenhum movimento encontrado para esta busca.
         </p>
       )}
+      {status === 'draft' && canIntegrate && (
+        <ImportBulkReview
+          items={items.slice(page * 25, (page + 1) * 25)}
+          categories={categories.data ?? []}
+          disabled={busy || !navigator.onLine}
+          onReview={bulkReview}
+        />
+      )}
       <div className="panel review-table-wrap">
         <table className="review-table">
           <thead>
@@ -286,7 +331,7 @@ export function ImportReview({
         </div>
       </div>
       {status === 'draft' && canIntegrate && (
-        <div className="review-confirm">
+        <div className="review-confirm contextual-actions">
           <p>
             {batch.items.some((item) => !item.selected && !item.duplicateLocked)
               ? 'Movimentos desmarcados não serão adicionados. Confira suas escolhas antes de confirmar.'

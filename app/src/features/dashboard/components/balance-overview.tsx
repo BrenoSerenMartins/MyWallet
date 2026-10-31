@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ChevronDown, Eye, EyeOff } from 'lucide-react';
 import type { Dashboard } from '../../../shared/api/resources';
 import { money } from '../../../shared/formatting/money';
+import { BalanceReference } from '../../../shared/ui/balance-reference';
 import { AccountsOverview } from './accounts-overview';
 export function BalanceOverview({
   summary,
@@ -38,7 +39,7 @@ export function BalanceOverview({
         </div>
         {summary.accounts.some((a) => ['benefit_food', 'benefit_meal'].includes(a.type)) && (
           <div>
-            <span>Benefícios</span>
+            <span>Benefícios · uso restrito</span>
             <strong>{amount(summary.benefitBalance)}</strong>
             <small>Alimentação e refeição · uso restrito</small>
           </div>
@@ -51,6 +52,12 @@ export function BalanceOverview({
           </div>
         )}
       </div>
+      {cashAccounts.length === 1 && <BalanceReference account={cashAccounts[0]} />}
+      {cashAccounts.length > 1 && (
+        <p className="balance-reference-summary">
+          Cada conta tem sua própria referência. Confira a composição abaixo.
+        </p>
+      )}
       {(partial || review) && (
         <p className="balance-warning">
           {review

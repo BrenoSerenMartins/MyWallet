@@ -254,7 +254,7 @@ describe('Monthly planning financial invariants', () => {
       return created;
     });
     const backup = await db.forUser(db.user, () => backups.backup(), true);
-    expect(backup.version).toBe(6);
+    expect(backup.version).toBe(7);
     expect(backup.categoryGroups?.[0].id).toBe(group.id);
     expect(backup.monthlyPlans).toHaveLength(2);
     await db.forUser(db.other, async () => {

@@ -190,7 +190,7 @@ it('keeps portable source identity after backup/restore and blocks repeated EDI 
   const report = await edi(a.id, 'portable-id');
   await run(() => imports.confirm(report.id, report.version, 'portable-confirm'));
   const backup = await run(() => backups.backup());
-  expect(backup.version).toBe(6);
+  expect(backup.version).toBe(7);
   await db.forUser(db.other, async () => {
     const draft = await backups.preview(backup);
     await backups.confirm(draft.id);
@@ -448,8 +448,8 @@ it('learns a source base without requesting manual starting fields', async () =>
   );
   expect(next.willInitializeOpening).toBe(false);
   await run(() => imports.confirm(next.id, next.version, 'keep-opening-and-import'));
-  expect((await run(() => accounts.find(a.id))).balance).toBe(8900);
-  expect((await run(() => accounts.find(a.id))).openingBalance).toBe(10000);
+  expect((await run(() => accounts.find(a.id))).balance).toBe(455);
+  expect((await run(() => accounts.find(a.id))).openingBalance).toBe(1555);
 });
 
 it('links an already imported refund to its original without posting cash twice', async () => {
@@ -551,7 +551,7 @@ it('selects positive direct-balance EDI events, creates income and preserves cro
   ).toHaveLength(1);
 });
 
-it('imports older statements and EDI into an established account without changing its baseline and restores the history', async () => {
+it('imports older statements and EDI into an established account with a proven latest MP bank position and restores the history', async () => {
   const a = await account('Migration history');
   const recent = await edi(a.id, 'migration-recent');
   await run(() => imports.confirm(recent.id, recent.version, 'migration-recent-confirm'));
@@ -584,9 +584,9 @@ it('imports older statements and EDI into an established account without changin
   });
   await run(() => imports.confirm(oldest.id, oldest.version, 'migration-edi-confirm'));
   expect(await run(() => accounts.find(a.id))).toMatchObject({
-    openingBalance: 10000,
+    openingBalance: 6000,
     openingDate: '2026-10-01',
-    balance: 7800,
+    balance: 3800,
   });
   const records = (await run(() => ledger.exportRecords())).filter((row) => row.accountId === a.id);
   expect(records).toHaveLength(3);
@@ -602,7 +602,7 @@ it('imports older statements and EDI into an established account without changin
       const draft = await backups.preview(backup);
       await backups.confirm(draft.id);
       const restored = (await accounts.list()).find((row) => row.name === a.name)!;
-      expect(restored).toMatchObject({ openingBalance: 10000, balance: 7800 });
+      expect(restored).toMatchObject({ openingBalance: 6000, balance: 3800 });
       expect(
         (await ledger.exportRecords()).filter((row) => row.accountId === restored.id),
       ).toHaveLength(3);

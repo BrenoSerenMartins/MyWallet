@@ -42,6 +42,6 @@ export class DashboardController {
     dateOnly(from);
     dateOnly(to);
     if (from >= to) throw new BadRequestException('Período inválido.');
-    return this.db.forUser(r.identity.id, () => this.dashboard.summary(from, to), true);
+    return this.db.forUser(r.identity.id, () => this.dashboard.summary(from, to), false);
   }
 }

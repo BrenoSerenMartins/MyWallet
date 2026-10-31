@@ -320,3 +320,9 @@ As migrations `202610260005_counterparty_rules.sql` e `202610260006_counterparty
 A migration `202610300003_workspace_trash.sql` adiciona a lixeira e bloqueia o acesso financeiro aos espaços excluídos. Excluir não apaga os lançamentos durante os primeiros 7 dias; restaurar devolve o mesmo espaço com todos os seus dados. Após 168 horas, a próxima limpeza remove definitivamente o espaço e seus dados. A operação não oferece remoção antecipada pela interface.
 
 No Supabase, a migration habilita `pg_cron` e agenda a limpeza a cada 10 minutos, sem depender do processo web do Render. `npm run db:setup` verifica se o agendamento está ativo. Em bancos locais sem a extensão, a limpeza ocorre ao consultar a lista/lixeira; o comando informa essa limitação. Referências: [instalação do Supabase Cron](https://supabase.com/docs/guides/cron/install) e [agendamento de funções SQL](https://supabase.com/docs/guides/cron/quickstart).
+
+### Referência atual do Mercado Pago
+
+O saldo registrado do MP pode partir do saldo final mais recente comprovado por um extrato confirmado, mesmo com meses antigos faltando. O sistema considera apenas os movimentos posteriores ainda não incluídos nessa referência e mantém todo o histórico nos relatórios. Origem e data ficam disponíveis na visão geral e nas contas. Arquivos antigos não substituem uma referência posterior; casos do mesmo dia sem ordem comprovada ficam sinalizados. Conferências manuais posteriores são preservadas.
+
+Contas MP já importadas adotam a nova referência quando elegíveis ao abrir a visão geral ou as contas, com registro no histórico. Alelo e outras instituições continuam usando a correção manual de saldo existente. Não há migration para esta mudança. Os novos backups são v7, preservando o ponto da referência e seu histórico; arquivos v1–v6 continuam aceitos com o comportamento original.

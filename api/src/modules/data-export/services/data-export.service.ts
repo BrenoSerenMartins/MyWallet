@@ -34,7 +34,7 @@ export class DataExportService {
   async backup(): Promise<BackupPayload> {
     return {
       format: 'mywallet',
-      version: 6,
+      version: 7,
       balanceHistory: await this.balanceBasis.exportHistory(),
       counterparties: await this.counterparties.snapshot(),
       categoryGroups: await this.categories.exportGroups(),

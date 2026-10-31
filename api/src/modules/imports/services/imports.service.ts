@@ -148,10 +148,9 @@ export class ImportsService {
     const openingMismatch =
       b.opening_balance_minor !== null &&
       recordedOpeningBalance !== Number(b.opening_balance_minor);
-    const previousImports =
-      openingMismatch && statementStartDate
-        ? await this.repository.previousImports(account.id, statementStartDate, id)
-        : [];
+    const previousImports = statementStartDate
+      ? await this.repository.previousImports(account.id, statementStartDate, id)
+      : [];
     return {
       balanceBasis: account.balanceBasis,
       willInitializeOpening:
@@ -272,10 +271,45 @@ export class ImportsService {
     await this.repository.advanceVersion(id);
     return this.preview(id);
   }
+  async bulkReview(id: string, input: import('../dto/import.dto.js').BulkReviewDto) {
+    const batch = await this.get(id, true);
+    this.assertDraft(batch);
+    requireVersion(batch.version, input.version);
+    if (
+      !input.itemIds.length ||
+      input.itemIds.length > 100 ||
+      new Set(input.itemIds).size !== input.itemIds.length
+    )
+      throw new UnprocessableEntityException('Seleção de movimentos inválida.');
+    const preview = await this.preview(id);
+    const targets = input.itemIds.map((key) => preview.items.find((item) => item.id === key));
+    if (
+      targets.some(
+        (item) => !item || item.duplicateLocked || item.action !== 'create' || item.refundOfId,
+      )
+    )
+      throw new ConflictException('O lote deve conter apenas movimentos novos e editáveis.');
+    let category: import('../../../core/integration/index.js').CategoryResource | undefined;
+    if (input.action === 'category') {
+      category = (await this.categories.list()).find((item) => item.id === input.categoryId);
+      if (!category || targets.some((item) => item!.transactionType !== category!.type))
+        throw new UnprocessableEntityException(
+          'A categoria deve corresponder ao tipo de todos os movimentos do lote.',
+        );
+    } else if (typeof input.selected !== 'boolean')
+      throw new UnprocessableEntityException('Informe se os movimentos devem ser selecionados.');
+    for (const item of targets)
+      await this.repository.updateItem(id, item!.id, {
+        ...item!,
+        selected: input.action === 'selection' ? input.selected! : item!.selected,
+        ...(category ? { categoryId: category.id, rememberCategory: false } : {}),
+      });
+    return this.preview(id);
+  }
   async confirm(id: string, version: number, key: string) {
     return this.receipts.execute('import-confirm', key, { id, version }, async () => {
       const first = await this.get(id);
-      await this.accounts.find(first.account_id, true);
+      const accountBefore = await this.accounts.find(first.account_id, true);
       const batch = await this.get(id, true);
       if (batch.status === 'confirmed') return { id, status: 'confirmed' };
       this.assertDraft(batch);
@@ -322,6 +356,7 @@ export class ImportsService {
         const created = await this.ledger.create(
           {
             accountId: batch.account_id,
+            deferBalanceRefresh: true,
             sourceKind: batch.report_type,
             sourceStoreId: item.metadata?.storeId,
             counterpartyName: item.counterpartyName ?? undefined,
@@ -345,12 +380,22 @@ export class ImportsService {
           await this.ledger.recordEvidence(created.id, batch.account_id, item.sourceEvidence);
         await this.reconciliation.link(id, item.id, created.id, item.sourceEvidence);
       }
+      // Rebase once after all rows/evidence are written, under the existing account lock.
+      await this.balanceBasis.refresh(
+        batch.account_id,
+        creating.some((item) => item.transactionDate === accountBefore.balanceBasis?.referenceDate)
+          ? accountBefore.balanceBasis?.referenceDate
+          : undefined,
+      );
       await this.repository.mark(id, 'confirmed');
       const balanceBasisResult = await this.balanceBasis.considerStatement(batch.account_id, id);
       return {
         id,
         status: 'confirmed',
         balanceBasis: balanceBasisResult,
+        balanceBefore: accountBefore.balance,
+        balanceAfter: (await this.accounts.find(batch.account_id)).balance,
+        referenceStatus: balanceBasisResult.status,
         count: creating.length,
         reconciled: selected.length - creating.length,
         skippedDuplicates,

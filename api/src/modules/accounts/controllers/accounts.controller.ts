@@ -17,6 +17,7 @@ import { AuthenticatedUserGuard, type AuthenticatedRequest } from '../../../core
 import { DatabaseService } from '../../../core/database/index.js';
 import { validateInput } from '../../../core/http/index.js';
 import { requireUuid } from '../../../core/rest/index.js';
+import { BalanceBasisService } from '../services/balance-basis.service.js';
 import { AccountsService } from '../services/accounts.service.js';
 import { CreateAccountDto } from '../dto/create-account.dto.js';
 @ApiTags('Accounts')
@@ -27,9 +28,13 @@ export class AccountsController {
   constructor(
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(AccountsService) private readonly accounts: AccountsService,
+    @Inject(BalanceBasisService) private readonly basis: BalanceBasisService,
   ) {}
   @Get() @ApiOkResponse({ type: [AccountResourceDto] }) list(@Req() request: AuthenticatedRequest) {
-    return this.db.forUser(request.identity.id, () => this.accounts.list());
+    return this.db.forUser(request.identity.id, async () => {
+      await this.basis.upgradeLegacyReferences();
+      return this.accounts.list();
+    });
   }
   @Get(':id') @ApiOkResponse({ type: AccountResourceDto }) find(
     @Req() r: AuthenticatedRequest,

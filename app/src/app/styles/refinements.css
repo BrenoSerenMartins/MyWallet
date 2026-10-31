@@ -1,0 +1,706 @@
+/* Shared task-first refinements: generous interaction regions without oversized cards. */
+:root {
+  --control-hit: 44px;
+  --control-hit-mobile: 48px;
+}
+body {
+  font-size: 14px;
+}
+body button,
+body a,
+body input,
+body select,
+body textarea,
+body summary {
+  touch-action: manipulation;
+}
+body button:focus-visible,
+body a:focus-visible,
+body summary:focus-visible,
+body textarea:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+body .icon-button {
+  min-width: var(--control-hit);
+  min-height: var(--control-hit);
+  flex-shrink: 0;
+}
+body .text-button,
+body .view-switcher button,
+body .theme-switcher button {
+  min-height: var(--control-hit);
+}
+body .theme-switcher button {
+  min-width: var(--control-hit);
+}
+body .button {
+  min-height: var(--control-hit);
+}
+body .field-help,
+body .field-hint,
+body .section-heading p,
+body .planning-explanation,
+body .planning-status,
+body .planning-note p {
+  font-size: 13px;
+  line-height: 1.65;
+}
+body .page-heading {
+  margin-bottom: 24px;
+}
+body .page-heading .eyebrow {
+  display: none;
+}
+body .page-heading h1 {
+  margin-top: 0;
+  font-size: clamp(24px, 2.3vw, 30px);
+}
+body .page-heading p {
+  font-size: 14px;
+  max-width: 680px;
+}
+body .page-content {
+  padding-top: 24px;
+}
+body .page-content > .page-enter > .view-switcher:first-child {
+  margin-bottom: 16px;
+}
+body .balance-reference {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 0 0 16px;
+  line-height: 1.6;
+}
+body .balance-reference > svg {
+  flex-shrink: 0;
+}
+body .balance-reference a {
+  color: var(--accent);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+body .balance-reference small {
+  width: 100%;
+  color: var(--warning);
+  font-size: 12px;
+}
+body .balance-reference-summary {
+  color: var(--muted);
+  font-size: 13px;
+  padding-bottom: 16px;
+}
+body .balance-reference.compact {
+  padding-bottom: 12px;
+}
+body .balance-reference.compact a {
+  min-height: 44px;
+}
+body .account-composition-item + .account-composition-item {
+  border-top: 1px solid var(--border);
+}
+body .account-card .account-card-balance {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.7px;
+}
+body .account-card .balance-reference {
+  margin-top: 12px;
+  padding: 0;
+}
+body .account-card-footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+body .account-card-footer > a,
+body .account-card-footer > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+  text-align: left;
+}
+body .account-card-footer > a {
+  grid-column: 1/-1;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+body .account-card-footer > button:hover {
+  background: var(--surface-raised);
+}
+body .transaction-row {
+  min-height: 80px;
+  padding: 16px 20px;
+  gap: 12px;
+}
+body .transaction-description strong {
+  font-size: 14px;
+  line-height: 1.5;
+}
+body .transaction-description span {
+  font-size: 12px;
+  line-height: 1.6;
+}
+body .transaction-amount {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+body .filters {
+  gap: 12px;
+}
+body .expanded-filters {
+  align-items: end;
+}
+body .expanded-filters input,
+body .expanded-filters select {
+  min-height: 44px;
+}
+body .filter-disclosure summary {
+  min-height: 48px;
+  padding: 12px 16px;
+  font-size: 13px;
+}
+body .dialog-content {
+  scroll-padding-block: 110px;
+  padding: 24px;
+}
+body .dialog-content input,
+body .dialog-content select,
+body .dialog-content textarea {
+  scroll-margin-block: 110px;
+}
+body .dialog-heading {
+  position: sticky;
+  top: -24px;
+  z-index: 3;
+  background: var(--surface);
+  margin: -24px -24px 20px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+body .dialog-heading h2 {
+  font-size: 20px;
+}
+body .dialog-heading p {
+  font-size: 13px;
+}
+body .dialog-detail {
+  inset: 0 0 0 auto;
+  transform: none;
+  width: min(580px, 55vw);
+  max-height: none;
+  height: 100dvh;
+  border-radius: 20px 0 0 20px;
+}
+body .form-stack {
+  gap: 20px;
+}
+body .dialog-content .form-actions {
+  position: sticky;
+  bottom: -24px;
+  z-index: 2;
+  margin: 4px -24px -24px;
+  padding: 16px 24px calc(16px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+body .dialog-content .form-actions > .button {
+  width: 100%;
+}
+body .form-stack > .danger {
+  margin-top: 24px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+body .import-receipt {
+  padding: 20px;
+  margin: 20px 0;
+}
+body .import-receipt h2 {
+  font-size: 18px;
+}
+body .import-receipt > p {
+  margin-top: 8px;
+  font-size: 13px;
+}
+body .import-receipt dl {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+body .import-receipt dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+body .import-receipt dd {
+  margin: 4px 0 0;
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+body .review-confirm.contextual-actions {
+  position: sticky;
+  bottom: 16px;
+  z-index: 8;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  gap: 20px;
+}
+body .review-confirm.contextual-actions p {
+  font-size: 13px;
+}
+body .review-table th {
+  font-size: 12px;
+}
+body .review-table td {
+  padding-block: 16px;
+}
+body .review-table td input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  margin: 10px;
+}
+body .review-table td:first-child {
+  min-width: 64px;
+}
+body .review-table td strong,
+body .review-table td select {
+  font-size: 14px;
+}
+body .review-table details > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+}
+body .review-table .field-help {
+  font-size: 12px;
+}
+body .history-heading h2,
+body .section-heading h2 {
+  font-size: 17px;
+}
+body .history-comparisons {
+  gap: 0;
+  border-block: 1px solid var(--border);
+}
+body .history-comparisons article {
+  border: 0;
+  border-radius: 0;
+  padding: 16px 0;
+}
+body .history-comparisons article + article {
+  padding-left: 20px;
+  border-left: 1px solid var(--border);
+}
+body .history-comparisons strong {
+  font-size: 22px;
+}
+body .history-comparisons small,
+body .history-comparisons span,
+body .history-comparison-caption {
+  font-size: 13px;
+}
+body .history-heading p,
+body .history-period-note,
+body .history-footnote {
+  font-size: 13px;
+}
+body .history-selection .text-button {
+  min-height: 44px;
+}
+body .category-row,
+body .counterparty-row {
+  min-height: 72px;
+}
+body .category-row button,
+body .category-group-toolbar button {
+  min-width: 44px;
+  min-height: 44px;
+}
+body .spaces-main,
+body .page-content {
+  overflow-wrap: break-word;
+}
+@media (min-width: 1200px) {
+  body .expanded-filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  body .review-table td:nth-child(2) {
+    width: 48%;
+  }
+}
+@media (max-width: 1050px) {
+  body .review-confirm.contextual-actions {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 700px) {
+  body input:not([type='checkbox']):not([type='radio']),
+  body select,
+  body textarea {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  body .button,
+  body .view-switcher button {
+    min-height: 48px;
+  }
+  body .page-heading {
+    gap: 16px;
+  }
+  body .page-heading p {
+    font-size: 14px;
+  }
+  body .page-content {
+    padding-inline: 16px;
+  }
+  body .account-card {
+    padding: 20px;
+  }
+  body .account-card-footer {
+    gap: 8px;
+  }
+  body .transaction-row {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 16px;
+  }
+  body .transaction-description {
+    min-width: 0;
+  }
+  body .transaction-description strong {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 14px;
+  }
+  body .transaction-amount {
+    grid-column: 2;
+    justify-self: start;
+    font-size: 16px;
+  }
+  body .transaction-row > .muted {
+    grid-column: 3;
+    grid-row: 1/3;
+  }
+  body .dialog-content,
+  body .dialog-detail {
+    inset: 0;
+    transform: none;
+    width: 100%;
+    height: min(var(--dialog-height, 100dvh), 100dvh);
+    max-height: min(var(--dialog-height, 100dvh), 100dvh);
+    top: var(--dialog-top, 0px);
+    border: 0;
+    border-radius: 0;
+    padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  body .dialog-heading {
+    top: -20px;
+    margin: -20px -16px 20px;
+    padding: 16px;
+  }
+  body .dialog-heading h2 {
+    font-size: 20px;
+  }
+  body .dialog-content .form-actions {
+    bottom: calc(-24px - env(safe-area-inset-bottom));
+    margin-inline: -16px;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  body .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body .expanded-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  body .review-confirm.contextual-actions {
+    flex-wrap: wrap;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  body .review-confirm.contextual-actions > p {
+    max-height: 3.5em;
+    overflow: auto;
+    margin: 0;
+  }
+  body .review-confirm.contextual-actions > .button {
+    width: 100%;
+  }
+  body .history-controls {
+    display: grid;
+    gap: 12px;
+  }
+  body .history-controls .view-switcher {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+  body .history-controls .view-switcher button {
+    padding-inline: 8px;
+    font-size: 13px;
+  }
+  body .history-table-scroll table {
+    min-width: 440px;
+  }
+  body .history-comparisons strong {
+    font-size: 20px;
+  }
+  body .history-comparisons article + article {
+    padding-left: 12px;
+  }
+  body .period-picker input {
+    min-height: 32px !important;
+  }
+  body .dashboard-heading {
+    flex-wrap: wrap;
+  }
+  body .balance-snapshot .hero-balance {
+    font-size: 36px;
+  }
+  body .balance-snapshot small,
+  body .balance-topline h2 {
+    font-size: 13px;
+  }
+  body .bottom-nav {
+    padding-top: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body .dialog-content,
+  body .dialog-overlay {
+    animation: none;
+  }
+}
+
+body .review-select-target {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 48px;
+  cursor: pointer;
+}
+body .review-select-target input[type='checkbox'] {
+  margin: 0;
+}
+body .import-bulk {
+  margin: 20px 0;
+  padding: 0 20px 20px;
+}
+body .import-bulk > summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+}
+body .import-bulk:not([open]) {
+  padding-bottom: 0;
+}
+body .import-bulk .bulk-selection {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+}
+body .import-bulk > label {
+  max-width: 480px;
+}
+body .import-bulk > .field-help {
+  margin-block: 12px;
+}
+@media (max-width: 700px) {
+  body .import-bulk {
+    padding-inline: 16px;
+  }
+  body .import-bulk .bulk-selection > button {
+    flex: 1;
+  }
+}
+
+body .spaces-appearance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+body .spaces-heading .eyebrow {
+  display: none;
+}
+body .spaces-heading h1 {
+  font-size: 30px;
+  margin-top: 0;
+}
+
+body .planning-metric > span,
+body .planning-metric > p,
+body .budget-line dt,
+body .budget-identity small {
+  font-size: 12px;
+}
+body .budget-identity strong,
+body .budget-line dd {
+  font-size: 14px;
+}
+body .planning-comparison dt,
+body .planning-difference {
+  font-size: 13px;
+}
+body .category-row strong,
+body .counterparty-panel > summary strong {
+  font-size: 14px;
+}
+body .category-toolbar .search-field input {
+  min-height: 48px;
+}
+body .source-details > summary,
+body .secondary-disclosure > summary {
+  min-height: 48px;
+  font-size: 14px;
+}
+@media (max-width: 900px) {
+  body .review-table,
+  body .review-table tbody {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+  body .review-table thead {
+    display: none;
+  }
+  body .review-table tr {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px 12px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  body .review-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  body .review-table td:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    width: 48px;
+  }
+  body .review-table td:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    max-width: none;
+  }
+  body .review-table td:nth-child(3) {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  body .review-table td:nth-child(4) {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 0;
+    text-align: left;
+    font-size: 18px;
+  }
+  body .review-table td:nth-child(3)::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  body .review-table select {
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+    min-height: 48px;
+  }
+  body .review-table .badge {
+    white-space: normal;
+  }
+  body .review-table-wrap {
+    overflow: visible;
+  }
+}
+
+body .balance-history > article {
+  padding: 16px;
+}
+body .balance-history > article > p {
+  margin-top: 8px;
+  font-size: 14px;
+}
+body .balance-history > article > small {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+body .balance-history > article > details {
+  margin-top: 8px;
+}
+body .balance-history summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+@media (min-width: 900px) {
+  body .current-balances:has(.balance-snapshot > div:only-child) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, auto);
+    align-items: center;
+    column-gap: 24px;
+  }
+  body .current-balances:has(.balance-snapshot > div:only-child) > .balance-topline,
+  body .current-balances:has(.balance-snapshot > div:only-child) > .balance-composition,
+  body .current-balances:has(.balance-snapshot > div:only-child) > .balance-warning {
+    grid-column: 1/-1;
+  }
+  body .current-balances:has(.balance-snapshot > div:only-child) > .balance-snapshot {
+    grid-column: 1;
+    grid-row: 2;
+    padding-top: 0;
+    padding-bottom: 16px;
+  }
+  body .current-balances:has(.balance-snapshot > div:only-child) > .balance-reference,
+  body .current-balances:has(.balance-snapshot > div:only-child) > .balance-reference-summary {
+    grid-column: 2;
+    grid-row: 2;
+    justify-content: flex-end;
+    padding-bottom: 0;
+    max-width: 340px;
+  }
+}

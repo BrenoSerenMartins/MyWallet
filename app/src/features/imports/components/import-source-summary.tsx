@@ -1,3 +1,4 @@
+import { BalanceReference } from '../../../shared/ui/balance-reference';
 import { ReconciliationGap } from './reconciliation-gap';
 import type { ImportBatch } from '../../../shared/api/resources';
 import { money } from '../../../shared/formatting/money';
@@ -7,6 +8,14 @@ export function ImportSourceSummary({ batch }: { batch: ImportBatch }) {
   return (
     <details className="source-details">
       <summary>Arquivo e conciliação · {batch.sourceFormat?.toUpperCase() ?? 'PDF'}</summary>
+      {batch.balanceBasis && (
+        <BalanceReference
+          account={{
+            institution: batch.institution ?? 'mercado_pago',
+            balanceBasis: batch.balanceBasis,
+          }}
+        />
+      )}
       <p className="field-help">
         {batch.fileName} ·{' '}
         {batch.institution === 'alelo' ? 'Extrato Alelo.' : 'Extrato de conta Mercado Pago.'}{' '}
@@ -41,7 +50,10 @@ export function ImportSourceSummary({ batch }: { batch: ImportBatch }) {
           </strong>
         </div>
       </section>
-      {batch.status !== 'reversed' && batch.openingMismatch && <ReconciliationGap batch={batch} />}
+      {batch.status !== 'reversed' &&
+        (batch.openingMismatch || !!batch.previousImports?.length) && (
+          <ReconciliationGap batch={batch} />
+        )}
     </details>
   );
 }

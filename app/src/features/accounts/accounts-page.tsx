@@ -1,3 +1,4 @@
+import { BalanceReference } from '../../shared/ui/balance-reference';
 import { BalanceHistoryPanel } from './components/balance-history-panel';
 import { BalanceAdjustmentForm } from './components/balance-adjustment-form';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
@@ -8,12 +9,40 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowUpRight, Landmark, Plus } from 'lucide-react';
 import { useAuth } from '../auth/auth-provider';
 import { request } from '../../shared/api/client';
-import type { Account } from '../../shared/api/resources';
+import type { Account, BalanceReferenceResult } from '../../shared/api/resources';
 import { money } from '../../shared/formatting/money';
 import { Button, EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
 export function AccountsPage() {
   const { session } = useAuth();
   const client = useQueryClient();
+  const [referenceBusy, setReferenceBusy] = useState<string | null>(null);
+  const [referenceMessage, setReferenceMessage] = useState('');
+  const [referenceError, setReferenceError] = useState<unknown>(null);
+  async function updateReference(account: Account) {
+    setReferenceBusy(account.id);
+    setReferenceError(null);
+    setReferenceMessage('');
+    try {
+      const result = await request<BalanceReferenceResult>(
+        `/accounts/${account.id}/balance-reference`,
+        { method: 'POST', headers: { 'If-Match': String(account.version) } },
+      );
+      setReferenceMessage(
+        result.status === 'conflict'
+          ? 'Existem referências do mesmo dia sem ordem comprovada. Confira a origem do saldo.'
+          : result.status === 'manual_preserved'
+            ? 'Sua conferência manual foi preservada porque o extrato não comprova um saldo posterior.'
+            : result.status === 'unavailable'
+              ? 'Ainda não há extrato confirmado com saldo válido para esta conta.'
+              : 'Referência de saldo conferida com os extratos confirmados.',
+      );
+      await client.invalidateQueries();
+    } catch (error) {
+      setReferenceError(error);
+    } finally {
+      setReferenceBusy(null);
+    }
+  }
   const [scope, setScope] = useState('all');
   const [open, setOpen] = useState(false);
   const [adjusting, setAdjusting] = useState<Account>();
@@ -27,9 +56,8 @@ export function AccountsPage() {
     <div className="page-enter">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">CADA PARTE DO SEU DINHEIRO</span>
           <h1>Minhas contas</h1>
-          <p>Reúna suas contas e enxergue o conjunto com clareza.</p>
+          <p>Confira os saldos registrados e a origem de cada referência.</p>
         </div>
         <Button
           onClick={() => {
@@ -42,6 +70,12 @@ export function AccountsPage() {
           Adicionar conta
         </Button>
       </div>
+      {referenceMessage && (
+        <p className="form-success" role="status">
+          {referenceMessage}
+        </p>
+      )}
+      {!!referenceError && <ErrorState error={referenceError} />}
       <ViewSwitcher
         label="Tipos de contas"
         value={scope}
@@ -94,6 +128,7 @@ export function AccountsPage() {
                 </p>
                 <span className="eyebrow">SALDO REGISTRADO</span>
                 <strong className="account-card-balance">{money(a.balance)}</strong>
+                <BalanceReference account={a} />
                 {a.balanceBasis?.kind === 'unknown' && (
                   <small>Histórico parcial · saldo atual ainda não conferido</small>
                 )}
@@ -104,6 +139,15 @@ export function AccountsPage() {
                   <Link to={`/accounts/${a.id}`}>
                     Ver movimentações <ArrowUpRight size={16} />
                   </Link>
+                  {a.institution === 'mercado_pago' && (
+                    <button
+                      className="text-button"
+                      disabled={referenceBusy !== null || !navigator.onLine}
+                      onClick={() => void updateReference(a)}
+                    >
+                      {referenceBusy === a.id ? 'Conferindo…' : 'Atualizar por extratos'}
+                    </button>
+                  )}
                   <button className="text-button" onClick={() => setHistoryAccount(a)}>
                     Histórico de saldo
                   </button>

@@ -1,3 +1,4 @@
+import { ImportConfirmationDto } from '../dto/import-confirmation.dto.js';
 import { SettlementMatchResourceDto } from '../../../core/integration/index.js';
 import { SettlementMatchingService } from '../services/settlement-matching.service.js';
 import { ImportReprocessingService } from '../services/import-reprocessing.service.js';
@@ -26,7 +27,12 @@ import { DatabaseService } from '../../../core/database/index.js';
 import { validateInput } from '../../../core/http/index.js';
 import { requireUuid } from '../../../core/rest/index.js';
 import { ImportsService } from '../services/imports.service.js';
-import { ReviewItemDto, ConfirmImportDto, ReprocessImportDto } from '../dto/import.dto.js';
+import {
+  BulkReviewDto,
+  ReviewItemDto,
+  ConfirmImportDto,
+  ReprocessImportDto,
+} from '../dto/import.dto.js';
 @ApiTags('Imports')
 @ApiBearerAuth()
 @UseGuards(AuthenticatedUserGuard)
@@ -114,7 +120,21 @@ export class ImportsController {
       this.imports.classify(requireUuid(id), input.version),
     );
   }
-  @Post(':id/confirmations') @ApiBody({ type: ConfirmImportDto }) async confirm(
+  @Post(':id/items/reviews')
+  @ApiBody({ type: BulkReviewDto })
+  @ApiOkResponse({ type: ImportBatchResourceDto })
+  async bulkReview(@Req() r: AuthenticatedRequest, @Param('id') id: string, @Body() body: unknown) {
+    const input = await validateInput(BulkReviewDto, body);
+    return this.db.forUser(r.identity.id, async () => {
+      requireUuid(id);
+      await this.imports.requireStatementImport(id);
+      return this.imports.bulkReview(id, input);
+    });
+  }
+  @Post(':id/confirmations')
+  @ApiOkResponse({ type: ImportConfirmationDto })
+  @ApiBody({ type: ConfirmImportDto })
+  async confirm(
     @Req() r: AuthenticatedRequest,
     @Param('id') id: string,
     @Headers('idempotency-key') key: string,

@@ -650,6 +650,18 @@ for (const outcome of ['normal', 'lost-response', 'refresh-failure', 'rejected']
         batch.status = 'confirmed';
         batch.version++;
         if (outcome === 'lost-response') return route.abort('failed');
+        return route.fulfill({
+          json: {
+            id,
+            status: 'confirmed',
+            count: 1,
+            reconciled: 0,
+            skippedDuplicates: 1,
+            balanceBefore: 1000,
+            balanceAfter: 5912,
+            referenceStatus: 'applied',
+          },
+        });
       } else if (batch.status === 'confirmed' && outcome === 'refresh-failure') {
         return route.fulfill({ status: 500, json: { title: 'Falha sintética ao atualizar.' } });
       }
@@ -682,6 +694,14 @@ for (const outcome of ['normal', 'lost-response', 'refresh-failure', 'rejected']
       0,
     );
     expect(confirmations).toBe(1);
+    if (outcome === 'normal') {
+      await expect(page.getByRole('region', { name: 'Resultado da confirmação' })).toContainText(
+        'R$ 59,12',
+      );
+      await expect(page.getByRole('region', { name: 'Resultado da confirmação' })).toContainText(
+        'saldo final do extrato Mercado Pago',
+      );
+    }
     await expect(page.getByRole('button', { name: 'Confirmar 1 movimento' })).toHaveCount(0);
     if (outcome === 'refresh-failure') {
       await expect(page.getByRole('button', { name: 'Atualizar relatório' })).toBeVisible();
@@ -2364,11 +2384,11 @@ for (const width of [360, 768, 1440])
       .click();
     await expect(page.locator('.expense-group-list')).toContainText('Luz');
     await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
-    await expect(history.locator('svg')).toHaveCount(0);
+    await expect(history.locator('svg.history-chart')).toHaveCount(0);
     await expect(history).not.toContainText('R$');
     await expect(page.locator('.expense-group-track')).toHaveCount(0);
     await page.getByRole('button', { name: 'Mostrar valores', exact: true }).click();
-    await expect(history.locator('svg')).toBeVisible();
+    await expect(history.locator('svg.history-chart')).toBeVisible();
     await history.locator('svg g[role="button"]').first().focus();
     await page.keyboard.press('Enter');
     await expect(history.locator('.history-selection')).toContainText('novembro de 2025');
@@ -2450,3 +2470,245 @@ for (const width of [390, 1440])
       true,
     );
   });
+
+for (const width of [320, 430, 1024, 1280, 1920])
+  test(`premium layout and bank source at ${width}px`, async ({ page }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 900 });
+    const bank = {
+      ...account,
+      balance: 5912,
+      balanceBasis: {
+        kind: 'statement',
+        referencePoint: 'closing',
+        referenceDate: '2026-10-30',
+        referenceBalance: 5912,
+        referenceKey: 'a'.repeat(64),
+        originId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        importId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        reviewRequired: false,
+      },
+    };
+    await page.route('**/v1/accounts', (route) => route.fulfill({ json: [bank] }));
+    await page.route('**/v1/dashboard?*', (route) =>
+      route.fulfill({
+        json: {
+          balance: 5912,
+          benefitBalance: 0,
+          reserveBalance: 0,
+          income: 100000,
+          expense: 50000,
+          unclassified: 0,
+          accounts: [bank],
+          expenseGroups: [],
+          expenseCategories: [],
+        },
+      }),
+    );
+    await page.goto('/');
+    await expect(page.locator('.current-balances')).toContainText('Referência do extrato');
+    await expect(
+      page.getByRole('link', { name: 'Ver origem', exact: true }).filter({ visible: true }),
+    ).toHaveAttribute('href', '/imports/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+    const privacy = page.getByRole('button', { name: 'Ocultar valores', exact: true });
+    const box = await privacy.boundingBox();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    for (const theme of ['claro', 'escuro']) {
+      await chooseTheme(page, theme);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await page.screenshot({
+        path: `/tmp/mywallet-premium-home-${width}-${theme}.png`,
+        fullPage: true,
+      });
+    }
+    await page.goto('/accounts');
+    await expect(
+      page.getByRole('button', { name: 'Atualizar por extratos', exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: `/tmp/mywallet-premium-accounts-${width}.png`, fullPage: true });
+    await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
+    await page.getByLabel('Nome da conta').fill('Conta com texto preservado');
+    await expect(
+      page.getByRole('dialog').getByRole('button', { name: 'Adicionar conta', exact: true }),
+    ).toBeInViewport();
+    if (width <= 700) {
+      await page.setViewportSize({ width, height: 480 });
+      const dialog = await page.getByRole('dialog').boundingBox();
+      expect(dialog!.height).toBeLessThanOrEqual(480);
+      await expect(page.getByLabel('Nome da conta')).toHaveValue('Conta com texto preservado');
+    }
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.goto('/workspaces');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+
+test('transaction detail panel preserves URL filters and browser back', async ({ page }) => {
+  await signedIn(page);
+  await page.route(`**/v1/transactions/${transaction.id}`, (route) =>
+    route.fulfill({ json: transaction }),
+  );
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/transactions?from=2026-10-01&to=2026-10-31&type=expense');
+  await page.getByLabel('Buscar movimentos').fill('supermercado');
+  await page.getByRole('button', { name: /Compra de supermercado/ }).click();
+  await expect(page.locator('.dialog-detail')).toBeVisible();
+  await expect(page.getByLabel('Descrição', { exact: true })).toHaveValue(transaction.description);
+  await page.goBack();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByLabel('Buscar movimentos')).toHaveValue('supermercado');
+  await expect(page.getByLabel('De', { exact: true })).toHaveValue('2026-10-01');
+});
+
+test('bulk category review affects only visible editable rows and keeps duplicate touch targets locked', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 900 });
+  const categoryId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  await page.route('**/v1/categories', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: categoryId,
+          name: 'Casa',
+          type: 'expense',
+          color: '#f28a97',
+          groupName: 'Geral',
+          groupId: null,
+        },
+      ],
+    }),
+  );
+  const items = [
+    {
+      ...transaction,
+      id: '11111111-aaaa-4111-8111-111111111111',
+      description: 'Luz da casa',
+      sourceRow: 1,
+      amount: -100,
+      selected: true,
+      duplicateLocked: false,
+      duplicateCandidate: false,
+      action: 'create',
+      transactionType: 'expense',
+      categoryId: null as string | null,
+      metadata: null,
+      candidateDescriptions: [],
+      linkedTransactionId: null,
+    },
+    {
+      ...transaction,
+      id: '22222222-aaaa-4222-8222-222222222222',
+      description: 'Mercado',
+      sourceRow: 2,
+      amount: -200,
+      selected: true,
+      duplicateLocked: false,
+      duplicateCandidate: false,
+      action: 'create',
+      transactionType: 'expense',
+      categoryId: null as string | null,
+      metadata: null,
+      candidateDescriptions: [],
+      linkedTransactionId: null,
+    },
+    {
+      ...transaction,
+      id: '33333333-aaaa-4333-8333-333333333333',
+      description: 'Duplicata',
+      sourceRow: 3,
+      amount: -100,
+      selected: false,
+      duplicateLocked: true,
+      duplicateCandidate: true,
+      action: 'recorded',
+      transactionType: 'expense',
+      categoryId: null as string | null,
+      metadata: null,
+      candidateDescriptions: [],
+      linkedTransactionId: transaction.id,
+    },
+  ];
+  const batch = {
+    id,
+    accountId: account.id,
+    institution: 'mercado_pago',
+    status: 'draft',
+    version: 1,
+    canIntegrate: true,
+    canReprocess: false,
+    sourceFormat: 'csv',
+    fileName: 'synthetic.csv',
+    reportType: 'account_statement',
+    openingBalance: 1000,
+    closingBalance: 600,
+    openingMismatch: false,
+    reconciliationCapability: 'running_balance',
+    items,
+  };
+  let writes = 0;
+  await page.route(`**/v1/imports/${id}**`, (route) => {
+    if (route.request().method() === 'POST') {
+      expect(new URL(route.request().url()).pathname).toBe(`/v1/imports/${id}/items/reviews`);
+      const body = route.request().postDataJSON();
+      expect(body.itemIds).toEqual([items[0].id]);
+      expect(body.categoryId).toBe(categoryId);
+      items[0].categoryId = categoryId;
+      batch.version++;
+      writes++;
+    }
+    return route.fulfill({ json: batch });
+  });
+  await page.goto(`/imports/${id}`);
+  const target = await page.locator('.review-select-target').first().boundingBox();
+  expect(target!.width).toBeGreaterThanOrEqual(48);
+  await expect(page.getByLabel('Selecionar movimento 3')).toBeDisabled();
+  await page.getByRole('searchbox', { name: 'Buscar no extrato' }).fill('Luz');
+  await page.locator('.import-bulk summary').click();
+  await page.getByLabel('Categoria do lote').selectOption(categoryId);
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Aplicar a 1 movimentos', exact: true }).click();
+  await expect.poll(() => writes).toBe(1);
+  expect(items[1].categoryId).toBeNull();
+  await expect(page.getByLabel('Categoria do movimento 1')).toHaveValue(categoryId);
+});
+
+test('premium accessibility with OS text scaling, reduced motion and narrow reflow', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setEmulatedOSTextScale', { scale: 2 });
+  await page.goto('/');
+  await expect(page.locator('.current-balances')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('button', { name: 'Adicionar conta', exact: true }),
+  ).toBeInViewport();
+  await page.getByLabel('Nome da conta').fill('Conta com texto ampliado');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await cdp.send('Emulation.setEmulatedOSTextScale', { scale: 1 });
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: 320,
+    height: 720,
+    deviceScaleFactor: 4,
+    mobile: false,
+  });
+  await page.goto('/');
+  await expect(page.locator('.current-balances')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

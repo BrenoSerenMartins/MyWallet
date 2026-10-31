@@ -3,6 +3,8 @@ import type { BalanceBasis } from './balance-basis.js';
 export class BalanceBasisDto {
   @ApiProperty({ enum: ['unknown', 'legacy', 'statement', 'manual'] }) kind!: BalanceBasis['kind'];
   @ApiPropertyOptional({ type: String }) referenceDate?: string;
+  @ApiPropertyOptional({ enum: ['closing'] }) referencePoint?: 'closing';
+  @ApiPropertyOptional({ type: String }) referenceKey?: string;
   @ApiPropertyOptional({ type: Number }) referenceBalance?: number;
   @ApiPropertyOptional({ type: String }) originId?: string;
   @ApiPropertyOptional({ type: String }) importId?: string;
@@ -23,4 +25,9 @@ export class BalanceHistoryDto {
   @ApiProperty({ type: Object, additionalProperties: true }) details!: Record<string, unknown>;
   @ApiProperty({ type: String, nullable: true }) undoOfId!: string | null;
   @ApiProperty({ type: String }) createdAt!: string;
+}
+
+export class BalanceReferenceResultDto {
+  @ApiProperty({ type: String }) status!: string;
+  @ApiPropertyOptional({ type: Number }) difference?: number;
 }

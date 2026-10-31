@@ -204,17 +204,20 @@ export function TransactionForm({
           {error}
         </p>
       )}
-      <Button
-        disabled={
-          busy ||
-          !navigator.onLine ||
-          !!entry?.transferGroupId ||
-          !!entry?.balanceAdjustment ||
-          !!entry?.refundOfId
-        }
-      >
-        {busy ? 'Salvando…' : entry ? 'Salvar alterações' : 'Registrar movimento'}
-      </Button>
+      <div className="form-actions">
+        {' '}
+        <Button
+          disabled={
+            busy ||
+            !navigator.onLine ||
+            !!entry?.transferGroupId ||
+            !!entry?.balanceAdjustment ||
+            !!entry?.refundOfId
+          }
+        >
+          {busy ? 'Salvando…' : entry ? 'Salvar alterações' : 'Registrar movimento'}
+        </Button>
+      </div>
       {entry && (
         <button
           type="button"

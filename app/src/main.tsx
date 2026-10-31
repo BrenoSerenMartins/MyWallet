@@ -12,6 +12,7 @@ import { Application } from './app/application';
 import './app/styles/tokens.css';
 import './app/styles/layout.css';
 import './app/styles/components.css';
+import './app/styles/refinements.css';
 const client = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: true },

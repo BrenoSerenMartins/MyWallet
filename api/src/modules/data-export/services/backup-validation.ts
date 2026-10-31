@@ -16,7 +16,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   const b = raw as BackupPayload;
   if (
     b.format !== 'mywallet' ||
-    ![1, 2, 3, 4, 5, 6].includes(b.version) ||
+    ![1, 2, 3, 4, 5, 6, 7].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||

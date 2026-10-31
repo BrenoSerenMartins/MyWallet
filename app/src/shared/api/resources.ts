@@ -28,3 +28,7 @@ export type BalanceHistory = components['schemas']['BalanceHistoryDto'];
 export type DashboardHistory = components['schemas']['DashboardHistoryDto'];
 
 export type TrashedWorkspace = components['schemas']['TrashedWorkspaceResourceDto'];
+
+export type ImportConfirmation = components['schemas']['ImportConfirmationDto'];
+
+export type BalanceReferenceResult = components['schemas']['BalanceReferenceResultDto'];

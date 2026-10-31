@@ -405,13 +405,44 @@
         "tags": ["Account balance"]
       }
     },
+    "/v1/accounts/{accountId}/balance-reference": {
+      "post": {
+        "operationId": "BalanceBasisController_refreshReference",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceReferenceResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Account balance"]
+      }
+    },
     "/v1/accounts/{accountId}/balance-basis/imports/{id}": {
       "post": {
         "operationId": "BalanceBasisController_statement",
         "parameters": [],
         "responses": {
-          "201": {
-            "description": ""
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceReferenceResultDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1120,6 +1151,40 @@
         "tags": ["Imports"]
       }
     },
+    "/v1/imports/{id}/items/reviews": {
+      "post": {
+        "operationId": "ImportsController_bulkReview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatchResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Imports"]
+      }
+    },
     "/v1/imports/{id}/confirmations": {
       "post": {
         "operationId": "ImportsController_confirm",
@@ -1135,8 +1200,15 @@
           }
         },
         "responses": {
-          "201": {
-            "description": ""
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportConfirmationDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1812,6 +1884,13 @@
           "referenceDate": {
             "type": "string"
           },
+          "referencePoint": {
+            "type": "string",
+            "enum": ["closing"]
+          },
+          "referenceKey": {
+            "type": "string"
+          },
           "referenceBalance": {
             "type": "number"
           },
@@ -1962,6 +2041,18 @@
           "undoOfId",
           "createdAt"
         ]
+      },
+      "BalanceReferenceResultDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "difference": {
+            "type": "number"
+          }
+        },
+        "required": ["status"]
       },
       "CategoryResourceDto": {
         "type": "object",
@@ -2956,6 +3047,61 @@
           }
         },
         "required": ["version"]
+      },
+      "BulkReviewDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number"
+          },
+          "itemIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "action": {
+            "type": "string",
+            "enum": ["selection", "category"]
+          },
+          "selected": {
+            "type": "boolean"
+          },
+          "categoryId": {
+            "type": "string"
+          }
+        },
+        "required": ["version", "itemIds", "action"]
+      },
+      "ImportConfirmationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          },
+          "reconciled": {
+            "type": "number"
+          },
+          "skippedDuplicates": {
+            "type": "number"
+          },
+          "balanceBefore": {
+            "type": "number"
+          },
+          "balanceAfter": {
+            "type": "number"
+          },
+          "referenceStatus": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "status"]
       },
       "ReprocessImportDto": {
         "type": "object",

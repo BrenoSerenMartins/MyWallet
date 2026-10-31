@@ -212,6 +212,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/accounts/{accountId}/balance-reference': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['BalanceBasisController_refreshReference'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/accounts/{accountId}/balance-basis/imports/{id}': {
     parameters: {
       query?: never;
@@ -510,6 +526,22 @@ export interface paths {
     get?: never;
     put?: never;
     post: operations['ImportsController_classify'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/imports/{id}/items/reviews': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['ImportsController_bulkReview'];
     delete?: never;
     options?: never;
     head?: never;
@@ -865,6 +897,9 @@ export interface components {
       /** @enum {string} */
       kind: 'unknown' | 'legacy' | 'statement' | 'manual';
       referenceDate?: string;
+      /** @enum {string} */
+      referencePoint?: 'closing';
+      referenceKey?: string;
       referenceBalance?: number;
       originId?: string;
       importId?: string;
@@ -911,6 +946,10 @@ export interface components {
       };
       undoOfId: string | null;
       createdAt: string;
+    };
+    BalanceReferenceResultDto: {
+      status: string;
+      difference?: number;
     };
     CategoryResourceDto: {
       groupId: string | null;
@@ -1179,6 +1218,24 @@ export interface components {
     };
     ConfirmImportDto: {
       version: number;
+    };
+    BulkReviewDto: {
+      version: number;
+      itemIds: string[];
+      /** @enum {string} */
+      action: 'selection' | 'category';
+      selected?: boolean;
+      categoryId?: string;
+    };
+    ImportConfirmationDto: {
+      id: string;
+      status: string;
+      count?: number;
+      reconciled?: number;
+      skippedDuplicates?: number;
+      balanceBefore?: number;
+      balanceAfter?: number;
+      referenceStatus?: string;
     };
     ReprocessImportDto: {
       version: number;
@@ -1576,6 +1633,25 @@ export interface operations {
       };
     };
   };
+  BalanceBasisController_refreshReference: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BalanceReferenceResultDto'];
+        };
+      };
+    };
+  };
   BalanceBasisController_statement: {
     parameters: {
       query?: never;
@@ -1585,11 +1661,13 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      201: {
+      200: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          'application/json': components['schemas']['BalanceReferenceResultDto'];
+        };
       };
     };
   };
@@ -2123,6 +2201,29 @@ export interface operations {
       };
     };
   };
+  ImportsController_bulkReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BulkReviewDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportBatchResourceDto'];
+        };
+      };
+    };
+  };
   ImportsController_confirm: {
     parameters: {
       query?: never;
@@ -2136,11 +2237,13 @@ export interface operations {
       };
     };
     responses: {
-      201: {
+      200: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          'application/json': components['schemas']['ImportConfirmationDto'];
+        };
       };
     };
   };

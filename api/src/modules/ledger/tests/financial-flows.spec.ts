@@ -296,11 +296,17 @@ describe('Financial integrity with PostgreSQL RLS', () => {
         openingDate: '2026-01-01',
       });
       const repository = new ImportsRepository(db.service);
-      const id = await repository.create(a.id, 'opening-test', 'synthetic.pdf', 'test', {
-        openingBalance: 500,
-        closingBalance: 510,
-        items: [],
-      });
+      const id = await repository.create(
+        a.id,
+        'opening-test',
+        'synthetic.pdf',
+        'mercado-pago/account-pdf/2',
+        {
+          openingBalance: 500,
+          closingBalance: 510,
+          items: [],
+        },
+      );
       await repository.addItem(
         id,
         {

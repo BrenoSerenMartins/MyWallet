@@ -44,6 +44,8 @@ export interface BalanceAdjustment {
   reason: string;
 }
 export interface TransactionInput {
+  /** Internal atomic import workflow: refresh after the entire batch, never from HTTP input. */
+  deferBalanceRefresh?: boolean;
   balanceBasisIncluded?: boolean;
   sourceStoreId?: string;
   counterpartyId?: string | null;
@@ -174,7 +176,7 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'mywallet';
-  version: 1 | 2 | 3 | 4 | 5 | 6;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   balanceHistory?: import('./balance-basis.js').BalanceHistory[];
   counterparties?: import('./counterparties.js').CounterpartySnapshot;
   categoryGroups?: CategoryGroupResource[];

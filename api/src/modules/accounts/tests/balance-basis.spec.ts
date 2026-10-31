@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, expect, it } from 'vitest';
+import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { TestDatabase } from '../../../../test/database-harness.js';
 import { AccountsRepository } from '../repositories/accounts.repository.js';
 import { AccountsService } from '../services/accounts.service.js';
@@ -116,7 +116,7 @@ it('learns the first complete statement and an older consistent base without a m
   expect(await run(() => accounts.find(a.id))).toMatchObject({
     openingBalance: 1494,
     balance: 1207,
-    balanceBasis: { referenceDate: '2026-09-01' },
+    balanceBasis: { referenceDate: '2026-10-01', referencePoint: 'closing' },
   });
   await run(() => imports.reverse(earlier.id, String(earlier.version + 1)));
   expect(await run(() => accounts.find(a.id))).toMatchObject({
@@ -126,7 +126,7 @@ it('learns the first complete statement and an older consistent base without a m
   });
   expect(
     (await run(() => basis.history(a.id))).filter((event) => event.operation === 'statement'),
-  ).toHaveLength(2);
+  ).toHaveLength(1);
 });
 it('recalculates a manual correction when missing old bank movements arrive instead of counting the adjustment twice', async () => {
   const a = await account('Missing 13.07');
@@ -147,7 +147,7 @@ it('recalculates a manual correction when missing old bank movements arrive inst
   expect(await run(() => accounts.find(a.id))).toMatchObject({
     openingBalance: 1494,
     balance: 5912,
-    balanceBasis: { kind: 'statement' },
+    balanceBasis: { kind: 'manual' },
   });
   expect(
     (await run(() => ledger.exportRecords())).filter((row) => row.accountId === a.id),
@@ -164,10 +164,16 @@ it('preserves a manual observation when bank history contradicts it and reports 
     ),
   );
   const older = await statement(a.id, '2026-02-01', 9000, [-100]);
-  expect(await confirm(older)).toMatchObject({ balanceBasis: { status: 'conflict' } });
+  expect(await confirm(older)).toMatchObject({ balanceBasis: { status: 'manual_preserved' } });
   expect((await run(() => accounts.find(a.id))).balance).toBe(2000);
+  const unrelated = await statement(a.id, '2026-02-01', 8000, [-110]);
+  expect(await confirm(unrelated)).toMatchObject({ balanceBasis: { status: 'manual_preserved' } });
+  expect((await run(() => accounts.find(a.id))).balanceBasis).toMatchObject({
+    kind: 'manual',
+    reviewRequired: false,
+  });
 });
-it('does not apply bank base evidence when part of the source was intentionally excluded', async () => {
+it('uses an observed bank position without fabricating intentionally excluded historical movements', async () => {
   const a = await account('Partial bank selection');
   let draft = await statement(a.id, '2026-10-01', 1307, [-100, -200]);
   draft = await run(() =>
@@ -178,11 +184,11 @@ it('does not apply bank base evidence when part of the source was intentionally 
       String(draft.version),
     ),
   );
-  expect(await confirm(draft)).toMatchObject({ balanceBasis: { status: 'partial' } });
+  expect(await confirm(draft)).toMatchObject({ balanceBasis: { status: 'applied' } });
   expect(await run(() => accounts.find(a.id))).toMatchObject({
-    openingBalance: 0,
-    balance: -100,
-    balanceBasis: { kind: 'unknown' },
+    openingBalance: 1107,
+    balance: 1007,
+    balanceBasis: { kind: 'statement', referencePoint: 'closing' },
   });
 });
 it('supports balance-less benefit history and optional current-balance calibration without a financial entry', async () => {
@@ -476,31 +482,280 @@ it('rebases both sides of historical transfers and undoes same-day transfers wit
 });
 
 it('restores the original manual membership when a later manual correction and bank reference are both undone', async () => {
-  const a = await account('Mixed reference undo');
-  await run(() => ledger.create(movement(a.id, 100, '2026-01-01')));
-  await run(() =>
-    ledger.adjustBalance(
-      a.id,
-      { expectedBalance: 100, targetBalance: 150, reason: 'First manual reference' },
-      'mixed-first',
-    ),
-  );
-  const bank = await statement(a.id, '2026-02-01', 130, [20]);
-  await confirm(bank);
-  expect((await run(() => accounts.find(a.id))).balanceBasis?.kind).toBe('statement');
-  await run(() => ledger.create(movement(a.id, -10, today())));
-  const latest = await run(() =>
-    ledger.adjustBalance(
-      a.id,
-      { expectedBalance: 140, targetBalance: 145, reason: 'Later manual reference' },
-      'mixed-later',
-    ),
-  );
-  await run(async () => basis.undo(a.id, latest.id, (await accounts.find(a.id)).version));
-  await run(() => imports.reverse(bank.id, String(bank.version + 1)));
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-01-31T12:00:00Z'));
+  try {
+    const a = await account('Mixed reference undo');
+    await run(() => ledger.create(movement(a.id, 100, '2026-01-01')));
+    await run(() =>
+      ledger.adjustBalance(
+        a.id,
+        { expectedBalance: 100, targetBalance: 150, reason: 'First manual reference' },
+        'mixed-first',
+      ),
+    );
+    const bank = await statement(a.id, '2026-02-01', 130, [20]);
+    await confirm(bank);
+    expect((await run(() => accounts.find(a.id))).balanceBasis?.kind).toBe('statement');
+    vi.setSystemTime(new Date('2026-02-02T12:00:00Z'));
+    await run(() => ledger.create(movement(a.id, -10, today())));
+    const latest = await run(() =>
+      ledger.adjustBalance(
+        a.id,
+        { expectedBalance: 140, targetBalance: 145, reason: 'Later manual reference' },
+        'mixed-later',
+      ),
+    );
+    await run(async () => basis.undo(a.id, latest.id, (await accounts.find(a.id)).version));
+    await run(() => imports.reverse(bank.id, String(bank.version + 1)));
+    expect(await run(() => accounts.find(a.id))).toMatchObject({
+      balance: 140,
+      openingBalance: 50,
+      balanceBasis: { kind: 'manual' },
+    });
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('uses the newest bank position across missing months without changing historical expenses and falls back on reversal', async () => {
+  const a = await account('Gaps and latest position');
+  const january = await statement(a.id, '2026-01-10', 10000, [-100]);
+  await confirm(january);
+  const august = await statement(a.id, '2026-08-10', 1000, [-100]);
+  await confirm(august);
+  const october = await statement(a.id, '2026-10-10', 500, [-50]);
+  await confirm(october);
   expect(await run(() => accounts.find(a.id))).toMatchObject({
-    balance: 140,
-    openingBalance: 50,
-    balanceBasis: { kind: 'manual' },
+    balance: 450,
+    balanceBasis: { referencePoint: 'closing', referenceDate: '2026-10-10', referenceBalance: 450 },
+  });
+  const july = await statement(a.id, '2026-07-10', 9000, [-50]);
+  await confirm(july);
+  expect((await run(() => accounts.find(a.id))).balance).toBe(450);
+  const entries = (await run(() => ledger.exportRecords())).filter((row) => row.accountId === a.id);
+  expect(entries).toHaveLength(4);
+  expect(entries.reduce((sum, row) => sum + row.amount, 0)).toBe(-300);
+  await run(() => imports.reverse(october.id, String(october.version + 1)));
+  expect(await run(() => accounts.find(a.id))).toMatchObject({
+    balance: 900,
+    balanceBasis: { referenceDate: '2026-08-10' },
+  });
+  const before = await run(() => basis.history(a.id));
+  await run(() => basis.considerStatement(a.id, august.id));
+  expect(await run(() => basis.history(a.id))).toHaveLength(before.length);
+});
+
+it('proves same-day order through overlapping bank operations and flags unrelated same-day endpoints', async () => {
+  const a = await account('Same-day bank order');
+  const first = await statement(a.id, '2026-09-10', 1000, [-100]);
+  await confirm(first);
+  const original = first.items[0];
+  const longer = await run(() =>
+    imports.upload(a.id, Buffer.from(randomUUID()), 'longer.csv', {
+      reportType: 'account_statement',
+      sourceFormat: 'csv',
+      openingBalance: 1000,
+      closingBalance: 850,
+      items: [
+        {
+          sourceRow: 1,
+          sourcePage: 1,
+          transactionDate: '2026-09-10',
+          description: original.description,
+          sourceOperationId: original.sourceOperationId!,
+          amount: -100,
+          balanceAfter: 900,
+        },
+        {
+          sourceRow: 2,
+          sourcePage: 1,
+          transactionDate: '2026-09-10',
+          description: 'Later operation',
+          sourceOperationId: randomUUID(),
+          amount: -50,
+          balanceAfter: 850,
+        },
+      ],
+    }),
+  );
+  await confirm(longer);
+  expect(await run(() => accounts.find(a.id))).toMatchObject({
+    balance: 850,
+    balanceBasis: { referenceBalance: 850, reviewRequired: false },
+  });
+  expect(
+    (await run(() => ledger.exportRecords())).filter((row) => row.accountId === a.id),
+  ).toHaveLength(2);
+  const independent = await statement(a.id, '2026-09-10', 850, [-30]);
+  expect(await confirm(independent)).toMatchObject({ balanceBasis: { status: 'conflict' } });
+  expect((await run(() => accounts.find(a.id))).balanceBasis).toMatchObject({
+    referenceBalance: 850,
+    reviewRequired: true,
+    reviewReason: 'same_day',
+  });
+});
+
+it('round-trips closing-reference membership in backups and excludes older imported history from current money', async () => {
+  const a = await account('Closing backup');
+  const source = await statement(a.id, '2026-10-10', 1000, [-100]);
+  await confirm(source);
+  const payload = await run(() => backup.backup());
+  const target = payload.accounts.find((row) => row.id === a.id)!;
+  expect(target.balanceBasis?.referencePoint).toBe('closing');
+  const preview = await db.forUser(db.other, () => backup.preview(payload));
+  await db.forUser(db.other, () => backup.confirm(preview.id));
+  const restored = (await db.forUser(db.other, () => accounts.list())).find(
+    (row) => row.name === a.name,
+  )!;
+  expect(restored.balance).toBe(900);
+  expect(restored.balanceBasis?.referenceKey).toBe(target.balanceBasis?.referenceKey);
+  await db.forUser(db.other, () => ledger.create(movement(restored.id, -200, '2026-08-01')));
+  expect((await db.forUser(db.other, () => accounts.find(restored.id))).balance).toBe(900);
+});
+
+it('upgrades old MP references once while leaving Alelo/manual observations untouched', async () => {
+  const a = await account('Automatic old reference upgrade');
+  const source = await statement(a.id, '2026-10-10', 1000, [-100]);
+  await confirm(source);
+  await run(() =>
+    db.service.query(
+      "UPDATE wallet.financial_accounts SET opening_balance_minor=0,balance_basis=jsonb_build_object('kind','statement','referenceDate','2026-10-10','referenceBalance',0,'originId',balance_basis->>'originId','importId',balance_basis->>'importId') WHERE id=$1",
+      [a.id],
+    ),
+  );
+  await run(() => basis.upgradeLegacyReferences());
+  expect(await run(() => accounts.find(a.id))).toMatchObject({
+    balance: 900,
+    balanceBasis: { referencePoint: 'closing', referenceBalance: 900 },
+  });
+  const count = (await run(() => basis.history(a.id))).length;
+  await run(() => basis.upgradeLegacyReferences());
+  expect(await run(() => basis.history(a.id))).toHaveLength(count);
+});
+
+it('does not restore a revoked bank reference when undoing a later manual observation', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-01-31T12:00:00Z'));
+  try {
+    const a = await account('Undo revoked bank source');
+    await run(() => ledger.create(movement(a.id, 100, today())));
+    await run(() =>
+      ledger.adjustBalance(
+        a.id,
+        { expectedBalance: 100, targetBalance: 150, reason: 'First observation' },
+        randomUUID(),
+      ),
+    );
+    const source = await statement(a.id, '2026-02-01', 150, [20]);
+    await confirm(source);
+    vi.setSystemTime(new Date('2026-02-02T12:00:00Z'));
+    const manual = await run(() =>
+      ledger.adjustBalance(
+        a.id,
+        { expectedBalance: 170, targetBalance: 180, reason: 'Later observation' },
+        randomUUID(),
+      ),
+    );
+    await run(() => imports.reverse(source.id, String(source.version + 1)));
+    expect((await run(() => accounts.find(a.id))).balance).toBe(180);
+    await run(async () => basis.undo(a.id, manual.id, (await accounts.find(a.id)).version));
+    expect(await run(() => accounts.find(a.id))).toMatchObject({
+      balance: 150,
+      balanceBasis: { kind: 'manual', referenceDate: '2026-01-31' },
+    });
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('applies bulk review only to explicit editable rows with type/version/duplicate protection', async () => {
+  const a = await account('Bulk review');
+  const category = await run(() =>
+    categories.save({ name: 'Bulk food', type: 'expense', color: '#f28a97' }),
+  );
+  const draft = await statement(a.id, '2026-10-20', 1000, [-100, -200, 50]);
+  const result = await run(() =>
+    imports.bulkReview(draft.id, {
+      version: draft.version,
+      itemIds: [draft.items[0].id],
+      action: 'category',
+      categoryId: category.id,
+    }),
+  );
+  expect(result.items[0].categoryId).toBe(category.id);
+  expect(result.items[1].categoryId).toBeNull();
+  await expect(
+    run(() =>
+      imports.bulkReview(draft.id, {
+        version: draft.version,
+        itemIds: [draft.items[1].id],
+        action: 'selection',
+        selected: false,
+      }),
+    ),
+  ).rejects.toThrow('mudou');
+  await expect(
+    run(() =>
+      imports.bulkReview(draft.id, {
+        version: result.version,
+        itemIds: [draft.items[2].id],
+        action: 'category',
+        categoryId: category.id,
+      }),
+    ),
+  ).rejects.toThrow('tipo');
+  await expect(
+    run(() =>
+      imports.bulkReview(draft.id, {
+        version: result.version,
+        itemIds: [randomUUID()],
+        action: 'selection',
+        selected: true,
+      }),
+    ),
+  ).rejects.toThrow('editáveis');
+  const before = (await run(() => accounts.find(a.id))).balance;
+  await confirm(result);
+  const second = await run(() =>
+    imports.upload(a.id, Buffer.from(randomUUID()), 'copy.csv', {
+      sourceFormat: 'csv',
+      reportType: 'account_statement',
+      openingBalance: 1000,
+      closingBalance: 750,
+      items: draft.items.map((item) => ({
+        sourceRow: item.sourceRow,
+        sourcePage: 1,
+        transactionDate: item.transactionDate,
+        description: item.description,
+        amount: item.amount,
+        balanceAfter: item.balanceAfter,
+        sourceOperationId: item.sourceOperationId!,
+      })),
+    }),
+  );
+  expect(second.items[0].duplicateLocked).toBe(true);
+  await expect(
+    run(() =>
+      imports.bulkReview(second.id, {
+        version: second.version,
+        itemIds: [second.items[0].id],
+        action: 'selection',
+        selected: true,
+      }),
+    ),
+  ).rejects.toThrow('editáveis');
+  expect(before).toBe(0);
+});
+
+it('keeps an observed bank position but flags an edited covered movement rather than presenting it as reconciled history', async () => {
+  const a = await account('Covered movement edited');
+  const source = await statement(a.id, '2026-10-10', 1000, [-100]);
+  await confirm(source);
+  const row = (await run(() => ledger.exportRecords())).find((item) => item.accountId === a.id)!;
+  await run(() => ledger.update(row.id, movement(a.id, -150, '2026-10-10'), String(row.version)));
+  expect(await run(() => accounts.find(a.id))).toMatchObject({
+    balance: 900,
+    balanceBasis: { reviewRequired: true, reviewReason: 'statement_conflict' },
   });
 });

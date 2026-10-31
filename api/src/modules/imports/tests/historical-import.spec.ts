@@ -391,7 +391,7 @@ it('classifies old drafts automatically and guides later statements to unfinishe
   await db.forUser(db.user, () =>
     imports.confirm(october.id, october.version, 'sequence-early-october'),
   );
-  expect((await db.forUser(db.user, () => accounts.find(accountId))).openingBalance).toBe(10000);
+  expect((await db.forUser(db.user, () => accounts.find(accountId))).openingBalance).toBe(11000);
   const history = await db.forUser(db.user, () =>
     imports.retainHistory(september.id, september.version),
   );

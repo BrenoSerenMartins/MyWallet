@@ -16,6 +16,9 @@ import type {
 } from '../../../core/integration/index.js';
 import { exactAmount, requireVersion } from '../../../core/rest/index.js';
 import { BalanceBasisRepository } from '../repositories/balance-basis.repository.js';
+import { coveredReferences, newestReference } from './bank-reference.js';
+const observed = (basis: BalanceBasis) =>
+  basis.kind === 'manual' || basis.referencePoint === 'closing';
 const today = () =>
   new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Sao_Paulo',
@@ -112,17 +115,25 @@ export class BalanceBasisService implements AccountBalanceBasis {
     )
       return;
     const base = exactAmount(
-      b.referenceBalance - (await this.repo.net(accountId, b.referenceDate, b.kind === 'manual')),
+      b.referenceBalance - (await this.repo.net(accountId, b.referenceDate, observed(b))),
     );
+    const mismatch =
+      b.referencePoint === 'closing' &&
+      (await this.repo.coveredMismatch(accountId, b.referenceDate));
     const basis: BalanceBasis = {
       ...b,
       reviewReason:
-        b.reviewReason ??
-        (b.kind === 'manual' && importedDate === b.referenceDate ? 'same_day' : undefined),
+        (mismatch ? 'statement_conflict' : b.reviewReason) ??
+        (observed(b) && importedDate === b.referenceDate ? 'same_day' : undefined),
       reviewRequired:
-        !!b.reviewRequired || (b.kind === 'manual' && importedDate === b.referenceDate),
+        !!b.reviewRequired || mismatch || (observed(b) && importedDate === b.referenceDate),
     };
-    if (base === s.base && !!basis.reviewRequired === !!b.reviewRequired) return;
+    if (
+      base === s.base &&
+      !!basis.reviewRequired === !!b.reviewRequired &&
+      basis.reviewReason === b.reviewReason
+    )
+      return;
     await this.repo.write(accountId, base, basis);
     await this.repo.append(
       this.event(
@@ -136,67 +147,125 @@ export class BalanceBasisService implements AccountBalanceBasis {
       ),
     );
   }
+  async upgradeLegacyReferences() {
+    for (const id of await this.repo.legacyReferenceAccounts())
+      await this.considerBankReference(id);
+  }
   async considerStatement(accountId: string, importId: string) {
-    const s = await this.state(accountId);
-    if (s.archived) throw new ConflictException('Esta conta está arquivada.');
+    const state = await this.state(accountId);
+    if (state.institution !== 'mercado_pago') return { status: 'unavailable' };
     const source = await this.repo.statement(accountId, importId);
-    if (
-      !source ||
-      source.type !== 'account_statement' ||
-      source.opening === null ||
-      source.status !== 'confirmed'
-    )
+    if (!source || source.type !== 'account_statement' || source.status !== 'confirmed')
       return { status: 'unavailable' };
-    if (!source.complete) return { status: 'partial' };
-    const b = s.basis;
-    if (b.kind === 'statement' && b.referenceDate! <= source.date) return { status: 'unchanged' };
-    const base = exactAmount(source.opening - (await this.repo.net(accountId, source.date, false)));
-    if (b.kind !== 'unknown' && base !== s.base) {
-      const difference = exactAmount(base - s.base);
-      if (!b.reviewRequired || b.reviewReason !== 'statement_conflict') {
-        const flagged: BalanceBasis = {
-          ...b,
-          reviewRequired: true,
-          reviewReason: 'statement_conflict',
-        };
-        await this.repo.write(accountId, s.base, flagged);
-        const event = this.event(
-          accountId,
-          'rebase',
-          s.base,
-          s.base,
-          b,
-          flagged,
-          'Saldo do extrato diverge da referência existente; base preservada',
-        );
-        event.details = { importId, difference };
-        await this.repo.append(event);
-      }
-      return { status: 'conflict', difference };
-    }
-    const id = randomUUID();
-    const basis: BalanceBasis = {
-      kind: 'statement',
-      referenceDate: source.date,
-      referenceBalance: source.opening,
-      importId,
-      originId: id,
-      reviewRequired: false,
-    };
-    await this.repo.write(accountId, base, basis);
+    return this.considerBankReference(accountId, importId);
+  }
+  private async flagReference(accountId: string, reason: 'same_day' | 'statement_conflict') {
+    const state = await this.state(accountId);
+    if (state.basis.reviewRequired && state.basis.reviewReason === reason) return;
+    const flagged = { ...state.basis, reviewRequired: true, reviewReason: reason };
+    await this.repo.write(accountId, state.base, flagged);
     await this.repo.append(
       this.event(
         accountId,
-        'statement',
-        s.base,
-        base,
-        b,
-        basis,
-        'Saldo base identificado no extrato confirmado',
-        id,
+        'rebase',
+        state.base,
+        state.base,
+        state.basis,
+        flagged,
+        'Referências de saldo precisam de conferência',
       ),
     );
-    return { status: 'applied' };
+  }
+  async refreshReference(accountId: string, version: unknown) {
+    const state = await this.state(accountId);
+    requireVersion(state.version, version);
+    return this.considerBankReference(accountId);
+  }
+  async considerBankReference(accountId: string, importId?: string) {
+    const s = await this.state(accountId);
+    if (s.institution !== 'mercado_pago') return { status: 'unavailable' };
+    if (s.archived) throw new ConflictException('Esta conta está arquivada.');
+    const references = await this.repo.bankReferences(accountId);
+    const b = s.basis;
+    // A restored backup may carry a proven position without the original batch.
+    if (b.referencePoint === 'closing' && !b.importId && b.referenceKey)
+      references.push({
+        importId: '',
+        date: b.referenceDate!,
+        amount: b.referenceBalance!,
+        key: b.referenceKey,
+        rows: [{ date: b.referenceDate!, key: b.referenceKey, transactionId: null }],
+      });
+    const latestDate = references.reduce((date, item) => (item.date > date ? item.date : date), '');
+    if (b.kind === 'manual' && latestDate && b.referenceDate! >= latestDate) {
+      if (b.referenceDate === latestDate) await this.flagReference(accountId, 'same_day');
+      return { status: 'manual_preserved' };
+    }
+    const { reference, conflict } = newestReference(references);
+    if (conflict) {
+      await this.flagReference(accountId, 'same_day');
+      return { status: 'conflict' };
+    }
+    if (!reference) return { status: 'unavailable' };
+    const included = [...coveredReferences(reference, references)].flatMap((item) =>
+      item.rows.filter((row) => row.date === reference.date),
+    );
+    const ids = await this.repo.referenceMembers(
+      accountId,
+      reference.date,
+      included.map((row) => row.key),
+      included.flatMap((row) => (row.transactionId ? [row.transactionId] : [])),
+    );
+    if (!b.importId && b.referencePoint === 'closing' && b.referenceKey === reference.key)
+      ids.push(...(await this.repo.knownIncludedIds(accountId, reference.date)));
+    await this.repo.restoreMarkers(accountId, ids);
+    const base = exactAmount(
+      reference.amount - (await this.repo.net(accountId, reference.date, true)),
+    );
+    const unknownSameDay = (await this.repo.unobservedCount(accountId, reference.date)) > 0;
+    const mismatch = await this.repo.coveredMismatch(accountId, reference.date);
+    const uncertain = unknownSameDay || mismatch;
+    const reviewReason = mismatch ? ('statement_conflict' as const) : ('same_day' as const);
+    if (
+      b.referencePoint === 'closing' &&
+      b.referenceKey === reference.key &&
+      b.referenceBalance === reference.amount &&
+      base === s.base &&
+      !!b.reviewRequired === uncertain
+    )
+      return { status: 'unchanged' };
+    const id = randomUUID();
+    const basis: BalanceBasis = {
+      kind: 'statement',
+      referencePoint: 'closing',
+      referenceKey: reference.key,
+      referenceDate: reference.date,
+      referenceBalance: reference.amount,
+      importId: reference.importId || undefined,
+      originId: id,
+      reviewRequired: uncertain,
+      ...(uncertain ? { reviewReason } : {}),
+    };
+    const event = this.event(
+      accountId,
+      'statement',
+      s.base,
+      base,
+      b,
+      basis,
+      'Referência atualizada pelo saldo final do Mercado Pago',
+      id,
+    );
+    event.details = {
+      knownSameDayIds: ids,
+      previousBalance: s.balance,
+      targetBalance: exactAmount(s.balance + base - s.base),
+      importId: reference.importId || null,
+      triggerImportId: importId ?? null,
+    };
+    await this.repo.write(accountId, base, basis);
+    await this.repo.append(event);
+    return { status: uncertain ? 'applied_review' : 'applied', difference: base - s.base };
   }
   async history(accountId: string) {
     const state = await this.state(accountId);
@@ -207,6 +276,24 @@ export class BalanceBasisService implements AccountBalanceBasis {
     }
     return history;
   }
+  private async usablePrevious(history: BalanceHistory[], initial: BalanceBasis, base: number) {
+    let basis = initial;
+    const visited = new Set<string>();
+    while (
+      basis.kind === 'statement' &&
+      basis.importId &&
+      !(await this.repo.confirmed(basis.importId))
+    ) {
+      if (!basis.originId || visited.has(basis.originId))
+        throw new ConflictException('Histórico de referência inválido.');
+      visited.add(basis.originId);
+      const earlier = history.find((row) => row.id === basis.originId);
+      if (!earlier) throw new ConflictException('A origem da referência não está disponível.');
+      basis = earlier.previousBasis;
+      base = earlier.previousBase;
+    }
+    return { basis, base };
+  }
   async undo(accountId: string, id: string, version: number) {
     const s = await this.state(accountId);
     const history = await this.repo.history(accountId, true);
@@ -216,8 +303,13 @@ export class BalanceBasisService implements AccountBalanceBasis {
     const original = history.find((event) => event.id === id);
     if (s.archived || !original || original.operation !== 'manual' || s.basis.originId !== id)
       throw new ConflictException('Só a correção manual ainda ativa pode ser desfeita.');
-    const basis = original.previousBasis;
-    if (basis.kind === 'manual') {
+    const previous = await this.usablePrevious(
+      history,
+      original.previousBasis,
+      original.previousBase,
+    );
+    const basis = previous.basis;
+    if (observed(basis)) {
       const earlier = history.find((event) => event.id === basis.originId);
       if (!earlier || !Array.isArray(earlier.details.knownSameDayIds))
         throw new ConflictException(
@@ -231,9 +323,9 @@ export class BalanceBasisService implements AccountBalanceBasis {
       ['manual', 'statement'].includes(basis.kind)
         ? exactAmount(
             basis.referenceBalance -
-              (await this.repo.net(accountId, basis.referenceDate, basis.kind === 'manual')),
+              (await this.repo.net(accountId, basis.referenceDate, observed(basis))),
           )
-        : original.previousBase;
+        : previous.base;
     const event = this.event(
       accountId,
       'undo',
@@ -253,8 +345,10 @@ export class BalanceBasisService implements AccountBalanceBasis {
     const history = await this.repo.history(accountId, true);
     const event = history.find((row) => row.id === s.basis.originId);
     if (!event) throw new ConflictException('Não foi possível localizar a origem do saldo base.');
-    const basis = event.previousBasis;
-    if (basis.kind === 'manual') {
+    const previous = await this.usablePrevious(history, event.previousBasis, event.previousBase);
+    const basis = previous.basis;
+    const fallbackBase = previous.base;
+    if (observed(basis)) {
       const observation = history.find((row) => row.id === basis.originId);
       if (!observation || !Array.isArray(observation.details.knownSameDayIds))
         throw new ConflictException(
@@ -268,9 +362,9 @@ export class BalanceBasisService implements AccountBalanceBasis {
       ['manual', 'statement'].includes(basis.kind)
         ? exactAmount(
             basis.referenceBalance -
-              (await this.repo.net(accountId, basis.referenceDate, basis.kind === 'manual')),
+              (await this.repo.net(accountId, basis.referenceDate, observed(basis))),
           )
-        : event.previousBase;
+        : fallbackBase;
     await this.repo.write(accountId, base, basis);
     await this.repo.append(
       this.event(
@@ -283,6 +377,7 @@ export class BalanceBasisService implements AccountBalanceBasis {
         'Base restaurada após desfazer o extrato',
       ),
     );
+    if (s.institution === 'mercado_pago') await this.considerBankReference(accountId);
   }
   exportHistory() {
     return this.repo.history();

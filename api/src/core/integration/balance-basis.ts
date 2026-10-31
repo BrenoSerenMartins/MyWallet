@@ -1,6 +1,8 @@
 export interface BalanceBasis {
   kind: 'unknown' | 'legacy' | 'statement' | 'manual';
   referenceDate?: string;
+  referencePoint?: 'closing';
+  referenceKey?: string;
   referenceBalance?: number;
   originId?: string;
   importId?: string;
@@ -28,6 +30,7 @@ export interface BalanceCorrectionInput {
 }
 export const ACCOUNT_BALANCE_BASIS = Symbol('ACCOUNT_BALANCE_BASIS');
 export interface AccountBalanceBasis {
+  upgradeLegacyReferences(): Promise<void>;
   correct(accountId: string, input: BalanceCorrectionInput): Promise<BalanceHistory>;
   refresh(accountId: string, importedDate?: string): Promise<void>;
   considerStatement(

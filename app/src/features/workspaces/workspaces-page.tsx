@@ -48,7 +48,6 @@ export function WorkspacesPage() {
               Voltar ao espaço
             </Link>
           )}
-          <ThemeSwitcher />
           <button
             className="icon-button"
             aria-label="Sair da conta"
@@ -68,7 +67,7 @@ export function WorkspacesPage() {
             <h1>
               Seus espaços<span>.</span>
             </h1>
-            <p>Escolha onde quer cuidar das suas finanças hoje.</p>
+            <p>Abra um espaço para consultar suas contas e movimentações.</p>
           </div>
           <Button onClick={() => setOpen(true)} disabled={loading || !!error || !navigator.onLine}>
             <Plus size={17} />
@@ -127,6 +126,10 @@ export function WorkspacesPage() {
             </p>
           </div>
           <ShieldCheck size={23} />
+        </div>
+        <div className="spaces-appearance">
+          <span>Aparência</span>
+          <ThemeSwitcher />
         </div>
         <footer className="spaces-footer">
           <span>MYWALLET</span>

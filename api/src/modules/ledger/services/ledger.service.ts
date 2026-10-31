@@ -256,7 +256,7 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     if (input.rememberCounterparty && input.counterpartyId)
       await this.applyCounterpartyRelation(input.accountId, input.counterpartyId);
     if (input.rememberCategory) await this.applyRememberedRule(input);
-    if (automatic)
+    if (automatic && !input.deferBalanceRefresh)
       await this.balanceBasis.refresh(
         input.accountId,
         imported ? input.transactionDate : undefined,

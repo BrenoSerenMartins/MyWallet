@@ -12,6 +12,15 @@ function basis(value: BalanceBasis | undefined) {
     !['unknown', 'legacy', 'statement', 'manual'].includes(value.kind)
   )
     fail();
+  if (
+    value!.referencePoint !== undefined &&
+    (value!.kind !== 'statement' ||
+      value!.referencePoint !== 'closing' ||
+      !value!.referenceKey ||
+      !/^[a-f0-9]{64}$/.test(value!.referenceKey))
+  )
+    fail();
+  if (value!.referenceKey !== undefined && value!.referencePoint !== 'closing') fail();
   if (value!.referenceDate !== undefined) dateOnly(value!.referenceDate);
   if (value!.referenceBalance !== undefined) exactAmount(value!.referenceBalance);
   if (
@@ -29,6 +38,16 @@ function basis(value: BalanceBasis | undefined) {
   if (value!.reviewRequired !== undefined && typeof value!.reviewRequired !== 'boolean') fail();
 }
 export function validateBalanceBackup(payload: BackupPayload, unique: (id: string) => void) {
+  if (
+    payload.version < 7 &&
+    (payload.accounts.some((account) => account.balanceBasis?.referencePoint !== undefined) ||
+      payload.balanceHistory?.some(
+        (event) =>
+          event.previousBasis?.referencePoint !== undefined ||
+          event.newBasis?.referencePoint !== undefined,
+      ))
+  )
+    fail();
   if (payload.version < 6) {
     if (
       payload.balanceHistory !== undefined ||
@@ -108,6 +127,7 @@ export function validateBalanceBackup(payload: BackupPayload, unique: (id: strin
   for (const account of payload.accounts) {
     basis(account.balanceBasis);
     const b = account.balanceBasis!;
+    if (b.referencePoint === 'closing' && account.institution !== 'mercado_pago') fail();
     if (b.originId && events.get(b.originId)?.accountId !== account.id) fail();
     if (['manual', 'statement'].includes(b.kind)) {
       const net = payload.transactions
@@ -115,7 +135,7 @@ export function validateBalanceBackup(payload: BackupPayload, unique: (id: strin
           (t) =>
             t.accountId === account.id &&
             (t.transactionDate < b.referenceDate! ||
-              (b.kind === 'manual' &&
+              ((b.kind === 'manual' || b.referencePoint === 'closing') &&
                 t.transactionDate === b.referenceDate &&
                 t.balanceBasisIncluded)),
         )

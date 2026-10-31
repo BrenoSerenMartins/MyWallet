@@ -89,9 +89,12 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
           {error}
         </p>
       )}
-      <Button disabled={busy || !navigator.onLine}>
-        {busy ? 'Salvando…' : account ? 'Salvar alterações' : 'Adicionar conta'}
-      </Button>
+      <div className="form-actions">
+        {' '}
+        <Button disabled={busy || !navigator.onLine}>
+          {busy ? 'Salvando…' : account ? 'Salvar alterações' : 'Adicionar conta'}
+        </Button>
+      </div>
     </form>
   );
 }

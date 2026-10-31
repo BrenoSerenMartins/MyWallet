@@ -105,11 +105,18 @@ export function BalanceAdjustmentForm({
           {error}
         </p>
       )}
-      <Button
-        disabled={busy || (!difference && !mayConfirmZero) || !reason.trim() || !navigator.onLine}
-      >
-        {busy ? 'Registrando…' : initial ? 'Confirmar saldo atual' : 'Registrar correção de saldo'}
-      </Button>
+      <div className="form-actions">
+        {' '}
+        <Button
+          disabled={busy || (!difference && !mayConfirmZero) || !reason.trim() || !navigator.onLine}
+        >
+          {busy
+            ? 'Registrando…'
+            : initial
+              ? 'Confirmar saldo atual'
+              : 'Registrar correção de saldo'}
+        </Button>
+      </div>
     </form>
   );
 }

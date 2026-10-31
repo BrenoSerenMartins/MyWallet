@@ -3,7 +3,7 @@ import { useAuth } from '../../auth/auth-provider';
 import type { Category } from '../../../shared/api/resources';
 import { useState } from 'react';
 import { ApiError, jsonBody, request } from '../../../shared/api/client';
-import type { ImportBatch, ImportItem } from '../../../shared/api/resources';
+import type { ImportBatch, ImportItem, ImportConfirmation } from '../../../shared/api/resources';
 export function useImportReview(batch: ImportBatch, refresh: () => Promise<unknown>) {
   const { session } = useAuth();
   const client = useQueryClient();
@@ -11,6 +11,7 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
     queryKey: [session?.user.id, 'categories'],
     queryFn: () => request<Category[]>('/categories'),
   });
+  const [receipt, setReceipt] = useState<ImportConfirmation>();
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -68,6 +69,24 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
       setBusy(false);
     }
   }
+  async function bulkReview(
+    itemIds: string[],
+    change: { action: 'selection'; selected: boolean } | { action: 'category'; categoryId: string },
+  ) {
+    setBusy(true);
+    setError('');
+    try {
+      await request(`/imports/${batch.id}/items/reviews`, {
+        method: 'POST',
+        body: jsonBody({ version: batch.version, itemIds, ...change }),
+      });
+      await refresh();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Não foi possível atualizar o lote.');
+    } finally {
+      setBusy(false);
+    }
+  }
   async function confirm() {
     if (busy || status !== 'draft') return;
     if (
@@ -82,11 +101,13 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
     setError('');
     try {
       try {
-        await request(`/imports/${batch.id}/confirmations`, {
-          method: 'POST',
-          headers: { 'Idempotency-Key': key },
-          body: jsonBody({ version: batch.version }),
-        });
+        setReceipt(
+          await request<ImportConfirmation>(`/imports/${batch.id}/confirmations`, {
+            method: 'POST',
+            headers: { 'Idempotency-Key': key },
+            body: jsonBody({ version: batch.version }),
+          }),
+        );
       } catch (failure) {
         // A lost response does not tell us whether the server committed. Read the
         // batch before offering another confirmation; never send a second POST here.
@@ -184,6 +205,8 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
     );
   return {
     categories,
+    receipt,
+    bulkReview,
     page,
     setPage,
     busy,
