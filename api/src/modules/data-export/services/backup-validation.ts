@@ -1,3 +1,4 @@
+import { validateCommitmentsBackup } from './validate-commitments-backup.js';
 import { validateBalanceBackup } from './validate-balance-backup.js';
 import { validateCounterpartyBackup } from './validate-counterparty-backup.js';
 import { sourceEvidenceKey } from '../../../core/integration/index.js';
@@ -16,7 +17,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   const b = raw as BackupPayload;
   if (
     b.format !== 'mywallet' ||
-    ![1, 2, 3, 4, 5, 6, 7].includes(b.version) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||
@@ -211,9 +212,11 @@ export function validateBackup(raw: unknown): BackupPayload {
     )
       fail();
   validateBalanceBackup(b, unique);
+  if (b.version < 8) validateCommitmentsBackup(b, unique);
   return {
     ...b,
     categoryGroups,
+    commitments: b.version >= 8 ? validateCommitmentsBackup(b, unique) : undefined,
     monthlyPlans:
       b.version >= 2 ? validatePlanningBackup(b.monthlyPlans, new Set(categories.keys())) : [],
   };

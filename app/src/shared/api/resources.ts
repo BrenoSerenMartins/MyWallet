@@ -32,3 +32,8 @@ export type TrashedWorkspace = components['schemas']['TrashedWorkspaceResourceDt
 export type ImportConfirmation = components['schemas']['ImportConfirmationDto'];
 
 export type BalanceReferenceResult = components['schemas']['BalanceReferenceResultDto'];
+
+export type CommitmentSchedule = components['schemas']['CommitmentScheduleDto'];
+export type CommitmentOccurrence = components['schemas']['CommitmentOccurrenceDto'];
+export type CommitmentsSummary = components['schemas']['CommitmentsSummaryDto'];
+export type CommitmentCandidate = components['schemas']['CommitmentCandidateDto'];

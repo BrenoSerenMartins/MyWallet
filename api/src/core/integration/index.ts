@@ -1,3 +1,4 @@
+export * from './commitments.js';
 export * from './balance-basis.js';
 export * from './counterparty-identifier.js';
 export * from './counterparties.js';
@@ -176,7 +177,8 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'mywallet';
-  version: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  commitments?: import('./commitments.js').CommitmentSnapshot;
   balanceHistory?: import('./balance-basis.js').BalanceHistory[];
   counterparties?: import('./counterparties.js').CounterpartySnapshot;
   categoryGroups?: CategoryGroupResource[];

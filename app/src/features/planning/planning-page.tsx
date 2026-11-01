@@ -1,3 +1,4 @@
+import { CommitmentsPage } from './commitments-page';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -12,6 +13,31 @@ import { PlanForm } from './components/plan-form';
 import { CopyPlanDialog } from './components/copy-plan-dialog';
 import './planning.css';
 export function PlanningPage() {
+  const [params, setParams] = useSearchParams();
+  const view = params.get('view') === 'commitments' ? 'commitments' : 'budget';
+  return (
+    <>
+      <div className="planning-navigation">
+        <ViewSwitcher
+          label="Área do planejamento"
+          value={view}
+          onChange={(value) => {
+            const next = new URLSearchParams(params);
+            if (value === 'budget') next.delete('view');
+            else next.set('view', value);
+            setParams(next);
+          }}
+          options={[
+            { value: 'budget', label: 'Orçamento mensal' },
+            { value: 'commitments', label: 'Contas e previsão' },
+          ]}
+        />
+      </div>
+      {view === 'commitments' ? <CommitmentsPage /> : <MonthlyBudgetPage />}
+    </>
+  );
+}
+function MonthlyBudgetPage() {
   const [params, setParams] = useSearchParams();
   const requestedMonth = params.get('month');
   const month = validMonth(requestedMonth) ? requestedMonth : dateToday().slice(0, 7);

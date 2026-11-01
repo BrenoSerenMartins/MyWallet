@@ -26,6 +26,21 @@ export interface LedgerFilter {
 @Injectable()
 export class LedgerRepository {
   constructor(@Inject(DatabaseService) private readonly db: DatabaseService) {}
+  async commitmentEntries(ids: string[]) {
+    if (!ids.length) return [];
+    const rows = await this.db.query(
+      `SELECT * FROM wallet.transactions WHERE user_id=$1 AND id=ANY($2::uuid[]) AND reversed_at IS NULL AND refund_of_id IS NULL AND balance_adjustment IS NULL AND transfer_group_id IS NULL AND transaction_type IN ('income','expense')`,
+      [this.db.userId, ids],
+    );
+    return rows.map(transactionResource);
+  }
+  async commitmentCandidates(accountId: string, from: string, to: string) {
+    const rows = await this.db.query(
+      `SELECT * FROM wallet.transactions WHERE user_id=$1 AND account_id=$2 AND transaction_date BETWEEN $3 AND $4 AND reversed_at IS NULL AND refund_of_id IS NULL AND balance_adjustment IS NULL AND transfer_group_id IS NULL AND transaction_type IN ('income','expense') ORDER BY transaction_date DESC,id LIMIT 100`,
+      [this.db.userId, accountId, from, to],
+    );
+    return rows.map(transactionResource);
+  }
   async exportRecords() {
     const rows = await this.db.query(
       `SELECT t.*, ${reconciliationSql('t')} AS reconciled, coalesce((SELECT jsonb_agg(s.source_data ORDER BY s.source_key) FROM wallet.transaction_sources s WHERE s.transaction_id=t.id),'[]'::jsonb) AS source_evidence FROM wallet.transactions t WHERE user_id=$1 AND reversed_at IS NULL ORDER BY transaction_date,id`,

@@ -1,3 +1,5 @@
+import { CashflowForecast } from '../planning/components/cashflow-forecast';
+import '../planning/commitments.css';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
@@ -40,6 +42,7 @@ export function DashboardPage() {
           onToggle={() => setVisible(!visible)}
         />
       )}
+      <CashflowForecast visible={visible} />
       <section className="monthly-analysis" aria-labelledby="monthly-title">
         <div className="monthly-heading">
           <div>

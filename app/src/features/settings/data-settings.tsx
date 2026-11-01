@@ -14,6 +14,7 @@ export function DataSettings() {
     accounts: number;
     transactions: number;
     monthlyPlans?: number;
+    commitments?: number;
   } | null>(null);
   async function download(format: 'json' | 'csv') {
     setBusy(true);
@@ -87,8 +88,9 @@ export function DataSettings() {
           <div>
             <strong>Backup financeiro · JSON</strong>
             <p>
-              Contas, grupos, categorias, movimentos ativos e planejamentos mensais. Revisões de
-              importação e arquivos originais não fazem parte deste backup.
+              Contas, grupos, categorias, movimentos ativos, planejamentos mensais e compromissos
+              com seus vínculos. Revisões de importação e arquivos originais não fazem parte deste
+              backup.
             </p>
             <Button className="secondary" disabled={busy} onClick={() => void download('json')}>
               <Download size={16} />
@@ -139,9 +141,10 @@ export function DataSettings() {
           <p>
             Este backup contém <strong>{restore?.accounts} contas</strong> e{' '}
             <strong>{restore?.transactions} movimentos</strong> e{' '}
-            <strong>{restore?.monthlyPlans ?? 0} planejamentos mensais</strong>. As contas serão
-            adicionadas como novas. Planejamentos com meses já existentes bloqueiam a restauração
-            para preservar seus dados. As categorias equivalentes serão reutilizadas.
+            <strong>{restore?.monthlyPlans ?? 0} planejamentos mensais</strong> e{' '}
+            <strong>{restore?.commitments ?? 0} compromissos</strong>. As contas serão adicionadas
+            como novas. Planejamentos com meses já existentes bloqueiam a restauração para preservar
+            seus dados. As categorias equivalentes serão reutilizadas.
           </p>
           {error && (
             <p className="form-error" role="alert">

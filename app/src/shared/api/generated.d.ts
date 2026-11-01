@@ -436,6 +436,86 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/commitments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['CommitmentsController_summary'];
+    put?: never;
+    post: operations['CommitmentsController_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/commitments/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['CommitmentsController_update'];
+    trace?: never;
+  };
+  '/v1/commitments/{id}/end': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CommitmentsController_end'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/commitments/{id}/occurrences/{date}/candidates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['CommitmentsController_candidates'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/commitments/{id}/occurrences/{date}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CommitmentsController_resolve'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/imports': {
     parameters: {
       query?: never;
@@ -1110,6 +1190,94 @@ export interface components {
     CopyMonthlyPlanDto: {
       version: number;
       sourceVersion: number;
+    };
+    CommitmentScheduleDto: {
+      id: string;
+      accountId: string;
+      categoryId: string | null;
+      description: string;
+      amount: number;
+      /** @enum {string} */
+      transactionType: 'income' | 'expense';
+      /** @enum {string} */
+      frequency: 'once' | 'monthly';
+      startDate: string;
+      endDate: string | null;
+      endedOn: string | null;
+      version: number;
+    };
+    CommitmentOccurrenceDto: {
+      scheduleId: string;
+      accountId: string;
+      categoryId: string | null;
+      description: string;
+      amount: number;
+      /** @enum {string} */
+      transactionType: 'income' | 'expense';
+      dueDate: string;
+      /** @enum {string} */
+      status: 'pending' | 'overdue' | 'review' | 'settled' | 'skipped';
+      transactionId: string | null;
+      version: number;
+      actualAmount: number | null;
+    };
+    CommitmentProjectionDto: {
+      accountId: string;
+      name: string;
+      /** @enum {string} */
+      kind: 'cash' | 'benefits' | 'reserves';
+      balance: number;
+      income: number;
+      expense: number;
+      projected: number;
+      overdue: number;
+    };
+    CommitmentsSummaryDto: {
+      today: string;
+      month: string;
+      through: string;
+      schedules: components['schemas']['CommitmentScheduleDto'][];
+      items: components['schemas']['CommitmentOccurrenceDto'][];
+      totalItems: number;
+      projection: components['schemas']['CommitmentProjectionDto'][];
+      overdueCount: number;
+      overdueIncome: number;
+      overdueExpense: number;
+    };
+    SaveCommitmentDto: {
+      accountId: string;
+      categoryId?: string | null;
+      description: string;
+      amount: number;
+      /** @enum {string} */
+      transactionType: 'income' | 'expense';
+      /** @enum {string} */
+      frequency: 'once' | 'monthly';
+      startDate: string;
+      endDate?: string | null;
+    };
+    CommitmentCandidateDto: {
+      version: number;
+      id: string;
+      accountId: string;
+      transactionDate: string;
+      description: string;
+      amount: number;
+      transactionType: string;
+    };
+    SettleCommitmentDto: {
+      transactionVersion?: number;
+      /** @enum {string} */
+      action: 'link' | 'create' | 'skip' | 'reopen';
+      transactionId?: string;
+      transactionDate?: string;
+      amount?: number;
+    };
+    CommitmentResolutionDto: {
+      id: string;
+      date: string;
+      status: string;
+      transactionId?: string | null;
     };
     PreviousImportResourceDto: {
       id: string;
@@ -2071,6 +2239,132 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['MonthlyPlanResourceDto'];
+        };
+      };
+    };
+  };
+  CommitmentsController_summary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CommitmentsSummaryDto'];
+        };
+      };
+    };
+  };
+  CommitmentsController_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveCommitmentDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CommitmentScheduleDto'];
+        };
+      };
+    };
+  };
+  CommitmentsController_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveCommitmentDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CommitmentScheduleDto'];
+        };
+      };
+    };
+  };
+  CommitmentsController_end: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CommitmentScheduleDto'];
+        };
+      };
+    };
+  };
+  CommitmentsController_candidates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CommitmentCandidateDto'][];
+        };
+      };
+    };
+  };
+  CommitmentsController_resolve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SettleCommitmentDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CommitmentResolutionDto'];
         };
       };
     };

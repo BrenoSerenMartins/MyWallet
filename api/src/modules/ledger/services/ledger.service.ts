@@ -32,6 +32,12 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
     @Inject(ACCOUNT_BALANCE_BASIS) private readonly balanceBasis: AccountBalanceBasis,
   ) {}
+  commitmentEntries(ids: string[]) {
+    return this.repository.commitmentEntries(ids);
+  }
+  commitmentCandidates(accountId: string, from: string, to: string) {
+    return this.repository.commitmentCandidates(accountId, from, to);
+  }
   exportRecords() {
     return this.repository.exportRecords();
   }

@@ -1,0 +1,305 @@
+.commitments-page {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+.planning-navigation {
+  margin-bottom: 1.5rem;
+}
+.commitment-period,
+.commitment-filters,
+.forecast-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.commitment-filters {
+  flex-wrap: wrap;
+}
+.commitment-filters > label {
+  flex: 1;
+  min-width: 180px;
+}
+.commitment-filters input,
+.commitment-filters select {
+  width: 100%;
+}
+.cashflow-forecast {
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin-block: 1.5rem;
+}
+.commitments-page .cashflow-forecast {
+  margin: 0;
+}
+.forecast-heading h2 {
+  margin: 0;
+}
+.forecast-heading p {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+}
+.forecast-totals {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+.forecast-totals > div {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem 0;
+}
+.forecast-totals span {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.forecast-totals strong {
+  font-size: clamp(1.1rem, 2.4vw, 1.6rem);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.forecast-result {
+  border-left: 1px solid var(--border);
+  padding-left: 1rem !important;
+}
+.forecast-warning {
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.forecast-accounts summary,
+.commitment-schedules summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+}
+.forecast-accounts summary::after,
+.commitment-schedules summary::after {
+  content: '+';
+  margin-left: auto;
+}
+.forecast-accounts[open] summary::after,
+.commitment-schedules[open] summary::after {
+  content: '−';
+}
+.forecast-accounts ul,
+.commitment-schedules ul,
+.commitment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.forecast-accounts li,
+.commitment-schedules li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+}
+.forecast-accounts li > div,
+.commitment-schedules li > div:first-child {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.forecast-accounts li > div:last-child {
+  text-align: right;
+}
+.forecast-accounts span,
+.commitment-schedules li span {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.commitment-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.commitment-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) minmax(110px, auto) auto;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+}
+.commitment-date {
+  display: grid;
+  gap: 0.3rem;
+  justify-items: start;
+  font-size: 0.875rem;
+}
+.commitment-description {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.commitment-description strong {
+  overflow-wrap: anywhere;
+}
+.commitment-description > span,
+.commitment-description small,
+.commitment-amount small {
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.commitment-amount {
+  display: grid;
+  gap: 0.4rem;
+  text-align: right;
+  white-space: nowrap;
+}
+.commitment-status.status-overdue,
+.commitment-status.status-review {
+  color: var(--negative);
+}
+.commitment-status.status-settled {
+  color: var(--positive);
+}
+.commitment-schedules {
+  padding: 1rem 1.5rem;
+}
+.commitment-schedules li strong {
+  overflow-wrap: anywhere;
+}
+.commitment-schedules .inline-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.commitment-candidate-period {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.commitment-candidate-period summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.commitment-candidate-period .form-grid {
+  margin-top: 1rem;
+}
+@media (max-width: 700px) {
+  .forecast-totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 1rem;
+  }
+  .forecast-result {
+    border-left: 0;
+    padding-left: 0 !important;
+    border-top: 1px solid var(--border);
+  }
+  .forecast-totals > div:nth-child(3) {
+    border-top: 1px solid var(--border);
+  }
+  .forecast-totals > div {
+    padding: 0.75rem 0;
+  }
+  .cashflow-forecast {
+    padding: 1.1rem;
+  }
+  .commitment-period {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .commitment-row {
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  .commitment-date {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    grid-column: 1/-1;
+  }
+  .commitment-description {
+    grid-column: 1;
+  }
+  .commitment-amount {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .commitment-row > .button {
+    grid-column: 1/-1;
+    width: 100%;
+    min-height: 48px;
+  }
+  .forecast-accounts li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .forecast-accounts li > div:last-child {
+    text-align: left;
+  }
+  .commitment-filters > label {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .commitment-schedules {
+    padding: 1rem;
+  }
+  .commitment-schedules li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .commitment-schedules .inline-actions {
+    justify-content: flex-end;
+  }
+  .commitment-filters > .view-switcher {
+    max-width: 100%;
+  }
+}
+
+.cashflow-forecast .income,
+.commitments-page .income {
+  color: var(--positive);
+}
+.cashflow-forecast .expense,
+.commitments-page .expense {
+  color: var(--negative);
+}
+
+.commitment-period .month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 340px;
+  flex-shrink: 0;
+}
+.commitment-period .month-navigation .period-picker {
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
+}
+.commitment-period .month-navigation input {
+  width: 100%;
+  min-width: 0;
+}
+.commitment-period .icon-button {
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  body .commitment-resolution .view-switcher {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  body .commitment-resolution .view-switcher button {
+    width: 100%;
+    min-height: 44px;
+    white-space: normal;
+  }
+}

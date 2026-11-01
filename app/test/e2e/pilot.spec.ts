@@ -66,6 +66,10 @@ async function signedIn(page: Page, rememberSpace = true) {
     if (path === '/v1/workspaces') data = [workspace];
     else if (path === '/v1/accounts') data = [account];
     else if (path.startsWith('/v1/planning/')) data = monthlyPlan(path.split('/').pop()!, 0);
+    else if (path === '/v1/commitments')
+      data = commitmentsFixture(
+        new URL(route.request().url()).searchParams.get('month') ?? '2026-11',
+      );
     else if (path === '/v1/categories') data = [];
     else if (path === '/v1/transactions') data = { items: [transaction], nextCursor: null };
     else if (path === '/v1/dashboard/history')
@@ -2739,4 +2743,218 @@ test('legacy accounts keep their institution and balance when renamed', async ({
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(saved).toEqual({ name: 'Conta preservada', institution: 'nubank', type: account.type });
+});
+
+function commitmentsFixture(month = '2026-11', populated = false) {
+  const rule = {
+    id: '55555555-5555-4555-8555-555555555555',
+    accountId: account.id,
+    categoryId: null,
+    description: 'Internet residencial',
+    amount: 9000,
+    transactionType: 'expense',
+    frequency: 'monthly',
+    startDate: `${month}-10`,
+    endDate: null,
+    endedOn: null,
+    version: 1,
+  };
+  return {
+    today: `${month}-15`,
+    month,
+    through: `${month}-30`,
+    schedules: populated ? [rule] : [],
+    items: populated
+      ? [
+          {
+            ...rule,
+            scheduleId: rule.id,
+            dueDate: `${month}-10`,
+            status: 'overdue',
+            transactionId: null,
+            actualAmount: null,
+          },
+        ]
+      : [],
+    totalItems: populated ? 1 : 0,
+    projection: [
+      {
+        accountId: account.id,
+        name: account.name,
+        kind: 'cash',
+        balance: 10000,
+        income: 0,
+        expense: populated ? 9000 : 0,
+        projected: populated ? 1000 : 10000,
+        overdue: populated ? 1 : 0,
+      },
+    ],
+    overdueCount: populated ? 1 : 0,
+    overdueIncome: 0,
+    overdueExpense: populated ? 9000 : 0,
+  };
+}
+for (const width of [320, 390, 768, 1440])
+  test(`commitments and cashflow remain usable at ${width}px`, async ({ page }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 900 });
+    const data = commitmentsFixture('2026-11', true);
+    await page.route('**/v1/commitments?*', (route) => route.fulfill({ json: data }));
+    await page.goto('/planning?view=commitments&month=2026-11');
+    await expect(page.getByRole('heading', { name: 'Contas e recebimentos' })).toBeVisible();
+    await expect(page.locator('.forecast-result')).toContainText('R$ 10,00');
+    await page.getByRole('button', { name: 'Novo compromisso', exact: true }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(
+      page.getByRole('dialog').getByRole('button', { name: 'Adicionar compromisso', exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: `/tmp/mywallet-commitment-form-${width}.png`, fullPage: true });
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.getByRole('button', { name: 'Pagar', exact: true }).click();
+    await expect(
+      page.getByRole('dialog').getByRole('group', { name: 'Como concluir' }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({
+      path: `/tmp/mywallet-commitment-payment-${width}.png`,
+      fullPage: false,
+    });
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
+    await expect(page.locator('.forecast-result strong')).toHaveText('••••••');
+    await chooseTheme(page, 'claro');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+test('creates a monthly commitment with no opening balance or automatic financial posting', async ({
+  page,
+}) => {
+  await signedIn(page);
+  let saved: Record<string, unknown> | undefined;
+  let receipt = '';
+  await page.route('**/v1/commitments', (route) => {
+    saved = route.request().postDataJSON();
+    receipt = route.request().headers()['idempotency-key'];
+    return route.fulfill({ json: { id: '55555555-5555-4555-8555-555555555555', ...saved } });
+  });
+  const financialWrites: string[] = [];
+  page.on('request', (r) => {
+    if (r.method() === 'POST' && r.url().includes('/v1/transactions'))
+      financialWrites.push(r.url());
+  });
+  await page.goto('/planning?view=commitments&month=2026-11');
+  await page.getByRole('button', { name: 'Novo compromisso', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Descrição', { exact: true }).fill('Internet');
+  await dialog.getByRole('combobox', { name: /^Conta$/ }).selectOption(account.id);
+  await dialog.getByLabel('Valor previsto (R$)', { exact: true }).fill('90,00');
+  await dialog.getByLabel('Primeiro vencimento', { exact: true }).fill('2026-11-10');
+  await dialog.getByRole('button', { name: 'Adicionar compromisso', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(saved).toMatchObject({
+    accountId: account.id,
+    description: 'Internet',
+    amount: 9000,
+    frequency: 'monthly',
+    transactionType: 'expense',
+    startDate: '2026-11-10',
+    categoryId: null,
+  });
+  expect(receipt).toBeTruthy();
+  expect(financialWrites).toEqual([]);
+});
+test('links an imported payment without creating another transaction and preserves retry identity', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const data = commitmentsFixture('2026-11', true);
+  let attempts = 0;
+  const keys: string[] = [];
+  const bodies: unknown[] = [];
+  await page.route('**/v1/commitments?*', (route) => route.fulfill({ json: data }));
+  await page.route('**/v1/commitments/*/occurrences/*/candidates?*', (route) =>
+    route.fulfill({
+      json: [
+        {
+          ...transaction,
+          description: 'Pagamento Internet',
+          amount: -9000,
+          transactionDate: '2026-11-10',
+        },
+      ],
+    }),
+  );
+  await page.route('**/v1/commitments/*/occurrences/2026-11-10', (route) => {
+    attempts++;
+    keys.push(route.request().headers()['idempotency-key']);
+    bodies.push(route.request().postDataJSON());
+    if (attempts === 1)
+      return route.fulfill({ status: 503, json: { title: 'Falha temporária. Tente novamente.' } });
+    data.items[0].status = 'settled';
+    data.items[0].transactionId = transaction.id as never;
+    data.projection[0].expense = 0;
+    data.projection[0].projected = 10000;
+    return route.fulfill({
+      json: {
+        id: data.schedules[0].id,
+        date: '2026-11-10',
+        status: 'settled',
+        transactionId: transaction.id,
+      },
+    });
+  });
+  const financialWrites: string[] = [];
+  page.on('request', (r) => {
+    if (r.method() === 'POST' && r.url().includes('/v1/transactions'))
+      financialWrites.push(r.url());
+  });
+  await page.goto('/planning?view=commitments&month=2026-11');
+  await page.getByRole('button', { name: 'Pagar', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Lançamento realizado').selectOption(transaction.id);
+  await dialog.getByRole('button', { name: 'Confirmar vínculo', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Falha temporária');
+  await dialog.getByRole('button', { name: 'Confirmar vínculo', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(keys[0]).toBeTruthy();
+  expect(keys[0]).toBe(keys[1]);
+  expect(bodies[0]).toEqual({
+    action: 'link',
+    transactionId: transaction.id,
+    transactionVersion: 1,
+  });
+  expect(financialWrites).toEqual([]);
+  await expect(page.locator('.forecast-result')).toContainText('R$ 100,00');
+});
+
+test('registers the actual payment amount through the commitment workflow', async ({ page }) => {
+  await signedIn(page);
+  const data = commitmentsFixture('2026-11', true);
+  let body: Record<string, unknown> | undefined;
+  await page.route('**/v1/commitments?*', (route) => route.fulfill({ json: data }));
+  await page.route('**/v1/commitments/*/occurrences/2026-11-10', (route) => {
+    body = route.request().postDataJSON();
+    data.items[0].status = 'settled';
+    data.projection[0].expense = 0;
+    data.projection[0].balance = 500;
+    data.projection[0].projected = 500;
+    return route.fulfill({ json: { status: 'settled', transactionId: transaction.id } });
+  });
+  await page.goto('/planning?view=commitments&month=2026-11');
+  await page.getByRole('button', { name: 'Pagar', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Registrar pagamento', exact: true }).click();
+  await dialog.getByLabel('Data realizada', { exact: true }).fill('2026-10-30');
+  await dialog.getByLabel('Valor realizado (R$)', { exact: true }).fill('95,00');
+  await dialog.getByRole('button', { name: 'Confirmar pagamento', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(body).toEqual({ action: 'create', transactionDate: '2026-10-30', amount: 9500 });
+  await expect(page.locator('.forecast-result')).toContainText('R$ 5,00');
 });

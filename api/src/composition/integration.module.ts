@@ -1,6 +1,8 @@
 import { CounterpartiesModule, CounterpartiesService } from '../modules/counterparties/index.js';
 import { Global, Module } from '@nestjs/common';
 import {
+  COMMITMENT_LEDGER,
+  COMMITMENTS_BACKUP,
   COUNTERPARTY_RULES,
   PLANNING_BACKUP,
   ACCOUNT_BALANCE_BASIS,
@@ -16,8 +18,10 @@ import {
 import { AccountsModule, AccountsService, BalanceBasisService } from '../modules/accounts/index.js';
 import { CategoriesModule, CategoriesService } from '../modules/categories/index.js';
 import { LedgerModule, LedgerService, IdempotencyService } from '../modules/ledger/index.js';
-import { PlanningModule, PlanningService } from '../modules/planning/index.js';
+import { PlanningModule, PlanningService, CommitmentsService } from '../modules/planning/index.js';
 const bindings = [
+  { provide: COMMITMENT_LEDGER, useExisting: LedgerService },
+  { provide: COMMITMENTS_BACKUP, useExisting: CommitmentsService },
   { provide: COUNTERPARTY_RULES, useExisting: CounterpartiesService },
   { provide: PLANNING_BACKUP, useExisting: PlanningService },
   { provide: ACCOUNT_BACKUP, useExisting: AccountsService },

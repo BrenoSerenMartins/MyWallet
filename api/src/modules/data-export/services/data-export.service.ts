@@ -1,6 +1,8 @@
-import { GoneException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { GoneException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import {
+  COMMITMENTS_BACKUP,
+  type CommitmentsBackup,
   ACCOUNT_BALANCE_BASIS,
   type AccountBalanceBasis,
   COUNTERPARTY_RULES,
@@ -30,11 +32,16 @@ export class DataExportService {
     @Inject(PLANNING_BACKUP) private readonly planning: PlanningBackup,
     @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
     @Inject(ACCOUNT_BALANCE_BASIS) private readonly balanceBasis: AccountBalanceBasis,
+    @Optional() @Inject(COMMITMENTS_BACKUP) private readonly commitments?: CommitmentsBackup,
   ) {}
   async backup(): Promise<BackupPayload> {
     return {
       format: 'mywallet',
-      version: 7,
+      version: 8,
+      commitments: (await this.commitments?.exportCommitments()) ?? {
+        schedules: [],
+        occurrences: [],
+      },
       balanceHistory: await this.balanceBasis.exportHistory(),
       counterparties: await this.counterparties.snapshot(),
       categoryGroups: await this.categories.exportGroups(),
@@ -81,6 +88,7 @@ export class DataExportService {
       categories: payload.categories.length,
       transactions: payload.transactions.length,
       monthlyPlans: payload.monthlyPlans?.length ?? 0,
+      commitments: payload.commitments?.schedules.length ?? 0,
     };
   }
   async review(id: string) {
@@ -97,6 +105,7 @@ export class DataExportService {
       categories: b.categories.length,
       transactions: b.transactions.length,
       monthlyPlans: b.monthlyPlans?.length ?? 0,
+      commitments: b.commitments?.schedules.length ?? 0,
     };
   }
   async confirm(id: string) {
@@ -141,6 +150,14 @@ export class DataExportService {
         transactionIds,
       );
       await this.planning.restoreRecords(payload.monthlyPlans ?? [], categories);
+      if (payload.commitments?.schedules.length && !this.commitments)
+        throw new Error('Commitment restore is unavailable.');
+      await this.commitments?.restoreCommitments(
+        payload.commitments ?? { schedules: [], occurrences: [] },
+        accounts,
+        categories,
+        transactionIds,
+      );
       await this.repository.confirm(id);
       return {
         id,
@@ -148,6 +165,7 @@ export class DataExportService {
         accounts: accounts.size,
         transactions: payload.transactions.length,
         monthlyPlans: payload.monthlyPlans?.length ?? 0,
+        commitments: payload.commitments?.schedules.length ?? 0,
       };
     });
   }

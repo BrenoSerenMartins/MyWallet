@@ -973,6 +973,181 @@
         "tags": ["Planning"]
       }
     },
+    "/v1/commitments": {
+      "get": {
+        "operationId": "CommitmentsController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitmentsSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Commitments"]
+      },
+      "post": {
+        "operationId": "CommitmentsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCommitmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitmentScheduleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Commitments"]
+      }
+    },
+    "/v1/commitments/{id}": {
+      "patch": {
+        "operationId": "CommitmentsController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCommitmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitmentScheduleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Commitments"]
+      }
+    },
+    "/v1/commitments/{id}/end": {
+      "post": {
+        "operationId": "CommitmentsController_end",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitmentScheduleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Commitments"]
+      }
+    },
+    "/v1/commitments/{id}/occurrences/{date}/candidates": {
+      "get": {
+        "operationId": "CommitmentsController_candidates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CommitmentCandidateDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Commitments"]
+      }
+    },
+    "/v1/commitments/{id}/occurrences/{date}": {
+      "post": {
+        "operationId": "CommitmentsController_resolve",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettleCommitmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitmentResolutionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Commitments"]
+      }
+    },
     "/v1/imports": {
       "get": {
         "operationId": "ImportsController_list",
@@ -2614,6 +2789,331 @@
           }
         },
         "required": ["version", "sourceVersion"]
+      },
+      "CommitmentScheduleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "frequency": {
+            "type": "string",
+            "enum": ["once", "monthly"]
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "endedOn": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "categoryId",
+          "description",
+          "amount",
+          "transactionType",
+          "frequency",
+          "startDate",
+          "endDate",
+          "endedOn",
+          "version"
+        ]
+      },
+      "CommitmentOccurrenceDto": {
+        "type": "object",
+        "properties": {
+          "scheduleId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "overdue", "review", "settled", "skipped"]
+          },
+          "transactionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "number"
+          },
+          "actualAmount": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "scheduleId",
+          "accountId",
+          "categoryId",
+          "description",
+          "amount",
+          "transactionType",
+          "dueDate",
+          "status",
+          "transactionId",
+          "version",
+          "actualAmount"
+        ]
+      },
+      "CommitmentProjectionDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["cash", "benefits", "reserves"]
+          },
+          "balance": {
+            "type": "number"
+          },
+          "income": {
+            "type": "number"
+          },
+          "expense": {
+            "type": "number"
+          },
+          "projected": {
+            "type": "number"
+          },
+          "overdue": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "accountId",
+          "name",
+          "kind",
+          "balance",
+          "income",
+          "expense",
+          "projected",
+          "overdue"
+        ]
+      },
+      "CommitmentsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string"
+          },
+          "month": {
+            "type": "string"
+          },
+          "through": {
+            "type": "string"
+          },
+          "schedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommitmentScheduleDto"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommitmentOccurrenceDto"
+            }
+          },
+          "totalItems": {
+            "type": "number"
+          },
+          "projection": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommitmentProjectionDto"
+            }
+          },
+          "overdueCount": {
+            "type": "number"
+          },
+          "overdueIncome": {
+            "type": "number"
+          },
+          "overdueExpense": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "today",
+          "month",
+          "through",
+          "schedules",
+          "items",
+          "totalItems",
+          "projection",
+          "overdueCount",
+          "overdueIncome",
+          "overdueExpense"
+        ]
+      },
+      "SaveCommitmentDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": ["income", "expense"]
+          },
+          "frequency": {
+            "type": "string",
+            "enum": ["once", "monthly"]
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "accountId",
+          "description",
+          "amount",
+          "transactionType",
+          "frequency",
+          "startDate"
+        ]
+      },
+      "CommitmentCandidateDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "transactionDate": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "transactionType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "id",
+          "accountId",
+          "transactionDate",
+          "description",
+          "amount",
+          "transactionType"
+        ]
+      },
+      "SettleCommitmentDto": {
+        "type": "object",
+        "properties": {
+          "transactionVersion": {
+            "type": "number"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["link", "create", "skip", "reopen"]
+          },
+          "transactionId": {
+            "type": "string"
+          },
+          "transactionDate": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": ["action"]
+      },
+      "CommitmentResolutionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transactionId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "date", "status"]
       },
       "PreviousImportResourceDto": {
         "type": "object",
