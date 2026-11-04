@@ -29,17 +29,87 @@ export class LedgerRepository {
   async commitmentEntries(ids: string[]) {
     if (!ids.length) return [];
     const rows = await this.db.query(
-      `SELECT * FROM wallet.transactions WHERE user_id=$1 AND id=ANY($2::uuid[]) AND reversed_at IS NULL AND refund_of_id IS NULL AND balance_adjustment IS NULL AND transfer_group_id IS NULL AND transaction_type IN ('income','expense')`,
+      `SELECT * FROM wallet.transactions WHERE user_id=$1 AND id=ANY($2::uuid[]) AND reversed_at IS NULL AND refund_of_id IS NULL AND balance_adjustment IS NULL AND transfer_group_id IS NULL AND transaction_type IN ('income','expense') AND managed_kind IS NULL`,
       [this.db.userId, ids],
     );
     return rows.map(transactionResource);
   }
   async commitmentCandidates(accountId: string, from: string, to: string) {
     const rows = await this.db.query(
-      `SELECT * FROM wallet.transactions WHERE user_id=$1 AND account_id=$2 AND transaction_date BETWEEN $3 AND $4 AND reversed_at IS NULL AND refund_of_id IS NULL AND balance_adjustment IS NULL AND transfer_group_id IS NULL AND transaction_type IN ('income','expense') ORDER BY transaction_date DESC,id LIMIT 100`,
+      `SELECT * FROM wallet.transactions WHERE user_id=$1 AND account_id=$2 AND transaction_date BETWEEN $3 AND $4 AND reversed_at IS NULL AND refund_of_id IS NULL AND balance_adjustment IS NULL AND transfer_group_id IS NULL AND transaction_type IN ('income','expense') AND managed_kind IS NULL ORDER BY transaction_date DESC,id LIMIT 100`,
       [this.db.userId, accountId, from, to],
     );
     return rows.map(transactionResource);
+  }
+  async managedEntries(ids: string[]) {
+    if (!ids.length) return [];
+    return (
+      await this.db.query(
+        `SELECT t.*,coalesce((SELECT sum(abs(r.amount_minor)) FROM wallet.transactions r WHERE r.refund_of_id=t.id AND r.reversed_at IS NULL),0) AS refunded_amount FROM wallet.transactions t WHERE user_id=$1 AND id=ANY($2::uuid[]) AND reversed_at IS NULL`,
+        [this.db.userId, ids],
+      )
+    ).map((row) => ({
+      ...transactionResource(row),
+      refundedAmount: Number(row.refunded_amount ?? 0),
+    }));
+  }
+  async managedCandidates(
+    accountId: string,
+    from: string,
+    to: string,
+    direction: 'income' | 'expense',
+  ) {
+    return (
+      await this.db.query(
+        `SELECT t.*,coalesce((SELECT sum(abs(r.amount_minor)) FROM wallet.transactions r WHERE r.refund_of_id=t.id AND r.reversed_at IS NULL),0) AS refunded_amount FROM wallet.transactions t WHERE t.user_id=$1 AND t.account_id=$2 AND t.transaction_date BETWEEN $3 AND $4 AND t.reversed_at IS NULL AND t.managed_kind IS NULL AND t.refund_of_id IS NULL AND t.balance_adjustment IS NULL AND t.transfer_group_id IS NULL
+      AND ${direction === 'income' ? "t.transaction_type IN ('income','transfer') AND t.amount_minor>0" : "t.transaction_type IN ('expense','transfer') AND t.amount_minor<0 AND NOT EXISTS(SELECT 1 FROM wallet.transactions r WHERE r.refund_of_id=t.id AND r.reversed_at IS NULL)"}
+      AND NOT EXISTS(SELECT 1 FROM wallet.transaction_claims c WHERE c.user_id=t.user_id AND c.workspace_id=t.workspace_id AND c.transaction_id=t.id) ORDER BY t.transaction_date DESC,t.id LIMIT 100`,
+        [this.db.userId, accountId, from, to],
+      )
+    ).map((row) => ({
+      ...transactionResource(row),
+      refundedAmount: Number(row.refunded_amount ?? 0),
+    }));
+  }
+  async claimEntry(id: string, purpose: string, ownerKey: string) {
+    const rows = await this.db.query(
+      `INSERT INTO wallet.transaction_claims(user_id,transaction_id,purpose,owner_key) VALUES($1,$2,$3,$4) ON CONFLICT(user_id,workspace_id,transaction_id) DO UPDATE SET purpose=EXCLUDED.purpose WHERE transaction_claims.owner_key=EXCLUDED.owner_key AND transaction_claims.purpose=EXCLUDED.purpose RETURNING transaction_id`,
+      [this.db.userId, id, purpose, ownerKey],
+    );
+    if (!rows.length)
+      throw new ConflictException(
+        'Este lançamento já está vinculado a outro compromisso ou módulo.',
+      );
+  }
+  async releaseEntry(id: string, ownerKey: string) {
+    await this.db.query(
+      'DELETE FROM wallet.transaction_claims WHERE user_id=$1 AND transaction_id=$2 AND owner_key=$3',
+      [this.db.userId, id, ownerKey],
+    );
+  }
+  async convertManagedDebit(id: string, groupId: string, kind: string) {
+    await this.db.query(
+      "UPDATE wallet.transactions SET transaction_type='transfer',category_id=NULL,classification_rule_id=NULL,transfer_group_id=$3,managed_kind=$4,version=version+1,updated_at=now() WHERE user_id=$1 AND id=$2",
+      [this.db.userId, id, groupId, kind],
+    );
+  }
+  async detachManagedDebit(id: string) {
+    await this.db.query(
+      'UPDATE wallet.transactions SET transfer_group_id=NULL,managed_kind=NULL,version=version+1,updated_at=now() WHERE user_id=$1 AND id=$2',
+      [this.db.userId, id],
+    );
+  }
+  async setManagedCategory(ids: string[], categoryId: string | null, kind: string) {
+    await this.db.query(
+      'UPDATE wallet.transactions SET category_id=$3,version=version+1,updated_at=now() WHERE user_id=$1 AND (id=ANY($2::uuid[]) OR refund_of_id=ANY($2::uuid[])) AND managed_kind=$4 AND reversed_at IS NULL',
+      [this.db.userId, ids, categoryId, kind],
+    );
+  }
+  async setManagedKind(id: string, kind: string | null) {
+    await this.db.query(
+      'UPDATE wallet.transactions SET managed_kind=$3,version=version+1,updated_at=now() WHERE user_id=$1 AND id=$2',
+      [this.db.userId, id, kind],
+    );
   }
   async exportRecords() {
     const rows = await this.db.query(
@@ -144,7 +214,7 @@ export class LedgerRepository {
   }
   async insert(input: TransactionInput) {
     const rows = await this.db.query(
-      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment,refund_of_id,counterparty_id,classification_rule_id,source_kind,balance_basis_included) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
+      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment,refund_of_id,counterparty_id,classification_rule_id,source_kind,balance_basis_included,managed_kind) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
       [
         randomUUID(),
         this.db.userId,
@@ -164,6 +234,7 @@ export class LedgerRepository {
         input.classificationRuleId ?? null,
         input.sourceKind ?? 'manual',
         input.balanceBasisIncluded ?? false,
+        input.managedKind ?? null,
       ],
     );
     return transactionResource(rows[0]);
@@ -338,15 +409,22 @@ export class LedgerRepository {
     to: string,
     scope: 'all' | 'cash' | 'benefits' = 'all',
   ): Promise<PlanningActual[]> {
+    // Planning can assign prepaid benefit credits to the following month without
+    // changing bank transaction dates, account balances or cash-date reports.
+    const planningDate = `CASE WHEN a.type IN ('benefit_food','benefit_meal') AND a.benefit_credit_month='following'
+      AND t.transaction_type='income' AND t.amount_minor>0
+      THEN (date_trunc('month',t.transaction_date)+interval '1 month')::date ELSE t.transaction_date END`;
     const rows = await this.db.query(
-      `SELECT category_id,transaction_type,
-      coalesce(sum(amount_minor),0) AS total,count(*) AS count,
-      coalesce(sum(amount_minor) FILTER(WHERE amount_minor>0),0) AS inflow,
-      coalesce(-sum(amount_minor) FILTER(WHERE amount_minor<0),0) AS outflow
-      FROM wallet.transactions WHERE user_id=$1 AND reversed_at IS NULL
-      AND transaction_date >= $2 AND transaction_date < $3 AND transaction_type <> 'transfer'
-      AND ($4='all' OR account_id IN(SELECT id FROM wallet.financial_accounts WHERE CASE WHEN $4='benefits' THEN type IN ('benefit_food','benefit_meal') ELSE type NOT IN ('benefit_food','benefit_meal') END))
-      GROUP BY category_id,transaction_type`,
+      `SELECT t.category_id,t.transaction_type,
+      coalesce(sum(t.amount_minor),0) AS total,count(*) AS count,
+      coalesce(sum(t.amount_minor) FILTER(WHERE t.amount_minor>0),0) AS inflow,
+      coalesce(-sum(t.amount_minor) FILTER(WHERE t.amount_minor<0),0) AS outflow
+      FROM wallet.transactions t JOIN wallet.financial_accounts a
+        ON a.user_id=t.user_id AND a.workspace_id=t.workspace_id AND a.id=t.account_id
+      WHERE t.user_id=$1 AND t.reversed_at IS NULL AND t.transaction_type <> 'transfer'
+      AND (${planningDate}) >= $2::date AND (${planningDate}) < $3::date
+      AND ($4='all' OR CASE WHEN $4='benefits' THEN a.type IN ('benefit_food','benefit_meal') ELSE a.type NOT IN ('benefit_food','benefit_meal') END)
+      GROUP BY t.category_id,t.transaction_type`,
       [this.db.userId, from, to, scope],
     );
     return rows.map((r) => ({

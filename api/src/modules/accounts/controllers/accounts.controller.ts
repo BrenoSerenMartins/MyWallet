@@ -1,3 +1,4 @@
+import { BenefitMonthDto } from '../dto/benefit-month.dto.js';
 import { ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
 import { AccountResourceDto } from '../../../core/integration/index.js';
 import {
@@ -34,7 +35,9 @@ export class AccountsController {
   @Get() @ApiOkResponse({ type: [AccountResourceDto] }) list(@Req() request: AuthenticatedRequest) {
     return this.db.forUser(request.identity.id, async () => {
       await this.basis.upgradeLegacyReferences();
-      return this.accounts.list();
+      return (await this.accounts.list()).filter(
+        (a) => !['credit_card', 'investment'].includes(a.type),
+      );
     });
   }
   @Get(':id') @ApiOkResponse({ type: AccountResourceDto }) find(
@@ -49,6 +52,20 @@ export class AccountsController {
   async create(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
     const dto = await validateInput(CreateAccountDto, body);
     return this.db.forUser(r.identity.id, () => this.accounts.create(dto));
+  }
+  @Patch(':id/benefit-planning-month')
+  @ApiBody({ type: BenefitMonthDto })
+  @ApiOkResponse({ type: AccountResourceDto })
+  async benefitMonth(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Headers('if-match') version: string,
+    @Body() body: unknown,
+  ) {
+    const dto = await validateInput(BenefitMonthDto, body);
+    return this.db.forUser(r.identity.id, () =>
+      this.accounts.setBenefitMonth(requireUuid(id), dto.benefitCreditMonth, version),
+    );
   }
   @Patch(':id')
   @ApiOkResponse({ type: AccountResourceDto })

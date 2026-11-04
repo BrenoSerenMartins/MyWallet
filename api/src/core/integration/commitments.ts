@@ -36,6 +36,12 @@ export interface CommitmentSnapshot {
 }
 export const COMMITMENT_LEDGER = Symbol('COMMITMENT_LEDGER');
 export interface CommitmentLedger {
+  claimEntry(
+    id: string,
+    purpose: 'commitment' | 'card' | 'investment',
+    ownerKey: string,
+  ): Promise<void>;
+  releaseEntry(id: string, ownerKey: string): Promise<void>;
   commitmentEntries(ids: string[]): Promise<CommitmentEntry[]>;
   commitmentCandidates(accountId: string, from: string, to: string): Promise<CommitmentEntry[]>;
 }

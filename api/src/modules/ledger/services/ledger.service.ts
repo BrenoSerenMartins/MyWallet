@@ -6,6 +6,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  type ManagedKind,
   ACCOUNT_BALANCE_BASIS,
   type AccountBalanceBasis,
   COUNTERPARTY_RULES,
@@ -32,6 +33,171 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
     @Inject(ACCOUNT_BALANCE_BASIS) private readonly balanceBasis: AccountBalanceBasis,
   ) {}
+  async setManagedCategory(ids: string[], categoryId: string | null, kind: ManagedKind) {
+    for (const entry of await this.managedEntries(ids)) {
+      await this.accounts.find(entry.accountId, true);
+      if (entry.managedKind !== kind) throw new ConflictException('Movimento de outro módulo.');
+      if (categoryId) await this.categories.validate(categoryId, entry.transactionType);
+    }
+    await this.repository.setManagedCategory(ids, categoryId, kind);
+  }
+  managedEntries(ids: string[]) {
+    return this.repository.managedEntries(ids);
+  }
+  managedCandidates(accountId: string, from: string, to: string, direction: 'income' | 'expense') {
+    return this.repository.managedCandidates(accountId, from, to, direction);
+  }
+  claimEntry(id: string, purpose: 'commitment' | ManagedKind, ownerKey: string) {
+    return this.repository.claimEntry(id, purpose, ownerKey);
+  }
+  releaseEntry(id: string, ownerKey: string) {
+    return this.repository.releaseEntry(id, ownerKey);
+  }
+  postManaged(input: TransactionInput, kind: ManagedKind) {
+    return this.create({ ...input, managedKind: kind }, true);
+  }
+  reverseManaged(id: string, version: number, kind: ManagedKind) {
+    return this.reverse(id, String(version), kind);
+  }
+  async transferManaged(input: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    date: string;
+    description: string;
+    kind: ManagedKind;
+    existingDebitId?: string;
+    existingVersion?: number;
+    existingCreditId?: string;
+    existingCreditVersion?: number;
+    ownerKey: string;
+  }) {
+    if (input.fromAccountId === input.toAccountId || input.amount <= 0)
+      throw new UnprocessableEntityException('Escolha contas diferentes e um valor positivo.');
+    exactAmount(input.amount);
+    dateOnly(input.date);
+    for (const id of [input.fromAccountId, input.toAccountId].sort())
+      await this.accounts.find(id, true);
+    const from = await this.accounts.find(input.fromAccountId);
+    const to = await this.accounts.find(input.toAccountId);
+    const ordinary = (type: string) =>
+      !['benefit_food', 'benefit_meal', 'credit_card', 'investment'].includes(type);
+    if (
+      input.kind === 'card'
+        ? !ordinary(from.type) || to.type !== 'credit_card'
+        : !(
+            (ordinary(from.type) && to.type === 'investment') ||
+            (from.type === 'investment' && ordinary(to.type))
+          )
+    )
+      throw new UnprocessableEntityException('Contas incompatíveis com esta movimentação.');
+    const group = await this.repository.createTransferGroup();
+    const common = {
+      transactionDate: input.date,
+      description: input.description,
+      transactionType: 'transfer' as const,
+      transferGroupId: group,
+      managedKind: input.kind,
+    };
+    const debitInput = { ...common, accountId: from.id, amount: -input.amount };
+    const creditInput = { ...common, accountId: to.id, amount: input.amount };
+    await this.validate(debitInput);
+    await this.validate(creditInput);
+    let debitId = input.existingDebitId;
+    if (debitId) {
+      const current = await this.find(debitId, true);
+      requireVersion(current.version, input.existingVersion);
+      if (
+        current.accountId !== from.id ||
+        current.amount !== -input.amount ||
+        current.transactionDate !== input.date ||
+        !['expense', 'transfer'].includes(current.transactionType) ||
+        current.refundOfId ||
+        current.balanceAdjustment ||
+        current.transferGroupId ||
+        current.managedKind ||
+        (await this.repository.refundedAmount(current.id)) > 0
+      )
+        throw new ConflictException('Escolha uma saída livre da mesma conta, data e valor.');
+      await this.claimEntry(debitId, input.kind, input.ownerKey);
+      await this.repository.convertManagedDebit(debitId, group, input.kind);
+    } else debitId = (await this.repository.insert(debitInput)).id;
+    let credit = input.existingCreditId;
+    if (credit) {
+      if (input.existingDebitId)
+        throw new ConflictException('Vincule somente uma ponta existente.');
+      const current = await this.find(credit, true);
+      requireVersion(current.version, input.existingCreditVersion);
+      if (
+        current.accountId !== to.id ||
+        current.amount !== input.amount ||
+        current.transactionDate !== input.date ||
+        !['income', 'transfer'].includes(current.transactionType) ||
+        current.refundOfId ||
+        current.balanceAdjustment ||
+        current.transferGroupId ||
+        current.managedKind ||
+        (await this.repository.refundedAmount(current.id)) > 0
+      )
+        throw new ConflictException('Escolha uma entrada livre da mesma conta, data e valor.');
+      await this.claimEntry(credit, input.kind, input.ownerKey);
+      await this.repository.convertManagedDebit(credit, group, input.kind);
+    } else credit = (await this.repository.insert(creditInput)).id;
+    for (const id of [from.id, to.id].sort()) await this.balanceBasis.refresh(id);
+    return { debitId: debitId!, creditId: credit! };
+  }
+  async detachManagedTransfer(
+    debitId: string,
+    creditId: string,
+    ownerKey: string,
+    kind: ManagedKind = 'card',
+    preserve: 'debit' | 'credit' = 'debit',
+  ) {
+    const debit = await this.find(debitId);
+    const credit = await this.find(creditId);
+    for (const id of [debit.accountId, credit.accountId].sort()) await this.accounts.find(id, true);
+    if (
+      debit.managedKind !== kind ||
+      credit.managedKind !== kind ||
+      !debit.transferGroupId ||
+      debit.transferGroupId !== credit.transferGroupId ||
+      debit.amount + credit.amount !== 0
+    )
+      throw new ConflictException('O pagamento mudou. Revise antes de desvincular.');
+    const kept = preserve === 'debit' ? debit : credit;
+    const removed = preserve === 'debit' ? credit : debit;
+    await this.repository.detachManagedDebit(kept.id);
+    await this.repository.reverse(removed.id);
+    await this.releaseEntry(kept.id, ownerKey);
+    await this.balanceBasis.refresh(removed.accountId);
+  }
+  async tagManagedIncome(id: string, version: number, ownerKey: string) {
+    const initial = await this.find(id);
+    await this.accounts.find(initial.accountId, true);
+    const entry = await this.find(id, true);
+    requireVersion(entry.version, version);
+    if (
+      entry.managedKind ||
+      entry.transactionType !== 'income' ||
+      entry.amount <= 0 ||
+      entry.refundOfId ||
+      entry.transferGroupId ||
+      entry.balanceAdjustment
+    )
+      throw new ConflictException('Escolha um recebimento livre de outros vínculos.');
+    await this.claimEntry(id, 'investment', ownerKey);
+    await this.repository.setManagedKind(id, 'investment');
+  }
+  async untagManagedIncome(id: string, ownerKey: string) {
+    const entry = (await this.managedEntries([id]))[0];
+    if (entry) {
+      await this.accounts.find(entry.accountId, true);
+      if (entry.managedKind !== 'investment')
+        throw new ConflictException('O recebimento foi alterado.');
+      await this.repository.setManagedKind(id, null);
+    }
+    await this.releaseEntry(id, ownerKey);
+  }
   commitmentEntries(ids: string[]) {
     return this.repository.commitmentEntries(ids);
   }
@@ -195,6 +361,13 @@ export class LedgerService implements LedgerWrites, LedgerReads {
   }
   async validate(input: TransactionInput) {
     const account = await this.accounts.find(input.accountId, true);
+    if (
+      ['credit_card', 'investment'].includes(account.type) &&
+      input.managedKind !== (account.type === 'credit_card' ? 'card' : 'investment')
+    )
+      throw new ConflictException(
+        'Use o módulo de cartões ou investimentos para movimentar esta posição.',
+      );
     dateOnly(input.transactionDate);
     exactAmount(input.amount);
     if (account.archived)
@@ -214,6 +387,8 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     const entry = await this.find(transactionId);
     await this.accounts.find(entry.accountId, true);
     const current = await this.find(transactionId, true);
+    if (current.managedKind)
+      throw new ConflictException('Use o módulo responsável para registrar o estorno.');
     if (current.refundOfId === refundOfId) return;
     if (
       current.refundOfId ||
@@ -274,12 +449,16 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     input: import('../dto/balance-adjustment.dto.js').BalanceAdjustmentDto,
     key: string,
   ) {
+    if (['credit_card', 'investment'].includes((await this.accounts.find(accountId)).type))
+      throw new ConflictException('Ajuste esta posição pelo seu módulo.');
     return this.receipts.execute('balance-adjustment', key, { accountId, ...input }, () =>
       this.balanceBasis.correct(accountId, input),
     );
   }
   async update(id: string, input: TransactionInput, version: string) {
     const original = await this.find(id);
+    if (original.managedKind)
+      throw new ConflictException('Edite este registro pelo módulo de cartões ou investimentos.');
     if (original.refundOfId || (await this.repository.refundedAmount(id)) > 0)
       throw new ConflictException(
         'Operações com devoluções não são editadas. Desfaça as devoluções antes de corrigir o histórico.',
@@ -335,8 +514,10 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     await this.balanceBasis.refresh(input.accountId);
     return input.rememberCounterparty ? this.find(updated.id) : updated;
   }
-  async reverse(id: string, version: string) {
+  async reverse(id: string, version: string, kind?: ManagedKind) {
     const current = await this.find(id);
+    if (current.managedKind && current.managedKind !== kind)
+      throw new ConflictException('Desfaça este registro pelo módulo de cartões ou investimentos.');
     const accountIds = current.transferGroupId
       ? await this.repository.transferAccounts(current.transferGroupId)
       : [current.accountId];

@@ -1,6 +1,7 @@
 import { isoDate } from '../../../core/rest/index.js';
 export function transactionResource(row: Record<string, any>) {
   return {
+    managedKind: row.managed_kind ?? null,
     counterpartyId: row.counterparty_id ?? null,
     classificationRuleId: row.classification_rule_id ?? null,
     sourceKind: row.source_kind ?? 'manual',

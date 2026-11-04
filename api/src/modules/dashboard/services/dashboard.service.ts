@@ -27,7 +27,9 @@ export class DashboardService {
   }
   async summary(from: string, to: string) {
     await this.balanceBasis?.upgradeLegacyReferences();
-    const accounts = await this.accounts.list();
+    const accounts = (await this.accounts.list()).filter(
+      (a) => !['credit_card', 'investment'].includes(a.type),
+    );
     const summary = await this.ledger.summary(from, to);
     return {
       ...summary,

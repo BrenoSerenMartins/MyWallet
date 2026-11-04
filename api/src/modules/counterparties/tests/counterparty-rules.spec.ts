@@ -64,7 +64,7 @@ const backups = new DataExportService(
   ledger,
   receipts,
   new RestoreRepository(db.service),
-  new PlanningService(new PlanningRepository(db.service), categories, ledger),
+  new PlanningService(new PlanningRepository(db.service), categories, ledger, accounts),
   counterparties,
   balanceBasis,
 );
@@ -436,7 +436,7 @@ it('learns an EDI store ID from a proved statement match so generic future EDI r
 
 it('backs up and restores agents, aliases, rules and transaction provenance without relearning', async () => {
   const backup = await run(() => backups.backup());
-  expect(backup.version).toBe(8);
+  expect(backup.version).toBe(10);
   expect(backup.counterparties!.rules.length).toBeGreaterThan(0);
   const bad = structuredClone(backup);
   bad.counterparties!.rules[0].accountId = '00000000-0000-4000-8000-000000000001';

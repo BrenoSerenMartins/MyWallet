@@ -36,6 +36,358 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/cards': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['CardsController_summary'];
+    put?: never;
+    post: operations['CardsController_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['CardsController_update'];
+    trace?: never;
+  };
+  '/v1/cards/{id}/purchases': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_purchase'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}/opening': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_opening'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}/candidates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['CardsController_candidates'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}/bills/{month}/payments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_pay'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}/payments/{paymentId}/reversal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_undoPayment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}/purchases/{purchaseId}/reversal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_cancelPurchase'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}/purchases/{purchaseId}/category': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['CardsController_category'];
+    trace?: never;
+  };
+  '/v1/cards/{id}/refunds': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_refund'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}/opening/{entryId}/reversal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_cancelOpening'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}/refunds/{entryId}/reversal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_cancelRefund'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/wealth/overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['WealthController_overview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/wealth': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['WealthController_summary'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/wealth/holdings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['WealthController_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/wealth/holdings/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['WealthController_update'];
+    trace?: never;
+  };
+  '/v1/wealth/holdings/{id}/candidates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['WealthController_candidates'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/wealth/holdings/{id}/operations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['WealthController_operate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/wealth/holdings/{id}/reversal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['WealthController_undo'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/wealth/items': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['WealthController_item'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/wealth/items/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['WealthController_updateItem'];
+    trace?: never;
+  };
+  '/v1/wealth/snapshots': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['WealthController_capture'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/counterparties': {
     parameters: {
       query?: never;
@@ -178,6 +530,22 @@ export interface paths {
     options?: never;
     head?: never;
     patch: operations['AccountsController_update'];
+    trace?: never;
+  };
+  '/v1/accounts/{id}/benefit-planning-month': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['AccountsController_benefitMonth'];
     trace?: never;
   };
   '/v1/accounts/{accountId}/balance-history': {
@@ -904,6 +1272,306 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    CardEntryResourceDto: {
+      id: string;
+      cardId: string;
+      billMonth: string;
+      description: string;
+      purchaseId: string | null;
+      transactionId: string | null;
+      installmentNumber: number | null;
+      /** @enum {string} */
+      kind: 'purchase' | 'opening' | 'refund';
+      amount: number;
+      active?: boolean;
+    };
+    CardPaymentResourceDto: {
+      id: string;
+      cardId: string;
+      billMonth: string;
+      paymentDate: string;
+      debitId: string | null;
+      creditId: string | null;
+      /** @enum {string} */
+      mode: 'create' | 'link';
+      amount: number;
+      version: number;
+      voided: boolean;
+      active?: boolean;
+    };
+    CardBillResourceDto: {
+      id: string;
+      cardId: string;
+      month: string;
+      closingDate: string;
+      dueDate: string;
+      total: number;
+      paid: number;
+      creditApplied: number;
+      remaining: number;
+      /** @enum {string} */
+      state: 'open' | 'closed' | 'overdue' | 'paid';
+      entries: components['schemas']['CardEntryResourceDto'][];
+      payments: components['schemas']['CardPaymentResourceDto'][];
+    };
+    CardPurchaseResourceDto: {
+      id: string;
+      cardId: string;
+      description: string;
+      purchaseDate: string;
+      firstBillMonth: string;
+      categoryId: string | null;
+      amount: number;
+      installments: number;
+      version: number;
+      canceled: boolean;
+    };
+    CardViewDto: {
+      id: string;
+      accountId: string;
+      paymentAccountId: string;
+      name: string;
+      closingDay: number;
+      dueDay: number;
+      limit: number;
+      version: number;
+      archived: boolean;
+      balance: number;
+      debt: number;
+      credit: number;
+      availableLimit: number;
+      limitExceeded: number;
+      selectedMonth: string;
+      bills: components['schemas']['CardBillResourceDto'][];
+      purchases: components['schemas']['CardPurchaseResourceDto'][];
+    };
+    CardsSummaryDto: {
+      today: string;
+      cards: components['schemas']['CardViewDto'][];
+    };
+    SaveCardDto: {
+      name: string;
+      paymentAccountId: string;
+      closingDay: number;
+      dueDay: number;
+      limit: number;
+      archived?: boolean;
+    };
+    CreditCardDto: {
+      id: string;
+      accountId: string;
+      paymentAccountId: string;
+      name: string;
+      closingDay: number;
+      dueDay: number;
+      limit: number;
+      version: number;
+      archived: boolean;
+    };
+    CardPurchaseDto: {
+      description: string;
+      categoryId?: string | null;
+      purchaseDate: string;
+      amount: number;
+      installments: number;
+      firstBillMonth?: string;
+    };
+    CardOpeningDto: {
+      billMonth: string;
+      amount: number;
+    };
+    FinanceActionDto: {
+      id?: string;
+      status?: string;
+      mode?: string;
+    };
+    ManagedEntryDto: {
+      refundedAmount: number;
+      id: string;
+      accountId: string;
+      transactionDate: string;
+      description: string;
+      transactionType: string;
+      amount: number;
+      version: number;
+      categoryId: string | null;
+      transferGroupId: string | null;
+      refundOfId: string | null;
+      /** @enum {string|null} */
+      managedKind: 'card' | 'investment' | null;
+    };
+    CardPaymentDto: {
+      /** @enum {string} */
+      mode: 'create' | 'link';
+      accountId: string;
+      date: string;
+      amount: number;
+      transactionId?: string;
+      transactionVersion?: number;
+    };
+    CardCategoryDto: {
+      categoryId?: string | null;
+    };
+    CardRefundDto: {
+      entryId: string;
+      billMonth: string;
+      amount: number;
+    };
+    WealthTotalsDto: {
+      asOf: string;
+      assets: number;
+      liabilities: number;
+      netWorth: number;
+      cash: number;
+      reserves: number;
+      investments: number;
+      otherAssets: number;
+      cardCredit: number;
+      cardDebt: number;
+      overdrafts: number;
+      otherDebts: number;
+      benefitsExcluded: number;
+    };
+    InvestmentHoldingDto: {
+      id: string;
+      accountId: string;
+      name: string;
+      provider: string;
+      valuationDate: string;
+      openedDate: string;
+      /** @enum {string} */
+      productType: 'fixed_income' | 'fund' | 'stock' | 'etf' | 'crypto' | 'other';
+      lastEventId: string | null;
+      /** @enum {string} */
+      valuationMethod: 'manual' | 'flow_estimate';
+      capital: number;
+      marketValue: number;
+      version: number;
+      archived: boolean;
+    };
+    InvestmentEventDto: {
+      effectiveAmount?: number;
+      id: string;
+      holdingId: string;
+      eventDate: string;
+      createdAt: string;
+      /** @enum {string} */
+      kind: 'contribution' | 'redemption' | 'income' | 'valuation' | 'capital' | 'edit' | 'undo';
+      amount: number;
+      capitalRemoved: number;
+      beforeState: components['schemas']['InvestmentHoldingDto'];
+      details: {
+        [key: string]: unknown;
+      };
+      debitId: string | null;
+      creditId: string | null;
+      resultId: string | null;
+      linkedId: string | null;
+      undoOfId: string | null;
+      undone: boolean;
+    };
+    InvestmentViewDto: {
+      id: string;
+      accountId: string;
+      name: string;
+      provider: string;
+      valuationDate: string;
+      openedDate: string;
+      /** @enum {string} */
+      productType: 'fixed_income' | 'fund' | 'stock' | 'etf' | 'crypto' | 'other';
+      lastEventId: string | null;
+      /** @enum {string} */
+      valuationMethod: 'manual' | 'flow_estimate';
+      capital: number;
+      marketValue: number;
+      version: number;
+      archived: boolean;
+      movementFromDate: string;
+      unrealized: number;
+      realized: number;
+      totalResult: number;
+      stale: boolean;
+      events: components['schemas']['InvestmentEventDto'][];
+    };
+    WealthItemDto: {
+      id: string;
+      name: string;
+      valuationDate: string;
+      notes: string;
+      /** @enum {string} */
+      kind: 'asset' | 'debt';
+      value: number;
+      version: number;
+      archived: boolean;
+    };
+    WealthHistoryDto: {
+      id: string;
+      createdAt: string;
+      kind: string;
+      data: components['schemas']['WealthTotalsDto'];
+    };
+    WealthSummaryDto: {
+      asOf: string;
+      assets: number;
+      liabilities: number;
+      netWorth: number;
+      cash: number;
+      reserves: number;
+      investments: number;
+      otherAssets: number;
+      cardCredit: number;
+      cardDebt: number;
+      overdrafts: number;
+      otherDebts: number;
+      benefitsExcluded: number;
+      holdings: components['schemas']['InvestmentViewDto'][];
+      items: components['schemas']['WealthItemDto'][];
+      history: components['schemas']['WealthHistoryDto'][];
+    };
+    CreateHoldingDto: {
+      name: string;
+      provider: string;
+      /** @enum {string} */
+      productType: 'fixed_income' | 'fund' | 'stock' | 'etf' | 'crypto' | 'other';
+      capital: number;
+      marketValue: number;
+      valuationDate: string;
+    };
+    UpdateHoldingDto: {
+      name: string;
+      provider: string;
+      /** @enum {string} */
+      productType: 'fixed_income' | 'fund' | 'stock' | 'etf' | 'crypto' | 'other';
+      archived: boolean;
+    };
+    InvestmentOperationDto: {
+      includedInPosition?: boolean;
+      /** @enum {string} */
+      kind: 'contribution' | 'redemption' | 'income' | 'valuation' | 'capital';
+      date: string;
+      amount?: number;
+      capitalRemoved?: number;
+      marketValue?: number;
+      capital?: number;
+      accountId?: string;
+      transactionId?: string;
+      transactionVersion?: number;
+      categoryId?: string | null;
+      reason?: string;
+    };
+    InvestmentUndoDto: {
+      holding: components['schemas']['InvestmentHoldingDto'];
+      preservedBankMovement: boolean;
+    };
+    SaveWealthItemDto: {
+      name: string;
+      /** @enum {string} */
+      kind: 'asset' | 'debt';
+      value: number;
+      valuationDate: string;
+      notes: string;
+      archived?: boolean;
+    };
     IdentifierResourceDto: {
       /** @enum {string} */
       identifierKind?: 'description' | 'store_id';
@@ -988,6 +1656,8 @@ export interface components {
       reviewReason?: 'same_day' | 'statement_conflict';
     };
     AccountResourceDto: {
+      /** @enum {string} */
+      benefitCreditMonth?: 'received' | 'following';
       balanceBasis?: components['schemas']['BalanceBasisDto'];
       canEditOpeningPosition: boolean;
       id: string;
@@ -1002,6 +1672,8 @@ export interface components {
       archived: boolean;
     };
     CreateAccountDto: {
+      /** @enum {string} */
+      benefitCreditMonth?: 'received' | 'following';
       name: string;
       /** @enum {string} */
       institution: 'mercado_pago' | 'alelo';
@@ -1012,7 +1684,13 @@ export interface components {
       /** @deprecated */
       openingDate?: string;
     };
+    BenefitMonthDto: {
+      /** @enum {string} */
+      benefitCreditMonth: 'received' | 'following';
+    };
     UpdateAccountDto: {
+      /** @enum {string} */
+      benefitCreditMonth?: 'received' | 'following';
       name: string;
       institution: string;
       /** @enum {string} */
@@ -1084,6 +1762,8 @@ export interface components {
       reason: string;
     };
     TransactionResourceDto: {
+      /** @enum {string|null} */
+      managedKind?: 'card' | 'investment' | null;
       counterpartyId?: string | null;
       classificationRuleId?: string | null;
       sourceKind?: string;
@@ -1139,6 +1819,13 @@ export interface components {
       transactionDate: string;
       description: string;
     };
+    PlanningBenefitAccountDto: {
+      version: number;
+      id: string;
+      name: string;
+      /** @enum {string} */
+      benefitCreditMonth: 'received' | 'following';
+    };
     PlanningLineResourceDto: {
       groupId: string | null;
       groupName: string | null;
@@ -1170,6 +1857,7 @@ export interface components {
       unclassifiedOutflow: number;
     };
     MonthlyPlanResourceDto: {
+      benefitAccounts?: components['schemas']['PlanningBenefitAccountDto'][];
       month: string;
       version: number;
       contribution: number | null;
@@ -1190,6 +1878,14 @@ export interface components {
     CopyMonthlyPlanDto: {
       version: number;
       sourceVersion: number;
+    };
+    CardForecastBillDto: {
+      cardId: string;
+      billMonth: string;
+      accountId: string;
+      description: string;
+      dueDate: string;
+      amount: number;
     };
     CommitmentScheduleDto: {
       id: string;
@@ -1233,6 +1929,7 @@ export interface components {
       overdue: number;
     };
     CommitmentsSummaryDto: {
+      cardBills?: components['schemas']['CardForecastBillDto'][];
       today: string;
       month: string;
       through: string;
@@ -1526,6 +2223,491 @@ export interface operations {
       };
     };
   };
+  CardsController_summary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CardsSummaryDto'];
+        };
+      };
+    };
+  };
+  CardsController_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveCardDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditCardDto'];
+        };
+      };
+    };
+  };
+  CardsController_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveCardDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditCardDto'];
+        };
+      };
+    };
+  };
+  CardsController_purchase: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CardPurchaseDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CardPurchaseResourceDto'];
+        };
+      };
+    };
+  };
+  CardsController_opening: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CardOpeningDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceActionDto'];
+        };
+      };
+    };
+  };
+  CardsController_candidates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManagedEntryDto'][];
+        };
+      };
+    };
+  };
+  CardsController_pay: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CardPaymentDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CardPaymentResourceDto'];
+        };
+      };
+    };
+  };
+  CardsController_undoPayment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceActionDto'];
+        };
+      };
+    };
+  };
+  CardsController_cancelPurchase: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceActionDto'];
+        };
+      };
+    };
+  };
+  CardsController_category: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CardCategoryDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceActionDto'];
+        };
+      };
+    };
+  };
+  CardsController_refund: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CardRefundDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceActionDto'];
+        };
+      };
+    };
+  };
+  CardsController_cancelOpening: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceActionDto'];
+        };
+      };
+    };
+  };
+  CardsController_cancelRefund: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceActionDto'];
+        };
+      };
+    };
+  };
+  WealthController_overview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WealthTotalsDto'];
+        };
+      };
+    };
+  };
+  WealthController_summary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WealthSummaryDto'];
+        };
+      };
+    };
+  };
+  WealthController_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateHoldingDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvestmentHoldingDto'];
+        };
+      };
+    };
+  };
+  WealthController_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateHoldingDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvestmentHoldingDto'];
+        };
+      };
+    };
+  };
+  WealthController_candidates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ManagedEntryDto'][];
+        };
+      };
+    };
+  };
+  WealthController_operate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['InvestmentOperationDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvestmentHoldingDto'];
+        };
+      };
+    };
+  };
+  WealthController_undo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvestmentUndoDto'];
+        };
+      };
+    };
+  };
+  WealthController_item: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveWealthItemDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WealthItemDto'];
+        };
+      };
+    };
+  };
+  WealthController_updateItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveWealthItemDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WealthItemDto'];
+        };
+      };
+    };
+  };
+  WealthController_capture: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WealthHistoryDto'];
+        };
+      };
+    };
+  };
   CounterpartiesController_list: {
     parameters: {
       query?: never;
@@ -1761,6 +2943,29 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': components['schemas']['UpdateAccountDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AccountResourceDto'];
+        };
+      };
+    };
+  };
+  AccountsController_benefitMonth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BenefitMonthDto'];
       };
     };
     responses: {

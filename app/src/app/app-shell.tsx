@@ -2,6 +2,8 @@ import { useWorkspace } from '../features/workspaces/workspace-provider';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
+  CreditCard,
+  ChartNoAxesCombined,
   UsersRound,
   CalendarDays,
   FolderTree,
@@ -24,6 +26,13 @@ const navigation = [
   { to: '/transactions', label: 'Movimentações', mobile: 'Movimentos', Icon: ArrowDownUp },
   { to: '/accounts', label: 'Minhas contas', mobile: 'Contas', Icon: Landmark },
   { to: '/planning', label: 'Planejamento', mobile: 'Planejar', Icon: CalendarDays },
+  { to: '/cards', label: 'Cartões e faturas', mobile: 'Cartões', Icon: CreditCard },
+  {
+    to: '/wealth',
+    label: 'Investimentos e patrimônio',
+    mobile: 'Patrimônio',
+    Icon: ChartNoAxesCombined,
+  },
   { to: '/imports', label: 'Importar extrato', mobile: 'Importar', Icon: Upload },
   { to: '/categories', label: 'Grupos e categorias', mobile: 'Categorias', Icon: FolderTree },
   {
@@ -161,8 +170,8 @@ export function AppShell() {
           }}
           aria-haspopup="dialog"
           className={
-            ['/categories', '/imports', '/counterparties', '/settings'].some((path) =>
-              location.pathname.startsWith(path),
+            ['/cards', '/wealth', '/categories', '/imports', '/counterparties', '/settings'].some(
+              (path) => location.pathname.startsWith(path),
             )
               ? 'active'
               : ''

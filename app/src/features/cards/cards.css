@@ -1,0 +1,344 @@
+.cards-page,
+.wealth-page {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+.cards-page .page-heading,
+.wealth-page .page-heading {
+  margin-bottom: 0;
+}
+.cards-page .inline-actions,
+.wealth-page .inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.finance-checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 0.6rem !important;
+  min-height: 44px;
+  width: fit-content;
+  font-size: 0.875rem;
+}
+.finance-checkbox input {
+  width: 20px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.credit-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+  gap: 1rem;
+}
+.credit-selector-item {
+  text-align: left;
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.85rem;
+  color: var(--text);
+  min-width: 0;
+}
+.credit-selector-item.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.credit-selector-item > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+.credit-selector-item > span:first-child {
+  justify-content: flex-start;
+}
+.credit-selector-item small,
+.credit-selector-item > span:nth-child(2) {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.credit-selector-item > span:nth-child(2) > strong {
+  font-size: 1.25rem;
+  color: var(--text);
+}
+.credit-limit {
+  height: 5px;
+  border-radius: 10px;
+  background: var(--surface-raised);
+  overflow: hidden;
+  display: block !important;
+}
+.credit-limit > span {
+  height: 100%;
+  background: var(--accent);
+  display: block;
+  border-radius: inherit;
+}
+.card-detail {
+  padding: 1.5rem;
+  min-width: 0;
+}
+.card-detail .section-heading {
+  gap: 1rem;
+}
+.card-detail h2 {
+  margin: 0;
+}
+.card-detail .section-heading p {
+  margin: 0.5rem 0 0;
+}
+.card-bill-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+.finance-month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 340px;
+}
+.finance-month-navigation .period-picker {
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
+}
+.finance-month-navigation input {
+  min-width: 0;
+  width: 100%;
+}
+.finance-month-navigation .icon-button {
+  flex-shrink: 0;
+}
+.card-bill-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  border-block: 1px solid var(--border);
+  padding: 1.25rem 0;
+}
+.card-bill-stats > div {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.card-bill-stats span {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.card-bill-stats strong {
+  font-size: clamp(1.1rem, 2.3vw, 1.65rem);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.card-bill-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.card-bill-status > .button {
+  margin-left: auto;
+}
+.bill-state {
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--text);
+}
+.state-overdue {
+  color: var(--negative);
+  background: color-mix(in srgb, var(--negative) 10%, transparent);
+}
+.state-paid {
+  color: var(--positive);
+  background: color-mix(in srgb, var(--positive) 10%, transparent);
+}
+.card-entry-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.card-entry-list > li {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+}
+.card-entry-list > li > div:first-child {
+  display: grid;
+  gap: 0.45rem;
+  flex: 1;
+  min-width: 150px;
+  overflow-wrap: anywhere;
+}
+.card-entry-list span {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.card-entry-list > li > strong {
+  font-variant-numeric: tabular-nums;
+}
+.finance-disclosure {
+  margin-block: 1rem;
+}
+.finance-disclosure summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+.finance-disclosure summary::after {
+  content: '+';
+  margin-left: auto;
+}
+.finance-disclosure[open] summary::after {
+  content: '−';
+}
+.finance-disclosure ul {
+  margin-top: 0.5rem;
+}
+.finance-period {
+  border: 1px solid var(--border);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+}
+.finance-period summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.finance-period .form-grid {
+  margin-top: 1rem;
+}
+.finance-review {
+  padding: 1rem;
+  background: var(--accent-soft);
+  border-radius: 12px;
+  line-height: 1.6;
+}
+.cards-page .positive,
+.wealth-page .positive {
+  color: var(--positive);
+}
+.cards-page .negative,
+.wealth-page .negative {
+  color: var(--negative);
+}
+.inactive {
+  opacity: 0.6;
+}
+.finance-fields {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.finance-overview-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.finance-overview-links a {
+  padding: 1rem 1.25rem;
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+.finance-overview-links span {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.finance-overview-links strong {
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
+.finance-overview-links small {
+  color: var(--muted);
+}
+@media (max-width: 700px) {
+  .credit-selector {
+    grid-template-columns: 1fr;
+  }
+  .card-detail {
+    padding: 1rem;
+  }
+  .card-bill-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 1rem;
+  }
+  .card-bill-toolbar {
+    align-items: stretch;
+  }
+  .card-bill-toolbar > .inline-actions {
+    width: 100%;
+  }
+  .card-bill-toolbar > .inline-actions > .button {
+    flex: 1;
+    min-height: 48px;
+  }
+  .card-bill-status > .button {
+    width: 100%;
+    min-height: 48px;
+    margin: 0;
+  }
+  .card-entry-list > li > div:first-child {
+    flex-basis: calc(100% - 100px);
+    min-width: 0;
+  }
+  .card-entry-list > li > .text-button {
+    width: 100%;
+    min-height: 44px;
+    justify-content: flex-start;
+  }
+  .credit-selector-item > span:first-child strong {
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .finance-overview-links {
+    grid-template-columns: 1fr;
+  }
+  .finance-overview-links a {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  .finance-overview-links small {
+    grid-column: 1/-1;
+  }
+  .dialog-content .view-switcher {
+    max-width: 100%;
+  }
+}
+
+.credit-selector-item small,
+.card-entry-list > li > strong {
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.credit-selector-item > span:nth-child(2) {
+  flex-wrap: wrap;
+}
+.credit-selector-item > span:nth-child(2) > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

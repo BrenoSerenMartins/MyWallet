@@ -15,6 +15,9 @@ export function DataSettings() {
     transactions: number;
     monthlyPlans?: number;
     commitments?: number;
+    cards?: number;
+    investments?: number;
+    wealthItems?: number;
   } | null>(null);
   async function download(format: 'json' | 'csv') {
     setBusy(true);
@@ -142,7 +145,10 @@ export function DataSettings() {
             Este backup contém <strong>{restore?.accounts} contas</strong> e{' '}
             <strong>{restore?.transactions} movimentos</strong> e{' '}
             <strong>{restore?.monthlyPlans ?? 0} planejamentos mensais</strong> e{' '}
-            <strong>{restore?.commitments ?? 0} compromissos</strong>. As contas serão adicionadas
+            <strong>{restore?.commitments ?? 0} compromissos</strong>,{' '}
+            <strong>{restore?.cards ?? 0} cartões</strong>,{' '}
+            <strong>{restore?.investments ?? 0} investimentos</strong> e{' '}
+            <strong>{restore?.wealthItems ?? 0} bens/dívidas</strong>. As contas serão adicionadas
             como novas. Planejamentos com meses já existentes bloqueiam a restauração para preservar
             seus dados. As categorias equivalentes serão reutilizadas.
           </p>

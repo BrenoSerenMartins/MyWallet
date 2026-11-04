@@ -56,7 +56,7 @@ const backup = new DataExportService(
   ledger,
   receipts,
   new RestoreRepository(db.service),
-  new PlanningService(new PlanningRepository(db.service), categories, ledger),
+  new PlanningService(new PlanningRepository(db.service), categories, ledger, accounts),
   parties,
   basis,
 );

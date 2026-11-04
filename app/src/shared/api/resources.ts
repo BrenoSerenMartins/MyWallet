@@ -37,3 +37,15 @@ export type CommitmentSchedule = components['schemas']['CommitmentScheduleDto'];
 export type CommitmentOccurrence = components['schemas']['CommitmentOccurrenceDto'];
 export type CommitmentsSummary = components['schemas']['CommitmentsSummaryDto'];
 export type CommitmentCandidate = components['schemas']['CommitmentCandidateDto'];
+
+export type CreditCard = components['schemas']['CardViewDto'];
+export type CardsSummary = components['schemas']['CardsSummaryDto'];
+export type CardBill = components['schemas']['CardBillResourceDto'];
+export type CardEntry = components['schemas']['CardEntryResourceDto'];
+export type CardPayment = components['schemas']['CardPaymentResourceDto'];
+export type CardPurchase = components['schemas']['CardPurchaseResourceDto'];
+export type ManagedEntry = components['schemas']['ManagedEntryDto'];
+export type WealthSummary = components['schemas']['WealthSummaryDto'];
+export type WealthTotals = components['schemas']['WealthTotalsDto'];
+export type InvestmentHolding = components['schemas']['InvestmentViewDto'];
+export type WealthItem = components['schemas']['WealthItemDto'];

@@ -54,7 +54,7 @@ const backup = new DataExportService(
   ledger,
   receipts,
   new RestoreRepository(db.service),
-  new PlanningService(new PlanningRepository(db.service), categories, ledger),
+  new PlanningService(new PlanningRepository(db.service), categories, ledger, accounts),
   parties,
   basis,
   commitments,
@@ -317,7 +317,7 @@ it('reopens invalid linked entries for review and round-trips commitment snapsho
     (await run(() => commitments.summary('2026-11'))).items.find((r) => r.scheduleId === rule.id),
   ).toMatchObject({ status: 'review' });
   const data = await run(() => backup.backup());
-  expect(data.version).toBe(8);
+  expect(data.version).toBe(10);
   expect(data.commitments!.occurrences.find((r) => r.scheduleId === rule.id)).toMatchObject({
     status: 'review',
     transactionId: null,
@@ -336,6 +336,8 @@ it('reopens invalid linked entries for review and round-trips commitment snapsho
   const old = structuredClone(data);
   old.version = 7;
   delete old.commitments;
+  delete old.cards;
+  delete old.wealth;
   await db.forUser(db.other, async () => {
     const draft = await backup.preview({ ...old, monthlyPlans: [] });
     await backup.review(draft.id);

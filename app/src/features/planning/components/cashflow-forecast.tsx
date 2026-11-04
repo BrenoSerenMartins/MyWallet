@@ -24,7 +24,7 @@ export function ForecastDetails({
         </div>
         <CalendarClock size={20} aria-hidden="true" />
       </div>
-      {!data.schedules.length ? (
+      {!data.schedules.length && !data.cardBills?.length ? (
         <p className="field-help">
           Adicione contas a pagar e receitas a receber para prever quanto pode sobrar.
         </p>
@@ -86,9 +86,9 @@ export function ForecastDetails({
             </ul>
           </details>
           <p className="field-help">
-            Saldo registrado + recebimentos pendentes − pagamentos pendentes. Compromissos
-            concluídos e dispensados ficam fora da previsão. O orçamento mensal não é somado
-            novamente.
+            Saldo registrado + recebimentos pendentes − pagamentos pendentes. Faturas pendentes
+            também entram na previsão. Compromissos concluídos e dispensados ficam fora da previsão.
+            O orçamento mensal não é somado novamente.
           </p>
         </>
       )}

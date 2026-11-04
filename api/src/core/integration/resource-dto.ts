@@ -2,6 +2,8 @@ import { BalanceBasisDto } from './balance-basis-dto.js';
 import { CounterpartyCandidateDto } from './counterparty-candidate-dto.js';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class AccountResourceDto {
+  @ApiPropertyOptional({ enum: ['received', 'following'] }) benefitCreditMonth?:
+    'received' | 'following';
   @ApiPropertyOptional({ type: () => BalanceBasisDto }) balanceBasis?: BalanceBasisDto;
   @ApiProperty({ type: Boolean }) canEditOpeningPosition!: boolean;
   @ApiProperty({ type: String }) id!: string;
@@ -36,6 +38,8 @@ export class BalanceAdjustmentResourceDto {
   @ApiProperty({ type: String }) reason!: string;
 }
 export class TransactionResourceDto {
+  @ApiPropertyOptional({ enum: ['card', 'investment'], nullable: true }) managedKind?:
+    'card' | 'investment' | null;
   @ApiPropertyOptional({ type: String, nullable: true }) counterpartyId?: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) classificationRuleId?: string | null;
   @ApiPropertyOptional({ type: String }) sourceKind?: string;

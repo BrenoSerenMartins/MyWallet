@@ -1,3 +1,6 @@
+export * from './cards.js';
+export * from './wealth.js';
+export * from './managed-finance.js';
 export * from './commitments.js';
 export * from './balance-basis.js';
 export * from './counterparty-identifier.js';
@@ -10,6 +13,7 @@ export const CATEGORY_READS = Symbol('CATEGORY_READS');
 export const LEDGER_WRITES = Symbol('LEDGER_WRITES');
 export const LEDGER_READS = Symbol('LEDGER_READS');
 export interface AccountResource {
+  benefitCreditMonth?: 'received' | 'following';
   balanceBasis?: import('./balance-basis.js').BalanceBasis;
   canEditOpeningPosition?: boolean;
   id: string;
@@ -45,6 +49,8 @@ export interface BalanceAdjustment {
   reason: string;
 }
 export interface TransactionInput {
+  /** Internal managed-module authorization, never exposed in public write DTOs. */
+  managedKind?: import('./managed-finance.js').ManagedKind | null;
   /** Internal atomic import workflow: refresh after the entire batch, never from HTTP input. */
   deferBalanceRefresh?: boolean;
   balanceBasisIncluded?: boolean;
@@ -142,6 +148,7 @@ export const ACCOUNT_BACKUP = Symbol('ACCOUNT_BACKUP');
 export const CATEGORY_BACKUP = Symbol('CATEGORY_BACKUP');
 export const LEDGER_BACKUP = Symbol('LEDGER_BACKUP');
 export interface BackupAccount {
+  benefitCreditMonth?: 'received' | 'following';
   balanceBasis?: import('./balance-basis.js').BalanceBasis;
   id: string;
   name: string;
@@ -158,6 +165,7 @@ export interface BackupCategory {
   color: string;
 }
 export interface BackupTransaction {
+  managedKind?: import('./managed-finance.js').ManagedKind | null;
   balanceBasisIncluded?: boolean;
   counterpartyId?: string | null;
   classificationRuleId?: string | null;
@@ -177,7 +185,9 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'mywallet';
-  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  cards?: import('./cards.js').CardsSnapshot;
+  wealth?: import('./wealth.js').WealthSnapshot;
   commitments?: import('./commitments.js').CommitmentSnapshot;
   balanceHistory?: import('./balance-basis.js').BalanceHistory[];
   counterparties?: import('./counterparties.js').CounterpartySnapshot;

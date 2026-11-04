@@ -1,3 +1,4 @@
+import { BenefitPlanningNotice } from './components/benefit-planning-notice';
 import { CommitmentsPage } from './commitments-page';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { useState } from 'react';
@@ -128,6 +129,7 @@ function MonthlyBudgetPage() {
               </p>
             )}
             <PlanningSummary plan={plan} />
+            <BenefitPlanningNotice plan={plan} scope={scope} />
             <p className="planning-explanation">
               Comparação dos valores salvos com receitas e despesas registradas no mês. O resultado
               não é o saldo da conta. Transferências e estornos ficam fora destes totais.

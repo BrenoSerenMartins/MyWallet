@@ -44,7 +44,7 @@ const backups = new DataExportService(
   ledger,
   new IdempotencyService(db.service),
   new RestoreRepository(db.service),
-  new PlanningService(new PlanningRepository(db.service), categories, ledger),
+  new PlanningService(new PlanningRepository(db.service), categories, ledger, accounts),
   counterparties,
   balanceBasis,
 );

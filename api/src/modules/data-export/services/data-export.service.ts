@@ -1,6 +1,11 @@
 import { GoneException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import {
+  CARDS_BACKUP,
+  WEALTH_BACKUP,
+  type ManagedBackup,
+  type CardsSnapshot,
+  type WealthSnapshot,
   COMMITMENTS_BACKUP,
   type CommitmentsBackup,
   ACCOUNT_BALANCE_BASIS,
@@ -33,11 +38,26 @@ export class DataExportService {
     @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
     @Inject(ACCOUNT_BALANCE_BASIS) private readonly balanceBasis: AccountBalanceBasis,
     @Optional() @Inject(COMMITMENTS_BACKUP) private readonly commitments?: CommitmentsBackup,
+    @Optional() @Inject(CARDS_BACKUP) private readonly cards?: ManagedBackup<CardsSnapshot>,
+    @Optional() @Inject(WEALTH_BACKUP) private readonly wealth?: ManagedBackup<WealthSnapshot>,
   ) {}
   async backup(): Promise<BackupPayload> {
     return {
       format: 'mywallet',
-      version: 8,
+      version: 10,
+      cards: (await this.cards?.exportManaged()) ?? {
+        cards: [],
+        bills: [],
+        purchases: [],
+        entries: [],
+        payments: [],
+      },
+      wealth: (await this.wealth?.exportManaged()) ?? {
+        holdings: [],
+        events: [],
+        items: [],
+        history: [],
+      },
       commitments: (await this.commitments?.exportCommitments()) ?? {
         schedules: [],
         occurrences: [],
@@ -89,6 +109,9 @@ export class DataExportService {
       transactions: payload.transactions.length,
       monthlyPlans: payload.monthlyPlans?.length ?? 0,
       commitments: payload.commitments?.schedules.length ?? 0,
+      cards: payload.cards?.cards.length ?? 0,
+      investments: payload.wealth?.holdings.length ?? 0,
+      wealthItems: payload.wealth?.items.length ?? 0,
     };
   }
   async review(id: string) {
@@ -106,6 +129,9 @@ export class DataExportService {
       transactions: b.transactions.length,
       monthlyPlans: b.monthlyPlans?.length ?? 0,
       commitments: b.commitments?.schedules.length ?? 0,
+      cards: b.cards?.cards.length ?? 0,
+      investments: b.wealth?.holdings.length ?? 0,
+      wealthItems: b.wealth?.items.length ?? 0,
     };
   }
   async confirm(id: string) {
@@ -158,6 +184,16 @@ export class DataExportService {
         categories,
         transactionIds,
       );
+      if (
+        (payload.cards?.cards.length && !this.cards) ||
+        (payload.wealth?.holdings.length && !this.wealth) ||
+        (payload.wealth?.items.length && !this.wealth)
+      )
+        throw new Error('Managed restore is unavailable.');
+      if (payload.cards)
+        await this.cards?.restoreManaged(payload.cards, accounts, categories, transactionIds);
+      if (payload.wealth)
+        await this.wealth?.restoreManaged(payload.wealth, accounts, categories, transactionIds);
       await this.repository.confirm(id);
       return {
         id,
@@ -166,6 +202,9 @@ export class DataExportService {
         transactions: payload.transactions.length,
         monthlyPlans: payload.monthlyPlans?.length ?? 0,
         commitments: payload.commitments?.schedules.length ?? 0,
+        cards: payload.cards?.cards.length ?? 0,
+        investments: payload.wealth?.holdings.length ?? 0,
+        wealthItems: payload.wealth?.items.length ?? 0,
       };
     });
   }

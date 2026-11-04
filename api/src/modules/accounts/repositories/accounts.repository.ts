@@ -14,6 +14,7 @@ export class AccountsRepository {
     );
     return rows.map((r) => ({
       balanceBasis: r.balance_basis,
+      benefitCreditMonth: r.benefit_credit_month ?? 'received',
       id: r.id,
       name: r.name,
       institution: r.institution,
@@ -36,7 +37,7 @@ export class AccountsRepository {
   async create(input: CreateAccountDto) {
     const id = randomUUID();
     await this.db.query(
-      'INSERT INTO wallet.financial_accounts(id,user_id,name,institution,type,opening_balance_minor,opening_date,balance_basis) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+      'INSERT INTO wallet.financial_accounts(id,user_id,name,institution,type,opening_balance_minor,opening_date,balance_basis,benefit_credit_month) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
       [
         id,
         this.db.userId,
@@ -46,13 +47,14 @@ export class AccountsRepository {
         input.openingBalance,
         input.openingDate,
         JSON.stringify({ kind: input.openingBalance ? 'legacy' : 'unknown' }),
+        input.benefitCreditMonth ?? 'received',
       ],
     );
     return id;
   }
   async update(id: string, input: CreateAccountDto) {
     await this.db.query(
-      `UPDATE wallet.financial_accounts SET name=$3,institution=$4,type=$5,opening_balance_minor=$6,opening_date=$7,balance_basis=CASE WHEN opening_balance_minor IS DISTINCT FROM $6 OR opening_date IS DISTINCT FROM $7 THEN jsonb_build_object('kind',CASE WHEN $6::bigint=0 THEN 'unknown' ELSE 'legacy' END) ELSE balance_basis END,version=version+1 WHERE user_id=$1 AND id=$2`,
+      `UPDATE wallet.financial_accounts SET name=$3,institution=$4,type=$5,opening_balance_minor=$6,opening_date=$7,balance_basis=CASE WHEN opening_balance_minor IS DISTINCT FROM $6 OR opening_date IS DISTINCT FROM $7 THEN jsonb_build_object('kind',CASE WHEN $6::bigint=0 THEN 'unknown' ELSE 'legacy' END) ELSE balance_basis END,benefit_credit_month=$8,version=version+1 WHERE user_id=$1 AND id=$2`,
       [
         this.db.userId,
         id,
@@ -61,7 +63,14 @@ export class AccountsRepository {
         input.type,
         input.openingBalance,
         input.openingDate,
+        input.benefitCreditMonth ?? 'received',
       ],
+    );
+  }
+  async setBenefitMonth(id: string, month: 'received' | 'following') {
+    await this.db.query(
+      'UPDATE wallet.financial_accounts SET benefit_credit_month=$3,version=version+1 WHERE user_id=$1 AND id=$2',
+      [this.db.userId, id, month],
     );
   }
   async hasTransactions(id: string) {

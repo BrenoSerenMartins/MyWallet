@@ -107,6 +107,8 @@ export class BalanceBasisService implements AccountBalanceBasis {
   }
   async refresh(accountId: string, importedDate?: string) {
     const s = await this.state(accountId);
+    // Managed book balances follow ledger movements; only their owning module corrects the base.
+    if (['credit_card', 'investment'].includes(s.institution)) return;
     const b = s.basis;
     if (
       !b.referenceDate ||
@@ -296,6 +298,8 @@ export class BalanceBasisService implements AccountBalanceBasis {
   }
   async undo(accountId: string, id: string, version: number) {
     const s = await this.state(accountId);
+    if (['credit_card', 'investment'].includes(s.institution))
+      throw new ConflictException('Use o módulo responsável para corrigir esta posição.');
     const history = await this.repo.history(accountId, true);
     const previousUndo = history.find((event) => event.undoOfId === id);
     if (previousUndo) return previousUndo;

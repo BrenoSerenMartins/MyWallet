@@ -1,6 +1,10 @@
 import { IsIn, IsInt, IsISO8601, IsOptional, IsString, Length, Max, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class UpdateAccountDto {
+  @ApiPropertyOptional({ enum: ['received', 'following'] })
+  @IsOptional()
+  @IsIn(['received', 'following'])
+  benefitCreditMonth?: 'received' | 'following';
   @ApiProperty({ type: String }) @IsString() @Length(1, 100) name!: string;
   @ApiProperty({ type: String }) @IsString() @Length(1, 80) institution!: string;
   @ApiProperty({ enum: ['checking', 'savings', 'cash', 'reserve', 'benefit_food', 'benefit_meal'] })

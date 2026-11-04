@@ -70,6 +70,8 @@ async function signedIn(page: Page, rememberSpace = true) {
       data = commitmentsFixture(
         new URL(route.request().url()).searchParams.get('month') ?? '2026-11',
       );
+    else if (path === '/v1/cards') data = { today: '2026-11-01', cards: [] };
+    else if (path === '/v1/wealth' || path === '/v1/wealth/overview') data = wealthFixture(false);
     else if (path === '/v1/categories') data = [];
     else if (path === '/v1/transactions') data = { items: [transaction], nextCursor: null };
     else if (path === '/v1/dashboard/history')
@@ -2958,3 +2960,488 @@ test('registers the actual payment amount through the commitment workflow', asyn
   expect(body).toEqual({ action: 'create', transactionDate: '2026-10-30', amount: 9500 });
   await expect(page.locator('.forecast-result')).toContainText('R$ 5,00');
 });
+
+const financeCardId = '55555555-5555-4555-8555-555555555551';
+const financeHoldingId = '77777777-7777-4777-8777-777777777771';
+function cardsFixture() {
+  return {
+    today: '2026-11-01',
+    cards: [
+      {
+        id: financeCardId,
+        accountId: '66666666-6666-4666-8666-666666666661',
+        paymentAccountId: account.id,
+        name: 'Cartão pessoal',
+        closingDay: 10,
+        dueDay: 20,
+        limit: 30000,
+        archived: false,
+        version: 1,
+        balance: -12000,
+        debt: 12000,
+        credit: 0,
+        availableLimit: 18000,
+        limitExceeded: 0,
+        selectedMonth: '2026-11',
+        purchases: [
+          {
+            id: '55555555-5555-4555-8555-555555555552',
+            cardId: financeCardId,
+            categoryId: null,
+            description: 'Compra de mercado',
+            purchaseDate: '2026-10-31',
+            amount: 12000,
+            installments: 1,
+            firstBillMonth: '2026-11',
+            canceled: false,
+            version: 1,
+          },
+        ],
+        bills: [
+          {
+            id: '55555555-5555-4555-8555-555555555553',
+            cardId: financeCardId,
+            month: '2026-11',
+            closingDate: '2026-11-10',
+            dueDate: '2026-11-20',
+            total: 12000,
+            paid: 0,
+            creditApplied: 0,
+            remaining: 12000,
+            state: 'open',
+            entries: [
+              {
+                id: '55555555-5555-4555-8555-555555555554',
+                cardId: financeCardId,
+                purchaseId: '55555555-5555-4555-8555-555555555552',
+                transactionId: transaction.id,
+                billMonth: '2026-11',
+                kind: 'purchase',
+                installmentNumber: 1,
+                amount: -12000,
+                description: 'Compra de mercado · 1/1',
+                active: true,
+              },
+            ],
+            payments: [],
+          },
+        ],
+      },
+    ],
+  };
+}
+function wealthFixture(populated = true) {
+  const totals = {
+    asOf: '2026-11-01',
+    assets: populated ? 455678 : 345678,
+    liabilities: populated ? 12000 : 0,
+    netWorth: populated ? 443678 : 345678,
+    cash: 345678,
+    reserves: 0,
+    investments: populated ? 110000 : 0,
+    otherAssets: 0,
+    cardCredit: 0,
+    cardDebt: populated ? 12000 : 0,
+    overdrafts: 0,
+    otherDebts: 0,
+    benefitsExcluded: 0,
+  };
+  return {
+    ...totals,
+    holdings: populated
+      ? [
+          {
+            id: financeHoldingId,
+            accountId: '88888888-8888-4888-8888-888888888881',
+            name: 'CDB Reserva',
+            provider: 'Custódia manual',
+            productType: 'fixed_income',
+            capital: 100000,
+            marketValue: 110000,
+            valuationDate: '2026-11-01',
+            valuationMethod: 'manual',
+            openedDate: '2026-11-01',
+            lastEventId: null,
+            archived: false,
+            version: 1,
+            unrealized: 10000,
+            realized: 0,
+            totalResult: 10000,
+            stale: false,
+            events: [],
+          },
+        ]
+      : [],
+    items: [],
+    history: populated
+      ? [
+          {
+            id: '99999999-9999-4999-8999-999999999991',
+            kind: 'snapshot',
+            createdAt: '2026-11-01T12:00:00Z',
+            data: totals,
+          },
+        ]
+      : [],
+  };
+}
+async function financeFixtures(page: Page) {
+  const cards = cardsFixture();
+  const wealth = wealthFixture();
+  await page.route('**/v1/cards?*', (r) => r.fulfill({ json: cards }));
+  await page.route('**/v1/wealth', (r) => r.fulfill({ json: wealth }));
+  await page.route('**/v1/wealth/overview', (r) => r.fulfill({ json: wealth }));
+  return { cards, wealth };
+}
+for (const width of [320, 390, 768, 1440])
+  test(`cards and wealth responsive workflows at ${width}px`, async ({ page }) => {
+    await signedIn(page);
+    await financeFixtures(page);
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/cards?month=2026-11');
+    await expect(
+      page.getByRole('heading', { name: 'Cartões e faturas', exact: true }),
+    ).toBeVisible();
+    await expect(page.locator('.credit-selector-item')).toContainText('R$ 120,00');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.getByRole('button', { name: 'Registrar compra', exact: true }).click();
+    await expect(
+      page.getByRole('dialog').getByLabel('Valor total da compra (R$)', { exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: `/tmp/mywallet-card-purchase-${width}.png`, fullPage: false });
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.getByRole('button', { name: 'Pagar ou vincular', exact: true }).click();
+    await expect(
+      page.getByRole('dialog').getByRole('group', { name: 'Modo de pagamento da fatura' }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.goto('/wealth');
+    await expect(
+      page.getByRole('heading', { name: 'Investimentos e patrimônio', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('CDB Reserva', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.getByRole('button', { name: 'Atualizar valor', exact: true }).click();
+    await expect(
+      page
+        .getByRole('dialog')
+        .getByLabel('Valor total atualizado da posição (R$)', { exact: true }),
+    ).toBeVisible();
+    await page.screenshot({ path: `/tmp/mywallet-investment-value-${width}.png`, fullPage: false });
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await chooseTheme(page, 'claro');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.getByRole('button', { name: 'Evolução', exact: true }).click();
+    await expect(page.locator('.wealth-chart')).toBeVisible();
+    await page.getByRole('button', { name: 'Ocultar valores do patrimônio', exact: true }).click();
+    await expect(page.locator('.wealth-chart')).toHaveCount(0);
+    await expect(page.locator('.wealth-net-worth strong')).toHaveText('••••••');
+  });
+test('creates a credit card and sends an exact installment purchase without debiting the bank', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const { cards } = await financeFixtures(page);
+  const writes: unknown[] = [];
+  await page.route('**/v1/cards', (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    writes.push(route.request().postDataJSON());
+    return route.fulfill({ json: cards.cards[0] });
+  });
+  await page.route('**/v1/cards/*/purchases', (route) => {
+    writes.push(route.request().postDataJSON());
+    return route.fulfill({ json: { ...cards.cards[0].purchases[0], firstBillMonth: '2026-11' } });
+  });
+  await page.goto('/cards?month=2026-11');
+  await page.getByRole('button', { name: 'Novo cartão', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nome do cartão', { exact: true }).fill('Meu cartão');
+  await dialog.getByLabel('Conta para pagar a fatura', { exact: true }).selectOption(account.id);
+  await dialog.getByLabel('Limite informado (R$)', { exact: true }).fill('2.500,00');
+  await dialog.getByRole('button', { name: 'Adicionar cartão', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(writes[0]).toMatchObject({
+    name: 'Meu cartão',
+    paymentAccountId: account.id,
+    closingDay: 10,
+    dueDay: 20,
+    limit: 250000,
+  });
+  await page.getByRole('button', { name: 'Registrar compra', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Descrição da compra', { exact: true }).fill('Compra parcelada');
+  await dialog.getByLabel('Valor total da compra (R$)', { exact: true }).fill('100,01');
+  await dialog.getByLabel('Quantidade de parcelas', { exact: true }).fill('3');
+  await dialog.getByLabel('Data da compra', { exact: true }).fill('2026-10-31');
+  await dialog.getByLabel('Primeira fatura (opcional)', { exact: true }).fill('2026-11');
+  await dialog.getByRole('button', { name: 'Registrar compra', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(writes[1]).toMatchObject({
+    amount: 10001,
+    installments: 3,
+    firstBillMonth: '2026-11',
+    purchaseDate: '2026-10-31',
+  });
+});
+test('links a card payment from the statement with an idempotent retry', async ({ page }) => {
+  await signedIn(page);
+  const { cards } = await financeFixtures(page);
+  const keys: string[] = [];
+  const writes: unknown[] = [];
+  await page.route('**/v1/cards/*/candidates?*', (r) =>
+    r.fulfill({
+      json: [
+        {
+          ...transaction,
+          amount: -12000,
+          description: 'Pagamento do cartão',
+          transactionDate: '2026-10-31',
+          managedKind: null,
+          refundOfId: null,
+        },
+      ],
+    }),
+  );
+  await page.route('**/v1/cards/*/bills/*/payments', (r) => {
+    keys.push(r.request().headers()['idempotency-key']);
+    writes.push(r.request().postDataJSON());
+    if (keys.length === 1)
+      return r.fulfill({ status: 503, json: { title: 'Tente confirmar novamente.' } });
+    cards.cards[0].bills[0].remaining = 0;
+    cards.cards[0].bills[0].paid = 12000;
+    cards.cards[0].debt = 0;
+    return r.fulfill({ json: { id: 'synthetic-payment' } });
+  });
+  await page.goto('/cards?month=2026-11');
+  await page.getByRole('button', { name: 'Pagar ou vincular', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Saída do extrato', { exact: true }).selectOption(transaction.id);
+  await dialog.getByRole('button', { name: 'Vincular pagamento', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Tente confirmar');
+  await dialog.getByRole('button', { name: 'Vincular pagamento', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(keys[0]).toBe(keys[1]);
+  expect(writes[0]).toMatchObject({
+    mode: 'link',
+    amount: 12000,
+    accountId: account.id,
+    transactionId: transaction.id,
+    transactionVersion: 1,
+    date: '2026-10-31',
+  });
+});
+test('values a holding without financial posting and records a redemption with separated capital', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const { wealth } = await financeFixtures(page);
+  const writes: Record<string, unknown>[] = [];
+  await page.route('**/v1/wealth/holdings/*/operations', (r) => {
+    const body = r.request().postDataJSON();
+    writes.push(body);
+    if (body.kind === 'valuation') wealth.holdings[0].marketValue = 120000;
+    return r.fulfill({ json: wealth.holdings[0] });
+  });
+  await page.goto('/wealth');
+  await page.getByRole('button', { name: 'Atualizar valor', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await dialog
+    .getByLabel('Valor total atualizado da posição (R$)', { exact: true })
+    .fill('1.200,00');
+  await dialog.getByRole('button', { name: 'Salvar avaliação', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(writes[0]).toMatchObject({ kind: 'valuation', marketValue: 120000 });
+  expect(writes[0].accountId).toBeUndefined();
+  await page.getByRole('button', { name: 'Ver detalhes', exact: false }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Resgate', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Conta da movimentação', { exact: true }).selectOption(account.id);
+  await dialog.getByLabel('Valor líquido recebido (R$)', { exact: true }).fill('600,00');
+  await dialog.getByRole('button', { name: 'Estimar capital proporcional', exact: true }).click();
+  await expect(
+    dialog.getByLabel('Capital que está sendo resgatado (R$)', { exact: true }),
+  ).toHaveValue('500,00');
+  await expect(dialog.locator('.finance-review')).toContainText('R$ 100,00');
+  await dialog.getByRole('button', { name: 'Registrar movimentação', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(writes[1]).toMatchObject({
+    kind: 'redemption',
+    amount: 60000,
+    capitalRemoved: 50000,
+    accountId: account.id,
+  });
+});
+test('registers an existing investment and an asset without duplicating a bank movement', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const { wealth } = await financeFixtures(page);
+  const writes: Record<string, unknown>[] = [];
+  const financial: string[] = [];
+  page.on('request', (r) => {
+    if (r.method() === 'POST' && r.url().includes('/v1/transactions')) financial.push(r.url());
+  });
+  await page.route('**/v1/wealth/holdings', (r) => {
+    writes.push(r.request().postDataJSON());
+    return r.fulfill({ json: wealth.holdings[0] });
+  });
+  await page.route('**/v1/wealth/items', (r) => {
+    writes.push(r.request().postDataJSON());
+    return r.fulfill({ json: { id: 'asset' } });
+  });
+  await page.goto('/wealth');
+  await page.getByRole('button', { name: 'Novo investimento', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nome do investimento', { exact: true }).fill('Aplicação existente');
+  await dialog.getByLabel('Capital já investido (R$)', { exact: true }).fill('1.000,00');
+  await dialog.getByLabel('Valor total atualizado (R$)', { exact: true }).fill('1.100,00');
+  await dialog.getByRole('button', { name: 'Cadastrar investimento', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(writes[0]).toMatchObject({ capital: 100000, marketValue: 110000 });
+  await page.getByRole('button', { name: 'Bens e dívidas', exact: true }).click();
+  await page.getByRole('button', { name: 'Adicionar posição', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nome do bem ou dívida', { exact: true }).fill('Moto');
+  await dialog.getByLabel('Valor atual informado (R$)', { exact: true }).fill('10.000,00');
+  await dialog.getByRole('button', { name: 'Adicionar posição', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(writes[1]).toMatchObject({ name: 'Moto', kind: 'asset', value: 1000000 });
+  expect(financial).toEqual([]);
+});
+
+test('links a historical investment movement already included in the current position', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const { wealth } = await financeFixtures(page);
+  let saved: Record<string, unknown> | undefined;
+  await page.route('**/v1/wealth/holdings/*/candidates?*', (r) =>
+    r.fulfill({
+      json: [
+        {
+          ...transaction,
+          description: 'Aporte antigo',
+          amount: -10000,
+          transactionDate: '2026-10-10',
+          managedKind: null,
+          refundedAmount: 0,
+          refundOfId: null,
+        },
+      ],
+    }),
+  );
+  await page.route('**/v1/wealth/holdings/*/operations', (r) => {
+    saved = r.request().postDataJSON();
+    return r.fulfill({ json: wealth.holdings[0] });
+  });
+  await page.goto('/wealth');
+  await page.getByRole('button', { name: 'Ver detalhes', exact: false }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Aporte', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Já está no extrato', exact: true }).click();
+  await dialog.getByLabel('Conta da movimentação', { exact: true }).selectOption(account.id);
+  await dialog.getByLabel('Movimento do extrato', { exact: true }).selectOption(transaction.id);
+  await dialog
+    .getByLabel('Este movimento já está incluído na posição cadastrada', { exact: true })
+    .check();
+  await dialog.getByRole('button', { name: 'Registrar movimentação', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(saved).toMatchObject({
+    kind: 'contribution',
+    date: '2026-10-10',
+    amount: 10000,
+    includedInPosition: true,
+    transactionId: transaction.id,
+  });
+  expect(saved?.marketValue).toBeUndefined();
+});
+test('cards and wealth support enlarged text and narrow reflow', async ({ page }) => {
+  await signedIn(page);
+  await financeFixtures(page);
+  await page.setViewportSize({ width: 320, height: 850 });
+  await page.goto('/cards?month=2026-11');
+  await page.addStyleTag({ content: 'html{font-size:200% !important}' });
+  await expect(page.getByRole('heading', { name: 'Cartões e faturas', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '/tmp/mywallet-cards-large-text.png', fullPage: true });
+  await page.goto('/wealth');
+  await page.addStyleTag({ content: 'html{font-size:200% !important}' });
+  await expect(
+    page.getByRole('heading', { name: 'Investimentos e patrimônio', exact: true }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '/tmp/mywallet-wealth-large-text.png', fullPage: true });
+});
+
+for (const width of [360, 1440])
+  test(`benefit credit planning month is configurable and recalculates without changing bank dates at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    let following = false;
+    let version = 1;
+    const aleloId = '77777777-7777-4777-8777-777777777777';
+    await page.route(`**/v1/accounts/${aleloId}/benefit-planning-month`, async (route) => {
+      expect(route.request().method()).toBe('PATCH');
+      expect(route.request().headers()['if-match']).toBe(String(version));
+      const body = route.request().postDataJSON();
+      following = body.benefitCreditMonth === 'following';
+      version++;
+      await route.fulfill({
+        json: { ...account, id: aleloId, version, benefitCreditMonth: body.benefitCreditMonth },
+      });
+    });
+    await page.route('**/v1/planning/**', async (route) => {
+      const plan = monthlyPlan('2026-11');
+      await route.fulfill({
+        json: {
+          ...plan,
+          benefitAccounts: [
+            {
+              id: aleloId,
+              name: 'Alelo VA',
+              version,
+              benefitCreditMonth: following ? 'following' : 'received',
+            },
+          ],
+          totals: {
+            ...plan.totals,
+            plannedIncome: 70000,
+            actualIncome: following ? 70000 : 0,
+            incomeDifference: following ? 0 : -70000,
+          },
+        },
+      });
+    });
+    await page.goto('/planning?month=2026-11');
+    const notice = page.getByRole('region', { name: 'Competência do VA/VR' });
+    const income = page.getByRole('article', { name: 'Receitas do mês', exact: true });
+    await expect(income.getByText('R$ 0,00', { exact: true })).toBeVisible();
+    await notice.getByRole('button', { name: 'Usar no mês seguinte' }).click();
+    await expect(
+      notice.getByText('Créditos de outubro de 2026 entram em novembro de 2026.'),
+    ).toBeVisible();
+    await expect(income.getByText('R$ 700,00', { exact: true })).toHaveCount(2);
+    await page.reload();
+    await expect(notice.getByRole('button', { name: 'Usar mês do recebimento' })).toBeVisible();
+    await notice.getByRole('button', { name: 'Usar mês do recebimento' }).click();
+    await expect(income.getByText('R$ 0,00', { exact: true })).toBeVisible();
+    expect(following).toBe(false);
+    expect(version).toBe(3);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });

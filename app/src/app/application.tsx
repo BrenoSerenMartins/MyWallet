@@ -39,6 +39,12 @@ const CounterpartiesPage = lazy(() =>
     default: module.CounterpartiesPage,
   })),
 );
+const CardsPage = lazy(() =>
+  import('../features/cards/cards-page').then((m) => ({ default: m.CardsPage })),
+);
+const WealthPage = lazy(() =>
+  import('../features/wealth/wealth-page').then((m) => ({ default: m.WealthPage })),
+);
 export function Application() {
   const { session, loading } = useAuth();
   if (loading)
@@ -68,6 +74,8 @@ export function Application() {
                     <Route path="accounts/:accountId" element={<TransactionsPage />} />
                     <Route path="transactions" element={<TransactionsPage />} />
                     <Route path="planning" element={<PlanningPage />} />
+                    <Route path="cards" element={<CardsPage />} />
+                    <Route path="wealth" element={<WealthPage />} />
                     <Route path="imports" element={<ImportsPage key="upload" />} />
                     <Route path="imports/:importId" element={<ImportsPage key="review" />} />
                     <Route path="categories" element={<CategoriesPage />} />

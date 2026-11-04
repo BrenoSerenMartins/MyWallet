@@ -3,9 +3,12 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  CARD_FORECAST,
+  type CardForecast,
   ACCOUNT_READS,
   CATEGORY_READS,
   LEDGER_WRITES,
@@ -42,6 +45,7 @@ export class CommitmentsService implements CommitmentsBackup {
     @Inject(LEDGER_WRITES) private readonly ledger: LedgerWrites,
     @Inject(COMMITMENT_LEDGER) private readonly entries: CommitmentLedger,
     @Inject(COMMAND_RECEIPTS) private readonly receipts: CommandReceipts,
+    @Optional() @Inject(CARD_FORECAST) private readonly cards?: CardForecast,
   ) {}
   private async validate(input: SaveCommitmentDto) {
     dateOnly(input.startDate);
@@ -55,6 +59,10 @@ export class CommitmentsService implements CommitmentsBackup {
         );
     }
     if (!input.description.trim()) throw new UnprocessableEntityException('Informe uma descrição.');
+    if (['credit_card', 'investment'].includes((await this.accounts.find(input.accountId)).type))
+      throw new UnprocessableEntityException(
+        'Use o módulo de cartões ou investimentos para esta posição.',
+      );
     if ((await this.accounts.find(input.accountId)).archived)
       throw new UnprocessableEntityException('Escolha uma conta ativa.');
     if (input.categoryId) await this.categories.validate(input.categoryId, input.transactionType);
@@ -162,9 +170,24 @@ export class CommitmentsService implements CommitmentsBackup {
       throw new UnprocessableEntityException('A previsão pode alcançar até 12 meses à frente.');
     const { schedules, items } = await this.occurrences(through);
     const outstanding = items.filter((r) => ['pending', 'overdue', 'review'].includes(r.status));
+    const bills = (await this.cards?.pendingBills(through)) ?? [];
+    for (const bill of bills)
+      outstanding.push({
+        scheduleId: bill.cardId,
+        accountId: bill.accountId,
+        categoryId: null,
+        description: bill.description,
+        amount: bill.amount,
+        transactionType: 'expense',
+        dueDate: bill.dueDate,
+        status: bill.dueDate < today ? 'overdue' : 'pending',
+        transactionId: null,
+        version: 0,
+        actualAmount: null,
+      });
     const accounts = await this.accounts.list();
     const projection = accounts
-      .filter((a) => !a.archived)
+      .filter((a) => !a.archived && !['credit_card', 'investment'].includes(a.type))
       .map((account) => {
         const due = outstanding.filter((r) => r.accountId === account.id);
         const income = sumAmounts(
@@ -194,6 +217,7 @@ export class CommitmentsService implements CommitmentsBackup {
         (r.dueDate < today && ['overdue', 'review'].includes(r.status)),
     );
     return {
+      cardBills: bills,
       today,
       month,
       through,
@@ -280,6 +304,8 @@ export class CommitmentsService implements CommitmentsBackup {
         const snap = record?.snapshot ?? this.snapshot(rule);
         if (input.action === 'reopen') {
           if (!record) throw new ConflictException('Este vencimento já está pendente.');
+          if (record.transactionId)
+            await this.entries.releaseEntry(record.transactionId, `${id}:${date}`);
           await this.repository.reopen(id, date);
           return { id, date, status: 'pending', transactionId: record.transactionId };
         }
@@ -334,6 +360,7 @@ export class CommitmentsService implements CommitmentsBackup {
         }
         if ((await this.repository.records()).some((r) => r.transactionId === transactionId))
           throw new ConflictException('Este lançamento já está vinculado a outro vencimento.');
+        await this.entries.claimEntry(transactionId!, 'commitment', `${id}:${date}`);
         await this.repository.record({
           scheduleId: id,
           dueDate: date,
@@ -390,7 +417,13 @@ export class CommitmentsService implements CommitmentsBackup {
       mapping.set(rule.id, id);
       if (rule.endedOn) await this.repository.end(id, rule.endedOn);
     }
-    for (const record of data.occurrences)
+    for (const record of data.occurrences) {
+      if (record.transactionId)
+        await this.entries.claimEntry(
+          transactions.get(record.transactionId)!,
+          'commitment',
+          `${mapping.get(record.scheduleId)!}:${record.dueDate}`,
+        );
       await this.repository.record({
         ...record,
         scheduleId: mapping.get(record.scheduleId)!,
@@ -403,5 +436,6 @@ export class CommitmentsService implements CommitmentsBackup {
             : null,
         },
       });
+    }
   }
 }

@@ -25,6 +25,682 @@
         "tags": ["Health"]
       }
     },
+    "/v1/cards": {
+      "get": {
+        "operationId": "CardsController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardsSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      },
+      "post": {
+        "operationId": "CardsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditCardDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}": {
+      "patch": {
+        "operationId": "CardsController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditCardDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/purchases": {
+      "post": {
+        "operationId": "CardsController_purchase",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardPurchaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardPurchaseResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/opening": {
+      "post": {
+        "operationId": "CardsController_opening",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardOpeningDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceActionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/candidates": {
+      "get": {
+        "operationId": "CardsController_candidates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManagedEntryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/bills/{month}/payments": {
+      "post": {
+        "operationId": "CardsController_pay",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardPaymentResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/payments/{paymentId}/reversal": {
+      "post": {
+        "operationId": "CardsController_undoPayment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceActionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/purchases/{purchaseId}/reversal": {
+      "post": {
+        "operationId": "CardsController_cancelPurchase",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceActionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/purchases/{purchaseId}/category": {
+      "patch": {
+        "operationId": "CardsController_category",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceActionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/refunds": {
+      "post": {
+        "operationId": "CardsController_refund",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardRefundDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceActionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/opening/{entryId}/reversal": {
+      "post": {
+        "operationId": "CardsController_cancelOpening",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceActionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/refunds/{entryId}/reversal": {
+      "post": {
+        "operationId": "CardsController_cancelRefund",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceActionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/wealth/overview": {
+      "get": {
+        "operationId": "WealthController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WealthTotalsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
+    "/v1/wealth": {
+      "get": {
+        "operationId": "WealthController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WealthSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
+    "/v1/wealth/holdings": {
+      "post": {
+        "operationId": "WealthController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHoldingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentHoldingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
+    "/v1/wealth/holdings/{id}": {
+      "patch": {
+        "operationId": "WealthController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHoldingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentHoldingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
+    "/v1/wealth/holdings/{id}/candidates": {
+      "get": {
+        "operationId": "WealthController_candidates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManagedEntryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
+    "/v1/wealth/holdings/{id}/operations": {
+      "post": {
+        "operationId": "WealthController_operate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvestmentOperationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentHoldingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
+    "/v1/wealth/holdings/{id}/reversal": {
+      "post": {
+        "operationId": "WealthController_undo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentUndoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
+    "/v1/wealth/items": {
+      "post": {
+        "operationId": "WealthController_item",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveWealthItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WealthItemDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
+    "/v1/wealth/items/{id}": {
+      "patch": {
+        "operationId": "WealthController_updateItem",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveWealthItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WealthItemDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
+    "/v1/wealth/snapshots": {
+      "post": {
+        "operationId": "WealthController_capture",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WealthHistoryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Wealth"]
+      }
+    },
     "/v1/counterparties": {
       "get": {
         "operationId": "CounterpartiesController_list",
@@ -330,6 +1006,40 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Accounts"]
+      }
+    },
+    "/v1/accounts/{id}/benefit-planning-month": {
+      "patch": {
+        "operationId": "AccountsController_benefitMonth",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenefitMonthDto"
               }
             }
           }
@@ -1846,6 +2556,1083 @@
       }
     },
     "schemas": {
+      "CardEntryResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "billMonth": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "purchaseId": {
+            "type": "string",
+            "nullable": true
+          },
+          "transactionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "installmentNumber": {
+            "type": "number",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["purchase", "opening", "refund"]
+          },
+          "amount": {
+            "type": "number"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "cardId",
+          "billMonth",
+          "description",
+          "purchaseId",
+          "transactionId",
+          "installmentNumber",
+          "kind",
+          "amount"
+        ]
+      },
+      "CardPaymentResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "billMonth": {
+            "type": "string"
+          },
+          "paymentDate": {
+            "type": "string"
+          },
+          "debitId": {
+            "type": "string",
+            "nullable": true
+          },
+          "creditId": {
+            "type": "string",
+            "nullable": true
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["create", "link"]
+          },
+          "amount": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "voided": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "cardId",
+          "billMonth",
+          "paymentDate",
+          "debitId",
+          "creditId",
+          "mode",
+          "amount",
+          "version",
+          "voided"
+        ]
+      },
+      "CardBillResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "month": {
+            "type": "string"
+          },
+          "closingDate": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          },
+          "paid": {
+            "type": "number"
+          },
+          "creditApplied": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number"
+          },
+          "state": {
+            "type": "string",
+            "enum": ["open", "closed", "overdue", "paid"]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardEntryResourceDto"
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardPaymentResourceDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "cardId",
+          "month",
+          "closingDate",
+          "dueDate",
+          "total",
+          "paid",
+          "creditApplied",
+          "remaining",
+          "state",
+          "entries",
+          "payments"
+        ]
+      },
+      "CardPurchaseResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "purchaseDate": {
+            "type": "string"
+          },
+          "firstBillMonth": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "number"
+          },
+          "installments": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "canceled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "cardId",
+          "description",
+          "purchaseDate",
+          "firstBillMonth",
+          "categoryId",
+          "amount",
+          "installments",
+          "version",
+          "canceled"
+        ]
+      },
+      "CardViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "paymentAccountId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "closingDay": {
+            "type": "number"
+          },
+          "dueDay": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "balance": {
+            "type": "number"
+          },
+          "debt": {
+            "type": "number"
+          },
+          "credit": {
+            "type": "number"
+          },
+          "availableLimit": {
+            "type": "number"
+          },
+          "limitExceeded": {
+            "type": "number"
+          },
+          "selectedMonth": {
+            "type": "string"
+          },
+          "bills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardBillResourceDto"
+            }
+          },
+          "purchases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardPurchaseResourceDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "paymentAccountId",
+          "name",
+          "closingDay",
+          "dueDay",
+          "limit",
+          "version",
+          "archived",
+          "balance",
+          "debt",
+          "credit",
+          "availableLimit",
+          "limitExceeded",
+          "selectedMonth",
+          "bills",
+          "purchases"
+        ]
+      },
+      "CardsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardViewDto"
+            }
+          }
+        },
+        "required": ["today", "cards"]
+      },
+      "SaveCardDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "paymentAccountId": {
+            "type": "string"
+          },
+          "closingDay": {
+            "type": "number"
+          },
+          "dueDay": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "paymentAccountId", "closingDay", "dueDay", "limit"]
+      },
+      "CreditCardDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "paymentAccountId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "closingDay": {
+            "type": "number"
+          },
+          "dueDay": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "paymentAccountId",
+          "name",
+          "closingDay",
+          "dueDay",
+          "limit",
+          "version",
+          "archived"
+        ]
+      },
+      "CardPurchaseDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "purchaseDate": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "installments": {
+            "type": "number"
+          },
+          "firstBillMonth": {
+            "type": "string"
+          }
+        },
+        "required": ["description", "purchaseDate", "amount", "installments"]
+      },
+      "CardOpeningDto": {
+        "type": "object",
+        "properties": {
+          "billMonth": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": ["billMonth", "amount"]
+      },
+      "FinanceActionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          }
+        }
+      },
+      "ManagedEntryDto": {
+        "type": "object",
+        "properties": {
+          "refundedAmount": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "transactionDate": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "transactionType": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferGroupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "refundOfId": {
+            "type": "string",
+            "nullable": true
+          },
+          "managedKind": {
+            "type": "string",
+            "enum": ["card", "investment"],
+            "nullable": true
+          }
+        },
+        "required": [
+          "refundedAmount",
+          "id",
+          "accountId",
+          "transactionDate",
+          "description",
+          "transactionType",
+          "amount",
+          "version",
+          "categoryId",
+          "transferGroupId",
+          "refundOfId",
+          "managedKind"
+        ]
+      },
+      "CardPaymentDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["create", "link"]
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "transactionId": {
+            "type": "string"
+          },
+          "transactionVersion": {
+            "type": "number"
+          }
+        },
+        "required": ["mode", "accountId", "date", "amount"]
+      },
+      "CardCategoryDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CardRefundDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string"
+          },
+          "billMonth": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": ["entryId", "billMonth", "amount"]
+      },
+      "WealthTotalsDto": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string"
+          },
+          "assets": {
+            "type": "number"
+          },
+          "liabilities": {
+            "type": "number"
+          },
+          "netWorth": {
+            "type": "number"
+          },
+          "cash": {
+            "type": "number"
+          },
+          "reserves": {
+            "type": "number"
+          },
+          "investments": {
+            "type": "number"
+          },
+          "otherAssets": {
+            "type": "number"
+          },
+          "cardCredit": {
+            "type": "number"
+          },
+          "cardDebt": {
+            "type": "number"
+          },
+          "overdrafts": {
+            "type": "number"
+          },
+          "otherDebts": {
+            "type": "number"
+          },
+          "benefitsExcluded": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "asOf",
+          "assets",
+          "liabilities",
+          "netWorth",
+          "cash",
+          "reserves",
+          "investments",
+          "otherAssets",
+          "cardCredit",
+          "cardDebt",
+          "overdrafts",
+          "otherDebts",
+          "benefitsExcluded"
+        ]
+      },
+      "InvestmentHoldingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "valuationDate": {
+            "type": "string"
+          },
+          "openedDate": {
+            "type": "string"
+          },
+          "productType": {
+            "type": "string",
+            "enum": ["fixed_income", "fund", "stock", "etf", "crypto", "other"]
+          },
+          "lastEventId": {
+            "type": "string",
+            "nullable": true
+          },
+          "valuationMethod": {
+            "type": "string",
+            "enum": ["manual", "flow_estimate"]
+          },
+          "capital": {
+            "type": "number"
+          },
+          "marketValue": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "name",
+          "provider",
+          "valuationDate",
+          "openedDate",
+          "productType",
+          "lastEventId",
+          "valuationMethod",
+          "capital",
+          "marketValue",
+          "version",
+          "archived"
+        ]
+      },
+      "InvestmentEventDto": {
+        "type": "object",
+        "properties": {
+          "effectiveAmount": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "holdingId": {
+            "type": "string"
+          },
+          "eventDate": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["contribution", "redemption", "income", "valuation", "capital", "edit", "undo"]
+          },
+          "amount": {
+            "type": "number"
+          },
+          "capitalRemoved": {
+            "type": "number"
+          },
+          "beforeState": {
+            "$ref": "#/components/schemas/InvestmentHoldingDto"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "debitId": {
+            "type": "string",
+            "nullable": true
+          },
+          "creditId": {
+            "type": "string",
+            "nullable": true
+          },
+          "resultId": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkedId": {
+            "type": "string",
+            "nullable": true
+          },
+          "undoOfId": {
+            "type": "string",
+            "nullable": true
+          },
+          "undone": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "holdingId",
+          "eventDate",
+          "createdAt",
+          "kind",
+          "amount",
+          "capitalRemoved",
+          "beforeState",
+          "details",
+          "debitId",
+          "creditId",
+          "resultId",
+          "linkedId",
+          "undoOfId",
+          "undone"
+        ]
+      },
+      "InvestmentViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "valuationDate": {
+            "type": "string"
+          },
+          "openedDate": {
+            "type": "string"
+          },
+          "productType": {
+            "type": "string",
+            "enum": ["fixed_income", "fund", "stock", "etf", "crypto", "other"]
+          },
+          "lastEventId": {
+            "type": "string",
+            "nullable": true
+          },
+          "valuationMethod": {
+            "type": "string",
+            "enum": ["manual", "flow_estimate"]
+          },
+          "capital": {
+            "type": "number"
+          },
+          "marketValue": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "movementFromDate": {
+            "type": "string"
+          },
+          "unrealized": {
+            "type": "number"
+          },
+          "realized": {
+            "type": "number"
+          },
+          "totalResult": {
+            "type": "number"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvestmentEventDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "name",
+          "provider",
+          "valuationDate",
+          "openedDate",
+          "productType",
+          "lastEventId",
+          "valuationMethod",
+          "capital",
+          "marketValue",
+          "version",
+          "archived",
+          "movementFromDate",
+          "unrealized",
+          "realized",
+          "totalResult",
+          "stale",
+          "events"
+        ]
+      },
+      "WealthItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "valuationDate": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["asset", "debt"]
+          },
+          "value": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "name", "valuationDate", "notes", "kind", "value", "version", "archived"]
+      },
+      "WealthHistoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/WealthTotalsDto"
+          }
+        },
+        "required": ["id", "createdAt", "kind", "data"]
+      },
+      "WealthSummaryDto": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string"
+          },
+          "assets": {
+            "type": "number"
+          },
+          "liabilities": {
+            "type": "number"
+          },
+          "netWorth": {
+            "type": "number"
+          },
+          "cash": {
+            "type": "number"
+          },
+          "reserves": {
+            "type": "number"
+          },
+          "investments": {
+            "type": "number"
+          },
+          "otherAssets": {
+            "type": "number"
+          },
+          "cardCredit": {
+            "type": "number"
+          },
+          "cardDebt": {
+            "type": "number"
+          },
+          "overdrafts": {
+            "type": "number"
+          },
+          "otherDebts": {
+            "type": "number"
+          },
+          "benefitsExcluded": {
+            "type": "number"
+          },
+          "holdings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvestmentViewDto"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WealthItemDto"
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WealthHistoryDto"
+            }
+          }
+        },
+        "required": [
+          "asOf",
+          "assets",
+          "liabilities",
+          "netWorth",
+          "cash",
+          "reserves",
+          "investments",
+          "otherAssets",
+          "cardCredit",
+          "cardDebt",
+          "overdrafts",
+          "otherDebts",
+          "benefitsExcluded",
+          "holdings",
+          "items",
+          "history"
+        ]
+      },
+      "CreateHoldingDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "productType": {
+            "type": "string",
+            "enum": ["fixed_income", "fund", "stock", "etf", "crypto", "other"]
+          },
+          "capital": {
+            "type": "number"
+          },
+          "marketValue": {
+            "type": "number"
+          },
+          "valuationDate": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "provider", "productType", "capital", "marketValue", "valuationDate"]
+      },
+      "UpdateHoldingDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "productType": {
+            "type": "string",
+            "enum": ["fixed_income", "fund", "stock", "etf", "crypto", "other"]
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "provider", "productType", "archived"]
+      },
+      "InvestmentOperationDto": {
+        "type": "object",
+        "properties": {
+          "includedInPosition": {
+            "type": "boolean"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["contribution", "redemption", "income", "valuation", "capital"]
+          },
+          "date": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "capitalRemoved": {
+            "type": "number"
+          },
+          "marketValue": {
+            "type": "number"
+          },
+          "capital": {
+            "type": "number"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "transactionId": {
+            "type": "string"
+          },
+          "transactionVersion": {
+            "type": "number"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["kind", "date"]
+      },
+      "InvestmentUndoDto": {
+        "type": "object",
+        "properties": {
+          "holding": {
+            "$ref": "#/components/schemas/InvestmentHoldingDto"
+          },
+          "preservedBankMovement": {
+            "type": "boolean"
+          }
+        },
+        "required": ["holding", "preservedBankMovement"]
+      },
+      "SaveWealthItemDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["asset", "debt"]
+          },
+          "value": {
+            "type": "number"
+          },
+          "valuationDate": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "kind", "value", "valuationDate", "notes"]
+      },
       "IdentifierResourceDto": {
         "type": "object",
         "properties": {
@@ -2088,6 +3875,10 @@
       "AccountResourceDto": {
         "type": "object",
         "properties": {
+          "benefitCreditMonth": {
+            "type": "string",
+            "enum": ["received", "following"]
+          },
           "balanceBasis": {
             "$ref": "#/components/schemas/BalanceBasisDto"
           },
@@ -2142,6 +3933,10 @@
       "CreateAccountDto": {
         "type": "object",
         "properties": {
+          "benefitCreditMonth": {
+            "type": "string",
+            "enum": ["received", "following"]
+          },
           "name": {
             "type": "string"
           },
@@ -2164,9 +3959,23 @@
         },
         "required": ["name", "institution", "type"]
       },
+      "BenefitMonthDto": {
+        "type": "object",
+        "properties": {
+          "benefitCreditMonth": {
+            "type": "string",
+            "enum": ["received", "following"]
+          }
+        },
+        "required": ["benefitCreditMonth"]
+      },
       "UpdateAccountDto": {
         "type": "object",
         "properties": {
+          "benefitCreditMonth": {
+            "type": "string",
+            "enum": ["received", "following"]
+          },
           "name": {
             "type": "string"
           },
@@ -2389,6 +4198,11 @@
       "TransactionResourceDto": {
         "type": "object",
         "properties": {
+          "managedKind": {
+            "type": "string",
+            "enum": ["card", "investment"],
+            "nullable": true
+          },
           "counterpartyId": {
             "type": "string",
             "nullable": true
@@ -2589,6 +4403,25 @@
         },
         "required": ["fromAccountId", "toAccountId", "amount", "transactionDate", "description"]
       },
+      "PlanningBenefitAccountDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "benefitCreditMonth": {
+            "type": "string",
+            "enum": ["received", "following"]
+          }
+        },
+        "required": ["version", "id", "name", "benefitCreditMonth"]
+      },
       "PlanningLineResourceDto": {
         "type": "object",
         "properties": {
@@ -2719,6 +4552,12 @@
       "MonthlyPlanResourceDto": {
         "type": "object",
         "properties": {
+          "benefitAccounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanningBenefitAccountDto"
+            }
+          },
           "month": {
             "type": "string"
           },
@@ -2789,6 +4628,30 @@
           }
         },
         "required": ["version", "sourceVersion"]
+      },
+      "CardForecastBillDto": {
+        "type": "object",
+        "properties": {
+          "cardId": {
+            "type": "string"
+          },
+          "billMonth": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": ["cardId", "billMonth", "accountId", "description", "dueDate", "amount"]
       },
       "CommitmentScheduleDto": {
         "type": "object",
@@ -2945,6 +4808,12 @@
       "CommitmentsSummaryDto": {
         "type": "object",
         "properties": {
+          "cardBills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardForecastBillDto"
+            }
+          },
           "today": {
             "type": "string"
           },

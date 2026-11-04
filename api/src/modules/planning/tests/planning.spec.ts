@@ -42,7 +42,12 @@ const ledger = new LedgerService(
   counterparties,
   balanceBasis,
 );
-const planning = new PlanningService(new PlanningRepository(db.service), categories, ledger);
+const planning = new PlanningService(
+  new PlanningRepository(db.service),
+  categories,
+  ledger,
+  accounts,
+);
 const backups = new DataExportService(
   accounts,
   categories,
@@ -254,7 +259,7 @@ describe('Monthly planning financial invariants', () => {
       return created;
     });
     const backup = await db.forUser(db.user, () => backups.backup(), true);
-    expect(backup.version).toBe(8);
+    expect(backup.version).toBe(10);
     expect(backup.categoryGroups?.[0].id).toBe(group.id);
     expect(backup.monthlyPlans).toHaveLength(2);
     await db.forUser(db.other, async () => {
@@ -278,6 +283,8 @@ describe('Monthly planning financial invariants', () => {
       ...backup,
       categoryGroups: undefined,
       commitments: undefined,
+      cards: undefined,
+      wealth: undefined,
       categories: backup.categories.map(({ groupId: _group, ...category }) => category),
     };
     expect(validateBackup({ ...legacy, version: 1, monthlyPlans: undefined }).monthlyPlans).toEqual(
@@ -581,5 +588,262 @@ describe('Monthly overview history', () => {
     const leap = await db.forUser(db.user, () => dashboard.history('2024-03', 2), true);
     expect(leap).toMatchObject({ from: '2024-02-01', to: '2024-04-01' });
     expect(leap.items.map((item) => item.month)).toEqual(['2024-02', '2024-03']);
+  });
+});
+
+async function benefitPlanningSpace<T>(action: () => Promise<T>) {
+  const space = await db.forUser(
+    db.user,
+    () =>
+      new WorkspacesService(new WorkspacesRepository(db.service)).create({
+        name: `Benefit planning ${randomUUID()}`,
+        description: '',
+        color: 'emerald',
+      }),
+    false,
+    null,
+  );
+  return db.forUser(db.user, action, false, space.id);
+}
+it('assigns prepaid VA credits to the following planning month while retaining bank dates and balances', async () => {
+  await benefitPlanningSpace(async () => {
+    const salary = await categories.save({
+      name: 'Salary competency',
+      type: 'income',
+      color: '#5ee9b5',
+    });
+    const va = await categories.save({ name: 'VA competency', type: 'income', color: '#5ee9b5' });
+    const food = await categories.save({
+      name: 'Food competency',
+      type: 'expense',
+      color: '#f28a97',
+    });
+    const bank = await accounts.create({
+      name: 'Payment account',
+      institution: 'mercado_pago',
+      type: 'checking',
+    });
+    const alelo = await accounts.create({
+      name: 'Alelo VA',
+      institution: 'alelo',
+      type: 'benefit_food',
+    });
+    const credit = await ledger.create({
+      accountId: alelo.id,
+      categoryId: va.id,
+      amount: 70000,
+      description: 'Seu Benefício Caiu',
+      transactionDate: '2026-10-30',
+      transactionType: 'income',
+    });
+    await ledger.create({
+      accountId: bank.id,
+      categoryId: salary.id,
+      amount: 300000,
+      description: 'Salary',
+      transactionDate: '2026-11-03',
+      transactionType: 'income',
+    });
+    await ledger.create({
+      accountId: alelo.id,
+      categoryId: food.id,
+      amount: -15012,
+      description: 'Benefit purchase',
+      transactionDate: '2026-11-03',
+      transactionType: 'expense',
+    });
+    await planning.save('2026-11', {
+      version: 0,
+      contribution: null,
+      notes: '',
+      lines: [
+        { categoryId: salary.id, amount: 300000 },
+        { categoryId: va.id, amount: 70000 },
+      ],
+    });
+    expect((await planning.summary('2026-11')).totals.actualIncome).toBe(300000);
+    const before = await accounts.find(alelo.id);
+    await accounts.setBenefitMonth(alelo.id, 'following', String(before.version));
+    const plan = await planning.summary('2026-11');
+    expect(plan.totals).toMatchObject({
+      plannedIncome: 370000,
+      actualIncome: 370000,
+      actualExpense: 15012,
+      actualResult: 354988,
+    });
+    expect(plan.lines.find((l) => l.categoryId === va.id)?.actual).toBe(70000);
+    expect(plan.benefitAccounts).toEqual([
+      expect.objectContaining({ id: alelo.id, benefitCreditMonth: 'following' }),
+    ]);
+    expect((await planning.summary('2026-11', 'benefits')).totals).toMatchObject({
+      actualIncome: 70000,
+      actualExpense: 15012,
+    });
+    expect((await planning.summary('2026-11', 'cash')).totals).toMatchObject({
+      actualIncome: 300000,
+      actualExpense: 0,
+    });
+    expect((await planning.summary('2026-10')).totals.actualIncome).toBe(0);
+    expect(await ledger.find(credit.id)).toMatchObject({
+      transactionDate: '2026-10-30',
+      amount: 70000,
+      version: 1,
+    });
+    expect((await accounts.find(alelo.id)).balance).toBe(before.balance);
+    expect((await ledger.summary('2026-10-01', '2026-11-01')).income).toBe(70000);
+  });
+});
+it('shifts only configured positive benefit income across year boundaries and excludes bases, transfers and reversed entries', async () => {
+  await benefitPlanningSpace(async () => {
+    const meal = await accounts.create({
+      name: 'Meal next month',
+      institution: 'alelo',
+      type: 'benefit_meal',
+      openingBalance: 50000,
+      benefitCreditMonth: 'following',
+    });
+    const food = await accounts.create({
+      name: 'Food received month',
+      institution: 'alelo',
+      type: 'benefit_food',
+    });
+    await ledger.create({
+      accountId: meal.id,
+      amount: 12345,
+      description: 'Meal credit',
+      transactionDate: '2026-12-31',
+      transactionType: 'income',
+    });
+    await ledger.create({
+      accountId: food.id,
+      amount: 20000,
+      description: 'Food credit',
+      transactionDate: '2026-12-30',
+      transactionType: 'income',
+    });
+    await ledger.create({
+      accountId: meal.id,
+      amount: -500,
+      description: 'Purchase',
+      transactionDate: '2027-01-01',
+      transactionType: 'expense',
+    });
+    await ledger.create(
+      {
+        accountId: meal.id,
+        amount: 9999,
+        description: 'Transfer excluded',
+        transactionDate: '2026-12-31',
+        transactionType: 'transfer',
+      },
+      true,
+    );
+    const reversed = await ledger.create({
+      accountId: meal.id,
+      amount: 8888,
+      description: 'Reversed credit',
+      transactionDate: '2026-12-30',
+      transactionType: 'income',
+    });
+    await ledger.reverse(reversed.id, '1');
+    const december = await planning.summary('2026-12');
+    const january = await planning.summary('2027-01');
+    expect(december.totals.actualIncome).toBe(20000);
+    expect(january.totals).toMatchObject({ actualIncome: 12345, actualExpense: 500 });
+    expect(january.lines.find((l) => l.type === 'income' && l.categoryId === null)?.actual).toBe(
+      12345,
+    );
+    await expect(
+      accounts.create({
+        name: 'Invalid policy',
+        institution: 'mercado_pago',
+        type: 'checking',
+        benefitCreditMonth: 'following',
+      }),
+    ).rejects.toThrow('exclusiva');
+  });
+});
+it('preserves the configured benefit month on name edits and backup/restore without moving source transactions', async () => {
+  const source = await benefitPlanningSpace(async () => {
+    const a = await accounts.create({
+      name: 'Portable Alelo policy',
+      institution: 'alelo',
+      type: 'benefit_food',
+      benefitCreditMonth: 'following',
+    });
+    await ledger.create({
+      accountId: a.id,
+      amount: 70000,
+      description: 'Seu Benefício Caiu',
+      transactionDate: '2026-10-30',
+      transactionType: 'income',
+    });
+    const current = await accounts.find(a.id);
+    await accounts.update(
+      a.id,
+      { name: 'Renamed Alelo', institution: 'alelo', type: 'benefit_food' },
+      String(current.version),
+    );
+    expect((await accounts.find(a.id)).benefitCreditMonth).toBe('following');
+    const payload = await backups.backup();
+    expect(payload.version).toBe(10);
+    expect(() => validateBackup({ ...payload, version: 9 })).toThrow('backup');
+    return payload;
+  });
+  await benefitPlanningSpace(async () => {
+    const draft = await backups.preview(source);
+    await backups.confirm(draft.id);
+    expect((await planning.summary('2026-11')).totals.actualIncome).toBe(70000);
+    expect((await planning.summary('2026-10')).totals.actualIncome).toBe(0);
+    expect((await ledger.exportRecords())[0]).toMatchObject({
+      transactionDate: '2026-10-30',
+      amount: 70000,
+    });
+  });
+});
+
+it('changes benefit planning preferences independently with version and workspace protection', async () => {
+  let foreignId = '';
+  await benefitPlanningSpace(async () => {
+    const alelo = await accounts.create({
+      name: 'VA first day',
+      institution: 'alelo',
+      type: 'benefit_food',
+    });
+    foreignId = alelo.id;
+    await ledger.create({
+      accountId: alelo.id,
+      amount: 70000,
+      description: 'Benefit',
+      transactionDate: '2026-11-01',
+      transactionType: 'income',
+    });
+    expect((await planning.summary('2026-11')).totals.actualIncome).toBe(70000);
+    const following = await accounts.setBenefitMonth(alelo.id, 'following', String(alelo.version));
+    expect((await planning.summary('2026-12')).totals.actualIncome).toBe(70000);
+    await expect(
+      accounts.setBenefitMonth(alelo.id, 'received', String(alelo.version)),
+    ).rejects.toThrow();
+    const received = await accounts.setBenefitMonth(
+      alelo.id,
+      'received',
+      String(following.version),
+    );
+    expect(received.version).toBe(following.version + 1);
+    expect((await planning.summary('2026-11')).totals.actualIncome).toBe(70000);
+    expect((await planning.summary('2026-12')).totals.actualIncome).toBe(0);
+    const bank = await accounts.create({
+      name: 'Ordinary bank',
+      institution: 'mercado_pago',
+      type: 'checking',
+    });
+    await expect(
+      accounts.setBenefitMonth(bank.id, 'following', String(bank.version)),
+    ).rejects.toThrow('exclusiva');
+  });
+  await benefitPlanningSpace(async () => {
+    await expect(accounts.setBenefitMonth(foreignId, 'following', '1')).rejects.toThrow(
+      'não encontrada',
+    );
   });
 });

@@ -1,3 +1,4 @@
+import { FinanceOverview } from './components/finance-overview';
 import { CashflowForecast } from '../planning/components/cashflow-forecast';
 import '../planning/commitments.css';
 import { useState } from 'react';
@@ -42,6 +43,7 @@ export function DashboardPage() {
           onToggle={() => setVisible(!visible)}
         />
       )}
+      <FinanceOverview visible={visible} />
       <CashflowForecast visible={visible} />
       <section className="monthly-analysis" aria-labelledby="monthly-title">
         <div className="monthly-heading">

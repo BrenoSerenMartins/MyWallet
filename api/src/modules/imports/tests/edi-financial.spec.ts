@@ -58,7 +58,7 @@ const backups = new DataExportService(
   ledger,
   receipts,
   new RestoreRepository(db.service),
-  new PlanningService(new PlanningRepository(db.service), categories, ledger),
+  new PlanningService(new PlanningRepository(db.service), categories, ledger, accounts),
   counterparties,
   balanceBasis,
 );
@@ -190,7 +190,7 @@ it('keeps portable source identity after backup/restore and blocks repeated EDI 
   const report = await edi(a.id, 'portable-id');
   await run(() => imports.confirm(report.id, report.version, 'portable-confirm'));
   const backup = await run(() => backups.backup());
-  expect(backup.version).toBe(8);
+  expect(backup.version).toBe(10);
   await db.forUser(db.other, async () => {
     const draft = await backups.preview(backup);
     await backups.confirm(draft.id);

@@ -1,6 +1,13 @@
+import { CardsModule, CardsService } from '../modules/cards/index.js';
+import { WealthModule, WealthService } from '../modules/wealth/index.js';
 import { CounterpartiesModule, CounterpartiesService } from '../modules/counterparties/index.js';
 import { Global, Module } from '@nestjs/common';
 import {
+  MANAGED_ACCOUNTS,
+  MANAGED_LEDGER,
+  CARD_FORECAST,
+  CARDS_BACKUP,
+  WEALTH_BACKUP,
   COMMITMENT_LEDGER,
   COMMITMENTS_BACKUP,
   COUNTERPARTY_RULES,
@@ -20,6 +27,11 @@ import { CategoriesModule, CategoriesService } from '../modules/categories/index
 import { LedgerModule, LedgerService, IdempotencyService } from '../modules/ledger/index.js';
 import { PlanningModule, PlanningService, CommitmentsService } from '../modules/planning/index.js';
 const bindings = [
+  { provide: MANAGED_ACCOUNTS, useExisting: AccountsService },
+  { provide: MANAGED_LEDGER, useExisting: LedgerService },
+  { provide: CARD_FORECAST, useExisting: CardsService },
+  { provide: CARDS_BACKUP, useExisting: CardsService },
+  { provide: WEALTH_BACKUP, useExisting: WealthService },
   { provide: COMMITMENT_LEDGER, useExisting: LedgerService },
   { provide: COMMITMENTS_BACKUP, useExisting: CommitmentsService },
   { provide: COUNTERPARTY_RULES, useExisting: CounterpartiesService },
@@ -36,7 +48,15 @@ const bindings = [
 ];
 @Global()
 @Module({
-  imports: [CounterpartiesModule, AccountsModule, CategoriesModule, LedgerModule, PlanningModule],
+  imports: [
+    CardsModule,
+    WealthModule,
+    CounterpartiesModule,
+    AccountsModule,
+    CategoriesModule,
+    LedgerModule,
+    PlanningModule,
+  ],
   providers: bindings,
   exports: bindings.map((b) => b.provide),
 })

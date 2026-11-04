@@ -19,6 +19,9 @@ export class AccountsService implements AccountReads {
   async restoreRecord(record: import('../../../core/integration/index.js').BackupAccount) {
     return (await this.create({ ...record })).id;
   }
+  createManaged(name: string, type: 'credit_card' | 'investment', openingBalance = 0) {
+    return this.create({ name, institution: type, type, openingBalance });
+  }
   list() {
     return this.repository.list();
   }
@@ -30,6 +33,10 @@ export class AccountsService implements AccountReads {
   }
   private validateProduct(input: UpdateAccountDto) {
     const benefit = ['benefit_food', 'benefit_meal'].includes(input.type);
+    if (!benefit && input.benefitCreditMonth === 'following')
+      throw new UnprocessableEntityException(
+        'A competência do benefício é exclusiva das contas de Alimentação ou Refeição.',
+      );
     if ((input.institution === 'alelo') !== benefit)
       throw new UnprocessableEntityException(
         'Use Alelo com o tipo Alimentação ou Refeição, em contas separadas.',
@@ -46,8 +53,23 @@ export class AccountsService implements AccountReads {
     const id = await this.repository.create(normalized);
     return this.find(id);
   }
+  async setBenefitMonth(id: string, month: 'received' | 'following', version: string) {
+    const account = await this.find(id, true);
+    requireVersion(account.version, version);
+    if (
+      !['benefit_food', 'benefit_meal'].includes(account.type) ||
+      !['received', 'following'].includes(month)
+    )
+      throw new UnprocessableEntityException('Esta regra é exclusiva dos créditos de VA/VR.');
+    await this.repository.setBenefitMonth(id, month);
+    return this.find(id);
+  }
   async update(id: string, input: UpdateAccountDto, version: string) {
     const account = await this.find(id, true);
+    if (['credit_card', 'investment'].includes(account.type))
+      throw new ConflictException(
+        'Use o módulo de cartões ou investimentos para alterar esta posição.',
+      );
     requireVersion(account.version, version);
     if (
       account.institution !== input.institution &&
@@ -66,6 +88,7 @@ export class AccountsService implements AccountReads {
     input = {
       ...input,
       openingBalance: input.openingBalance ?? account.openingBalance,
+      benefitCreditMonth: input.benefitCreditMonth ?? account.benefitCreditMonth ?? 'received',
       openingDate: input.openingDate ?? account.openingDate,
     };
     this.validateProduct(input);

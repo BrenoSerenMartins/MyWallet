@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -65,7 +65,15 @@ export class PlanningTotalsDto {
   @ApiProperty({ type: Number }) unclassifiedInflow!: number;
   @ApiProperty({ type: Number }) unclassifiedOutflow!: number;
 }
+export class PlanningBenefitAccountDto {
+  @ApiProperty({ type: Number }) version!: number;
+  @ApiProperty({ type: String }) id!: string;
+  @ApiProperty({ type: String }) name!: string;
+  @ApiProperty({ enum: ['received', 'following'] }) benefitCreditMonth!: 'received' | 'following';
+}
 export class MonthlyPlanResourceDto {
+  @ApiPropertyOptional({ type: [PlanningBenefitAccountDto] })
+  benefitAccounts?: PlanningBenefitAccountDto[];
   @ApiProperty({ type: String }) month!: string;
   @ApiProperty({ type: Number }) version!: number;
   @ApiProperty({ type: Number, nullable: true }) contribution!: number | null;

@@ -129,6 +129,31 @@ export function CommitmentsPage() {
           <section className="panel cashflow-forecast">
             <ForecastDetails data={query.data} />
           </section>
+          {!!query.data.cardBills?.length && (
+            <section className="panel card-forecast-links">
+              <h2>Faturas na previsão</h2>
+              <p className="field-help">
+                Já estão incluídas nos valores a pagar. Registre ou vincule pagamentos em Cartões.
+              </p>
+              <ul className="card-entry-list">
+                {query.data.cardBills.map((b) => (
+                  <li key={`${b.cardId}:${b.billMonth}`}>
+                    <div>
+                      <strong>{b.description}</strong>
+                      <span>Vence {shortDate(b.dueDate)}</span>
+                    </div>
+                    <strong>{money(b.amount)}</strong>
+                    <Link
+                      className="text-button"
+                      to={`/cards?card=${b.cardId}&month=${b.billMonth}`}
+                    >
+                      Ver fatura
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <div className="commitment-filters">
             <ViewSwitcher
               label="Situação dos compromissos"

@@ -6,6 +6,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  ACCOUNT_READS,
+  type AccountReads,
   CATEGORY_READS,
   LEDGER_READS,
   type CategoryReads,
@@ -24,15 +26,27 @@ export class PlanningService implements PlanningBackup {
     @Inject(PlanningRepository) private readonly repository: PlanningRepository,
     @Inject(CATEGORY_READS) private readonly categories: CategoryReads,
     @Inject(LEDGER_READS) private readonly ledger: LedgerReads,
+    @Inject(ACCOUNT_READS) private readonly accounts: AccountReads,
   ) {}
   async summary(month: string, scope: 'all' | 'cash' | 'benefits' = 'all') {
     const { from, to } = planningPeriod(month);
-    return planningSummary(
+    const summary = planningSummary(
       month,
       await this.repository.find(month),
       await this.categories.list(true),
       await this.ledger.planningActuals(from, to, scope),
     );
+    return {
+      ...summary,
+      benefitAccounts: (await this.accounts.list())
+        .filter((a) => ['benefit_food', 'benefit_meal'].includes(a.type))
+        .map((a) => ({
+          id: a.id,
+          version: a.version,
+          name: a.name,
+          benefitCreditMonth: a.benefitCreditMonth ?? 'received',
+        })),
+    };
   }
   async save(month: string, input: SaveMonthlyPlanDto) {
     planningPeriod(month);

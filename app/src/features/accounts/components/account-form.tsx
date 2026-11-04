@@ -6,6 +6,9 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
   const [name, setName] = useState(account?.name ?? '');
   const [institution, setInstitution] = useState(account?.institution ?? 'mercado_pago');
   const [type, setType] = useState(account?.type ?? 'checking');
+  const [benefitCreditMonth, setBenefitCreditMonth] = useState<'received' | 'following'>(
+    account?.benefitCreditMonth ?? 'received',
+  );
   const legacyInstitution = account && !['mercado_pago', 'alelo'].includes(account.institution);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -21,6 +24,7 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
           name,
           institution,
           type,
+          ...(['benefit_food', 'benefit_meal'].includes(type) ? { benefitCreditMonth } : {}),
         }),
       });
       onSaved();
@@ -51,6 +55,7 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
             onChange={(e) => {
               setInstitution(e.target.value);
               setType(e.target.value === 'alelo' ? 'benefit_food' : 'checking');
+              setBenefitCreditMonth('received');
             }}
           >
             <option value="alelo">Alelo</option>
@@ -79,6 +84,25 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
           </select>
         </label>
       </div>
+      {['benefit_food', 'benefit_meal'].includes(type) && (
+        <>
+          <label>
+            Crédito do VA/VR no planejamento
+            <select
+              aria-label="Crédito do VA/VR no planejamento"
+              value={benefitCreditMonth}
+              onChange={(e) => setBenefitCreditMonth(e.target.value as 'received' | 'following')}
+            >
+              <option value="received">Mês em que o crédito caiu</option>
+              <option value="following">Mês seguinte ao crédito</option>
+            </select>
+          </label>
+          <p className="field-help">
+            Use o mês seguinte quando a empresa antecipa o benefício no fim do mês. A regra vale
+            para os créditos de VA/VR no planejamento; a data do extrato e o saldo continuam iguais.
+          </p>
+        </>
+      )}
       <p className="field-help">
         {legacyInstitution
           ? 'Esta conta anterior foi preservada com seu histórico. Novas contas estão disponíveis para Mercado Pago e Alelo.'

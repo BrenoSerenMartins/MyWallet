@@ -36,7 +36,16 @@ export class CommitmentProjectionDto {
   @ApiProperty({ type: Number }) projected!: number;
   @ApiProperty({ type: Number }) overdue!: number;
 }
+export class CardForecastBillDto {
+  @ApiProperty({ type: String }) cardId!: string;
+  @ApiProperty({ type: String }) billMonth!: string;
+  @ApiProperty({ type: String }) accountId!: string;
+  @ApiProperty({ type: String }) description!: string;
+  @ApiProperty({ type: String }) dueDate!: string;
+  @ApiProperty({ type: Number }) amount!: number;
+}
 export class CommitmentsSummaryDto {
+  @ApiPropertyOptional({ type: [CardForecastBillDto] }) cardBills?: CardForecastBillDto[];
   @ApiProperty({ type: String }) today!: string;
   @ApiProperty({ type: String }) month!: string;
   @ApiProperty({ type: String }) through!: string;

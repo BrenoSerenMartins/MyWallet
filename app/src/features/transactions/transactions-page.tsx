@@ -332,6 +332,20 @@ export function TransactionsPage() {
           <ErrorState error={accounts.error ?? categories.error} />
         ) : accounts.isPending || categories.isPending ? (
           <Loading />
+        ) : selected?.managedKind ? (
+          <div className="form-stack">
+            <p>
+              Este movimento é gerenciado pelo módulo de{' '}
+              {selected.managedKind === 'card' ? 'cartões' : 'investimentos'}. Use esse módulo para
+              corrigir compras, pagamentos, aportes e resgates.
+            </p>
+            <Link
+              className="button secondary"
+              to={selected.managedKind === 'card' ? '/cards' : '/wealth'}
+            >
+              Abrir {selected.managedKind === 'card' ? 'cartões e faturas' : 'investimentos'}
+            </Link>
+          </div>
         ) : (
           <TransactionForm
             key={selected?.id ?? 'new'}

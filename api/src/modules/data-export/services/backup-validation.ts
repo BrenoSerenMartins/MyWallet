@@ -1,3 +1,4 @@
+import { validateManagedBackup } from './validate-managed-backup.js';
 import { validateCommitmentsBackup } from './validate-commitments-backup.js';
 import { validateBalanceBackup } from './validate-balance-backup.js';
 import { validateCounterpartyBackup } from './validate-counterparty-backup.js';
@@ -17,7 +18,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   const b = raw as BackupPayload;
   if (
     b.format !== 'mywallet' ||
-    ![1, 2, 3, 4, 5, 6, 7, 8].includes(b.version) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||
@@ -39,7 +40,32 @@ export function validateBackup(raw: unknown): BackupPayload {
     if (
       !text(a.name, 100) ||
       !text(a.institution, 80) ||
-      !['checking', 'savings', 'cash', 'reserve', 'benefit_food', 'benefit_meal'].includes(a.type)
+      ![
+        'checking',
+        'savings',
+        'cash',
+        'reserve',
+        'benefit_food',
+        'benefit_meal',
+        'credit_card',
+        'investment',
+      ].includes(a.type)
+    )
+      fail();
+    if (
+      ['credit_card', 'investment'].includes(a.type) &&
+      (b.version < 9 || a.institution !== a.type)
+    )
+      fail();
+    if (['credit_card', 'investment'].includes(a.institution) && a.type !== a.institution) fail();
+    if (
+      a.benefitCreditMonth !== undefined &&
+      !['received', 'following'].includes(a.benefitCreditMonth)
+    )
+      fail();
+    if (
+      a.benefitCreditMonth === 'following' &&
+      (b.version < 10 || !['benefit_food', 'benefit_meal'].includes(a.type))
     )
       fail();
     if ((a.institution === 'alelo') !== ['benefit_food', 'benefit_meal'].includes(a.type)) fail();
@@ -83,6 +109,8 @@ export function validateBackup(raw: unknown): BackupPayload {
   for (const t of b.transactions) {
     if (!t || typeof t !== 'object') fail();
     unique(t.id);
+    if (t.managedKind != null && (b.version < 9 || !['card', 'investment'].includes(t.managedKind)))
+      fail();
     dateOnly(t.transactionDate);
     exactAmount(t.amount);
     const account = accounts.get(t.accountId);
@@ -212,11 +240,12 @@ export function validateBackup(raw: unknown): BackupPayload {
     )
       fail();
   validateBalanceBackup(b, unique);
-  if (b.version < 8) validateCommitmentsBackup(b, unique);
+  const commitments = validateCommitmentsBackup(b, unique);
+  validateManagedBackup({ ...b, commitments: b.version >= 8 ? commitments : undefined }, unique);
   return {
     ...b,
     categoryGroups,
-    commitments: b.version >= 8 ? validateCommitmentsBackup(b, unique) : undefined,
+    commitments: b.version >= 8 ? commitments : undefined,
     monthlyPlans:
       b.version >= 2 ? validatePlanningBackup(b.monthlyPlans, new Set(categories.keys())) : [],
   };

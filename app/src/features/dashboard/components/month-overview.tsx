@@ -45,6 +45,12 @@ export function MonthOverview({
   const display = (value: number) => (visible ? money(value) : '••••••');
   return (
     <>
+      {plan?.benefitAccounts?.some((a) => a.benefitCreditMonth === 'following') && (
+        <p className="field-help">
+          Este resumo usa a data das movimentações. No planejamento, o VA/VR antecipado pode estar
+          atribuído ao mês seguinte.
+        </p>
+      )}
       <div className="monthly-metrics">
         {metrics.map(({ title, actual, planned, Icon, type, tone }) => {
           const difference =
