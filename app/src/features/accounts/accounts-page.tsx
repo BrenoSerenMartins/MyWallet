@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { BalanceReference } from '../../shared/ui/balance-reference';
 import { BalanceHistoryPanel } from './components/balance-history-panel';
 import { BalanceAdjustmentForm } from './components/balance-adjustment-form';
@@ -53,12 +54,11 @@ export function AccountsPage() {
     queryFn: () => request<Account[]>('/accounts'),
   });
   return (
-    <div className="page-enter">
-      <div className="page-heading">
-        <div>
-          <h1>Minhas contas</h1>
-          <p>Confira os saldos registrados e a origem de cada referência.</p>
-        </div>
+    <div className="page-enter accounts-page">
+      <PageHeader
+        title={<>Minhas contas</>}
+        description={<>Confira os saldos registrados e a origem de cada referência.</>}
+      >
         <Button
           onClick={() => {
             setEditing(undefined);
@@ -69,7 +69,7 @@ export function AccountsPage() {
           <Plus size={18} />
           Adicionar conta
         </Button>
-      </div>
+      </PageHeader>
       {referenceMessage && (
         <p className="form-success" role="status">
           {referenceMessage}
@@ -139,18 +139,6 @@ export function AccountsPage() {
                   <Link to={`/accounts/${a.id}`}>
                     Ver movimentações <ArrowUpRight size={16} />
                   </Link>
-                  {a.institution === 'mercado_pago' && (
-                    <button
-                      className="text-button"
-                      disabled={referenceBusy !== null || !navigator.onLine}
-                      onClick={() => void updateReference(a)}
-                    >
-                      {referenceBusy === a.id ? 'Conferindo…' : 'Atualizar por extratos'}
-                    </button>
-                  )}
-                  <button className="text-button" onClick={() => setHistoryAccount(a)}>
-                    Histórico de saldo
-                  </button>
                   <button className="text-button" onClick={() => setAdjusting(a)}>
                     Corrigir saldo
                   </button>
@@ -163,6 +151,23 @@ export function AccountsPage() {
                   >
                     Editar
                   </button>
+                  <details className="account-reference-actions">
+                    <summary>Referência e histórico</summary>
+                    <div>
+                      {a.institution === 'mercado_pago' && (
+                        <button
+                          className="text-button"
+                          disabled={referenceBusy !== null || !navigator.onLine}
+                          onClick={() => void updateReference(a)}
+                        >
+                          {referenceBusy === a.id ? 'Conferindo…' : 'Atualizar por extratos'}
+                        </button>
+                      )}
+                      <button className="text-button" onClick={() => setHistoryAccount(a)}>
+                        Histórico de saldo
+                      </button>
+                    </div>
+                  </details>
                 </div>
               </article>
             ))}

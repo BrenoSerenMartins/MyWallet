@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { CheckCircle2 } from 'lucide-react';
 import { ImportReview } from './components/import-review';
@@ -40,24 +41,22 @@ export function ImportsPage() {
   });
 
   return (
-    <div className="page-enter">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">MENOS DIGITAÇÃO, MAIS CLAREZA</span>
-          <h1>{importId ? 'Revise seu extrato' : 'Importar extrato'}</h1>
-          <p>
-            {importId
-              ? 'Confira os movimentos e escolha como guardar seus dados.'
-              : 'Traga seus movimentos para cá. Você confere tudo antes de salvar.'}
-          </p>
-        </div>
+    <div className="page-enter imports-page">
+      <PageHeader
+        title={importId ? 'Revise seu extrato' : 'Importar extrato'}
+        description={
+          importId
+            ? 'Confira os movimentos e escolha como guardar seus dados.'
+            : 'Traga seus movimentos para cá. Você confere tudo antes de salvar.'
+        }
+      >
         {importId && (
           <Link className="button secondary" to="/imports">
             <ArrowLeft size={16} />
             Importações
           </Link>
         )}
-      </div>
+      </PageHeader>
       {importId ? (
         batch.isPending ? (
           <Loading />
@@ -100,11 +99,7 @@ export function ImportsPage() {
                 <span className="file-icon">
                   <FileText size={28} />
                 </span>
-                <h2>
-                  Seus movimentos,
-                  <br />
-                  sem começar do zero.
-                </h2>
+                <h2>Selecione seus extratos</h2>
                 <p>
                   Mercado Pago: extratos PDF, CSV e XLSX. Alelo Alimentação: PDF com texto, com
                   revisão da cobertura e dos movimentos.
@@ -181,7 +176,7 @@ export function ImportsPage() {
               </section>
               <aside className="panel import-guide">
                 <span className="eyebrow">VOCÊ NO CONTROLE</span>
-                <h2>Do arquivo à sua visão financeira.</h2>
+                <h2>Enviar. Revisar. Confirmar.</h2>
                 {[
                   {
                     n: '01',

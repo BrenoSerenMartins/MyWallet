@@ -1,25 +1,25 @@
 # Design system
 
 ## Purpose and direction
-Proposed visual direction: a polished personal-finance app with the clarity and tactile feel of a banking application. Build depth through layered surfaces, spacing, restrained light, and clear visual hierarchy. The product manages finances; labels must not imply that MyWallet holds money or executes bank payments.
+Implemented visual direction: a polished personal-finance app with the clarity and tactile feel of a banking application. Build depth through layered surfaces, spacing, restrained light, and clear visual hierarchy. The product manages finances; labels must not imply that MyWallet holds money or executes bank payments.
 
 ## Themes and tokens
 Support `light`, `dark`, and `system`. Start with the system preference and persist an explicit override locally. Apply the resolved theme before first paint, update the browser theme color, and respond to system changes only in system mode. Theme initialization must work with the production Content Security Policy.
 
 | Semantic token | Dark | Light |
 | --- | --- | --- |
-| Background | `#081116` | `#F4F7F8` |
-| Surface | `#102027` | `#FFFFFF` |
-| Raised surface | `#17313A` | `#E8EFF2` |
-| Text | `#EAF2F5` | `#102129` |
-| Muted text | `#A7BCC5` | `#52636D` |
-| Primary action | `#5EE9B5` | `#08664B` |
-| On primary | `#062019` | `#FFFFFF` |
+| Background | `#141715` | `#F6F5F1` |
+| Surface | `#1C201D` | `#FFFEFA` |
+| Raised surface | `#2A302A` | `#EDECE7` |
+| Text | `#F2F3EC` | `#252824` |
+| Muted text | `#B4BBAE` | `#646862` |
+| Primary action | `#F2F3EC` | `#252824` |
+| On primary | `#141715` | `#F6F5F1` |
 
 - Define colors, typography, spacing, radii, elevation, motion, and chart colors as CSS custom properties. Components consume semantic tokens rather than hardcoded theme colors.
 - Use a 4px spacing scale; standard surface radii around 16–24px, controls around 10–12px. Reserve pill shapes for badges and compact filters.
 - Use locally bundled Inter or a system sans-serif fallback; use tabular numerals for amounts and right-align numeric columns.
-- Keep hero balances prominent and supporting numbers quieter. Use a subtle emerald glow or gradient on the balance area; avoid translucent treatment over transaction text.
+- Keep hero balances prominent and supporting numbers quieter. Use a subtle neutral gradient on the balance area; avoid translucent treatment over transaction text.
 - Income, expense, transfer, warning, and error get separate semantic treatments, with labels/icons as well as color. Validate every implemented state in both themes.
 - Initial contrast checks for the specified main text, muted text, and button pairs exceed 4.5:1. This is a palette check, not a completed interface accessibility audit.
 
@@ -27,7 +27,7 @@ Support `light`, `dark`, and `system`. Start with the system preference and pers
 - Desktop: compact top navigation with Overview, Transactions, Accounts and Planning; workspace switching, creation and More remain reachable. No permanent sidebar. Home separates current tracked balances from monthly analysis.
 - Tablet: compact navigation and a two-column layout where space permits.
 - Mobile: five bottom destinations: Home, Transactions, Accounts, Planning, and More. Respect safe areas and the on-screen keyboard. Keep the primary create action reachable without covering content.
-- More opens an accessible dialog containing imports, groups/categories, people/establishments, preferences, appearance, sign-out and workspace switching. Future areas join navigation only when functional.
+- More opens an accessible dialog containing cards/bills, investments/net worth, imports, groups/categories, people/establishments, preferences, appearance, sign-out and workspace switching. Future areas join navigation only when functional.
 - Detailed views drill into accounts, transaction details, and import batches. Carry period and account filters into the detail view and support browser Back.
 - Use tables for desktop transaction review and compact transaction rows on mobile. Show direction/type, description, date, amount, and review state without horizontal scrolling for the main workflow.
 
@@ -35,7 +35,7 @@ Support `light`, `dark`, and `system`. Start with the system preference and pers
 | Surface | Core content and behavior |
 | --- | --- |
 | Authentication | Sign in, sign up, verification feedback, password recovery; clear error and expired-link states |
-| First use | Create the first account, choose opening balance/date or obtain them from a validated statement |
+| First use | Create the first supported account; derive balance references from a validated statement or a manual balance confirmation |
 | Home | Tracked balances with coverage label, selected-period income/expenses, shortcuts, recent transactions |
 | Accounts | Institution, account type, recorded balance, statement coverage and transaction history |
 | Transactions | Search, period/account/category/type filters; detail, create, edit, and explicit reversal/removal confirmation |
@@ -86,3 +86,6 @@ Overview comparisons add accessible 2/4/7/12-month and bars/lines switchers. Res
 The source/date of current balance is visible outside the collapsed composition, with a normalized-source link. MP closing position and Alelo manual observation have distinct copy. Derived base calculations remain in expandable audit details. Import results separate ledger counts from current-balance/reference changes; existing lost-response protection is preserved.
 
 Shared refinement CSS raises standalone targets to 44px, primary mobile controls to 48px, task labels/body readability and non-obscured focus. Mobile dialogs use full viewport sheets constrained by both dvh and VisualViewport, with contextual save regions; desktop transaction details use a side panel. Import review stacks at tablet/narrow widths, provides separate 48px selection labels and scopes bulk actions to visible editable rows. Workspace appearance moves out of the narrow header. Chart comparison strips and single-balance desktop panels are more compact, axes use rounded intervals, and all financial geometry honors privacy. URL filters and transaction details preserve Back navigation. Chrome visual/keyboard tests passed across nine widths, both themes and emulated text/viewport changes; no claim of native device/Safari or full WCAG certification.
+
+## Shared interface implementation
+See [Shared interface system](interface-system.md) for the complete route coverage, shared `PageHeader`, visual ownership and browser verification limits of the November 2026 revision. Main text, muted text and neutral primary-button contrast pairs exceed 4.5:1 in both palettes; this is a palette calculation, not a full accessibility audit.

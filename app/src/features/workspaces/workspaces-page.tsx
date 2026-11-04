@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Layers3, LogOut, Plus, ShieldCheck } from 'lucide-react';
@@ -58,22 +59,19 @@ export function WorkspacesPage() {
         </div>
       </header>
       <main id="main-content" className="spaces-main">
-        <div className="spaces-heading">
-          <div>
-            <span className="eyebrow">
-              <span className="status-dot" />
-              CADA PLANO TEM SEU LUGAR
-            </span>
-            <h1>
+        <PageHeader
+          title={
+            <>
               Seus espaços<span>.</span>
-            </h1>
-            <p>Abra um espaço para consultar suas contas e movimentações.</p>
-          </div>
+            </>
+          }
+          description={<>Abra um espaço para consultar suas contas e movimentações.</>}
+        >
           <Button onClick={() => setOpen(true)} disabled={loading || !!error || !navigator.onLine}>
             <Plus size={17} />
             Criar espaço
           </Button>
-        </div>
+        </PageHeader>
         {message && (
           <p className="form-success" role="status">
             {message}

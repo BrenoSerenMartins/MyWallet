@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { money } from '../../shared/formatting/money';
 import { TransactionSources } from './components/transaction-sources';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
@@ -118,12 +119,11 @@ export function TransactionsPage() {
     }
   };
   return (
-    <div className="page-enter">
-      <div className="page-heading">
-        <div>
-          <h1>{accountName ?? 'Movimentações'}</h1>
-          <p>Consulte, filtre e organize os movimentos registrados.</p>
-        </div>
+    <div className="page-enter transactions-page">
+      <PageHeader
+        title={accountName ?? 'Movimentações'}
+        description={<>Consulte, filtre e organize os movimentos registrados.</>}
+      >
         <Button
           onClick={() => {
             const next = new URLSearchParams(params);
@@ -134,9 +134,9 @@ export function TransactionsPage() {
           <Plus size={18} />
           Novo lançamento
         </Button>
-      </div>
+      </PageHeader>
       {requestedTransaction.isError && <ErrorState error={requestedTransaction.error} />}
-      <div className="panel">
+      <section className="panel movements-workbench" aria-label="Lista de movimentações">
         <div className="filters">
           <label className="search-field">
             <Search size={18} />
@@ -277,7 +277,7 @@ export function TransactionsPage() {
             Seus movimentos aparecerão aqui. Você pode importar um extrato ou registrar manualmente.
           </EmptyState>
         )}
-      </div>
+      </section>
       <Modal
         open={open}
         onOpenChange={(v) => (v ? setOpen(true) : close())}

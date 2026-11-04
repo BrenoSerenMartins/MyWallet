@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { DeleteCategoryDialog } from './components/delete-category-dialog';
 import { CategoryGroupPanel } from './components/category-group-panel';
 import { DeleteGroupDialog } from './components/delete-group-dialog';
@@ -38,15 +39,12 @@ export function CategoriesPage() {
   const activeGroup = visibleGroups.find((group) => group.id === selectedGroup) ?? visibleGroups[0];
   return (
     <div className="page-enter categories-page" data-financial-type={type}>
-      <div className="page-heading">
-        <div>
-          <h1>Categorias</h1>
-        </div>
+      <PageHeader title={<>Categorias</>}>
         <Button onClick={() => setEditor({ kind: 'group' })}>
           <Plus size={18} />
           Novo grupo
         </Button>
-      </div>
+      </PageHeader>
       <div className="category-toolbar">
         <ViewSwitcher
           label="Tipo de categoria"

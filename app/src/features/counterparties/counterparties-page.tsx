@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import './counterparties.css';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -61,12 +62,12 @@ export function CounterpartiesPage() {
   );
   return (
     <div className="counterparties-page">
-      <header className="page-heading">
-        <div>
-          <h1>Pessoas e estabelecimentos</h1>
-          <p>Pessoas, estabelecimentos e as relações que simplificam seus próximos lançamentos.</p>
-        </div>
-      </header>
+      <PageHeader
+        title={<>Pessoas e estabelecimentos</>}
+        description={
+          <>Pessoas, estabelecimentos e as relações que simplificam seus próximos lançamentos.</>
+        }
+      ></PageHeader>
       <form
         className="form-grid"
         onSubmit={(e) => {

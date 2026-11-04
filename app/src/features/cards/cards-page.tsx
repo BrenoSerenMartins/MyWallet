@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -66,11 +67,10 @@ export function CardsPage() {
   };
   return (
     <div className="page-enter cards-page">
-      <div className="page-heading">
-        <div>
-          <h1>Cartões e faturas</h1>
-          <p>Compras organizadas, sem contar o pagamento duas vezes.</p>
-        </div>
+      <PageHeader
+        title={<>Cartões e faturas</>}
+        description={<>Compras organizadas, sem contar o pagamento duas vezes.</>}
+      >
         <div className="inline-actions">
           <button
             className="icon-button"
@@ -84,7 +84,7 @@ export function CardsPage() {
             Novo cartão
           </Button>
         </div>
-      </div>
+      </PageHeader>
       {message && (
         <p className="form-success" role="status">
           {message}

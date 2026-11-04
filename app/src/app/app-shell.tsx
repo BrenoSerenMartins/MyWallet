@@ -192,17 +192,23 @@ export function AppShell() {
         }}
       >
         <nav className="more-menu" aria-label="Mais funções">
-          {navigation
-            .filter((n) =>
-              ['/imports', '/categories', '/counterparties', '/settings'].includes(n.to),
-            )
-            .map(({ to, label, Icon }) => (
-              <NavLink to={to} key={to} onClick={() => setMore(false)}>
-                <Icon size={21} />
-                <span>{label}</span>
-                <ChevronRight size={17} />
-              </NavLink>
-            ))}
+          {[
+            { title: 'Seu dinheiro', paths: ['/cards', '/wealth', '/imports'] },
+            { title: 'Organização', paths: ['/categories', '/counterparties', '/settings'] },
+          ].map((group) => (
+            <div className="more-menu-group" key={group.title}>
+              <h3>{group.title}</h3>
+              {navigation
+                .filter((n) => group.paths.includes(n.to))
+                .map(({ to, label, Icon }) => (
+                  <NavLink to={to} key={to} onClick={() => setMore(false)}>
+                    <Icon size={20} />
+                    <span>{label}</span>
+                    <ChevronRight size={16} />
+                  </NavLink>
+                ))}
+            </div>
+          ))}
           <NavLink to="/workspaces" onClick={() => setMore(false)}>
             <FolderTree size={21} />
             <span>Trocar de espaço</span>

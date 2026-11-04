@@ -1,15 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Check,
-  Eye,
-  EyeOff,
-  Layers3,
-  ShieldCheck,
-  Sparkles,
-} from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { authClient } from '../../shared/api/auth-client';
 import { Button, Logo, ThemeSwitcher } from '../../shared/ui/primitives';
 export function AuthPage() {
@@ -89,19 +80,29 @@ export function AuthPage() {
             <span>Mais você.</span>
           </h1>
           <p>Um lugar para organizar o presente e dar espaço aos seus próximos planos.</p>
-          <div className="story-orbit">
-            <div className="orbit-ring one" />
-            <div className="orbit-ring two" />
-            <div className="orbit-center">
-              <Layers3 size={54} />
-            </div>
-            <span className="orbit-label">
-              <Sparkles size={16} /> Tudo conectado
-            </span>
-            <span className="orbit-label secondary">
-              <Check size={16} /> Cada movimento importa
-            </span>
-          </div>
+          <ol className="auth-feature-list">
+            <li>
+              <span>01</span>
+              <div>
+                <strong>Contas em um só lugar</strong>
+                <p>Importe seus extratos e acompanhe cada movimento.</p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <strong>Um plano para o seu mês</strong>
+                <p>Compare suas intenções com o que aconteceu.</p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <strong>Seu patrimônio, por inteiro</strong>
+                <p>Veja investimentos, bens e compromissos com clareza.</p>
+              </div>
+            </li>
+          </ol>
         </div>
         <p className="story-footer">
           Seu dinheiro merece uma visão mais clara. <ArrowUpRight size={16} />

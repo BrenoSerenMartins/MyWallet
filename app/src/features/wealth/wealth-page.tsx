@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -75,11 +76,10 @@ export function WealthPage() {
   }
   return (
     <div className="page-enter wealth-page">
-      <div className="page-heading">
-        <div>
-          <h1>Investimentos e patrimônio</h1>
-          <p>O que você tem, o que deve e como isso evolui.</p>
-        </div>
+      <PageHeader
+        title={<>Investimentos e patrimônio</>}
+        description={<>O que você tem, o que deve e como isso evolui.</>}
+      >
         <div className="inline-actions">
           <button
             className="icon-button"
@@ -97,7 +97,7 @@ export function WealthPage() {
             {captureBusy ? 'Salvando…' : 'Guardar posição atual'}
           </Button>
         </div>
-      </div>
+      </PageHeader>
       {message && (
         <p className="form-success" role="status">
           {message}

@@ -346,24 +346,10 @@
   }
 }
 
-/* A quiet, neutral canvas with colour reserved for financial meaning. */
 .planning-workspace {
-  --surface: #fffefa;
-  --surface-soft: #f5f3ef;
-  --surface-raised: #ece9e3;
-  --border: #e3e0d9;
-  --muted: #62676a;
-  --planning-highlight: #a37c45;
+  --planning-highlight: var(--accent);
   max-width: 1240px;
   margin-inline: auto;
-}
-:root[data-theme='dark'] .planning-workspace {
-  --surface: #191e23;
-  --surface-soft: #20262c;
-  --surface-raised: #2a3036;
-  --border: #333a40;
-  --muted: #adb5bd;
-  --planning-highlight: #d2b382;
 }
 .planning-workspace .planning-navigation {
   margin-bottom: 32px;

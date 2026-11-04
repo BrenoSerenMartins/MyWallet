@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Plus, Pencil, CalendarClock, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -71,16 +72,15 @@ export function CommitmentsPage() {
   }
   return (
     <div className="commitments-page">
-      <div className="page-heading">
-        <div>
-          <h1>Contas e recebimentos</h1>
-          <p>Organize vencimentos e acompanhe o que ainda vai acontecer.</p>
-        </div>
+      <PageHeader
+        title={<>Contas e recebimentos</>}
+        description={<>Organize vencimentos e acompanhe o que ainda vai acontecer.</>}
+      >
         <Button onClick={() => setDialog('new')} disabled={!navigator.onLine}>
           <Plus size={18} />
           Novo compromisso
         </Button>
-      </div>
+      </PageHeader>
       <div className="commitment-period">
         <div className="month-navigation">
           <button

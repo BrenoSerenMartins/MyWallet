@@ -1,0 +1,1012 @@
+/* Shared product language. Feature files own layout; these rules own surfaces,
+   hierarchy, controls and interactions across every route and dialog portal. */
+body {
+  background: var(--bg);
+  letter-spacing: -0.12px;
+}
+body .logo {
+  font-size: 23px;
+  letter-spacing: -1px;
+}
+body .logo-mark {
+  background: var(--brand);
+  color: var(--bg);
+  border-radius: 12px;
+}
+body .logo-dot {
+  color: var(--brand);
+}
+body .app-header {
+  min-height: 80px;
+  gap: 28px;
+  background: var(--bg);
+  padding-inline: max(24px, calc((100vw - 1360px) / 2));
+  border-bottom-color: var(--border);
+}
+body .desktop-navigation {
+  gap: 2px;
+}
+body .desktop-navigation a {
+  position: relative;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+body .desktop-navigation a.active,
+body .header-more.active {
+  color: var(--text);
+  background: var(--surface-raised);
+}
+body .desktop-navigation a.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: calc(50% - 8px);
+  width: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+body .workspace-pill {
+  border-color: transparent;
+  background: var(--surface-soft);
+  border-radius: var(--radius-sm);
+}
+body .page-content {
+  max-width: 1360px;
+  padding: 36px var(--space-page) 64px;
+}
+body .page-header {
+  width: 100%;
+  margin-bottom: 28px;
+  align-items: center;
+  gap: 24px;
+}
+body .page-header-copy {
+  min-width: 0;
+}
+body .page-header h1 {
+  font-size: clamp(27px, 2.6vw, 36px);
+  line-height: 1.2;
+  letter-spacing: -1.2px;
+  font-weight: 500;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+body .page-header p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 10px;
+  max-width: 62ch;
+}
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+body .panel {
+  border-radius: var(--radius-lg);
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: 0 3px 20px #00000003;
+}
+body .section-heading {
+  padding: 22px 24px;
+}
+body .section-heading h2 {
+  font-size: 16px;
+  letter-spacing: -0.4px;
+  font-weight: 600;
+}
+body .section-heading p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+body .button {
+  color: var(--bg);
+  background: var(--text);
+  border-color: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 44px;
+  padding: 11px 17px;
+  box-shadow: none;
+  transition:
+    background 160ms ease,
+    opacity 160ms ease;
+}
+body .button:hover:not(:disabled) {
+  transform: none;
+  filter: none;
+  background: color-mix(in srgb, var(--text) 88%, var(--bg));
+}
+body .button.secondary {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+body .button.secondary:hover:not(:disabled) {
+  background: var(--surface-raised);
+}
+body .button.danger,
+body .button.workspace-danger {
+  background: var(--negative);
+  color: var(--surface);
+}
+body .text-button {
+  font-size: 13px;
+  line-height: 1.5;
+  text-underline-offset: 4px;
+}
+body .text-button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+body input,
+body select,
+body textarea {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  min-height: 46px;
+  font-size: 14px;
+  box-shadow: none;
+}
+body input:focus,
+body select:focus,
+body textarea:focus {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+body input[type='checkbox'],
+body input[type='radio'] {
+  min-height: 20px;
+}
+body input[type='color'] {
+  min-height: 44px;
+}
+body label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+body .search-field {
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+body .search-field input {
+  background: transparent;
+}
+body .view-switcher {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+  border: 1px solid transparent;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+body .view-switcher button {
+  background: transparent;
+  color: var(--muted);
+  padding: 10px 16px;
+  font-weight: 500;
+  font-size: 13px;
+  border-radius: 8px;
+}
+body .view-switcher button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 5px #0000000a;
+}
+body .badge {
+  border-radius: 6px;
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+body .badge.success {
+  background: color-mix(in srgb, var(--positive) 9%, var(--surface));
+  color: var(--positive);
+}
+body .review-banner {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+  padding: 18px 22px;
+}
+body .review-banner strong {
+  font-weight: 500;
+}
+body .form-error,
+body .form-success,
+body .error-state {
+  border-radius: var(--radius-md);
+  line-height: 1.65;
+}
+body .form-success {
+  color: var(--positive);
+  background: color-mix(in srgb, var(--positive) 7%, var(--surface));
+}
+body .empty-state {
+  padding: 48px 24px;
+  max-width: 520px;
+  margin-inline: auto;
+}
+body .empty-icon,
+body .file-icon {
+  background: var(--surface-raised);
+  color: var(--muted);
+  border: 0;
+}
+body .empty-state p {
+  line-height: 1.7;
+  color: var(--muted);
+}
+body .dialog-overlay {
+  background: #10171080;
+  backdrop-filter: blur(6px);
+}
+body .dialog-content {
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: 22px;
+  padding: 28px;
+  box-shadow: 0 24px 100px #00000030;
+}
+body .dialog-heading {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+body .dialog-heading h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: -0.8px;
+}
+body .dialog-heading p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+body .form-stack {
+  gap: 20px;
+}
+body .form-actions {
+  gap: 10px;
+}
+body .period-picker {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 11px;
+}
+body .period-picker input {
+  background: transparent;
+  min-height: 30px;
+  font-size: 13px;
+  border-radius: 0;
+}
+body .more-menu {
+  gap: 16px;
+}
+.more-menu-group h3 {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin: 0 12px 8px;
+}
+body .more-menu a {
+  border: 0;
+  border-radius: 10px;
+  min-height: 48px;
+  padding: 12px;
+  font-size: 14px;
+}
+body .more-menu a > svg:first-child {
+  color: var(--muted);
+}
+body .more-menu a.active {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+body .menu-preferences {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin-top: 20px;
+}
+/* Overview: one account snapshot, a quiet adjacent portfolio, then analysis. */
+.dashboard-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+body .dashboard-page {
+  gap: 28px;
+}
+body .dashboard-page > .page-header {
+  margin-bottom: 0;
+}
+body .current-balances {
+  background: linear-gradient(140deg, var(--hero-start), var(--surface));
+  border-color: var(--border);
+  padding-inline: 28px;
+}
+body .balance-topline {
+  padding-top: 20px;
+}
+body .balance-snapshot {
+  gap: 20px;
+  padding-block: 20px 28px;
+}
+body .balance-snapshot .hero-balance {
+  font-size: clamp(34px, 4.5vw, 56px);
+  letter-spacing: -2px;
+  font-weight: 500;
+}
+body .balance-snapshot > div + div {
+  padding-left: 20px;
+}
+body .dashboard-overview .finance-overview-links {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+body .dashboard-overview .finance-overview-links > .panel {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 18px 24px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 16px;
+  align-content: center;
+}
+body .dashboard-overview .finance-overview-links > .panel + .panel {
+  border-top: 1px solid var(--border);
+}
+body .dashboard-overview .finance-overview-links strong {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.7px;
+  grid-row: 1 / 3;
+  grid-column: 2;
+  align-self: center;
+}
+body .dashboard-overview .finance-overview-links span,
+body .dashboard-overview .finance-overview-links small {
+  font-size: 12px;
+}
+body .month-metric {
+  padding: 24px;
+}
+body .monthly-heading {
+  margin-top: 12px;
+}
+body .dashboard-lower {
+  gap: 24px;
+}
+/* Accounts and transaction workbench. */
+body .accounts-grid {
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+}
+body .account-card {
+  padding: 24px;
+}
+body .account-card-top {
+  margin-bottom: 22px;
+}
+body .bank-icon,
+body .bank-icon.large {
+  border-radius: 12px;
+  background: var(--surface-raised);
+  color: var(--text);
+}
+body .bank-icon.mp {
+  background: color-mix(in srgb, #5899c0 12%, var(--surface));
+  color: var(--text);
+}
+body .account-card-balance {
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+body .account-card-footer {
+  border-top: 1px solid var(--border);
+  gap: 8px 20px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+}
+body .account-card-footer a {
+  color: var(--text);
+}
+body .movements-workbench {
+  overflow: hidden;
+}
+body .movements-workbench .filters {
+  padding: 20px 24px 12px;
+  border: 0;
+}
+body .movements-workbench > .view-switcher {
+  margin: 0 24px 12px;
+  max-width: calc(100% - 48px);
+}
+body .filter-disclosure > summary {
+  min-height: 48px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+body .expanded-filters {
+  background: var(--surface-soft);
+  padding: 20px 24px;
+}
+body .transaction-row {
+  min-height: 76px;
+  padding-block: 16px;
+  border-color: var(--border);
+}
+body .transaction-row:hover {
+  background: var(--surface-soft);
+}
+body .transaction-icon {
+  background: var(--surface-soft);
+}
+/* Import and review: the file and movements take precedence over the guide. */
+body .import-grid {
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
+  gap: 24px;
+}
+body .upload-panel {
+  align-items: stretch;
+  text-align: left;
+  padding: 32px;
+}
+body .upload-panel .file-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  margin: 0 0 24px;
+}
+body .upload-panel h2 {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.8px;
+}
+body .upload-panel > p {
+  margin: 12px 0 28px;
+  font-size: 13px;
+  max-width: 54ch;
+}
+body .upload-panel > label,
+body .upload-panel > .button,
+body .upload-panel .field-help {
+  width: 100%;
+  max-width: none;
+}
+body .import-guide {
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
+  padding: 24px;
+}
+body .import-guide > .eyebrow {
+  display: none;
+}
+body .import-guide h2 {
+  font-size: 18px;
+  margin-bottom: 26px;
+}
+body .guide-step > span {
+  border: 0;
+  background: var(--surface-raised);
+  color: var(--muted);
+  border-radius: 50%;
+}
+body .guide-step h3 {
+  font-size: 13px;
+}
+body .guide-step p,
+body .guide-note p {
+  font-size: 12px;
+  line-height: 1.7;
+}
+body .review-table {
+  font-size: 13px;
+}
+body .review-table th {
+  background: var(--surface-soft);
+  color: var(--muted);
+  padding-block: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+body .review-table td {
+  border-color: var(--border);
+  padding-block: 20px;
+}
+body .review-table tr:not(.excluded):hover td {
+  background: var(--surface-soft);
+}
+body .review-table select {
+  min-height: 44px;
+  font-size: 13px;
+}
+body .import-history-row {
+  min-height: 78px;
+  padding: 20px 24px;
+}
+/* Organisation: tabbed lists instead of collections of decorated boxes. */
+body .category-toolbar {
+  gap: 16px;
+  margin-bottom: 24px;
+}
+body .category-toolbar .view-switcher {
+  margin-bottom: 0;
+}
+body .category-group-tabs {
+  margin-bottom: 24px;
+  gap: 12px;
+}
+body .category-group-tabs > button {
+  border-radius: 0;
+  padding-inline: 8px;
+  min-height: 52px;
+}
+body .category-group-panel {
+  box-shadow: none;
+}
+body .category-list-heading {
+  padding: 20px 24px;
+}
+body .category-row {
+  min-height: 72px;
+  padding: 18px 24px;
+}
+body .category-row:hover {
+  background: var(--surface-soft);
+}
+body .counterparties-page {
+  gap: 24px;
+}
+body .counterparties-page > .form-grid {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  align-items: end;
+}
+body .counterparty-panel > summary {
+  padding: 20px 24px;
+  min-height: 76px;
+}
+body .counterparty-panel > .form-stack {
+  padding: 24px;
+  background: var(--surface-soft);
+}
+/* Cards, investments, commitments and settings inherit the same product frame. */
+body .credit-selector-item {
+  padding: 24px;
+  gap: 14px;
+}
+body .credit-selector-item.selected {
+  border-color: var(--accent);
+  background: var(--surface-soft);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+body .card-detail {
+  padding: 28px;
+}
+body .card-detail .section-heading {
+  padding: 0;
+}
+body .holding-values {
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+body .wealth-net-worth {
+  background: linear-gradient(140deg, var(--hero-start), var(--surface));
+  color: var(--text);
+}
+body .wealth-net-worth span,
+body .wealth-net-worth small {
+  color: var(--muted);
+}
+body .wealth-overview > .panel {
+  padding: 28px;
+}
+body .wealth-overview strong {
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+body .investment-row {
+  padding: 24px;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+body .finance-disclosure > summary {
+  min-height: 48px;
+  color: var(--muted);
+}
+body .cashflow-forecast {
+  background: var(--surface);
+  border-color: var(--border);
+}
+body .commitment-row {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+}
+body .settings-panel,
+body .settings-shortcut {
+  box-shadow: none;
+}
+body .settings-info {
+  padding: 24px;
+}
+body .settings-info strong {
+  font-weight: 500;
+}
+body .settings-info p {
+  font-size: 13px;
+  line-height: 1.7;
+}
+/* Entry and workspace selection are part of the same interface. */
+body .auth-story {
+  background: linear-gradient(140deg, var(--hero-start), var(--surface));
+  color: var(--text);
+  border-right: 1px solid var(--border);
+  padding: clamp(28px, 4vw, 64px);
+}
+body .auth-story .logo-mark {
+  background: var(--brand);
+  color: var(--bg);
+}
+body .auth-story .logo-dot {
+  color: var(--brand);
+}
+body .story-content h1 {
+  font-size: clamp(38px, 4vw, 62px);
+  letter-spacing: -2.5px;
+  font-weight: 500;
+}
+body .story-content h1 > span {
+  color: var(--accent);
+}
+body .story-content > p,
+body .story-content > .eyebrow,
+body .story-footer {
+  color: var(--muted);
+}
+body .auth-form-wrap h2 {
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+body .spaces-main {
+  max-width: 1240px;
+  padding-top: 48px;
+}
+body .spaces-topbar {
+  background: var(--bg);
+  border-color: var(--border);
+}
+body .space-card,
+body .space-create-card {
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+}
+body .space-card:hover {
+  transform: none;
+  border-color: var(--accent);
+}
+body .space-cover {
+  height: 102px;
+  background: var(--surface-soft);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+body .space-cover::before,
+body .space-cover::after {
+  display: none;
+}
+body .spaces-explanation {
+  border-color: var(--border);
+  background: var(--surface-soft);
+}
+/* Keep touch targets and the content hierarchy intact at narrow widths and zoom. */
+@media (max-width: 1100px) {
+  body .app-header {
+    gap: 12px;
+    padding-inline: 20px;
+  }
+  body .desktop-navigation a {
+    padding-inline: 9px;
+  }
+  body .header-create span {
+    display: none;
+  }
+  .dashboard-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body .dashboard-overview .finance-overview-links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  body .dashboard-overview .finance-overview-links > .panel {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  body .dashboard-overview .finance-overview-links strong {
+    grid-row: auto;
+    grid-column: auto;
+  }
+  body .dashboard-overview .finance-overview-links > .panel + .panel {
+    border-top: 0;
+    border-left: 1px solid var(--border);
+  }
+}
+@media (max-width: 760px) {
+  body .app-header {
+    min-height: 68px;
+    padding: 10px 16px;
+    gap: 12px;
+  }
+  body .page-content {
+    padding: 24px 18px calc(108px + env(safe-area-inset-bottom));
+  }
+  body .page-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  body .page-header h1 {
+    font-size: 28px;
+  }
+  body .page-header-copy {
+    flex: 1 1 100%;
+  }
+  body .page-header-actions {
+    width: 100%;
+    gap: 10px;
+  }
+  body .page-header-actions > .button {
+    flex: 1;
+  }
+  body .page-header-actions .inline-actions {
+    width: 100%;
+  }
+  body .button,
+  body .icon-button,
+  body .text-button,
+  body .view-switcher button {
+    min-height: 48px;
+  }
+  body .view-switcher {
+    gap: 2px;
+  }
+  body .view-switcher button {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  body .bottom-nav {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 24px #00000008;
+  }
+  body .bottom-nav a,
+  body .bottom-nav button {
+    min-height: 62px;
+    color: var(--muted);
+  }
+  body .bottom-nav a.active,
+  body .bottom-nav button.active {
+    color: var(--text);
+    background: var(--surface-soft);
+    border-radius: 12px;
+  }
+  body .dialog-content {
+    padding: 22px 18px;
+    border-radius: 18px 18px 0 0;
+  }
+  body .dialog-heading h2 {
+    font-size: 23px;
+  }
+  body .dialog-content .form-actions {
+    background: var(--surface);
+  }
+  body .dashboard-overview .finance-overview-links {
+    grid-template-columns: 1fr;
+  }
+  body .dashboard-overview .finance-overview-links > .panel {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 18px;
+  }
+  body .dashboard-overview .finance-overview-links strong {
+    grid-row: 1 / 3;
+    grid-column: 2;
+    font-size: 20px;
+    overflow-wrap: anywhere;
+  }
+  body .dashboard-overview .finance-overview-links > .panel + .panel {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  body .current-balances {
+    padding-inline: 20px;
+  }
+  body .balance-snapshot .hero-balance {
+    font-size: 40px;
+  }
+  body .section-heading,
+  body .account-card,
+  body .counterparties-page > .form-grid,
+  body .investment-row,
+  body .card-detail,
+  body .wealth-overview > .panel {
+    padding: 20px;
+  }
+  body .import-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body .upload-panel {
+    padding: 24px;
+  }
+  body .import-guide {
+    padding: 12px 6px;
+  }
+  body .guide-step {
+    margin-top: 20px;
+  }
+  body .movements-workbench .filters {
+    padding: 18px;
+  }
+  body .movements-workbench > .view-switcher {
+    margin-inline: 14px;
+    max-width: calc(100% - 28px);
+  }
+  body .category-row {
+    padding: 16px 18px;
+  }
+  body .spaces-main {
+    padding-top: 28px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  body .panel,
+  body .view-switcher button,
+  body .desktop-navigation a {
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease;
+  }
+}
+body .account-card-footer > a {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+body .account-card .account-card-balance {
+  font-weight: 500;
+  font-size: 34px;
+  letter-spacing: -1px;
+}
+body .card-bill-stats {
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+}
+body .space-cover .space-card-symbol {
+  background: color-mix(in srgb, var(--space-color) 15%, var(--surface));
+  color: var(--text);
+  border-color: var(--border);
+}
+body .space-cover-rings {
+  display: none;
+}
+body .space-current {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border);
+}
+body .auth-feature-list {
+  list-style: none;
+  margin: 40px 0 0;
+  padding: 0;
+}
+body .auth-feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+}
+body .auth-feature-list li > span {
+  font-size: 12px;
+  color: var(--accent);
+  line-height: 24px;
+  font-variant-numeric: tabular-nums;
+}
+body .auth-feature-list strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+body .auth-feature-list p {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 5px;
+  line-height: 1.6;
+}
+body .planning-workspace .view-switcher {
+  margin-bottom: 0;
+}
+body .planning-page .page-header-actions > .period-picker {
+  width: auto;
+}
+@media (max-width: 400px) {
+  body .app-header .logo {
+    font-size: 19px;
+    gap: 6px;
+  }
+  body .workspace-pill {
+    max-width: 82px;
+  }
+  body .dashboard-overview .finance-overview-links > .panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body .dashboard-overview .finance-overview-links strong {
+    grid-column: 1;
+    grid-row: auto;
+    order: 1;
+  }
+  body .bottom-nav a,
+  body .bottom-nav button {
+    min-width: 0;
+    flex: 1;
+    font-size: 10px;
+  }
+}
+body .account-reference-actions {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.account-reference-actions > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 48px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  list-style: none;
+  padding: 8px;
+}
+.account-reference-actions > summary::after {
+  content: '+';
+  font-size: 18px;
+}
+.account-reference-actions[open] > summary::after {
+  content: '−';
+}
+.account-reference-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 0 8px 8px;
+}

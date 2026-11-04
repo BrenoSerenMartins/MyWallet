@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Palette, ShieldCheck, FolderTree, ArrowUpRight } from 'lucide-react';
@@ -10,14 +11,11 @@ export function SettingsPage() {
   const { session } = useAuth();
   const [view, setView] = useState('appearance');
   return (
-    <div className="page-enter">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">DO SEU JEITO</span>
-          <h1>Preferências</h1>
-          <p>Seu espaço, suas escolhas e seus dados.</p>
-        </div>
-      </div>
+    <div className="page-enter settings-page">
+      <PageHeader
+        title={<>Preferências</>}
+        description={<>Seu espaço, suas escolhas e seus dados.</>}
+      ></PageHeader>
       <ViewSwitcher
         label="Seções de preferências"
         value={view}

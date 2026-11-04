@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { BenefitPlanningNotice } from './components/benefit-planning-notice';
 import { CommitmentsPage } from './commitments-page';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
@@ -56,11 +57,10 @@ function MonthlyBudgetPage() {
   }
   return (
     <div className="page-enter planning-page">
-      <div className="page-heading">
-        <div>
-          <h1>Planejamento mensal</h1>
-          <p>Um plano claro. Espaço para o que importa.</p>
-        </div>
+      <PageHeader
+        title={<>Planejamento mensal</>}
+        description={<>Um plano claro. Espaço para o que importa.</>}
+      >
         <label className="period-picker">
           <span>Mês do plano</span>
           <input
@@ -77,7 +77,7 @@ function MonthlyBudgetPage() {
             }}
           />
         </label>
-      </div>
+      </PageHeader>
       <div className="planning-scope">
         <ViewSwitcher
           label="Contas no realizado"

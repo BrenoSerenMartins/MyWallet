@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/ui/page-header';
 import { FinanceOverview } from './components/finance-overview';
 import { CashflowForecast } from '../planning/components/cashflow-forecast';
 import '../planning/commitments.css';
@@ -25,25 +26,26 @@ export function DashboardPage() {
   const { snapshot, summary, movements, plan, transactionsLink } = useDashboard(month);
   return (
     <div className="page-enter dashboard-page">
-      <div className="dashboard-heading">
-        <h1>Visão geral</h1>
+      <PageHeader title={<>Visão geral</>}>
         <Link className="button secondary compact" to="/imports">
           <Upload size={16} />
           Importar extrato
         </Link>
+      </PageHeader>
+      <div className="dashboard-overview">
+        {snapshot.isPending ? (
+          <Loading />
+        ) : snapshot.isError ? (
+          <ErrorState error={snapshot.error} retry={() => void snapshot.refetch()} />
+        ) : (
+          <BalanceOverview
+            summary={snapshot.data}
+            visible={visible}
+            onToggle={() => setVisible(!visible)}
+          />
+        )}
+        <FinanceOverview visible={visible} />
       </div>
-      {snapshot.isPending ? (
-        <Loading />
-      ) : snapshot.isError ? (
-        <ErrorState error={snapshot.error} retry={() => void snapshot.refetch()} />
-      ) : (
-        <BalanceOverview
-          summary={snapshot.data}
-          visible={visible}
-          onToggle={() => setVisible(!visible)}
-        />
-      )}
-      <FinanceOverview visible={visible} />
       <CashflowForecast visible={visible} />
       <section className="monthly-analysis" aria-labelledby="monthly-title">
         <div className="monthly-heading">

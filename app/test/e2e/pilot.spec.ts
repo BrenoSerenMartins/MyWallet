@@ -1297,7 +1297,7 @@ for (const width of [390, 1440])
         .filter({ has: page.getByRole('button', { name: 'Editar categoria Luz', exact: true }) })
         .locator('.category-type-dot');
       expect(await dot.evaluate((node) => getComputedStyle(node).backgroundColor)).toBe(
-        theme === 'claro' ? 'rgb(195, 72, 84)' : 'rgb(242, 138, 151)',
+        theme === 'claro' ? 'rgb(184, 75, 85)' : 'rgb(234, 160, 167)',
       );
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
@@ -2164,6 +2164,7 @@ for (const width of [390, 1440])
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Registrar correção de saldo', exact: true }).click();
     await expect(page.getByText('R$ 59,12', { exact: true })).toBeVisible();
+    await page.getByText('Referência e histórico', { exact: true }).click();
     await page.getByRole('button', { name: 'Histórico de saldo', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Histórico de saldo' });
     await expect(dialog.getByText('Saldo conferido no banco', { exact: true })).toBeVisible();
@@ -2539,6 +2540,7 @@ for (const width of [320, 430, 1024, 1280, 1920])
       });
     }
     await page.goto('/accounts');
+    await page.getByText('Referência e histórico', { exact: true }).click();
     await expect(
       page.getByRole('button', { name: 'Atualizar por extratos', exact: true }),
     ).toBeVisible();
@@ -3451,3 +3453,90 @@ for (const width of [360, 1440])
       true,
     );
   });
+
+const redesignedRoutes = [
+  ['/', 'Visão geral'],
+  ['/transactions', 'Movimentações'],
+  ['/accounts', 'Minhas contas'],
+  ['/planning', 'Planejamento mensal'],
+  ['/planning?view=commitments', 'Contas e recebimentos'],
+  ['/imports', 'Importar extrato'],
+  ['/categories', 'Grupos e categorias'],
+  ['/counterparties', 'Pessoas e estabelecimentos'],
+  ['/cards', 'Cartões e faturas'],
+  ['/wealth', 'Investimentos e patrimônio'],
+  ['/settings', 'Preferências'],
+  ['/workspaces', 'Seus espaços'],
+] as const;
+for (const width of [390, 1440])
+  for (const theme of ['light', 'dark'])
+    test(`shared interface remains usable across all routes at ${width}px in ${theme}`, async ({
+      page,
+    }, info) => {
+      await signedIn(page);
+      await page.addInitScript((value) => localStorage.setItem('mywallet-theme', value), theme);
+      await page.setViewportSize({ width, height: 1000 });
+      for (const [path, title] of redesignedRoutes) {
+        await page.goto(path);
+        const heading = page.getByRole('heading', {
+          level: 1,
+          name: title,
+          exact: title !== 'Seus espaços',
+        });
+        await expect(heading).toBeVisible();
+        await expect(page.locator('.page-header')).toHaveCount(1);
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+          path,
+        ).toBe(true);
+        const action = page.locator('.page-header-actions button').first();
+        if (await action.count()) {
+          const target = await action.boundingBox();
+          expect(target!.height, `${path}: primary action target`).toBeGreaterThanOrEqual(44);
+        }
+        await page.screenshot({
+          path: info.outputPath(`${path.replace(/[^a-z0-9]/gi, '_') || 'overview'}.png`),
+          fullPage: true,
+        });
+      }
+    });
+test('additional finance modules are discoverable from the shared mobile navigation', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const more = page
+    .getByRole('navigation', { name: 'Navegação móvel' })
+    .getByRole('button', { name: 'Mais' });
+  await more.click();
+  const menu = page.getByRole('dialog', { name: 'Menu e preferências' });
+  await menu.getByRole('link', { name: 'Cartões e faturas' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Cartões e faturas' })).toBeVisible();
+  await expect(menu).not.toBeVisible();
+  await more.click();
+  await menu.getByRole('link', { name: 'Investimentos e patrimônio' }).click();
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Investimentos e patrimônio' }),
+  ).toBeVisible();
+});
+test('new shared forms and account controls remain usable with a narrow viewport and large text', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto('/accounts');
+  await page.addStyleTag({ content: 'html { font-size: 200%; }' });
+  await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole('button', { name: 'Adicionar conta', exact: true }),
+  ).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const field = dialog.getByRole('textbox', { name: 'Nome da conta', exact: true });
+  await field.fill('Minha conta');
+  await expect(field).toHaveValue('Minha conta');
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Adicionar conta', exact: true })).toBeFocused();
+});

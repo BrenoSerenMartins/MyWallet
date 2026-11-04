@@ -19,7 +19,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
       document
         .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', dark ? '#081116' : '#f4f7f8');
+        ?.setAttribute('content', dark ? '#141715' : '#f6f5f1');
     };
     apply();
     try {
