@@ -1,3 +1,4 @@
+import { FinanceAreaNav } from '../../shared/navigation/finance-area-nav';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -67,6 +68,7 @@ export function CardsPage() {
   };
   return (
     <div className="page-enter cards-page">
+      <FinanceAreaNav />
       <PageHeader
         title={<>Cartões e faturas</>}
         description={<>Compras organizadas, sem contar o pagamento duas vezes.</>}
@@ -116,7 +118,7 @@ export function CardsPage() {
               Cadastre o fechamento e o vencimento para organizar compras e parcelas.
             </EmptyState>
           ) : (
-            <>
+            <div className="cards-workspace">
               <div className="credit-selector" role="group" aria-label="Escolher cartão">
                 {cards.map((c) => (
                   <button
@@ -392,7 +394,7 @@ export function CardsPage() {
                   )}
                 </section>
               )}
-            </>
+            </div>
           )}
           <Link className="text-button" to="/wealth">
             Ver impacto no patrimônio

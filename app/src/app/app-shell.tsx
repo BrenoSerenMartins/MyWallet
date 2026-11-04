@@ -43,6 +43,7 @@ const navigation = [
   },
   { to: '/settings', label: 'Preferências', mobile: 'Mais', Icon: Settings2 },
 ];
+const primaryPaths = ['/', '/transactions', '/accounts', '/planning', '/wealth'];
 export function AppShell() {
   const { session } = useAuth();
   const { active } = useWorkspace();
@@ -84,11 +85,13 @@ export function AppShell() {
             <Logo />
           </NavLink>
           <nav className="desktop-navigation" aria-label="Navegação principal">
-            {navigation.slice(0, 4).map(({ to, label }) => (
-              <NavLink key={to} to={to} end={to === '/'}>
-                {label}
-              </NavLink>
-            ))}
+            {navigation
+              .filter((n) => primaryPaths.includes(n.to))
+              .map(({ to, label }) => (
+                <NavLink key={to} to={to} end={to === '/'}>
+                  {to === '/wealth' ? 'Patrimônio' : label}
+                </NavLink>
+              ))}
           </nav>
           <div className="header-actions">
             <NavLink
@@ -100,7 +103,7 @@ export function AppShell() {
               <span>{active?.name}</span>
               <ChevronRight size={14} />
             </NavLink>
-            {location.pathname !== '/transactions' && (
+            {location.pathname === '/' && (
               <Button
                 className="compact header-create"
                 aria-label="Novo lançamento"
@@ -113,7 +116,7 @@ export function AppShell() {
             )}
             <button
               type="button"
-              className={`header-more ${navigation.slice(4).some((n) => location.pathname.startsWith(n.to)) ? 'active' : ''}`}
+              className={`header-more ${navigation.filter((n) => !primaryPaths.includes(n.to)).some((n) => location.pathname.startsWith(n.to)) ? 'active' : ''}`}
               onClick={(event) => {
                 menuTrigger.current = event.currentTarget;
                 setMore(true);

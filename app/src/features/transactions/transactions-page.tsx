@@ -109,6 +109,30 @@ export function TransactionsPage() {
     getNextPageParam: (last) => last.nextCursor,
   });
   const items = entries.data?.pages.flatMap((page) => page.items) ?? [];
+  const activeFilters = [
+    ...(params.get('accountId')
+      ? [{ key: 'accountId', label: accounts.data?.find((a) => a.id === account)?.name ?? 'Conta' }]
+      : []),
+    ...(category
+      ? [
+          {
+            key: 'categoryId',
+            label: categories.data?.find((c) => c.id === category)?.name ?? 'Categoria',
+          },
+        ]
+      : []),
+    ...(reconciliation
+      ? [
+          {
+            key: 'reconciliation',
+            label: reconciliation === 'pending' ? 'Conciliação pendente' : 'Conferidas por arquivo',
+          },
+        ]
+      : []),
+    ...(from ? [{ key: 'from', label: `Desde ${from.split('-').reverse().join('/')}` }] : []),
+    ...(to ? [{ key: 'to', label: `Até ${to.split('-').reverse().join('/')}` }] : []),
+  ];
+
   const accountName = accounts.data?.find((a) => a.id === accountId)?.name;
   const close = () => {
     setOpen(false);
@@ -223,10 +247,39 @@ export function TransactionsPage() {
                 setParams(new URLSearchParams(), { replace: true, preventScrollReset: true });
               }}
             >
-              Limpar filtros
+              Redefinir filtros
             </button>
           </div>
         </details>
+        {(activeFilters.length > 0 || search) && (
+          <div className="active-filters" aria-label="Filtros aplicados">
+            {activeFilters.map((filter) => (
+              <button
+                className="filter-chip"
+                key={filter.key}
+                onClick={() => changeFilter(filter.key, '')}
+                aria-label={`Remover filtro: ${filter.label}`}
+              >
+                {filter.label}
+                <span aria-hidden="true">×</span>
+              </button>
+            ))}
+            <button
+              className="text-button"
+              onClick={() =>
+                setParams(new URLSearchParams(), { replace: true, preventScrollReset: true })
+              }
+            >
+              Limpar filtros
+            </button>
+          </div>
+        )}
+        {!entries.isPending && !entries.isError && (
+          <div className="movement-results" role="status">
+            {items.length} {items.length === 1 ? 'movimento carregado' : 'movimentos carregados'}
+            {entries.hasNextPage ? ' · há mais resultados' : ''}
+          </div>
+        )}
         {entries.isPending ? (
           <Loading />
         ) : entries.isError ? (

@@ -77,10 +77,10 @@ export function Loading() {
     </div>
   );
 }
-export function ThemeSwitcher() {
+export function ThemeSwitcher({ expanded = false }: { expanded?: boolean }) {
   const { mode, setMode } = useTheme();
   return (
-    <div className="theme-switcher" aria-label="Tema">
+    <div className={`theme-switcher ${expanded ? 'theme-options' : ''}`} aria-label="Tema">
       {(
         [
           { mode: 'light', label: 'Claro', Icon: Sun },
@@ -95,7 +95,15 @@ export function ThemeSwitcher() {
           aria-pressed={mode === value}
           onClick={() => setMode(value)}
         >
+          {expanded && (
+            <span className={`theme-preview preview-${value}`} aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+          )}
           <Icon size={16} />
+          {expanded && <span>{label}</span>}
         </button>
       ))}
     </div>

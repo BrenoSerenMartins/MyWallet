@@ -88,14 +88,26 @@ export function WealthPage() {
           >
             {visible ? <Eye size={18} /> : <EyeOff size={18} />}
           </button>
-          <Button
-            className="secondary compact"
-            disabled={captureBusy || !data || !navigator.onLine}
-            onClick={() => void capture()}
-          >
-            <Camera size={17} />
-            {captureBusy ? 'Salvando…' : 'Guardar posição atual'}
-          </Button>
+          {view === 'history' ? (
+            <Button
+              className="secondary compact"
+              disabled={captureBusy || !data || !navigator.onLine}
+              onClick={() => void capture()}
+            >
+              <Camera size={17} />
+              {captureBusy ? 'Salvando…' : 'Guardar posição atual'}
+            </Button>
+          ) : (
+            <Button
+              disabled={!navigator.onLine}
+              onClick={() =>
+                setDialog(view === 'investments' ? { kind: 'newHolding' } : { kind: 'item' })
+              }
+            >
+              <Plus size={17} />
+              {view === 'investments' ? 'Novo investimento' : 'Adicionar posição'}
+            </Button>
+          )}
         </div>
       </PageHeader>
       {message && (
@@ -134,31 +146,7 @@ export function WealthPage() {
                 <small>Cartões, contas negativas e outras dívidas</small>
               </div>
             </section>
-            <details className="panel wealth-composition finance-disclosure">
-              <summary>Composição do patrimônio</summary>
-              <dl>
-                {[
-                  ['Dinheiro nas contas', data.cash],
-                  ['Reservas', data.reserves],
-                  ['Investimentos avaliados', data.investments],
-                  ['Outros bens e ativos', data.otherAssets],
-                  ['Créditos nos cartões', data.cardCredit],
-                  ['Dívidas de cartões', -data.cardDebt],
-                  ['Contas com saldo negativo', -data.overdrafts],
-                  ['Outras dívidas', -data.otherDebts],
-                ].map(([label, amount]) => (
-                  <div key={String(label)}>
-                    <dt>{label}</dt>
-                    <dd>{value(Number(amount))}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="field-help">
-                Benefícios de uso restrito ({value(data.benefitsExcluded)}) ficam fora do
-                patrimônio. O capital contábil dos investimentos não é somado novamente ao valor
-                avaliado. <Link to="/cards">Revisar cartões</Link>.
-              </p>
-            </details>
+
             <ViewSwitcher
               label="Área do patrimônio"
               value={view}
@@ -177,14 +165,6 @@ export function WealthPage() {
               <>
                 <div className="section-heading">
                   <h2>Carteira de investimentos</h2>
-                  <Button
-                    className="compact"
-                    onClick={() => setDialog({ kind: 'newHolding' })}
-                    disabled={!navigator.onLine}
-                  >
-                    <Plus size={17} />
-                    Novo investimento
-                  </Button>
                 </div>
                 <div className="wealth-filters">
                   <label>
@@ -285,14 +265,6 @@ export function WealthPage() {
               <>
                 <div className="section-heading">
                   <h2>Bens e outras dívidas</h2>
-                  <Button
-                    className="compact"
-                    disabled={!navigator.onLine}
-                    onClick={() => setDialog({ kind: 'item' })}
-                  >
-                    <Plus size={17} />
-                    Adicionar posição
-                  </Button>
                 </div>
                 {!data.items.length ? (
                   <EmptyState title="Complete sua visão patrimonial">
@@ -330,6 +302,31 @@ export function WealthPage() {
             ) : (
               <WealthHistory history={data.history} visible={visible} />
             )}
+            <details className="panel wealth-composition finance-disclosure">
+              <summary>Composição do patrimônio</summary>
+              <dl>
+                {[
+                  ['Dinheiro nas contas', data.cash],
+                  ['Reservas', data.reserves],
+                  ['Investimentos avaliados', data.investments],
+                  ['Outros bens e ativos', data.otherAssets],
+                  ['Créditos nos cartões', data.cardCredit],
+                  ['Dívidas de cartões', -data.cardDebt],
+                  ['Contas com saldo negativo', -data.overdrafts],
+                  ['Outras dívidas', -data.otherDebts],
+                ].map(([label, amount]) => (
+                  <div key={String(label)}>
+                    <dt>{label}</dt>
+                    <dd>{value(Number(amount))}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="field-help">
+                Benefícios de uso restrito ({value(data.benefitsExcluded)}) ficam fora do
+                patrimônio. O capital contábil dos investimentos não é somado novamente ao valor
+                avaliado. <Link to="/cards">Revisar cartões</Link>.
+              </p>
+            </details>
           </>
         )
       )}

@@ -1,6 +1,5 @@
 import { PageHeader } from '../../shared/ui/page-header';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Palette, ShieldCheck, FolderTree, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '../auth/auth-provider';
 import { authClient } from '../../shared/api/auth-client';
@@ -9,7 +8,17 @@ import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { DataSettings } from './data-settings';
 export function SettingsPage() {
   const { session } = useAuth();
-  const [view, setView] = useState('appearance');
+  const [params, setParams] = useSearchParams();
+  const view = ['appearance', 'data', 'account'].includes(params.get('view') ?? '')
+    ? params.get('view')!
+    : 'appearance';
+  const setView = (value: string) => {
+    const next = new URLSearchParams(params);
+    if (value === 'appearance') next.delete('view');
+    else next.set('view', value);
+    setParams(next);
+  };
+
   return (
     <div className="page-enter settings-page">
       <PageHeader
@@ -38,10 +47,9 @@ export function SettingsPage() {
                   </h2>
                   <p>Escolha como prefere enxergar seu espaço.</p>
                 </div>
-                <ThemeSwitcher />
               </div>
               <div className="settings-info">
-                <strong>Claro, escuro ou automático.</strong>
+                <ThemeSwitcher expanded />
                 <p>
                   O modo sistema acompanha seu dispositivo. Sua escolha fica salva neste navegador.
                 </p>

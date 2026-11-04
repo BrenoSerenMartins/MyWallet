@@ -24,7 +24,7 @@ Support `light`, `dark`, and `system`. Start with the system preference and pers
 - Initial contrast checks for the specified main text, muted text, and button pairs exceed 4.5:1. This is a palette check, not a completed interface accessibility audit.
 
 ## Navigation and layout
-- Desktop: compact top navigation with Overview, Transactions, Accounts and Planning; workspace switching, creation and More remain reachable. No permanent sidebar. Home separates current tracked balances from monthly analysis.
+- Desktop: compact top navigation with Overview, Transactions, Accounts, Planning and Wealth; workspace switching, creation and More remain reachable. No permanent sidebar. Home separates its Summary workspace (balances, a compact forecast and recent entries) from Analysis (monthly evolution and spending breakdown).
 - Tablet: compact navigation and a two-column layout where space permits.
 - Mobile: five bottom destinations: Home, Transactions, Accounts, Planning, and More. Respect safe areas and the on-screen keyboard. Keep the primary create action reachable without covering content.
 - More opens an accessible dialog containing cards/bills, investments/net worth, imports, groups/categories, people/establishments, preferences, appearance, sign-out and workspace switching. Future areas join navigation only when functional.
@@ -89,3 +89,6 @@ Shared refinement CSS raises standalone targets to 44px, primary mobile controls
 
 ## Shared interface implementation
 See [Shared interface system](interface-system.md) for the complete route coverage, shared `PageHeader`, visual ownership and browser verification limits of the November 2026 revision. Main text, muted text and neutral primary-button contrast pairs exceed 4.5:1 in both palettes; this is a palette calculation, not a full accessibility audit.
+
+## Task and content review
+The follow-up [navigation and task layout review](navigation-task-review.md) defines each destination’s purpose, primary action, default content and supporting disclosures. Changes to area structure should preserve URL context and filtered empty states rather than adding another permanent block to every page.

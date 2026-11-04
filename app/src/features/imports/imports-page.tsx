@@ -46,7 +46,7 @@ export function ImportsPage() {
         title={importId ? 'Revise seu extrato' : 'Importar extrato'}
         description={
           importId
-            ? 'Confira os movimentos e escolha como guardar seus dados.'
+            ? (batch.data?.fileName ?? 'Confira os movimentos antes de concluir.')
             : 'Traga seus movimentos para cá. Você confere tudo antes de salvar.'
         }
       >
@@ -57,6 +57,25 @@ export function ImportsPage() {
           </Link>
         )}
       </PageHeader>
+      <ol className="import-stepper" aria-label="Etapas da importação">
+        {['Enviar arquivo', 'Revisar movimentos', 'Concluir'].map((label, index) => {
+          const current = !importId
+            ? 0
+            : ['confirmed', 'history'].includes(batch.data?.status ?? '')
+              ? 2
+              : 1;
+          return (
+            <li
+              key={label}
+              aria-current={index === current ? 'step' : undefined}
+              data-complete={index < current}
+            >
+              <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+              {label}
+            </li>
+          );
+        })}
+      </ol>
       {importId ? (
         batch.isPending ? (
           <Loading />
@@ -174,42 +193,45 @@ export function ImportsPage() {
                   </EmptyState>
                 )}
               </section>
-              <aside className="panel import-guide">
-                <span className="eyebrow">VOCÊ NO CONTROLE</span>
-                <h2>Enviar. Revisar. Confirmar.</h2>
-                {[
-                  {
-                    n: '01',
-                    title: 'Envie seu extrato',
-                    text: 'Escolha o PDF, CSV ou XLSX e a conta à qual ele pertence.',
-                  },
-                  {
-                    n: '02',
-                    title: 'Confira os movimentos',
-                    text: 'Revise receitas, despesas e transferências. Possíveis duplicidades ficam sinalizadas.',
-                  },
-                  {
-                    n: '03',
-                    title: 'Confirme quando estiver pronto',
-                    text: 'Os lançamentos só entram no seu saldo depois da sua confirmação.',
-                  },
-                ].map((step) => (
-                  <div className="guide-step" key={step.n}>
-                    <span>{step.n}</span>
-                    <div>
-                      <h3>{step.title}</h3>
-                      <p>{step.text}</p>
+              <details className="panel import-guide">
+                <summary>Como funciona a importação</summary>
+                <div className="import-guide-content">
+                  <span className="eyebrow">VOCÊ NO CONTROLE</span>
+                  <h2>Enviar. Revisar. Confirmar.</h2>
+                  {[
+                    {
+                      n: '01',
+                      title: 'Envie seu extrato',
+                      text: 'Escolha o PDF, CSV ou XLSX e a conta à qual ele pertence.',
+                    },
+                    {
+                      n: '02',
+                      title: 'Confira os movimentos',
+                      text: 'Revise receitas, despesas e transferências. Possíveis duplicidades ficam sinalizadas.',
+                    },
+                    {
+                      n: '03',
+                      title: 'Confirme quando estiver pronto',
+                      text: 'Os lançamentos só entram no seu saldo depois da sua confirmação.',
+                    },
+                  ].map((step) => (
+                    <div className="guide-step" key={step.n}>
+                      <span>{step.n}</span>
+                      <div>
+                        <h3>{step.title}</h3>
+                        <p>{step.text}</p>
+                      </div>
                     </div>
+                  ))}
+                  <div className="guide-note">
+                    <CheckCircle2 size={18} />
+                    <p>
+                      O arquivo original não fica armazenado. Mantemos os movimentos que você
+                      confirmar e a referência da importação.
+                    </p>
                   </div>
-                ))}
-                <div className="guide-note">
-                  <CheckCircle2 size={18} />
-                  <p>
-                    O arquivo original não fica armazenado. Mantemos os movimentos que você
-                    confirmar e a referência da importação.
-                  </p>
                 </div>
-              </aside>
+              </details>
             </div>
             <UploadResults
               rows={uploads.rows}

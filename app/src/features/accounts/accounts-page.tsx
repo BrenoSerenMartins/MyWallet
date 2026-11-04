@@ -1,5 +1,6 @@
+import { FinanceAreaNav } from '../../shared/navigation/finance-area-nav';
 import { PageHeader } from '../../shared/ui/page-header';
-import { BalanceReference } from '../../shared/ui/balance-reference';
+import { AccountRecord } from './components/account-record';
 import { BalanceHistoryPanel } from './components/balance-history-panel';
 import { BalanceAdjustmentForm } from './components/balance-adjustment-form';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
@@ -7,11 +8,10 @@ import { AccountForm } from './components/account-form';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, Landmark, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useAuth } from '../auth/auth-provider';
 import { request } from '../../shared/api/client';
 import type { Account, BalanceReferenceResult } from '../../shared/api/resources';
-import { money } from '../../shared/formatting/money';
 import { Button, EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
 export function AccountsPage() {
   const { session } = useAuth();
@@ -53,8 +53,18 @@ export function AccountsPage() {
     queryKey: [session?.user.id, 'accounts'],
     queryFn: () => request<Account[]>('/accounts'),
   });
+  const visibleAccounts = (accounts.data ?? []).filter(
+    (a) =>
+      scope === 'all' ||
+      (scope === 'benefits'
+        ? a.type.startsWith('benefit_')
+        : scope === 'reserve'
+          ? a.type === 'reserve'
+          : !a.type.startsWith('benefit_') && a.type !== 'reserve'),
+  );
   return (
     <div className="page-enter accounts-page">
+      <FinanceAreaNav />
       <PageHeader
         title={<>Minhas contas</>}
         description={<>Confira os saldos registrados e a origem de cada referência.</>}
@@ -93,84 +103,30 @@ export function AccountsPage() {
         <ErrorState error={accounts.error} retry={() => void accounts.refetch()} />
       ) : accounts.data.length ? (
         <div className="accounts-grid">
-          {accounts.data
-            .filter(
-              (a) =>
-                scope === 'all' ||
-                (scope === 'benefits'
-                  ? a.type.startsWith('benefit_')
-                  : scope === 'reserve'
-                    ? a.type === 'reserve'
-                    : !a.type.startsWith('benefit_') && a.type !== 'reserve'),
-            )
-            .map((a) => (
-              <article className="account-card panel" key={a.id}>
-                <div className="account-card-top">
-                  <span
-                    className={`bank-icon large ${a.institution === 'mercado_pago' ? 'mp' : ''}`}
-                  >
-                    {a.institution === 'mercado_pago' ? 'mp' : <Landmark size={23} />}
-                  </span>
-                  <ArrowUpRight size={20} />
-                </div>
-                <h2>
-                  <Link to={`/accounts/${a.id}`}>{a.name}</Link>
-                </h2>
-                <p>
-                  {a.institution === 'mercado_pago' ? 'Mercado Pago' : a.institution} ·{' '}
-                  {a.type === 'benefit_food'
-                    ? 'Vale-alimentação'
-                    : a.type === 'benefit_meal'
-                      ? 'Vale-refeição'
-                      : a.type === 'reserve'
-                        ? 'Reserva'
-                        : 'Conta pessoal'}
-                </p>
-                <span className="eyebrow">SALDO REGISTRADO</span>
-                <strong className="account-card-balance">{money(a.balance)}</strong>
-                <BalanceReference account={a} />
-                {a.balanceBasis?.kind === 'unknown' && (
-                  <small>Histórico parcial · saldo atual ainda não conferido</small>
-                )}
-                {a.balanceBasis?.reviewRequired && (
-                  <small role="status">Confira o saldo após as novas importações.</small>
-                )}
-                <div className="account-card-footer">
-                  <Link to={`/accounts/${a.id}`}>
-                    Ver movimentações <ArrowUpRight size={16} />
-                  </Link>
-                  <button className="text-button" onClick={() => setAdjusting(a)}>
-                    Corrigir saldo
-                  </button>
-                  <button
-                    className="text-button"
-                    onClick={() => {
-                      setEditing(a);
-                      setOpen(true);
-                    }}
-                  >
-                    Editar
-                  </button>
-                  <details className="account-reference-actions">
-                    <summary>Referência e histórico</summary>
-                    <div>
-                      {a.institution === 'mercado_pago' && (
-                        <button
-                          className="text-button"
-                          disabled={referenceBusy !== null || !navigator.onLine}
-                          onClick={() => void updateReference(a)}
-                        >
-                          {referenceBusy === a.id ? 'Conferindo…' : 'Atualizar por extratos'}
-                        </button>
-                      )}
-                      <button className="text-button" onClick={() => setHistoryAccount(a)}>
-                        Histórico de saldo
-                      </button>
-                    </div>
-                  </details>
-                </div>
-              </article>
-            ))}
+          <p className="account-list-caption">
+            {visibleAccounts.length} {visibleAccounts.length === 1 ? 'conta' : 'contas'} neste
+            filtro · benefícios e reservas ficam separados do dinheiro disponível.
+          </p>
+          {!visibleAccounts.length && (
+            <EmptyState title="Nenhuma conta neste filtro">
+              Escolha outro tipo de conta ou adicione uma conta.
+            </EmptyState>
+          )}
+          {visibleAccounts.map((a) => (
+            <AccountRecord
+              key={a.id}
+              account={a}
+              updating={referenceBusy === a.id}
+              updateDisabled={referenceBusy !== null || !navigator.onLine}
+              onUpdate={() => void updateReference(a)}
+              onHistory={() => setHistoryAccount(a)}
+              onCorrect={() => setAdjusting(a)}
+              onEdit={() => {
+                setEditing(a);
+                setOpen(true);
+              }}
+            />
+          ))}
         </div>
       ) : (
         <div className="panel">
@@ -188,7 +144,7 @@ export function AccountsPage() {
               </Button>
             }
           >
-            Adicione seu Mercado Pago ou outra conta para começar a organizar seus movimentos.
+            Adicione sua conta Mercado Pago ou Alelo para começar.
           </EmptyState>
         </div>
       )}

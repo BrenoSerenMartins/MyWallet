@@ -1,10 +1,11 @@
+import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { PageHeader } from '../../shared/ui/page-header';
 import { FinanceOverview } from './components/finance-overview';
 import { CashflowForecast } from '../planning/components/cashflow-forecast';
 import '../planning/commitments.css';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { ErrorState, Loading } from '../../shared/ui/primitives';
 import { dateToday } from '../../shared/formatting/money';
 import { validMonth, shiftMonth } from '../../shared/formatting/month';
@@ -17,22 +18,57 @@ import { ExpenseGroups } from './components/expense-groups';
 import './dashboard.css';
 export function DashboardPage() {
   const [params, setParams] = useSearchParams();
+  const view = params.get('view') === 'analysis' ? 'analysis' : 'summary';
   const requestedMonth = params.get('month');
   const month = validMonth(requestedMonth) ? requestedMonth : dateToday().slice(0, 7);
   const setMonth = (value: string) => {
-    if (validMonth(value)) setParams({ month: value });
+    if (validMonth(value)) {
+      const next = new URLSearchParams(params);
+      next.set('month', value);
+      setParams(next);
+    }
   };
   const [visible, setVisible] = useState(true);
   const { snapshot, summary, movements, plan, transactionsLink } = useDashboard(month);
   return (
     <div className="page-enter dashboard-page">
-      <PageHeader title={<>Visão geral</>}>
+      <PageHeader
+        title="Visão geral"
+        description={
+          view === 'analysis'
+            ? 'Entenda o que mudou e para onde foi seu dinheiro.'
+            : 'Seu dinheiro agora e os próximos movimentos.'
+        }
+      >
+        {view === 'analysis' && (
+          <button
+            className="icon-button"
+            aria-label={visible ? 'Ocultar valores' : 'Mostrar valores'}
+            onClick={() => setVisible(!visible)}
+          >
+            {visible ? <Eye size={18} /> : <EyeOff size={18} />}
+          </button>
+        )}
         <Link className="button secondary compact" to="/imports">
           <Upload size={16} />
           Importar extrato
         </Link>
       </PageHeader>
-      <div className="dashboard-overview">
+      <ViewSwitcher
+        label="Conteúdo da visão geral"
+        value={view}
+        onChange={(value) => {
+          const next = new URLSearchParams(params);
+          if (value === 'summary') next.delete('view');
+          else next.set('view', value);
+          setParams(next);
+        }}
+        options={[
+          { value: 'summary', label: 'Resumo' },
+          { value: 'analysis', label: 'Análise' },
+        ]}
+      />
+      <div className="dashboard-overview" hidden={view !== 'summary'}>
         {snapshot.isPending ? (
           <Loading />
         ) : snapshot.isError ? (
@@ -46,7 +82,7 @@ export function DashboardPage() {
         )}
         <FinanceOverview visible={visible} />
       </div>
-      <CashflowForecast visible={visible} />
+      {view === 'summary' && <CashflowForecast visible={visible} compact />}
       <section className="monthly-analysis" aria-labelledby="monthly-title">
         <div className="monthly-heading">
           <div>
@@ -130,17 +166,21 @@ export function DashboardPage() {
             </div>
           )}
         </div>
-        <HistoryOverview month={month} visible={visible} onMonthChange={setMonth} />
-        <div className="dashboard-lower">
-          <RecentMovements
-            items={movements.data?.items}
-            pending={movements.isPending}
-            error={movements.error}
-            retry={() => void movements.refetch()}
-            visible={visible}
-            link={transactionsLink()}
-          />
-          {!summary.isPending && !summary.isError && (
+        {view === 'analysis' && (
+          <HistoryOverview month={month} visible={visible} onMonthChange={setMonth} />
+        )}
+        <div className="dashboard-detail-area">
+          {view === 'summary' && (
+            <RecentMovements
+              items={movements.data?.items}
+              pending={movements.isPending}
+              error={movements.error}
+              retry={() => void movements.refetch()}
+              visible={visible}
+              link={transactionsLink()}
+            />
+          )}
+          {view === 'analysis' && !summary.isPending && !summary.isError && (
             <ExpenseGroups
               groups={summary.data.expenseGroups ?? []}
               categories={summary.data.expenseCategories ?? []}

@@ -95,15 +95,58 @@ export function ForecastDetails({
     </>
   );
 }
-export function CashflowForecast({ visible }: { visible: boolean }) {
+export function CashflowForecast({
+  visible,
+  compact = false,
+}: {
+  visible: boolean;
+  compact?: boolean;
+}) {
   const month = dateToday().slice(0, 7);
   const { query } = useCommitments(month);
   return (
-    <section className="panel cashflow-forecast" aria-label="Previsão de saldo">
+    <section
+      className={`panel cashflow-forecast ${compact ? 'forecast-compact' : ''}`}
+      aria-label="Previsão de saldo"
+    >
       {query.isPending ? (
         <Loading />
       ) : query.isError ? (
         <ErrorState error={query.error} retry={() => void query.refetch()} />
+      ) : compact ? (
+        <div className="forecast-compact-content">
+          <div>
+            <h2>O que vem pela frente</h2>
+            <p>Contas de dinheiro · até {shortDate(query.data.through)}</p>
+          </div>
+          <dl>
+            {(
+              [
+                ['A receber', 'income'],
+                ['A pagar', 'expense'],
+                ['Saldo previsto', 'projected'],
+              ] as const
+            ).map(([label, field]) => (
+              <div key={field}>
+                <dt>{label}</dt>
+                <dd>
+                  {visible
+                    ? money(
+                        query.data.projection
+                          .filter((a) => a.kind === 'cash')
+                          .reduce((sum, row) => sum + row[field], 0),
+                      )
+                    : '••••••'}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {query.data.overdueCount > 0 && (
+            <p className="forecast-warning">
+              {query.data.overdueCount} vencimento(s) anterior(es) em aberto
+            </p>
+          )}
+        </div>
       ) : (
         <ForecastDetails data={query.data} visible={visible} />
       )}

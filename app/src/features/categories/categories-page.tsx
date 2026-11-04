@@ -39,7 +39,10 @@ export function CategoriesPage() {
   const activeGroup = visibleGroups.find((group) => group.id === selectedGroup) ?? visibleGroups[0];
   return (
     <div className="page-enter categories-page" data-financial-type={type}>
-      <PageHeader title={<>Categorias</>}>
+      <PageHeader
+        title="Categorias"
+        description="Grupos dão contexto. Categorias organizam cada lançamento."
+      >
         <Button onClick={() => setEditor({ kind: 'group' })}>
           <Plus size={18} />
           Novo grupo
@@ -55,8 +58,16 @@ export function CategoriesPage() {
             setSearch('');
           }}
           options={[
-            { value: 'expense', label: 'Despesas' },
-            { value: 'income', label: 'Receitas' },
+            {
+              value: 'expense',
+              label: 'Despesas',
+              count: categories.data?.filter((c) => c.type === 'expense').length,
+            },
+            {
+              value: 'income',
+              label: 'Receitas',
+              count: categories.data?.filter((c) => c.type === 'income').length,
+            },
           ]}
         />
         <label className="search-field">

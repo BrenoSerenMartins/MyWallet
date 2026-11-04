@@ -59,7 +59,7 @@ function MonthlyBudgetPage() {
     <div className="page-enter planning-page">
       <PageHeader
         title={<>Planejamento mensal</>}
-        description={<>Um plano claro. Espaço para o que importa.</>}
+        description="Defina limites e compare com o que aconteceu."
       >
         <label className="period-picker">
           <span>Mês do plano</span>
@@ -77,22 +77,15 @@ function MonthlyBudgetPage() {
             }}
           />
         </label>
+        <Button
+          className="compact"
+          disabled={!plan || !navigator.onLine}
+          onClick={() => setDialog('edit')}
+        >
+          <Pencil size={15} />
+          {plan?.version ? 'Editar planejamento' : 'Preparar meu mês'}
+        </Button>
       </PageHeader>
-      <div className="planning-scope">
-        <ViewSwitcher
-          label="Contas no realizado"
-          value={scope}
-          onChange={setScope}
-          options={[
-            { value: 'all', label: 'Todas as contas' },
-            { value: 'cash', label: 'Sem benefícios' },
-            { value: 'benefits', label: 'Só benefícios' },
-          ]}
-        />
-        <p className="field-help" id="planning-scope-help">
-          Filtro do realizado · o previsto continua sendo o do espaço inteiro.
-        </p>
-      </div>
       {query.isPending ? (
         <Loading />
       ) : query.isError ? (
@@ -101,6 +94,18 @@ function MonthlyBudgetPage() {
         plan && (
           <>
             <div className="planning-toolbar">
+              <label className="planning-scope-control">
+                Realizado de
+                <select
+                  aria-label="Contas no realizado"
+                  value={scope}
+                  onChange={(e) => setScope(e.target.value)}
+                >
+                  <option value="all">Todas as contas</option>
+                  <option value="cash">Sem benefícios</option>
+                  <option value="benefits">Só benefícios</option>
+                </select>
+              </label>
               <span className="planning-status">
                 <CalendarDays size={16} />
                 {plan.version ? 'Planejamento salvo' : 'Comece seu planejamento'}
@@ -113,14 +118,6 @@ function MonthlyBudgetPage() {
                 >
                   <Copy size={15} />
                   Copiar mês anterior
-                </Button>
-                <Button
-                  className="compact"
-                  disabled={!navigator.onLine}
-                  onClick={() => setDialog('edit')}
-                >
-                  <Pencil size={15} />
-                  {plan.version ? 'Editar planejamento' : 'Preparar meu mês'}
                 </Button>
               </div>
             </div>
@@ -175,8 +172,10 @@ function MonthlyBudgetPage() {
               <summary>Como os valores são calculados e configurações do VA/VR</summary>
               <BenefitPlanningNotice plan={plan} scope={scope} />
               <p className="field-help">
-                Transferências e estornos ficam fora do resultado. O saldo da conta inclui valores
-                de outros períodos.
+                O filtro muda somente o realizado; o previsto é o do espaço inteiro. Transferências
+                e estornos ficam fora do resultado. O saldo da conta inclui outros períodos.
+                Benefícios têm uso restrito. Aporte é uma intenção; seu realizado não é identificado
+                automaticamente.
               </p>
             </details>
             <section className="panel planning-note">
@@ -185,11 +184,6 @@ function MonthlyBudgetPage() {
               <Link to="/settings/categories">
                 Gerenciar categorias <ArrowRight size={14} />
               </Link>
-              <p className="field-help">
-                Os valores refletem apenas as contas e os lançamentos cadastrados. Benefícios de uso
-                restrito não devem ser tratados como dinheiro livre. O aporte é uma intenção; seu
-                realizado ainda não é identificado automaticamente.
-              </p>
             </section>
             <Modal
               open={dialog === 'edit'}

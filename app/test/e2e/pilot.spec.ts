@@ -2273,7 +2273,15 @@ for (const width of [360, 390, 768, 1440]) {
       'As despesas superaram as receitas',
     );
     await expect(page.locator('.month-metric.expense')).toContainText('R$ 500,00');
+    await page
+      .getByRole('group', { name: 'Conteúdo da visão geral' })
+      .getByRole('button', { name: 'Análise', exact: true })
+      .click();
     await expect(page.locator('.expense-groups')).toContainText('Outros');
+    await page
+      .getByRole('group', { name: 'Conteúdo da visão geral' })
+      .getByRole('button', { name: 'Resumo', exact: true })
+      .click();
     await page.getByText('Composição por conta', { exact: false }).click();
     await expect(page.locator('.balance-composition .account-line')).toHaveCount(3);
     await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
@@ -2333,6 +2341,10 @@ test('overview preserves balances when historical analysis fails and supports re
   await expect(page.getByRole('alert')).toContainText('Não foi possível carregar');
   failing = false;
   await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Conteúdo da visão geral' })
+    .getByRole('button', { name: 'Análise', exact: true })
+    .click();
   await expect(page.locator('.expense-groups')).toContainText('Nenhuma despesa registrada');
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
@@ -2382,7 +2394,7 @@ for (const width of [360, 768, 1440])
         },
       }),
     );
-    await page.goto('/?month=2026-10');
+    await page.goto('/?month=2026-10&view=analysis');
     const history = page.getByRole('region', { name: 'Evolução mensal', exact: true });
     await expect(history.locator('svg g[role="button"]')).toHaveCount(4);
     await history.getByRole('button', { name: '7 meses', exact: true }).click();
@@ -3456,12 +3468,13 @@ for (const width of [360, 1440])
 
 const redesignedRoutes = [
   ['/', 'Visão geral'],
+  ['/?view=analysis', 'Visão geral'],
   ['/transactions', 'Movimentações'],
   ['/accounts', 'Minhas contas'],
   ['/planning', 'Planejamento mensal'],
   ['/planning?view=commitments', 'Contas e recebimentos'],
   ['/imports', 'Importar extrato'],
-  ['/categories', 'Grupos e categorias'],
+  ['/categories', 'Categorias'],
   ['/counterparties', 'Pessoas e estabelecimentos'],
   ['/cards', 'Cartões e faturas'],
   ['/wealth', 'Investimentos e patrimônio'],
@@ -3539,4 +3552,139 @@ test('new shared forms and account controls remain usable with a narrow viewport
   await expect(field).toHaveValue('Minha conta');
   await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Adicionar conta', exact: true })).toBeFocused();
+});
+
+test('overview separates daily tasks from analysis and preserves the selected view across month changes', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/?month=2026-10');
+  const views = page.getByRole('group', { name: 'Conteúdo da visão geral' });
+  await expect(page.getByRole('region', { name: 'Saldos atuais', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Últimos movimentos', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Evolução mensal', exact: true })).toHaveCount(0);
+  await views.getByRole('button', { name: 'Análise', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Evolução mensal', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Últimos movimentos', exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole('button', { name: 'Mês anterior', exact: true }).click();
+  await expect(page).toHaveURL(/view=analysis/);
+  await expect(page.getByLabel('Mês do resumo')).toHaveValue('2026-09');
+  await page.reload();
+  await expect(views.getByRole('button', { name: 'Análise', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
+  await expect(
+    page.getByRole('region', { name: 'Evolução mensal', exact: true }),
+  ).not.toContainText('R$');
+  await views.getByRole('button', { name: 'Resumo', exact: true }).click();
+  await expect(page.locator('.hero-balance')).toHaveText('••••••');
+});
+test('account filters explain empty results and keep account and card workspaces connected', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/accounts');
+  await page
+    .getByRole('group', { name: 'Tipos de contas' })
+    .getByRole('button', { name: 'Benefícios', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Nenhuma conta neste filtro', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('.account-record')).toHaveCount(0);
+  await page
+    .getByRole('group', { name: 'Tipos de contas' })
+    .getByRole('button', { name: 'Todas', exact: true })
+    .click();
+  await expect(page.locator('.account-record')).toHaveCount(1);
+  await page
+    .getByRole('navigation', { name: 'Contas e cartões' })
+    .getByRole('link', { name: 'Cartões e faturas', exact: true })
+    .click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Cartões e faturas' })).toBeVisible();
+  await page
+    .getByRole('navigation', { name: 'Contas e cartões' })
+    .getByRole('link', { name: 'Contas e saldos', exact: true })
+    .click();
+  await expect(page.locator('.account-record')).toHaveCount(1);
+});
+test('directory creation is isolated from browsing, retains failed input and refreshes automation filters', async ({
+  page,
+}) => {
+  await signedIn(page);
+  let created = false;
+  let fail = true;
+  await page.route('**/v1/counterparties', async (route) => {
+    if (route.request().method() === 'POST') {
+      expect(route.request().postDataJSON()).toEqual({ name: 'Mercado do bairro' });
+      if (fail) return route.fulfill({ status: 500, json: { message: 'Falha temporária' } });
+      created = true;
+      return route.fulfill({ json: { ...automationAgent, name: 'Mercado do bairro', rules: [] } });
+    }
+    return route.fulfill({
+      json: created ? [{ ...automationAgent, name: 'Mercado do bairro', rules: [] }] : [],
+    });
+  });
+  await page.goto('/counterparties');
+  await expect(page.getByRole('button', { name: 'Cadastrar', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Novo cadastro', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Nova pessoa ou estabelecimento' });
+  await dialog.getByLabel('Nome', { exact: true }).fill('Mercado do bairro');
+  await dialog.getByRole('button', { name: 'Cadastrar', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toBeVisible();
+  await expect(dialog.getByLabel('Nome', { exact: true })).toHaveValue('Mercado do bairro');
+  fail = false;
+  await dialog.getByRole('button', { name: 'Cadastrar', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('.counterparty-panel > summary')).toContainText('Mercado do bairro');
+  await page.getByLabel('Filtrar automação', { exact: true }).selectOption('automated');
+  await expect(page.getByRole('heading', { name: 'Nenhum cadastro neste filtro' })).toBeVisible();
+  await page.getByLabel('Filtrar automação', { exact: true }).selectOption('manual');
+  await expect(page.locator('.counterparty-panel')).toHaveCount(1);
+});
+test('visible filter chips remove one constraint without losing movement type or the other date', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/transactions?type=income&from=2026-10-01&to=2026-10-31');
+  await page.getByRole('button', { name: 'Remover filtro: Desde 01/10/2026', exact: true }).click();
+  const url = new URL(page.url());
+  expect(url.searchParams.has('from')).toBe(false);
+  expect(url.searchParams.get('to')).toBe('2026-10-31');
+  expect(url.searchParams.get('type')).toBe('income');
+  await expect(
+    page.getByRole('button', { name: 'Remover filtro: Até 31/10/2026', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: '1 movimento carregado' })).toBeVisible();
+});
+test('settings retain the chosen section on reload and offer labelled theme previews', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/settings?view=data');
+  await expect(
+    page
+      .getByRole('group', { name: 'Seções de preferências' })
+      .getByRole('button', { name: 'Dados e backup' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await expect(
+    page
+      .getByRole('group', { name: 'Seções de preferências' })
+      .getByRole('button', { name: 'Dados e backup' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await page
+    .getByRole('group', { name: 'Seções de preferências' })
+    .getByRole('button', { name: 'Aparência' })
+    .click();
+  await page.getByRole('button', { name: 'Tema claro', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.getByRole('button', { name: 'Tema escuro', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
