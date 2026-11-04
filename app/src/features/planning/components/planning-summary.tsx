@@ -33,7 +33,11 @@ export function PlanningSummary({ plan }: { plan: MonthlyPlan }) {
   return (
     <section className="planning-metrics" aria-label="Resumo do planejamento">
       {metrics.map(({ label, Icon, planned, actual, difference, kind }) => (
-        <article className="panel planning-metric comparison-metric" key={kind} aria-label={label}>
+        <article
+          className={`panel planning-metric comparison-metric metric-${kind}`}
+          key={kind}
+          aria-label={label}
+        >
           <span>
             <Icon size={17} />
             {label}
@@ -48,6 +52,15 @@ export function PlanningSummary({ plan }: { plan: MonthlyPlan }) {
               <dd>{money(actual)}</dd>
             </div>
           </dl>
+          {kind !== 'result' && planned !== null && planned > 0 && (
+            <div
+              className="planning-meter"
+              role="img"
+              aria-label={`${label}: ${Math.round((actual / planned) * 100)}% do previsto`}
+            >
+              <span style={{ width: `${Math.min(100, Math.max(0, (actual / planned) * 100))}%` }} />
+            </div>
+          )}
           <p
             className={`planning-difference ${difference == null ? '' : difference < 0 ? 'negative-text' : difference > 0 ? 'positive-text' : ''}`}
           >
@@ -61,7 +74,10 @@ export function PlanningSummary({ plan }: { plan: MonthlyPlan }) {
           </p>
         </article>
       ))}
-      <article className="panel planning-metric comparison-metric" aria-label="Aporte planejado">
+      <article
+        className="panel planning-metric comparison-metric metric-contribution"
+        aria-label="Aporte planejado"
+      >
         <span>
           <PiggyBank size={17} />
           Aporte planejado

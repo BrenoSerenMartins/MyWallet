@@ -17,7 +17,7 @@ export function PlanningPage() {
   const [params, setParams] = useSearchParams();
   const view = params.get('view') === 'commitments' ? 'commitments' : 'budget';
   return (
-    <>
+    <div className="planning-workspace">
       <div className="planning-navigation">
         <ViewSwitcher
           label="Área do planejamento"
@@ -35,7 +35,7 @@ export function PlanningPage() {
         />
       </div>
       {view === 'commitments' ? <CommitmentsPage /> : <MonthlyBudgetPage />}
-    </>
+    </div>
   );
 }
 function MonthlyBudgetPage() {
@@ -56,24 +56,10 @@ function MonthlyBudgetPage() {
   }
   return (
     <div className="page-enter planning-page">
-      <ViewSwitcher
-        label="Contas no realizado"
-        value={scope}
-        onChange={setScope}
-        options={[
-          { value: 'all', label: 'Todas as contas' },
-          { value: 'cash', label: 'Sem benefícios' },
-          { value: 'benefits', label: 'Só benefícios' },
-        ]}
-      />
-      <p className="field-help">
-        O filtro altera apenas o realizado. O planejamento salvo continua sendo o do espaço inteiro.
-      </p>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">SEU MÊS, COM DIREÇÃO</span>
           <h1>Planejamento mensal</h1>
-          <p>Planeje com intenção. Acompanhe o que acontece de verdade.</p>
+          <p>Um plano claro. Espaço para o que importa.</p>
         </div>
         <label className="period-picker">
           <span>Mês do plano</span>
@@ -91,6 +77,21 @@ function MonthlyBudgetPage() {
             }}
           />
         </label>
+      </div>
+      <div className="planning-scope">
+        <ViewSwitcher
+          label="Contas no realizado"
+          value={scope}
+          onChange={setScope}
+          options={[
+            { value: 'all', label: 'Todas as contas' },
+            { value: 'cash', label: 'Sem benefícios' },
+            { value: 'benefits', label: 'Só benefícios' },
+          ]}
+        />
+        <p className="field-help" id="planning-scope-help">
+          Filtro do realizado · o previsto continua sendo o do espaço inteiro.
+        </p>
       </div>
       {query.isPending ? (
         <Loading />
@@ -129,10 +130,8 @@ function MonthlyBudgetPage() {
               </p>
             )}
             <PlanningSummary plan={plan} />
-            <BenefitPlanningNotice plan={plan} scope={scope} />
             <p className="planning-explanation">
-              Comparação dos valores salvos com receitas e despesas registradas no mês. O resultado
-              não é o saldo da conta. Transferências e estornos ficam fora destes totais.
+              Previsto e realizado, lado a lado. O resultado do mês é diferente do saldo disponível.
             </p>
             {plan.totals.missingCategoryCount > 0 && (
               <div className="review-banner planning-included">
@@ -172,6 +171,14 @@ function MonthlyBudgetPage() {
                 lines={plan.lines.filter((l) => l.type === 'expense')}
               />
             </div>
+            <details className="planning-preferences">
+              <summary>Como os valores são calculados e configurações do VA/VR</summary>
+              <BenefitPlanningNotice plan={plan} scope={scope} />
+              <p className="field-help">
+                Transferências e estornos ficam fora do resultado. O saldo da conta inclui valores
+                de outros períodos.
+              </p>
+            </details>
             <section className="panel planning-note">
               <h2>Notas e próximos passos</h2>
               <p>{plan.notes || 'Registre seus compromissos e intenções ao preparar o mês.'}</p>

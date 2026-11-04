@@ -345,3 +345,372 @@
     gap: 0.4rem;
   }
 }
+
+/* A quiet, neutral canvas with colour reserved for financial meaning. */
+.planning-workspace {
+  --surface: #fffefa;
+  --surface-soft: #f5f3ef;
+  --surface-raised: #ece9e3;
+  --border: #e3e0d9;
+  --muted: #62676a;
+  --planning-highlight: #a37c45;
+  max-width: 1240px;
+  margin-inline: auto;
+}
+:root[data-theme='dark'] .planning-workspace {
+  --surface: #191e23;
+  --surface-soft: #20262c;
+  --surface-raised: #2a3036;
+  --border: #333a40;
+  --muted: #adb5bd;
+  --planning-highlight: #d2b382;
+}
+.planning-workspace .planning-navigation {
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+.planning-workspace .planning-navigation .view-switcher {
+  padding: 0;
+  gap: 24px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.planning-workspace .planning-navigation .view-switcher button {
+  min-height: 48px;
+  border-radius: 0;
+  padding: 10px 0;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  background: transparent;
+}
+.planning-workspace .planning-navigation .view-switcher button[aria-pressed='true'] {
+  color: var(--text);
+  border-bottom-color: var(--planning-highlight);
+}
+.planning-page .page-heading {
+  margin-bottom: 26px;
+  align-items: center;
+}
+.planning-page .page-heading h1 {
+  font-size: clamp(26px, 3vw, 36px);
+  letter-spacing: -1.2px;
+  font-weight: 600;
+}
+.planning-page .page-heading p {
+  margin-top: 10px;
+  color: var(--muted);
+}
+.planning-page .period-picker {
+  background: var(--surface);
+  border-radius: 12px;
+}
+.planning-scope {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.planning-scope .view-switcher {
+  display: inline-flex;
+  width: auto;
+  border: 0;
+  background: var(--surface-soft);
+  padding: 4px;
+  border-radius: 10px;
+}
+.planning-scope .view-switcher button {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 7px;
+  color: var(--muted);
+  background: transparent;
+}
+.planning-scope .view-switcher button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 4px #00000012;
+}
+.planning-scope .field-help {
+  margin: 0;
+  font-size: 11px;
+  max-width: 32ch;
+}
+.planning-toolbar {
+  margin-bottom: 24px;
+}
+.planning-toolbar .button:not(.secondary) {
+  color: var(--surface);
+  background: var(--text);
+  border-color: var(--text);
+}
+.planning-toolbar .button.secondary {
+  background: transparent;
+}
+.planning-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px #00000006;
+}
+.planning-metrics .planning-metric {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 26px;
+  min-width: 0;
+}
+.planning-metric + .planning-metric:not(.metric-contribution) {
+  border-left: 1px solid var(--border);
+}
+.planning-metric > span {
+  font-size: 12px;
+  font-weight: 500;
+}
+.planning-metric > span svg {
+  color: var(--muted);
+}
+.planning-metric.metric-income > span svg {
+  color: var(--positive);
+}
+.planning-metric.metric-expense > span svg {
+  color: var(--negative);
+}
+.planning-comparison {
+  margin-top: 26px;
+  gap: 12px;
+}
+.planning-comparison > div {
+  align-items: baseline;
+}
+.planning-comparison dd {
+  font-size: clamp(23px, 2.4vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.8px;
+}
+.planning-comparison > div:first-child dd {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.planning-meter {
+  height: 3px;
+  background: var(--surface-raised);
+  border-radius: 4px;
+  margin-top: 22px;
+  overflow: hidden;
+}
+.planning-meter span {
+  display: block;
+  height: 100%;
+  background: var(--planning-highlight);
+}
+.planning-metric .planning-difference {
+  border: 0;
+  padding: 0;
+  margin: 12px 0 0;
+  min-height: 0;
+  font-size: 11px;
+}
+.metric-result .planning-difference {
+  margin-top: 37px;
+}
+.planning-metrics .metric-contribution {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--border);
+  padding: 16px 26px;
+  background: var(--surface-soft);
+  display: flex;
+  align-items: center;
+  gap: 12px 28px;
+  flex-wrap: wrap;
+}
+.metric-contribution .planning-comparison {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin: 0;
+}
+.metric-contribution .planning-comparison dd,
+.metric-contribution .planning-comparison > div:first-child dd {
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.metric-contribution > p {
+  margin: 0;
+  margin-left: auto;
+}
+.planning-explanation {
+  margin: 14px 0 28px;
+  font-size: 11px;
+}
+.planning-sections {
+  gap: 24px;
+}
+.planning-page .budget-section {
+  border-radius: 16px;
+  border-color: var(--border);
+  background: var(--surface);
+  overflow: hidden;
+}
+.planning-page .budget-section .section-heading {
+  padding: 24px;
+}
+.planning-page .budget-section .section-heading h2 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.planning-page .budget-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+  background: transparent;
+  border-top: 1px solid var(--border);
+  min-height: 56px;
+  font-size: 13px;
+}
+.planning-page .budget-group > summary::after {
+  content: '+';
+  font-size: 18px;
+  color: var(--muted);
+}
+.planning-page .budget-group[open] > summary::after {
+  content: '−';
+}
+.planning-page .budget-group > summary .budget-group-totals {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: auto;
+}
+.budget-group-totals strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.planning-page .budget-line {
+  border-top-style: dashed;
+  background: var(--surface-soft);
+}
+.planning-page .planning-preferences {
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.planning-preferences > summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding-block: 12px;
+}
+.planning-preferences .benefit-planning-notice {
+  margin-top: 8px;
+  background: var(--surface);
+}
+.planning-page .planning-note {
+  margin-top: 20px;
+  border: 0;
+  background: transparent;
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+}
+.planning-page .review-banner {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+@media (max-width: 850px) {
+  .planning-comparison > div {
+    display: block;
+  }
+  .planning-comparison dt {
+    margin-bottom: 6px;
+  }
+  .planning-metrics .planning-metric {
+    padding: 22px 18px;
+  }
+}
+@media (max-width: 600px) {
+  .planning-workspace .planning-navigation {
+    margin-bottom: 24px;
+  }
+  .planning-workspace .planning-navigation .view-switcher {
+    gap: 20px;
+  }
+  .planning-page .page-heading {
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .planning-page .page-heading > div {
+    width: 100%;
+  }
+  .planning-page .period-picker {
+    width: 100%;
+  }
+  .planning-scope {
+    gap: 8px;
+  }
+  .planning-scope .view-switcher {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .planning-scope .view-switcher button {
+    flex: 1;
+    padding-inline: 8px;
+  }
+  .planning-scope .field-help {
+    max-width: none;
+  }
+  .planning-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+  .planning-metrics .metric-result {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  .metric-result .planning-comparison {
+    grid-template-columns: 1fr 1fr;
+    margin-top: 18px;
+  }
+  .metric-result .planning-difference {
+    margin-top: 16px;
+  }
+  .planning-comparison dd,
+  .planning-comparison > div:first-child dd {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .planning-comparison dd {
+    font-size: clamp(20px, 6vw, 28px);
+  }
+  .planning-comparison > div:first-child dd {
+    font-size: 14px;
+  }
+  .planning-metrics .metric-contribution {
+    gap: 12px;
+  }
+  .metric-contribution > span {
+    width: 100%;
+  }
+  .metric-contribution > p {
+    margin-left: 0;
+  }
+  .planning-page .budget-section .section-heading,
+  .planning-page .budget-group > summary {
+    padding: 18px;
+  }
+  .planning-page .budget-group > summary .budget-group-totals {
+    gap: 8px;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}

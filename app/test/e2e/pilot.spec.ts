@@ -3427,6 +3427,9 @@ for (const width of [360, 1440])
       });
     });
     await page.goto('/planning?month=2026-11');
+    await page
+      .getByText('Como os valores são calculados e configurações do VA/VR', { exact: true })
+      .click();
     const notice = page.getByRole('region', { name: 'Competência do VA/VR' });
     const income = page.getByRole('article', { name: 'Receitas do mês', exact: true });
     await expect(income.getByText('R$ 0,00', { exact: true })).toBeVisible();
@@ -3436,6 +3439,9 @@ for (const width of [360, 1440])
     ).toBeVisible();
     await expect(income.getByText('R$ 700,00', { exact: true })).toHaveCount(2);
     await page.reload();
+    await page
+      .getByText('Como os valores são calculados e configurações do VA/VR', { exact: true })
+      .click();
     await expect(notice.getByRole('button', { name: 'Usar mês do recebimento' })).toBeVisible();
     await notice.getByRole('button', { name: 'Usar mês do recebimento' }).click();
     await expect(income.getByText('R$ 0,00', { exact: true })).toBeVisible();

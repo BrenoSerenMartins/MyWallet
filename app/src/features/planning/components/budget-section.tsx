@@ -1,3 +1,4 @@
+import { money } from '../../../shared/formatting/money';
 import { Link } from 'react-router-dom';
 import type { PlanningLine } from '../../../shared/api/resources';
 import { BudgetLine } from './budget-line';
@@ -11,7 +12,7 @@ export function BudgetSection({
   lines: PlanningLine[];
 }) {
   return (
-    <section className="panel budget-section">
+    <section className={`panel budget-section budget-${type}`}>
       <div className="section-heading">
         <div>
           <h2>{type === 'income' ? 'Receitas previstas' : 'Orçamento de despesas'}</h2>
@@ -39,7 +40,12 @@ export function BudgetSection({
               >
                 <summary>
                   {children[0].groupName ?? 'Sem grupo'}
-                  <span>{children.length} categorias</span>
+                  <span className="budget-group-totals">
+                    <span>{children.length} categorias</span>
+                    <strong>
+                      {money(children.reduce((total, line) => total + line.actual, 0))}
+                    </strong>
+                  </span>
                 </summary>
                 {children.map((line) => (
                   <BudgetLine key={line.categoryId ?? 'uncategorized'} line={line} type={type} />
