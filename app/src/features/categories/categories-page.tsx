@@ -1,3 +1,4 @@
+import { FolderTree as EmptyStateIcon } from 'lucide-react';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { DeleteCategoryDialog } from './components/delete-category-dialog';
@@ -86,7 +87,10 @@ export function CategoriesPage() {
       ) : categories.isPending || groups.isPending ? (
         <Loading />
       ) : !visibleGroups.length ? (
-        <EmptyState title={search ? 'Nenhum resultado' : 'Comece pelos grandes grupos'}>
+        <EmptyState
+          icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
+          title={search ? 'Nenhum resultado' : 'Comece pelos grandes grupos'}
+        >
           {search
             ? 'Tente outro nome.'
             : 'Crie Casa e adicione Luz, Água e Aluguel. Depois crie Alimentação com Mercado e Comer fora.'}

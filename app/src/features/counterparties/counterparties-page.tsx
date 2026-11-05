@@ -1,3 +1,4 @@
+import { UsersRound as EmptyStateIcon } from 'lucide-react';
 import { Select } from '../../shared/ui/controls/select';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { Plus, Search } from 'lucide-react';
@@ -127,6 +128,7 @@ export function CounterpartiesPage() {
       )}
       {!filtered.length && (
         <EmptyState
+          icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
           title={
             agents.data.length
               ? 'Nenhum cadastro neste filtro'

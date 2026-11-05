@@ -1,3 +1,4 @@
+import { Search as EmptyStateIcon } from 'lucide-react';
 import { DatePicker } from '../../shared/ui/controls/date-picker';
 import { Select } from '../../shared/ui/controls/select';
 import './transactions.css';
@@ -421,14 +422,27 @@ export function TransactionsPage() {
           </>
         ) : (
           <EmptyState
-            title="Nada por aqui neste período"
+            icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
+            title={
+              search || activeFilters.length || from || to || kind
+                ? 'Nenhum movimento neste filtro'
+                : 'Seu histórico começa aqui'
+            }
             action={
-              <Link to="/imports" className="button secondary">
-                Importar extrato
-              </Link>
+              search || activeFilters.length || from || to || kind ? (
+                <Link to="/transactions" className="button secondary">
+                  Limpar filtros
+                </Link>
+              ) : (
+                <Link to="/imports" className="button secondary">
+                  Importar extrato
+                </Link>
+              )
             }
           >
-            Seus movimentos aparecerão aqui. Você pode importar um extrato ou registrar manualmente.
+            {search || activeFilters.length || from || to || kind
+              ? 'Ajuste a busca ou os filtros para consultar outros movimentos.'
+              : 'Importe um extrato ou use Novo lançamento para começar.'}
           </EmptyState>
         )}
       </section>

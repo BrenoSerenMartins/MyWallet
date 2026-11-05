@@ -1,3 +1,5 @@
+import { EmptyState } from '../../../shared/ui/primitives';
+import { ChartPie as EmptyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { ViewSwitcher } from '../../../shared/ui/view-switcher';
 import { Link } from 'react-router-dom';
@@ -88,9 +90,13 @@ export function ExpenseGroups({
           </p>
         </>
       ) : (
-        <div className="small-empty">
-          <p>Nenhuma despesa registrada neste mês.</p>
-        </div>
+        <EmptyState
+          compact
+          icon={<EmptyIcon size={26} />}
+          title="Nenhuma despesa registrada neste mês"
+        >
+          Escolha outro mês ou registre seus gastos para acompanhar a distribuição.
+        </EmptyState>
       )}
     </section>
   );

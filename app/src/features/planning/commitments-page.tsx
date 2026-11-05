@@ -1,3 +1,4 @@
+import { CalendarDays as EmptyStateIcon } from 'lucide-react';
 import { Select } from '../../shared/ui/controls/select';
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import type { ReactNode } from 'react';
@@ -192,14 +193,16 @@ export function CommitmentsPage({ navigation }: { navigation?: ReactNode }) {
           )}
           {!items.length ? (
             <EmptyState
+              icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
               title={
                 query.data.schedules.length
                   ? 'Nenhum vencimento neste filtro'
                   : 'Seus próximos compromissos, organizados'
               }
             >
-              Cadastre contas fixas, pagamentos avulsos e receitas previstas. Eles só viram
-              lançamentos quando você confirmar.
+              {query.data.schedules.length
+                ? 'Escolha outra situação, conta ou período para consultar os vencimentos.'
+                : 'Use Novo compromisso para cadastrar contas e receitas previstas. Só viram lançamentos quando você confirmar.'}
             </EmptyState>
           ) : (
             <ul className="commitment-list">

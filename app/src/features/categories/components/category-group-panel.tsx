@@ -1,7 +1,7 @@
 import { Tooltip } from '../../../shared/ui/tooltip';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Category, CategoryGroup } from '../../../shared/api/resources';
-import { Button } from '../../../shared/ui/primitives';
+import { Button, EmptyState } from '../../../shared/ui/primitives';
 export function CategoryGroupPanel({
   group,
   categories,
@@ -93,9 +93,15 @@ export function CategoryGroupPanel({
         ))}
       </div>
       {!categories.length && (
-        <p className="category-empty">
-          {searching ? 'Nenhuma categoria encontrada.' : 'Nenhuma categoria neste grupo.'}
-        </p>
+        <EmptyState
+          compact
+          icon={<Plus size={24} />}
+          title={searching ? 'Nenhuma categoria encontrada' : 'Nenhuma categoria neste grupo'}
+        >
+          {searching
+            ? 'Experimente outro nome na busca.'
+            : 'Use Adicionar categoria para organizar este grupo.'}
+        </EmptyState>
       )}
     </section>
   );

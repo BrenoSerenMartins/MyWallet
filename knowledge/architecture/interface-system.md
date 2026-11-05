@@ -28,3 +28,9 @@ Overview keeps its view switcher inside the balance card. Budget and wealth now 
 ## Contextual actions and compact selectors
 
 Budget actions (month, edit and scope/copy menu) are inside its numerical summary; wealth actions remain inside its position summary. Account creation and type selection share a directory toolbar. Category, counterparty and movement creation share their search/filter toolbar. Cards use an owned workspace toolbar rather than controls aligned to an invisible title. Preferences, import sections and commitment status use the shared accessible Select; overview/wealth analysis and financial category direction retain visible tabs for frequent alternate readings. Desktop account/card navigation remains in the header dropdown and mobile access is preserved. No financial calculation or persistence changes are introduced. Lint and frontend compilation validate this revision; visual browser verification and maintenance of older browser selectors remain outstanding.
+
+## Empty-state consistency
+
+`EmptyState` accepts a contextual decorative icon and a compact mode for nested collections. The shared scale matches the card directory: 64px icon, restrained 20px heading, readable 13px explanation, bounded width and responsive padding. Icons use the area's vocabulary (accounts, categories, people, imports, planning, investments and activity) rather than repeating a wallet everywhere. Nested category groups, expense analysis, history and empty bills use the compact version.
+
+An empty filtered result explains how to adjust filters; an empty first-use area points to the existing creation action without duplicating it. Movement results offer filter reset when a query is active rather than suggesting a new import. Existing card onboarding retains its specific credit-card artwork. Errors and loading are not styled as successful empty results. Financial values and data persistence are unchanged.

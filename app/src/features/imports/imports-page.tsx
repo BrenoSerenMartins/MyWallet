@@ -1,3 +1,4 @@
+import { FileText as EmptyStateIcon } from 'lucide-react';
 import { Select } from '../../shared/ui/controls/select';
 import { PageHeader } from '../../shared/ui/page-header';
 import { CheckCircle2 } from 'lucide-react';
@@ -183,6 +184,7 @@ export function ImportsPage() {
                   </>
                 ) : (
                   <EmptyState
+                    icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
                     title="Primeiro, adicione sua conta"
                     action={
                       <Link className="button" to="/accounts">
@@ -274,7 +276,10 @@ export function ImportsPage() {
                 </Link>
               ))
             ) : (
-              <EmptyState title="Seu histórico começa no primeiro arquivo">
+              <EmptyState
+                icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
+                title="Seu histórico começa no primeiro arquivo"
+              >
                 Cada importação fica registrada para você conferir depois.
               </EmptyState>
             )}

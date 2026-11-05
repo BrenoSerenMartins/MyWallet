@@ -1,3 +1,5 @@
+import { EmptyState } from '../../../shared/ui/primitives';
+import { ChartNoAxesCombined as EmptyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { ErrorState, Loading } from '../../../shared/ui/primitives';
@@ -151,7 +153,9 @@ export function HistoryOverview({
               )}
             </>
           ) : (
-            <p className="history-hidden">Nenhuma receita ou despesa registrada neste período.</p>
+            <EmptyState compact icon={<EmptyIcon size={26} />} title="Sem movimentos neste período">
+              Escolha outro período para comparar receitas e despesas.
+            </EmptyState>
           )}
           <details className="history-table-details">
             <summary>Ver valores mês a mês</summary>

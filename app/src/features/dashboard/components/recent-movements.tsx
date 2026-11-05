@@ -1,3 +1,4 @@
+import { ArrowDownUp as EmptyStateIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Upload } from 'lucide-react';
 import { EmptyState, ErrorState, Loading } from '../../../shared/ui/primitives';
@@ -47,6 +48,7 @@ export function RecentMovements({
         </div>
       ) : (
         <EmptyState
+          icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
           title="Nenhum movimento neste mês"
           action={
             <Link className="button secondary" to="/imports">

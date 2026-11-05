@@ -36,15 +36,19 @@ export function EmptyState({
   title,
   children,
   action,
+  icon,
+  compact = false,
 }: {
   title: string;
   children: ReactNode;
   action?: ReactNode;
+  icon?: ReactNode;
+  compact?: boolean;
 }) {
   return (
-    <div className="empty-state">
-      <span className="empty-icon">
-        <Wallet size={26} />
+    <div className={`empty-state${compact ? ' empty-state-compact' : ''}`}>
+      <span className="empty-icon" aria-hidden="true">
+        {icon ?? <Wallet size={28} strokeWidth={1.5} />}
       </span>
       <h3>{title}</h3>
       <p>{children}</p>

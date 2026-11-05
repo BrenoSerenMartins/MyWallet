@@ -374,7 +374,11 @@ export function CardsPage() {
                         )}
                       </>
                     ) : (
-                      <EmptyState title="Nenhuma compra nesta fatura">
+                      <EmptyState
+                        compact
+                        icon={<CreditIcon size={26} />}
+                        title="Nenhuma compra nesta fatura"
+                      >
                         As parcelas aparecerão aqui conforme o mês de vencimento.
                       </EmptyState>
                     )}

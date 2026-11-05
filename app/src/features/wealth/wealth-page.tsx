@@ -1,3 +1,4 @@
+import { ChartNoAxesCombined as EmptyStateIcon } from 'lucide-react';
 import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { useState } from 'react';
@@ -203,14 +204,16 @@ export function WealthPage() {
                 </div>
                 {!holdings.length ? (
                   <EmptyState
+                    icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
                     title={
                       data.holdings.length
                         ? 'Nenhuma posição neste filtro'
                         : 'Sua carteira, em um lugar'
                     }
                   >
-                    Informe posições existentes ou comece zerado e registre seus aportes. Valores e
-                    avaliações ficam com data de referência.
+                    {data.holdings.length
+                      ? 'Experimente outro nome ou inclua as posições arquivadas.'
+                      : 'Use Novo investimento para cadastrar uma posição existente ou começar a registrar seus aportes.'}
                   </EmptyState>
                 ) : (
                   <ul className="investment-list">
@@ -276,7 +279,10 @@ export function WealthPage() {
                   <h2>Bens e outras dívidas</h2>
                 </div>
                 {!data.items.length ? (
-                  <EmptyState title="Complete sua visão patrimonial">
+                  <EmptyState
+                    icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
+                    title="Complete sua visão patrimonial"
+                  >
                     Cadastre bens e saldos de dívidas que ainda não estão representados nas contas,
                     investimentos e cartões.
                   </EmptyState>

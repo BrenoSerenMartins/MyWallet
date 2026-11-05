@@ -766,3 +766,52 @@ body .movement-toolbar > .button {
     margin-left: auto;
   }
 }
+
+/* Empty states share one scale; inline collections use the compact variant. */
+body .empty-state {
+  min-height: 0;
+  width: 100%;
+  max-width: 560px;
+  padding: clamp(36px, 5vw, 64px) 24px;
+  gap: 12px;
+}
+body .empty-state .empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 0 6px;
+  border-radius: 20px;
+  background: var(--surface-soft);
+  color: var(--accent);
+}
+body .empty-state h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+}
+body .empty-state p {
+  margin: 0;
+  max-width: 380px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+body .empty-state .button {
+  margin-top: 6px;
+  min-height: 44px;
+  font-size: 12px;
+  background: var(--surface-soft);
+}
+body .empty-state-compact {
+  padding: 28px 16px;
+}
+body .empty-state-compact .empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+body .empty-state-compact h3 {
+  font-size: 15px;
+}
+body .finance-checkbox {
+  flex-direction: row;
+}

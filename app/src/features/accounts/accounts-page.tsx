@@ -1,3 +1,4 @@
+import { Landmark as EmptyStateIcon } from 'lucide-react';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { AccountRecord } from './components/account-record';
 import { BalanceHistoryPanel } from './components/balance-history-panel';
@@ -111,7 +112,10 @@ export function AccountsPage() {
             filtro
           </p>
           {!visibleAccounts.length && (
-            <EmptyState title="Nenhuma conta neste filtro">
+            <EmptyState
+              icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
+              title="Nenhuma conta neste filtro"
+            >
               Escolha outro tipo de conta ou adicione uma conta.
             </EmptyState>
           )}
@@ -133,7 +137,10 @@ export function AccountsPage() {
         </div>
       ) : (
         <div className="panel">
-          <EmptyState title="Dê um lugar para o seu dinheiro">
+          <EmptyState
+            icon={<EmptyStateIcon size={28} strokeWidth={1.5} />}
+            title="Dê um lugar para o seu dinheiro"
+          >
             Adicione sua conta Mercado Pago ou Alelo para começar.
           </EmptyState>
         </div>
