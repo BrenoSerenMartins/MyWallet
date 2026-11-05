@@ -14,13 +14,14 @@ body .month-trigger {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  min-height: 46px;
-  padding: 10px 13px;
+  min-height: var(--control-hit);
+  padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-soft);
   color: var(--text);
   font: inherit;
+  font-size: 14px;
   text-align: left;
   line-height: 1.4;
 }
@@ -44,16 +45,36 @@ body .month-trigger[aria-invalid='true'],
 body input.date-trigger[aria-invalid='true'] {
   border-color: var(--negative);
 }
+/* The wrapper provides layout only; the trigger owns its hit area and padding. */
+body .page-content .period-picker {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  border: 0;
+  background: transparent;
+}
 body .period-picker .month-trigger {
   background: transparent;
-  border: 0;
-  padding: 8px 2px;
-  min-height: 44px;
+  border: 1px solid transparent;
+  padding: 10px 12px;
+  min-height: var(--control-hit);
+  gap: 10px;
   white-space: nowrap;
+  font-size: 13px;
   font-weight: 500;
+  line-height: 20px;
+}
+body .period-picker .month-trigger:hover:not(:disabled),
+body .period-picker .month-trigger[aria-expanded='true'] {
+  background: var(--surface-soft);
 }
 body .period-picker .month-field {
   width: auto;
+  max-width: 100%;
 }
 body .control-popover {
   position: fixed;
@@ -194,8 +215,10 @@ body .calendar-footer .text-button {
 body .date-field input.date-trigger {
   width: 100%;
   min-width: 0;
-  min-height: 46px;
-  padding: 10px 45px 10px 13px;
+  min-height: var(--control-hit);
+  padding: 10px 46px 10px 12px;
+  font-size: 14px;
+  line-height: 22px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -205,11 +228,12 @@ body .date-field input.date-trigger {
 body .date-calendar-button {
   position: absolute;
   right: 1px;
-  top: 1px;
+  top: 50%;
+  transform: translateY(-50%);
   display: grid;
   place-items: center;
   min-width: 44px;
-  height: 44px;
+  height: calc(100% - 2px);
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -304,4 +328,49 @@ body .review-table .select-field + .select-field {
 body .review-table .select-trigger {
   min-height: 44px;
   font-size: 13px;
+}
+
+/* Keep icon and text actions on the same baseline as adjacent form controls. */
+body .button {
+  gap: 8px;
+  min-height: var(--control-hit);
+  padding: 10px 16px;
+  line-height: 22px;
+}
+body .button.compact {
+  padding: 10px 12px;
+}
+body .button > svg,
+body .text-button > svg,
+body .icon-button > svg {
+  flex-shrink: 0;
+}
+body .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-hit);
+  height: var(--control-hit);
+  padding: 0;
+  line-height: 1;
+}
+body .text-button {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 4px;
+}
+@media (pointer: coarse) {
+  body .select-trigger,
+  body .month-trigger,
+  body .date-field input.date-trigger,
+  body .button,
+  body .icon-button,
+  body .text-button {
+    min-height: var(--control-hit-mobile);
+  }
+  body .icon-button {
+    min-width: var(--control-hit-mobile);
+    height: var(--control-hit-mobile);
+  }
 }
