@@ -199,3 +199,131 @@ body .overview-editorial > .forecast-compact {
     font-size: 40px;
   }
 }
+
+/* Give the editorial figures a quiet frame and a centered reading axis. */
+body .overview-editorial .current-balances {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 0 24px;
+  background: transparent;
+}
+body .overview-editorial .balance-topline {
+  padding-top: 12px;
+}
+body .overview-editorial .balance-snapshot {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  align-items: center;
+  gap: 0;
+  padding: 24px 0 32px;
+}
+body .overview-editorial .balance-snapshot > div {
+  justify-items: center;
+  text-align: center;
+  padding: 12px 24px;
+  margin: 0;
+}
+body .overview-editorial .balance-snapshot > div + div {
+  margin: 0;
+  padding: 12px 24px;
+  border-left: 1px solid var(--border);
+}
+body .overview-editorial .balance-snapshot .hero-balance {
+  font-size: clamp(46px, 5.8vw, 76px);
+  letter-spacing: -0.055em;
+}
+body .overview-editorial .current-balances > .balance-reference {
+  justify-content: center;
+  text-align: center;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+}
+body .overview-editorial .balance-composition > summary {
+  min-height: 52px;
+}
+body .overview-editorial .monthly-analysis {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+body .overview-editorial .monthly-heading {
+  padding: 14px 24px;
+}
+body .overview-editorial .monthly-metrics {
+  gap: 0;
+  padding: 0;
+}
+body .overview-editorial .month-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 20px;
+}
+body .overview-editorial .month-metric + .month-metric {
+  border-left: 1px solid var(--border);
+}
+body .overview-editorial .month-metric-label {
+  justify-content: center;
+  gap: 10px;
+}
+body .overview-editorial .month-metric-label svg:last-child {
+  margin-left: 0;
+}
+body .overview-editorial .month-metric dl {
+  width: 100%;
+}
+body .overview-editorial .month-metric dl > div {
+  justify-content: center;
+}
+body .overview-editorial .month-context {
+  border-top: 1px solid var(--border);
+  padding-inline: 24px;
+}
+body .overview-editorial .dashboard-plan-link {
+  padding: 4px 24px 12px;
+}
+body .overview-editorial .history-overview {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+@media (max-width: 760px) {
+  body .overview-editorial .current-balances {
+    padding-inline: 18px;
+  }
+  body .overview-editorial .balance-snapshot {
+    grid-template-columns: minmax(0, 1fr);
+    padding-block: 8px 20px;
+  }
+  body .overview-editorial .balance-snapshot > div {
+    padding: 20px 0;
+  }
+  body .overview-editorial .balance-snapshot > div + div {
+    padding: 20px 0 4px;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  body .overview-editorial .monthly-heading {
+    padding-inline: 18px;
+  }
+  body .overview-editorial .month-metric {
+    padding: 24px 12px;
+  }
+  body .overview-editorial .month-metric + .month-metric {
+    border-left: 1px solid var(--border);
+  }
+  body .overview-editorial .month-metric.result {
+    border-left: 0;
+    padding-top: 24px;
+  }
+  body .overview-editorial .month-context {
+    padding-inline: 18px;
+  }
+  body .overview-editorial .dashboard-plan-link {
+    padding-inline: 18px;
+  }
+  body .overview-editorial .history-overview {
+    padding: 18px;
+  }
+}
