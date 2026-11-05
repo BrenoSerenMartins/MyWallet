@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import { CompactForecast } from './compact-forecast';
+import { CommitmentForm } from './commitment-form';
+import { Modal } from '../../../shared/ui/primitives';
 import { Link } from 'react-router-dom';
 import { CalendarClock, ArrowRight } from 'lucide-react';
 import { dateToday, money, shortDate } from '../../../shared/formatting/money';
@@ -103,7 +107,8 @@ export function CashflowForecast({
   compact?: boolean;
 }) {
   const month = dateToday().slice(0, 7);
-  const { query } = useCommitments(month);
+  const { query, write } = useCommitments(month);
+  const [adding, setAdding] = useState(false);
   return (
     <section
       className={`panel cashflow-forecast ${compact ? 'forecast-compact' : ''}`}
@@ -114,45 +119,30 @@ export function CashflowForecast({
       ) : query.isError ? (
         <ErrorState error={query.error} retry={() => void query.refetch()} />
       ) : compact ? (
-        <div className="forecast-compact-content">
-          <div>
-            <h2>O que vem pela frente</h2>
-            <p>Contas de dinheiro · até {shortDate(query.data.through)}</p>
-          </div>
-          <dl>
-            {(
-              [
-                ['A receber', 'income'],
-                ['A pagar', 'expense'],
-                ['Saldo previsto', 'projected'],
-              ] as const
-            ).map(([label, field]) => (
-              <div key={field}>
-                <dt>{label}</dt>
-                <dd>
-                  {visible
-                    ? money(
-                        query.data.projection
-                          .filter((a) => a.kind === 'cash')
-                          .reduce((sum, row) => sum + row[field], 0),
-                      )
-                    : '••••••'}
-                </dd>
-              </div>
-            ))}
-          </dl>
-          {query.data.overdueCount > 0 && (
-            <p className="forecast-warning">
-              {query.data.overdueCount} vencimento(s) anterior(es) em aberto
-            </p>
-          )}
-        </div>
+        <CompactForecast data={query.data} visible={visible} onAdd={() => setAdding(true)} />
       ) : (
         <ForecastDetails data={query.data} visible={visible} />
       )}
-      <Link className="text-button" to={`/planning?view=commitments&month=${month}`}>
-        Ver compromissos <ArrowRight size={16} />
-      </Link>
+      {!compact && (
+        <Link className="text-button" to={`/planning?view=commitments&month=${month}`}>
+          Ver compromissos <ArrowRight size={16} />
+        </Link>
+      )}
+      <Modal
+        open={adding}
+        onOpenChange={setAdding}
+        title="Novo compromisso"
+        description="Defina o vencimento e o valor previsto."
+      >
+        {adding && (
+          <CommitmentForm
+            onSave={async (data, key) => {
+              await write('', data, undefined, 'POST', key);
+              setAdding(false);
+            }}
+          />
+        )}
+      </Modal>
     </section>
   );
 }
