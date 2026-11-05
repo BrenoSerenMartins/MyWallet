@@ -130,3 +130,119 @@ body .page-content .counterparties-page .directory-filter-summary > .result-coun
     grid-template-columns: minmax(0, 1fr) 48px;
   }
 }
+
+/* Expanded agents keep the same open canvas and one consistent form inset. */
+body .page-content .counterparties-page .counterparty-panel > .counterparty-content {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 20px 16px 28px;
+  border: 0;
+  border-radius: 0;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+}
+body .page-content .counterparty-content > * {
+  min-width: 0;
+}
+body .page-content .counterparty-profile {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px 16px;
+}
+body .page-content .counterparty-content .form-actions {
+  margin: 0;
+  padding: 0;
+  gap: 8px;
+  justify-content: flex-start;
+}
+body .page-content .counterparty-content .form-grid > label {
+  min-width: 0;
+}
+body .page-content .counterparty-content .secondary-disclosure {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: var(--rule-horizontal) bottom / 100% 1px no-repeat;
+}
+body .page-content .counterparty-content .secondary-disclosure > summary {
+  padding: 10px 0;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 48px;
+}
+body .page-content .counterparty-content .secondary-disclosure > summary::after {
+  flex-shrink: 0;
+}
+body .page-content .counterparty-content .secondary-disclosure[open] > summary::after {
+  transform: rotate(180deg);
+}
+body .page-content .counterparty-content .secondary-disclosure > .form-stack {
+  padding: 12px 0 20px;
+  gap: 16px;
+  min-width: 0;
+}
+body .page-content .counterparty-content-section {
+  padding-top: 20px;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+}
+body .page-content .counterparty-content-section h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+body .page-content .counterparty-content .field-help {
+  margin-block: 0 12px;
+  font-size: 12px;
+  line-height: 1.65;
+}
+body .page-content .counterparty-content .counterparty-rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  padding-block: 16px;
+  border: 0;
+  background: var(--rule-horizontal) bottom / 100% 1px no-repeat;
+}
+body .page-content .counterparty-content .counterparty-rule > .form-grid {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+body .page-content .counterparty-content .counterparty-rule strong {
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+body .page-content .counterparty-content .counterparty-rule small {
+  font-size: 12px;
+  color: var(--muted);
+}
+body .page-content .counterparty-panel > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+  border-radius: 8px;
+}
+@media (max-width: 760px) {
+  body .page-content .counterparties-page .counterparty-panel > .counterparty-content {
+    padding: 18px 10px 24px;
+    gap: 20px;
+  }
+  body .page-content .counterparty-profile {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body .page-content .counterparty-content .form-actions > .button {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+  body .page-content .counterparty-content .button {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+  }
+  body .page-content .counterparty-content .secondary-disclosure > .form-stack > .button {
+    width: 100%;
+  }
+}

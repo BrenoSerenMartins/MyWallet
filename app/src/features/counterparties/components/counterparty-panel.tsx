@@ -40,11 +40,11 @@ export function CounterpartyPanel({
         <strong>{agent.name}</strong>
         <span>
           {agent.enabled ? 'Ativo' : 'Desativado'} · {agent.rules.filter((r) => r.enabled).length}{' '}
-          regras ativas
+          {agent.rules.filter((r) => r.enabled).length === 1 ? 'regra ativa' : 'regras ativas'}
         </span>
       </summary>
-      <div className="form-stack">
-        <div className="form-grid">
+      <div className="form-stack counterparty-content">
+        <div className="form-grid counterparty-profile">
           <label>
             Nome
             <input maxLength={150} value={name} onChange={(e) => setName(e.target.value)} />
@@ -73,7 +73,7 @@ export function CounterpartyPanel({
             />
           </>
         )}
-        <div>
+        <section className="counterparty-content-section">
           <h3>Regras de categoria</h3>
           {!agent.rules.length && (
             <p className="field-help">
@@ -102,8 +102,8 @@ export function CounterpartyPanel({
               />
             </div>
           ))}
-        </div>
-        <div>
+        </section>
+        <section className="counterparty-content-section">
           <h3>Descrições de reconhecimento</h3>
           <p className="field-help">
             Várias descrições podem representar a mesma pessoa ou estabelecimento. Acentos, espaços
@@ -131,7 +131,7 @@ export function CounterpartyPanel({
             </div>
           ))}
           {!agent.identifiers.length && <p className="field-help">Nenhuma identificação salva.</p>}
-        </div>
+        </section>
       </div>
     </details>
   );
