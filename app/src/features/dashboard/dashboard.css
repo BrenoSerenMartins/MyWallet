@@ -553,3 +553,10 @@ body .dashboard-page .recent-movements > .section-heading {
 body .dashboard-page .recent-movements .transaction-row {
   padding-inline: 4px;
 }
+
+body .dashboard-page .overview-view-navigation {
+  border-bottom: 1px solid var(--border);
+}
+body .dashboard-page .overview-view-navigation .view-switcher {
+  margin: 0;
+}

@@ -12,7 +12,7 @@ ARG SUPABASE_URL
 ARG SUPABASE_PUBLISHABLE_KEY
 ENV SUPABASE_URL=$SUPABASE_URL
 ENV SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY
-RUN npm run build
+RUN node scripts/check-public-auth-config.mjs && npm run build
 RUN npm prune --omit=dev
 
 FROM node:24.21.0-bookworm-slim

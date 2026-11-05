@@ -2,13 +2,12 @@ import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { HelpTip } from '../../shared/ui/tooltip';
 import { Tooltip } from '../../shared/ui/tooltip';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
-import { PageHeader } from '../../shared/ui/page-header';
 import { FinanceOverview } from './components/finance-overview';
 import { CashflowForecast } from '../planning/components/cashflow-forecast';
 import '../planning/commitments.css';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ErrorState, Loading } from '../../shared/ui/primitives';
 import { dateToday } from '../../shared/formatting/money';
 import { validMonth, shiftMonth } from '../../shared/formatting/month';
@@ -35,39 +34,8 @@ export function DashboardPage() {
   const { snapshot, summary, movements, plan, transactionsLink } = useDashboard(month);
   return (
     <div className="page-enter dashboard-page">
-      <PageHeader
-        title="Visão geral"
-        navigation={
-          <ViewSwitcher
-            variant="tabs"
-            label="Conteúdo da visão geral"
-            value={view}
-            onChange={(value) => {
-              const next = new URLSearchParams(params);
-              if (value === 'summary') next.delete('view');
-              else next.set('view', value);
-              setParams(next);
-            }}
-            options={[
-              { value: 'summary', label: 'Resumo' },
-              { value: 'analysis', label: 'Análise' },
-            ]}
-          />
-        }
-      >
-        {view === 'analysis' && (
-          <Tooltip text={visible ? 'Ocultar valores' : 'Mostrar valores'}>
-            <button
-              className="icon-button"
-              aria-label={visible ? 'Ocultar valores' : 'Mostrar valores'}
-              onClick={() => setVisible(!visible)}
-            >
-              {visible ? <Eye size={18} /> : <EyeOff size={18} />}
-            </button>
-          </Tooltip>
-        )}
-      </PageHeader>
-      <div className="dashboard-overview motion-reveal" hidden={view !== 'summary'}>
+      <h1 className="sr-only">Visão geral</h1>
+      <div className="dashboard-overview motion-reveal">
         {snapshot.isPending ? (
           <Loading />
         ) : snapshot.isError ? (
@@ -79,8 +47,29 @@ export function DashboardPage() {
             onToggle={() => setVisible(!visible)}
           />
         )}
-        <FinanceOverview visible={visible} />
       </div>
+      <div className="overview-view-navigation">
+        <ViewSwitcher
+          variant="tabs"
+          label="Conteúdo da visão geral"
+          value={view}
+          onChange={(value) => {
+            const next = new URLSearchParams(params);
+            if (value === 'summary') next.delete('view');
+            else next.set('view', value);
+            setParams(next);
+          }}
+          options={[
+            { value: 'summary', label: 'Resumo' },
+            { value: 'analysis', label: 'Análise' },
+          ]}
+        />
+      </div>
+      {view === 'summary' && (
+        <div className="dashboard-overview">
+          <FinanceOverview visible={visible} />
+        </div>
+      )}
       {view === 'summary' && <CashflowForecast visible={visible} compact />}
       <section className="monthly-analysis" aria-labelledby="monthly-title">
         <div className="monthly-heading">

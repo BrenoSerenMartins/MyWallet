@@ -161,6 +161,22 @@ Em um serviço já criado, confira **Environment → PORT = 10000** e **Settings
 
 O plano gratuito pode adormecer após inatividade; a primeira abertura pode demorar. O worker separado do Cloudflare não é necessário nesse caminho. Se houver um deploy frontend antigo, utilize a URL do Render para acessar a aplicação completa.
 
+#### Configuração ausente no deploy
+
+Se o processo parar em `Supabase configuration is required.` (versões anteriores) ou `Missing Supabase environment variables: ...`, abra **Environment** no serviço que está sendo implantado e confira:
+
+| Variável                   | Valor a usar                                     |
+| -------------------------- | ------------------------------------------------ |
+| `SUPABASE_URL`             | O valor de `SUPABASE_URL` da `.env.local`        |
+| `SUPABASE_PUBLISHABLE_KEY` | A chave pública de autenticação da `.env.local`  |
+| `RUNTIME_DATABASE_URL`     | A conexão restrita gerada por `npm run db:setup` |
+
+Copie somente o valor de cada variável, sem o prefixo `NOME=`. Não copie a conexão administrativa para `RUNTIME_DATABASE_URL` e não coloque senhas no Dockerfile ou no Git. Depois escolha **Save, rebuild, and deploy**, pois o frontend também recebe a configuração pública durante a compilação.
+
+Variáveis marcadas com `sync: false` são solicitadas na criação inicial do Blueprint e precisam ser adicionadas manualmente a serviços existentes. Um serviço novo precisa das próprias configurações. Referências: [variáveis no Render](https://render.com/docs/configure-environment-variables), [Docker no Render](https://render.com/docs/docker) e [campos `sync: false`](https://render.com/docs/blueprint-spec#prompting-for-secret-values).
+
+O Dockerfile verifica a presença da configuração pública antes de compilar. A API lista apenas os nomes ausentes, sem imprimir valores. Avisos de install scripts de dependências não substituem o diagnóstico da falha de inicialização.
+
 #### Diagnosticar deploy que inicia, mas não fica saudável
 
 O log `HTTP listening on 0.0.0.0:10000` confirma a porta HTTP no Render; a liberação do deploy também depende de `/ready`, que verifica o PostgreSQL e o papel restrito. Se essa etapa falhar, procure `Database readiness failed:` nos logs. O app registra somente códigos permitidos, sem mensagens brutas, URLs ou senhas, e evita repetir a mesma falha em cada probe.
@@ -168,7 +184,7 @@ O log `HTTP listening on 0.0.0.0:10000` confirma a porta HTTP no Render; a liber
 | Código                                                          | O que conferir                                                                                               |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `RUNTIME_DATABASE_URL_MISSING`                                  | A variável deve conter a conexão restrita completa, sem o prefixo `RUNTIME_DATABASE_URL=` no valor do painel |
-| `RUNTIME_ROLE_INVALID`                                          | Use a credencial `plannedwallet_runtime`, não a administrativa `postgres`                                         |
+| `RUNTIME_ROLE_INVALID`                                          | Use a credencial `plannedwallet_runtime`, não a administrativa `postgres`                                    |
 | `28P01` / `28000`                                               | Usuário/senha e sufixo do projeto no usuário do pooler; copie a conexão restrita gerada pelo setup           |
 | `ENETUNREACH` / `EHOSTUNREACH`                                  | Compatibilidade de rede; confira a conexão de Session pooler IPv4                                            |
 | `ENOTFOUND` / `EAI_AGAIN`                                       | Host da conexão e resolução DNS                                                                              |
