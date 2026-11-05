@@ -1,0 +1,19 @@
+# PlannedWallet — logo exploration v1
+
+An abstract pair of offset folded planes suggests a deliberate path and the accumulation of capital. The lockup uses the product's sage/forest/ivory palette. Cinematic atmosphere belongs to the presentation; the reusable mark itself uses flat solid fills.
+
+## Deliverables
+
+- `plannedwallet-presentation-v1.png`: cinematic concept presentation, generated with the built-in image generation tool.
+- `plannedwallet-preview-v1.png`: clean vector lockup rendered on the app's charcoal background.
+- `plannedwallet-logo-dark-v1.svg` / `.png`: ivory wordmark and sage symbol on transparent background, for dark surfaces.
+- `plannedwallet-logo-light-v1.svg` / `.png`: forest wordmark and deeper green symbol on transparent background, for light surfaces.
+- `plannedwallet-symbol-v1.svg`: standalone sage symbol on transparent background.
+
+The SVG assets are an editable geometric reconstruction of the generated direction, with Inter SemiBold lettering converted to paths. They contain no embedded raster image and require no installed fonts. Inter is already used by the application via `@fontsource/inter`. Transparent PNGs are raster exports of these clean SVGs. Generated transparent image variations had contour artifacts and were discarded; they are not production deliverables.
+
+These are versioned design assets. They do not replace the current application wordmark or installation icons.
+
+## Final presentation prompt — built-in image generation
+
+Use case: logo-brand. Create ONE exceptionally refined brand identity presentation for the personal finance and wealth planning SaaS named EXACTLY "PlannedWallet". This is an original logo design exploration for a real minimalist premium application, not an app screenshot. Brand character: composed, intelligent, architectural, confident, personal, serious financial planning. Art direction: cinematic restraint, Swiss editorial precision with the atmosphere of a beautifully art-directed luxury software launch. Landscape composition, ample intentional negative space, a single original symbol to the left of an impeccably typeset horizontal wordmark "PlannedWallet", centered as one balanced lockup. Symbol must be a memorable SIMPLE solid geometric silhouette, subtly combining the idea of a planned path and protected capital through two offset folded planes and deliberate negative space. It may subtly suggest P and W without illustrating literal letters. It must remain recognizable at 24 pixels, with clean smooth vector-like edges and consistent visual weight. Wordmark: sophisticated custom modern sans, precise kerning, slightly distinctive letterforms, very legible; exact capitalization PlannedWallet, no period. Palette drawn from the real product: near-black forest charcoal #141715 backdrop, warm ivory #F2F3EC lettering, restrained soft sage #8AC9A2 accent for the symbol. Cinematic quality belongs to the background lighting and composition: very subtle broad atmospheric side light, deep controlled dark tones, extremely restrained material texture. The actual logo itself must be flat, crisp, production-friendly, without dependency on bevels, glow or metallic gradients. No tagline, no extra words, no grids, no alternate designs, no branding-board labels, no website mockups. Avoid literal wallet/purse drawings, coins, dollar signs, a W drawn inside a wallet, generic upward arrows, shields, crowns, mountain peaks, neon, excessive gold, 3D extrusion, lens flare, crypto aesthetics, stock fintech icons. Aim for the strength and visual discipline of a professionally designed enduring identity, not ornamental AI concept art. Spell the brand correctly: P-l-a-n-n-e-d-W-a-l-l-e-t.
