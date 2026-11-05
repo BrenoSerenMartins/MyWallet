@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { HelpTip } from '../../../shared/ui/tooltip';
 import { Tooltip } from '../../../shared/ui/tooltip';
 import { Link } from 'react-router-dom';
@@ -10,10 +11,12 @@ export function BalanceOverview({
   summary,
   visible,
   onToggle,
+  navigation,
 }: {
   summary: Dashboard;
   visible: boolean;
   onToggle: () => void;
+  navigation?: ReactNode;
 }) {
   const cashAccounts = summary.accounts.filter(
     (a) => !['benefit_food', 'benefit_meal', 'reserve'].includes(a.type),
@@ -88,6 +91,7 @@ export function BalanceOverview({
         </p>
         <AccountsOverview accounts={summary.accounts} visible={visible} />
       </details>
+      {navigation && <div className="overview-view-navigation">{navigation}</div>}
     </section>
   );
 }

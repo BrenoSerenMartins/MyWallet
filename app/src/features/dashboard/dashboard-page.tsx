@@ -45,25 +45,25 @@ export function DashboardPage() {
             summary={snapshot.data}
             visible={visible}
             onToggle={() => setVisible(!visible)}
+            navigation={
+              <ViewSwitcher
+                variant="tabs"
+                label="Conteúdo da visão geral"
+                value={view}
+                onChange={(value) => {
+                  const next = new URLSearchParams(params);
+                  if (value === 'summary') next.delete('view');
+                  else next.set('view', value);
+                  setParams(next);
+                }}
+                options={[
+                  { value: 'summary', label: 'Resumo' },
+                  { value: 'analysis', label: 'Análise' },
+                ]}
+              />
+            }
           />
         )}
-      </div>
-      <div className="overview-view-navigation">
-        <ViewSwitcher
-          variant="tabs"
-          label="Conteúdo da visão geral"
-          value={view}
-          onChange={(value) => {
-            const next = new URLSearchParams(params);
-            if (value === 'summary') next.delete('view');
-            else next.set('view', value);
-            setParams(next);
-          }}
-          options={[
-            { value: 'summary', label: 'Resumo' },
-            { value: 'analysis', label: 'Análise' },
-          ]}
-        />
       </div>
       {view === 'summary' && (
         <div className="dashboard-overview">

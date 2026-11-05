@@ -560,3 +560,10 @@ body .dashboard-page .overview-view-navigation {
 body .dashboard-page .overview-view-navigation .view-switcher {
   margin: 0;
 }
+
+body .dashboard-page .current-balances .overview-view-navigation {
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+  margin-top: 0;
+  padding: 6px 0;
+}
