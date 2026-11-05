@@ -3944,15 +3944,19 @@ test('an operation completing after a space switch cannot add feedback to the ne
   await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
   await openWorkspaceSwitcher(page);
   await page.getByRole('link', { name: 'Abrir espaço Outro', exact: true }).click();
+  await expect(page).toHaveURL('/');
+  await expect(
+    page.getByRole('button', { name: 'Menu do espaço: Outro', exact: true }),
+  ).toBeVisible();
   const response = page.waitForResponse(
     (r) => r.request().method() === 'PATCH' && r.url().endsWith(`/accounts/${account.id}`),
   );
   release();
   await (await response).finished();
   await page.getByRole('button', { name: 'Abrir notificações', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Notificações' })).not.toContainText(
-    'Conta salva.',
-  );
+  const notifications = page.getByRole('dialog', { name: 'Notificações', exact: true });
+  await expect(notifications).toBeVisible();
+  await expect(notifications).not.toContainText('Conta salva.');
 });
 
 for (const width of [390, 1440])
