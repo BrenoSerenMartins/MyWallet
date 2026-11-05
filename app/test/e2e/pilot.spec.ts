@@ -364,6 +364,7 @@ for (const width of [360, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
+    await page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }).click();
     await page.getByRole('button', { name: 'Editar planejamento', exact: true }).click();
     await fillControl(page.getByLabel('Previsto · Alimentação'), '600,00');
     await fillControl(page.getByLabel('Notas do mês'), 'Notas preservadas');
@@ -3916,8 +3917,8 @@ for (const width of [390, 1440])
       page.getByRole('button', { name: 'Copiar mês anterior', exact: true }),
     ).not.toBeVisible();
     await page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }).click();
-    await chooseSelect(page.getByLabel('Contas no realizado', { exact: true }), 'cash');
-    await expect(page.locator('.scope-indicator')).toHaveText('Sem benefícios');
+    await expect(page.getByLabel('Contas no realizado', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Preparar meu mês', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(
       page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }),
@@ -4123,24 +4124,21 @@ for (const width of [390, 1440]) {
   });
 }
 
-test('styled selects stay open inside action menus and support keyboard selection', async ({
+test('planning keeps editing in contextual actions and always includes every account', async ({
   page,
 }) => {
   await signedIn(page);
   await page.goto('/planning?month=2026-11');
+  await expect(page.getByLabel('Contas no realizado', { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Preparar meu mês', exact: true }),
+  ).not.toBeVisible();
   const menu = page.getByRole('button', { name: 'Mais ações do planejamento', exact: true });
   await menu.click();
-  const select = page.getByRole('combobox', { name: 'Contas no realizado', exact: true });
-  await select.focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('listbox')).toBeVisible();
-  await expect(select).toBeVisible();
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
-  await expectControlValue(select, 'cash');
-  await expect(select).toBeFocused();
-  await expect(page.locator('.action-menu')).toHaveAttribute('open', '');
-  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Preparar meu mês', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Preparar planejamento', exact: true });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
   await expect(menu).toBeFocused();
 });
 

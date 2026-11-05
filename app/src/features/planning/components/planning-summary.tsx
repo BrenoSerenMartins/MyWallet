@@ -44,7 +44,6 @@ export function PlanningSummary({
     <section className="planning-metrics" aria-label="Resumo do planejamento">
       {actions && (
         <div className="summary-action-bar">
-          <span>Seu orçamento</span>
           <div>{actions}</div>
         </div>
       )}

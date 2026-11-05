@@ -1,4 +1,3 @@
-import { Select } from '../../shared/ui/controls/select';
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { ActionMenu } from '../../shared/ui/action-menu';
 import type { ReactNode } from 'react';
@@ -11,7 +10,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { validMonth } from '../../shared/formatting/month';
 import { Copy, Pencil, ArrowRight } from 'lucide-react';
 import { dateToday, money } from '../../shared/formatting/money';
-import { Button, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
+import { ErrorState, Loading, Modal } from '../../shared/ui/primitives';
 import { useMonthlyPlan } from './hooks/use-monthly-plan';
 import { PlanningSummary } from './components/planning-summary';
 import { BudgetSection } from './components/budget-section';
@@ -57,8 +56,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
   };
   const [dialog, setDialog] = useState<'edit' | 'copy' | null>(null);
   const { success: setMessage } = useNotifications();
-  const [scope, setScope] = useState('all');
-  const { query, save, copy } = useMonthlyPlan(month, scope);
+  const { query, save, copy } = useMonthlyPlan(month);
   const plan = query.data;
   function saved() {
     setDialog(null);
@@ -95,33 +93,15 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
                       }}
                     />
                   </label>
-                  <Button
-                    className="compact"
-                    aria-label={plan?.version ? 'Editar planejamento' : 'Preparar meu mês'}
-                    disabled={!plan || !navigator.onLine}
-                    onClick={() => setDialog('edit')}
-                  >
-                    <Pencil size={15} />
-                    <span>{plan?.version ? 'Editar' : 'Preparar mês'}</span>
-                  </Button>
-                  {scope !== 'all' && (
-                    <span className="scope-indicator">
-                      {scope === 'cash' ? 'Sem benefícios' : 'Só benefícios'}
-                    </span>
-                  )}
                   <ActionMenu label="Mais ações do planejamento">
-                    <label>
-                      Realizado de
-                      <Select
-                        aria-label="Contas no realizado"
-                        value={scope}
-                        onChange={(e) => setScope(e.target.value)}
-                      >
-                        <option value="all">Todas as contas</option>
-                        <option value="cash">Sem benefícios</option>
-                        <option value="benefits">Só benefícios</option>
-                      </Select>
-                    </label>
+                    <button
+                      type="button"
+                      disabled={!navigator.onLine}
+                      onClick={() => setDialog('edit')}
+                    >
+                      <Pencil size={16} />
+                      {plan.version ? 'Editar planejamento' : 'Preparar meu mês'}
+                    </button>
                     <button
                       type="button"
                       disabled={!plan || !navigator.onLine || month === '1900-01'}
@@ -175,12 +155,11 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
             </div>
             <details className="planning-preferences">
               <summary>Como os valores são calculados e configurações do VA/VR</summary>
-              <BenefitPlanningNotice plan={plan} scope={scope} />
+              <BenefitPlanningNotice plan={plan} scope="all" />
               <p className="field-help">
-                O filtro muda somente o realizado; o previsto é o do espaço inteiro. Transferências
-                e estornos ficam fora do resultado. O saldo da conta inclui outros períodos.
-                Benefícios têm uso restrito. Aporte é uma intenção; seu realizado não é identificado
-                automaticamente.
+                Previsto e realizado consideram todas as contas do espaço. Transferências e estornos
+                ficam fora do resultado. O saldo da conta inclui outros períodos. Benefícios têm uso
+                restrito. Aporte é uma intenção; seu realizado não é identificado automaticamente.
               </p>
             </details>
             <section className="panel planning-note">

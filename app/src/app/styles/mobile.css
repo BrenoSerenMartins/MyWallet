@@ -753,3 +753,37 @@
     grid-column: 2;
   }
 }
+
+/* A quiet period row; editing and copying belong to the contextual actions. */
+body .page-content .planning-page .summary-action-bar {
+  display: block;
+}
+body .page-content .planning-page .summary-action-bar > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  body .page-content .planning-page .planning-metrics {
+    row-gap: 0;
+  }
+  body .page-content .planning-page .metric-result {
+    background: none;
+    padding-bottom: 24px;
+  }
+  body .page-content .planning-page .metric-result::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    pointer-events: none;
+    background: var(--rule-horizontal);
+  }
+  body .page-content .planning-page :is(.metric-income, .metric-expense) {
+    padding-top: 20px;
+  }
+}
