@@ -590,3 +590,32 @@
     padding-top: calc(16px + env(safe-area-inset-top));
   }
 }
+
+@media (max-width: 760px) {
+  body .page-content .overview-editorial .balance-snapshot .balance-figure-label {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    min-height: 44px;
+    width: 100%;
+    text-align: center;
+    line-height: 1.4;
+  }
+  body .page-content .overview-editorial .balance-snapshot .balance-figure-label.has-help {
+    grid-template-columns: 44px minmax(0, auto) 44px;
+    justify-content: center;
+    gap: 0;
+  }
+  body .page-content .overview-editorial .balance-label-text {
+    grid-column: 2;
+  }
+  body .page-content .overview-editorial .balance-figure-label > .help-tip {
+    grid-column: 3;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+  body .page-content .overview-editorial .balance-figure-label > .help-tip:hover {
+    background: transparent;
+  }
+}

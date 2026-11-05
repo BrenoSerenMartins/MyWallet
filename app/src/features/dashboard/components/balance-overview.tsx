@@ -40,8 +40,10 @@ export function BalanceOverview({
       </div>
       <div className="balance-snapshot">
         <div className="available-balance">
-          <span>
-            {partial || review ? 'Saldo registrado nas contas' : 'Dinheiro disponível'}
+          <span className="balance-figure-label has-help">
+            <span className="balance-label-text">
+              {partial || review ? 'Saldo registrado nas contas' : 'Dinheiro disponível'}
+            </span>
             <HelpTip
               label="Dinheiro disponível"
               text="Soma os saldos atuais das contas de dinheiro. Benefícios de uso restrito e reservas ficam separados. Selecionar outro mês não muda este saldo."
@@ -52,14 +54,14 @@ export function BalanceOverview({
         </div>
         {summary.accounts.some((a) => ['benefit_food', 'benefit_meal'].includes(a.type)) && (
           <div>
-            <span>Benefícios · uso restrito</span>
+            <span className="balance-figure-label">Benefícios · uso restrito</span>
             <strong>{amount(summary.benefitBalance)}</strong>
             <small>Alimentação e refeição</small>
           </div>
         )}
         {summary.accounts.some((a) => a.type === 'reserve') && (
           <div>
-            <span>Reservas</span>
+            <span className="balance-figure-label">Reservas</span>
             <strong>{amount(summary.reserveBalance)}</strong>
             <small>Contas de reserva cadastradas</small>
           </div>
