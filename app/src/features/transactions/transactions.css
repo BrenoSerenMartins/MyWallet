@@ -396,3 +396,19 @@ body .dialog-content .movement-date input.date-trigger {
   border: 1px solid var(--border);
   padding-left: 12px;
 }
+
+body .transactions-page .movement-new-button {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+body .transactions-page .movement-new-button:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+.movement-account-context {
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}

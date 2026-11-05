@@ -3,7 +3,6 @@ import { DatePicker } from '../../shared/ui/controls/date-picker';
 import { Select } from '../../shared/ui/controls/select';
 import './transactions.css';
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { PageHeader } from '../../shared/ui/page-header';
 import { dateToday, money } from '../../shared/formatting/money';
 import { TransactionSources } from './components/transaction-sources';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
@@ -199,22 +198,8 @@ export function TransactionsPage() {
   };
   return (
     <div className="page-enter transactions-page">
-      <PageHeader title={accountName ?? 'Movimentações'}>
-        <Tooltip text="Novo lançamento">
-          <Button
-            className="compact movement-new-button"
-            aria-label="Novo lançamento"
-            onClick={() => {
-              const next = new URLSearchParams(params);
-              next.set('new', '1');
-              setParams(next, { preventScrollReset: true });
-            }}
-          >
-            <Plus size={18} />
-            <span className="movement-new-label">Novo lançamento</span>
-          </Button>
-        </Tooltip>
-      </PageHeader>
+      <h1 className="sr-only">{accountName ?? 'Movimentações'}</h1>
+      {accountName && <p className="movement-account-context">{accountName}</p>}
       {requestedTransaction.isError && <ErrorState error={requestedTransaction.error} />}
       <section className="movements-workbench" aria-label="Lista de movimentações">
         <div className="movement-toolbar">
@@ -224,7 +209,7 @@ export function TransactionsPage() {
               aria-label="Buscar movimentos"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar movimentos…"
+              placeholder="Buscar…"
             />
           </label>
           <Tooltip text="Filtrar período, conta, categoria e conciliação">
@@ -237,6 +222,20 @@ export function TransactionsPage() {
             >
               <SlidersHorizontal size={18} />
               {activeFilters.length > 0 && <span className="filter-active-dot" />}
+            </button>
+          </Tooltip>
+          <Tooltip text="Novo lançamento">
+            <button
+              type="button"
+              className="icon-button movement-new-button"
+              aria-label="Novo lançamento"
+              onClick={() => {
+                const next = new URLSearchParams(params);
+                next.set('new', '1');
+                setParams(next, { preventScrollReset: true });
+              }}
+            >
+              <Plus size={18} />
             </button>
           </Tooltip>
         </div>
