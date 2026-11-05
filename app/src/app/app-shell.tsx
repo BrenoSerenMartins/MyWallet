@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { ActionMenu } from '../shared/ui/action-menu';
 import { Tooltip } from '../shared/ui/tooltip';
 import { productName } from '../shared/brand';
@@ -205,34 +206,37 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
-      <nav className="bottom-nav" aria-label="Navegação móvel">
-        {navigation
-          .filter((n) => ['/', '/transactions', '/accounts', '/planning'].includes(n.to))
-          .map(({ to, mobile, Icon }) => (
-            <NavLink key={to} to={to} end={to === '/'}>
-              <Icon size={20} />
-              <span>{mobile}</span>
-            </NavLink>
-          ))}
-        <button
-          type="button"
-          onClick={(event) => {
-            menuTrigger.current = event.currentTarget;
-            setMore(true);
-          }}
-          aria-haspopup="dialog"
-          className={
-            ['/cards', '/wealth', '/categories', '/imports', '/counterparties', '/settings'].some(
-              (path) => location.pathname.startsWith(path),
-            )
-              ? 'active'
-              : ''
-          }
-        >
-          <Menu size={20} />
-          <span>Mais</span>
-        </button>
-      </nav>
+      {createPortal(
+        <nav className="bottom-nav" aria-label="Navegação móvel">
+          {navigation
+            .filter((n) => ['/', '/transactions', '/accounts', '/planning'].includes(n.to))
+            .map(({ to, mobile, Icon }) => (
+              <NavLink key={to} to={to} end={to === '/'}>
+                <Icon size={20} />
+                <span>{mobile}</span>
+              </NavLink>
+            ))}
+          <button
+            type="button"
+            onClick={(event) => {
+              menuTrigger.current = event.currentTarget;
+              setMore(true);
+            }}
+            aria-haspopup="dialog"
+            className={
+              ['/cards', '/wealth', '/categories', '/imports', '/counterparties', '/settings'].some(
+                (path) => location.pathname.startsWith(path),
+              )
+                ? 'active'
+                : ''
+            }
+          >
+            <Menu size={20} />
+            <span>Mais</span>
+          </button>
+        </nav>,
+        document.body,
+      )}
       <Modal
         open={more}
         onOpenChange={setMore}

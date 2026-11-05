@@ -4395,3 +4395,17 @@ for (const saved of [false, true]) {
     } else await expect(copy).toHaveCount(0);
   });
 }
+
+test('mobile navigation stays flush with viewport when page containers move', async ({ page }) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/transactions');
+  const bar = page.getByRole('navigation', { name: 'Navegação móvel', exact: true });
+  await expect(bar).toBeVisible();
+  await page.locator('.app-shell').evaluate((element) => {
+    element.style.transform = 'translateY(-24px)';
+  });
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const bounds = await bar.boundingBox();
+  expect(Math.abs(bounds!.y + bounds!.height - 844)).toBeLessThanOrEqual(1);
+});

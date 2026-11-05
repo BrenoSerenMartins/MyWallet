@@ -799,6 +799,15 @@ body .page-content .planning-page .summary-action-bar > div {
     padding-bottom: calc(var(--mobile-nav-height) + 24px);
   }
   body .bottom-nav {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    transform: none;
+    translate: none;
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: stretch;
