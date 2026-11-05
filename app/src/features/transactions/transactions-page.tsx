@@ -92,7 +92,7 @@ export function TransactionsPage() {
   function changePeriod(value: string) {
     setCustomPeriod(value === 'custom');
     if (value === 'custom') {
-      fromInput.current?.focus();
+      requestAnimationFrame(() => fromInput.current?.focus());
       return;
     }
     const next = new URLSearchParams(params);
@@ -199,11 +199,11 @@ export function TransactionsPage() {
   };
   return (
     <div className="page-enter transactions-page">
-      <PageHeader title={accountName ?? 'Movimentações'}></PageHeader>
-      {requestedTransaction.isError && <ErrorState error={requestedTransaction.error} />}
-      <section className="movements-workbench" aria-label="Lista de movimentações">
-        <div className="movement-toolbar">
+      <PageHeader title={accountName ?? 'Movimentações'}>
+        <Tooltip text="Novo lançamento">
           <Button
+            className="compact movement-new-button"
+            aria-label="Novo lançamento"
             onClick={() => {
               const next = new URLSearchParams(params);
               next.set('new', '1');
@@ -211,8 +211,13 @@ export function TransactionsPage() {
             }}
           >
             <Plus size={18} />
-            Novo lançamento
+            <span className="movement-new-label">Novo lançamento</span>
           </Button>
+        </Tooltip>
+      </PageHeader>
+      {requestedTransaction.isError && <ErrorState error={requestedTransaction.error} />}
+      <section className="movements-workbench" aria-label="Lista de movimentações">
+        <div className="movement-toolbar">
           <label className="search-field">
             <Search size={17} />
             <input
@@ -222,6 +227,50 @@ export function TransactionsPage() {
               placeholder="Buscar movimentos…"
             />
           </label>
+          <Tooltip text="Filtrar período, conta, categoria e conciliação">
+            <button
+              type="button"
+              className="icon-button movement-filter-trigger"
+              aria-label="Filtros avançados"
+              aria-haspopup="dialog"
+              onClick={() => setFiltersOpen(true)}
+            >
+              <SlidersHorizontal size={18} />
+              {activeFilters.length > 0 && <span className="filter-active-dot" />}
+            </button>
+          </Tooltip>
+        </div>
+        <div className="movement-typebar">
+          <ViewSwitcher
+            variant="tabs"
+            label="Tipos de movimentos"
+            value={kind}
+            onChange={(value) => {
+              setKind(value);
+            }}
+            options={[
+              { value: '', label: 'Todos' },
+              { value: 'expense', label: 'Despesas' },
+              { value: 'income', label: 'Receitas' },
+              { value: 'transfer', label: 'Transferências' },
+              { value: 'unclassified', label: 'A revisar' },
+            ]}
+          />
+          {!entries.isPending && !entries.isError && !rangeInvalid && (
+            <span className="movement-results" role="status">
+              {entries.isPlaceholderData
+                ? 'Atualizando movimentos…'
+                : `${items.length} ${items.length === 1 ? 'movimento carregado' : 'movimentos carregados'}`}
+              {entries.hasNextPage && !entries.isPlaceholderData ? ' · há mais resultados' : ''}
+            </span>
+          )}
+        </div>
+        <Modal
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          title="Filtros avançados"
+          description="Escolha o período, a conta e os demais filtros da lista."
+        >
           <div className="movement-period">
             <label className="movement-preset">
               <span className="sr-only">Período</span>
@@ -256,52 +305,7 @@ export function TransactionsPage() {
               />
             </label>
           </div>
-          <Tooltip text="Filtrar conta, categoria e conciliação">
-            <button
-              type="button"
-              className="icon-button movement-filter-trigger"
-              aria-label="Filtros avançados"
-              aria-haspopup="dialog"
-              onClick={() => setFiltersOpen(true)}
-            >
-              <SlidersHorizontal size={18} />
-              {activeFilters.some((f) => !['from', 'to'].includes(f.key)) && (
-                <span className="filter-active-dot" />
-              )}
-            </button>
-          </Tooltip>
-        </div>
-        <div className="movement-typebar">
-          <ViewSwitcher
-            variant="tabs"
-            label="Tipos de movimentos"
-            value={kind}
-            onChange={(value) => {
-              setKind(value);
-            }}
-            options={[
-              { value: '', label: 'Todos' },
-              { value: 'expense', label: 'Despesas' },
-              { value: 'income', label: 'Receitas' },
-              { value: 'transfer', label: 'Transferências' },
-              { value: 'unclassified', label: 'A revisar' },
-            ]}
-          />
-          {!entries.isPending && !entries.isError && !rangeInvalid && (
-            <span className="movement-results" role="status">
-              {entries.isPlaceholderData
-                ? 'Atualizando movimentos…'
-                : `${items.length} ${items.length === 1 ? 'movimento carregado' : 'movimentos carregados'}`}
-              {entries.hasNextPage && !entries.isPlaceholderData ? ' · há mais resultados' : ''}
-            </span>
-          )}
-        </div>
-        <Modal
-          open={filtersOpen}
-          onOpenChange={setFiltersOpen}
-          title="Filtros avançados"
-          description="Selecione conta, categoria e situação. O período fica na busca principal."
-        >
+
           <div className="expanded-filters">
             <label>
               Conciliação
@@ -346,41 +350,56 @@ export function TransactionsPage() {
               className="text-button"
               onClick={() => {
                 const next = new URLSearchParams(params);
-                for (const key of ['accountId', 'categoryId', 'reconciliation']) next.delete(key);
+                for (const key of ['from', 'to', 'accountId', 'categoryId', 'reconciliation'])
+                  next.delete(key);
+                setCustomPeriod(false);
                 setParams(next, { replace: true, preventScrollReset: true });
               }}
             >
-              Limpar filtros avançados
+              Limpar filtros
             </button>
           </div>
+          {rangeInvalid && (
+            <p id={rangeErrorId} className="form-error" role="alert">
+              A data inicial deve ser anterior ou igual à data final.
+            </p>
+          )}
+          <div className="form-actions">
+            <Button disabled={rangeInvalid} onClick={() => setFiltersOpen(false)}>
+              Ver movimentos
+            </Button>
+          </div>
         </Modal>
-        {(activeFilters.some((f) => !['from', 'to'].includes(f.key)) || search) && (
+        {(activeFilters.length > 0 || search) && (
           <div className="active-filters" aria-label="Filtros aplicados">
-            {activeFilters
-              .filter((f) => !['from', 'to'].includes(f.key))
-              .map((filter) => (
-                <button
-                  className="filter-chip"
-                  key={filter.key}
-                  onClick={() => changeFilter(filter.key, '')}
-                  aria-label={`Remover filtro: ${filter.label}`}
-                >
-                  {filter.label}
-                  <span aria-hidden="true">×</span>
-                </button>
-              ))}
+            {activeFilters.map((filter) => (
+              <button
+                className="filter-chip"
+                key={filter.key}
+                onClick={() => changeFilter(filter.key, '')}
+                aria-label={`Remover filtro: ${filter.label}`}
+              >
+                {filter.label}
+                <span aria-hidden="true">×</span>
+              </button>
+            ))}
             <button
               className="text-button"
-              onClick={() =>
-                setParams(new URLSearchParams(), { replace: true, preventScrollReset: true })
-              }
+              onClick={() => {
+                setCustomPeriod(false);
+                setParams(new URLSearchParams(), { replace: true, preventScrollReset: true });
+              }}
             >
               Limpar filtros
             </button>
           </div>
         )}
         {rangeInvalid ? (
-          <p id={rangeErrorId} className="form-error movement-date-error" role="alert">
+          <p
+            id={filtersOpen ? undefined : rangeErrorId}
+            className="form-error movement-date-error"
+            role="alert"
+          >
             A data inicial deve ser anterior ou igual à data final.
           </p>
         ) : entries.isPending ? (

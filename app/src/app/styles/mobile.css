@@ -1087,3 +1087,47 @@ body .page-content .planning-page .summary-action-bar > div {
     gap: 4px;
   }
 }
+
+@media (max-width: 760px) {
+  body .page-content .transactions-page .page-header {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  body .page-content .transactions-page .page-header-copy {
+    flex: 1 1 0;
+  }
+  body .page-content .transactions-page .page-header-actions {
+    flex: 0 0 auto;
+    width: auto;
+  }
+  body .page-content .transactions-page .movement-new-button {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+  }
+  body .page-content .transactions-page .movement-new-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  body .page-content .transactions-page .movement-toolbar > .search-field,
+  body .page-content .transactions-page .movement-filter-trigger {
+    grid-row: 1;
+  }
+  body .page-content .transactions-page .movement-toolbar {
+    padding: 0 0 8px;
+  }
+  body .page-content .transactions-page .active-filters {
+    padding: 10px 0;
+    gap: 6px;
+  }
+  body .dialog-content .movement-date input.date-trigger {
+    font-size: 16px;
+  }
+}

@@ -367,3 +367,32 @@ body .transactions-page .movement-toolbar {
     grid-row: 1 / 3;
   }
 }
+
+/* Search is the primary list control. Period and account controls live in the filter dialog. */
+body .transactions-page .movement-toolbar {
+  padding-block: 0 12px;
+}
+body .dialog-content .movement-period {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+body .dialog-content .movement-preset {
+  grid-column: 1 / -1;
+}
+body .dialog-content .movement-preset .select-field,
+body .dialog-content .movement-date .date-field {
+  width: 100%;
+}
+body .dialog-content .movement-date {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+body .dialog-content .movement-date input.date-trigger {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  padding-left: 12px;
+}

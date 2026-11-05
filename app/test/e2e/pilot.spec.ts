@@ -6,6 +6,12 @@ async function accountAction(page: Page, label: string) {
     .click();
   await page.getByRole('button', { name: label, exact: true }).click();
 }
+async function movementFilterControl(page: Page, name: string) {
+  const control = page.getByLabel(name, { exact: true });
+  if (!(await control.count()))
+    await page.getByRole('button', { name: 'Filtros avançados', exact: true }).click();
+  return control;
+}
 async function chooseSelect(control: Locator, value: string) {
   if ((await control.getAttribute('aria-expanded')) !== 'true') await control.click();
   const options = control.page().getByRole('listbox');
@@ -2363,8 +2369,8 @@ for (const width of [360, 390, 768, 1440]) {
     }
     await page.getByRole('link', { name: 'Ver despesas do período', exact: true }).click();
     await expect(page).toHaveURL(/from=2026-09-01.*to=2026-09-30.*type=expense/);
-    await expectControlValue(page.getByLabel('De', { exact: true }), '2026-09-01');
-    await expectControlValue(page.getByLabel('Até', { exact: true }), '2026-09-30');
+    await expectControlValue(await movementFilterControl(page, 'De'), '2026-09-01');
+    await expectControlValue(await movementFilterControl(page, 'Até'), '2026-09-30');
     await page.goBack();
     await page.getByRole('link', { name: 'Abrir planejamento deste mês', exact: true }).click();
     await expectControlValue(page.getByLabel('Mês do planejamento'), '2026-09');
@@ -2650,7 +2656,7 @@ test('transaction detail panel preserves URL filters and browser back', async ({
   await page.goBack();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expectControlValue(page.getByLabel('Buscar movimentos'), 'supermercado');
-  await expectControlValue(page.getByLabel('De', { exact: true }), '2026-10-01');
+  await expectControlValue(await movementFilterControl(page, 'De'), '2026-10-01');
 });
 
 test('bulk category review affects only visible editable rows and keeps duplicate touch targets locked', async ({
@@ -3717,12 +3723,12 @@ test('visible date controls remove one bound without losing movement type or the
 }) => {
   await signedIn(page);
   await page.goto('/transactions?type=income&from=2026-10-01&to=2026-10-31');
-  await fillControl(page.getByLabel('De', { exact: true }), '');
+  await fillControl(await movementFilterControl(page, 'De'), '');
   const url = new URL(page.url());
   expect(url.searchParams.has('from')).toBe(false);
   expect(url.searchParams.get('to')).toBe('2026-10-31');
   expect(url.searchParams.get('type')).toBe('income');
-  await expectControlValue(page.getByLabel('Até', { exact: true }), '2026-10-31');
+  await expectControlValue(await movementFilterControl(page, 'Até'), '2026-10-31');
   await expect(page.getByRole('status').filter({ hasText: '1 movimento carregado' })).toBeVisible();
 });
 test('settings retain the chosen section on reload and offer labelled theme previews', async ({
@@ -3963,9 +3969,9 @@ for (const example of [
       return route.fulfill({ json: { items: [transaction], nextCursor: null } });
     });
     await page.goto('/transactions?type=expense');
-    await chooseSelect(page.getByLabel('Período dos movimentos', { exact: true }), 'previous');
-    await expectControlValue(page.getByLabel('De', { exact: true }), example.previousFrom);
-    await expectControlValue(page.getByLabel('Até', { exact: true }), example.previousTo);
+    await chooseSelect(await movementFilterControl(page, 'Período dos movimentos'), 'previous');
+    await expectControlValue(await movementFilterControl(page, 'De'), example.previousFrom);
+    await expectControlValue(await movementFilterControl(page, 'Até'), example.previousTo);
     await expect
       .poll(() =>
         queries.some(
@@ -3976,9 +3982,9 @@ for (const example of [
         ),
       )
       .toBe(true);
-    await chooseSelect(page.getByLabel('Período dos movimentos', { exact: true }), 'all');
-    await expectControlValue(page.getByLabel('De', { exact: true }), '');
-    await expectControlValue(page.getByLabel('Até', { exact: true }), '');
+    await chooseSelect(await movementFilterControl(page, 'Período dos movimentos'), 'all');
+    await expectControlValue(await movementFilterControl(page, 'De'), '');
+    await expectControlValue(await movementFilterControl(page, 'Até'), '');
     expect(new URL(page.url()).searchParams.get('type')).toBe('expense');
   });
 test('invalid date ranges are explained beside the visible controls without issuing an invalid query', async ({
@@ -3992,13 +3998,14 @@ test('invalid date ranges are explained beside the visible controls without issu
   });
   await page.goto('/transactions?type=income&from=2026-10-01&to=2026-10-31');
   await expect(page.getByRole('table')).toBeVisible();
-  await fillControl(page.getByLabel('De', { exact: true }), '2026-11-01');
+  await fillControl(await movementFilterControl(page, 'De'), '2026-11-01');
   await expect(page.getByRole('alert')).toContainText('A data inicial deve ser anterior ou igual');
-  await expect(page.getByLabel('De', { exact: true })).toHaveAttribute('aria-invalid', 'true');
+  await expect(await movementFilterControl(page, 'De')).toHaveAttribute('aria-invalid', 'true');
   expect(queries.some((q) => q.get('from') === '2026-11-01' && q.get('to') === '2026-11-01')).toBe(
     false,
   );
-  await fillControl(page.getByLabel('De', { exact: true }), '2026-10-30');
+  await fillControl(await movementFilterControl(page, 'De'), '2026-10-30');
+  await page.getByRole('button', { name: 'Ver movimentos', exact: true }).click();
   await expect(page.getByRole('table')).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
@@ -4018,8 +4025,9 @@ for (const width of [390, 1440])
     await expect(table).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await expect(table.getByRole('columnheader')).toHaveCount(3);
     await expect(table.getByRole('row')).toHaveCount(3);
-    await expect(page.getByLabel('De', { exact: true })).toBeVisible();
-    await expect(page.getByLabel('Até', { exact: true })).toBeVisible();
+    await expect(await movementFilterControl(page, 'De')).toBeVisible();
+    await expect(await movementFilterControl(page, 'Até')).toBeVisible();
+    await page.getByRole('button', { name: 'Ver movimentos', exact: true }).click();
     await table.getByRole('button', { name: /Situação:/ }).click();
     await expect(page.getByRole('tooltip')).toContainText('Pendente de conciliação');
     await page.getByRole('tooltip').click();
@@ -4150,7 +4158,7 @@ test('date calendar keeps localized display and ISO filters, with independent ne
 }) => {
   await signedIn(page);
   await page.goto('/transactions?from=2026-10-01&to=2026-10-31');
-  const from = page.getByLabel('De', { exact: true });
+  const from = await movementFilterControl(page, 'De');
   await expect(from).toHaveValue('01/10/2026');
   await page.getByRole('button', { name: 'Abrir calendário: De', exact: true }).click();
   const calendar = page.getByRole('dialog', { name: 'Selecionar data: De', exact: true });
@@ -4409,3 +4417,23 @@ test('mobile navigation stays flush with viewport when page containers move', as
   const bounds = await bar.boundingBox();
   expect(Math.abs(bounds!.y + bounds!.height - 844)).toBeLessThanOrEqual(1);
 });
+
+for (const width of [390, 1440]) {
+  test(`movement header keeps date filters in one panel at ${width}px`, async ({ page }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/transactions');
+    await expect(page.getByLabel('Buscar movimentos', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Período dos movimentos', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Novo lançamento', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Filtros avançados', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Filtros avançados', exact: true });
+    await chooseSelect(dialog.getByLabel('Período dos movimentos', { exact: true }), 'previous');
+    await expect(dialog.getByLabel('De', { exact: true })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Ver movimentos', exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByLabel('Filtros aplicados', { exact: true })).toContainText('Desde');
+    await page.getByRole('button', { name: 'Novo lançamento', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Novo lançamento', exact: true })).toBeVisible();
+  });
+}
