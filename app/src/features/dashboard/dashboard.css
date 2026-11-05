@@ -591,3 +591,110 @@ body .dashboard-page .overview-finance-details {
 body .dashboard-page > .recent-movements {
   margin-top: 8px;
 }
+
+/* One visual grammar for balances and monthly figures. */
+body .dashboard-page {
+  gap: 28px;
+}
+body .dashboard-page .monthly-analysis {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  overflow: hidden;
+}
+body .dashboard-page .monthly-heading {
+  margin: 0;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+body .dashboard-page .monthly-heading h2 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+body .dashboard-page .monthly-metrics {
+  gap: 0;
+}
+body .dashboard-page .month-metric {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 26px 28px;
+  box-shadow: none;
+}
+body .dashboard-page .month-metric + .month-metric {
+  border-left: 1px solid var(--border);
+}
+body .dashboard-page .month-metric:hover {
+  background: var(--surface-soft);
+  transform: none;
+}
+body .dashboard-page .month-metric > strong {
+  color: var(--text);
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+body .dashboard-page .month-metric-label {
+  font-size: 12px;
+}
+body .dashboard-page .month-metric p {
+  font-size: 11px;
+}
+.month-context {
+  border-top: 1px solid var(--border);
+  padding: 0 28px;
+}
+.month-context > summary {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+body .dashboard-page .month-context .month-result-note {
+  margin: 0;
+  padding-bottom: 16px;
+  font-size: 12px;
+}
+.month-context .field-help {
+  padding-bottom: 16px;
+  margin: 0;
+  font-size: 12px;
+}
+body .dashboard-page .dashboard-plan-link {
+  margin: 0;
+  padding: 10px 28px;
+  border-top: 1px solid var(--border);
+  background: transparent;
+}
+body .dashboard-page .recent-movements > .section-heading {
+  padding: 0 0 18px;
+}
+body .dashboard-page .history-overview {
+  border-radius: 18px;
+}
+@media (max-width: 760px) {
+  body .dashboard-page .monthly-heading {
+    padding: 14px 18px;
+  }
+  body .dashboard-page .month-metric {
+    padding: 22px 18px;
+  }
+  body .dashboard-page .month-metric + .month-metric {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  body .dashboard-page .monthly-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .month-context {
+    padding-inline: 18px;
+  }
+  body .dashboard-page .dashboard-plan-link {
+    padding-inline: 18px;
+  }
+}

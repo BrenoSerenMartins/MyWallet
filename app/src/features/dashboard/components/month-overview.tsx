@@ -45,12 +45,6 @@ export function MonthOverview({
   const display = (value: number) => (visible ? money(value) : '••••••');
   return (
     <>
-      {plan?.benefitAccounts?.some((a) => a.benefitCreditMonth === 'following') && (
-        <p className="field-help">
-          Este resumo usa a data das movimentações. No planejamento, o VA/VR antecipado pode estar
-          atribuído ao mês seguinte.
-        </p>
-      )}
       <div className="monthly-metrics">
         {metrics.map(({ title, actual, planned, Icon, type, tone }) => {
           const difference =
@@ -105,17 +99,26 @@ export function MonthOverview({
           );
         })}
       </div>
-      <p className="month-result-note">
-        {!visible
-          ? 'Resultado do mês oculto.'
-          : result < 0
-            ? `As despesas superaram as receitas em ${money(-result)} neste mês.`
-            : result > 0
-              ? `As receitas superaram as despesas em ${money(result)} neste mês.`
-              : 'Receitas e despesas se equilibraram neste mês.'}{' '}
-        O saldo atual também inclui valores anteriores e transferências; ajustes da base não são
-        receitas ou despesas.
-      </p>
+      <details className="month-context">
+        <summary>Entender o resultado do mês</summary>{' '}
+        <p className="month-result-note">
+          {!visible
+            ? 'Resultado do mês oculto.'
+            : result < 0
+              ? `As despesas superaram as receitas em ${money(-result)} neste mês.`
+              : result > 0
+                ? `As receitas superaram as despesas em ${money(result)} neste mês.`
+                : 'Receitas e despesas se equilibraram neste mês.'}{' '}
+          O saldo atual também inclui valores anteriores e transferências; ajustes da base não são
+          receitas ou despesas.
+        </p>
+        {plan?.benefitAccounts?.some((a) => a.benefitCreditMonth === 'following') && (
+          <p className="field-help">
+            Este resumo usa a data das movimentações. No planejamento, o VA/VR antecipado pode estar
+            atribuído ao mês seguinte.
+          </p>
+        )}
+      </details>
     </>
   );
 }
