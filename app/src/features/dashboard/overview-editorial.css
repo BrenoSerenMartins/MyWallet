@@ -327,3 +327,100 @@ body .overview-editorial .history-overview {
     padding: 18px;
   }
 }
+
+/* Internal brushed-metal rules: the sections remain open to the page canvas. */
+body .overview-editorial {
+  --editorial-metal: color-mix(in srgb, var(--muted) 48%, transparent);
+  --editorial-metal-light: color-mix(in srgb, var(--text) 30%, transparent);
+}
+body .overview-editorial .current-balances,
+body .overview-editorial .monthly-analysis,
+body .overview-editorial .history-overview {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+body .overview-editorial .current-balances {
+  padding-inline: 0;
+}
+body .overview-editorial .history-overview {
+  padding-inline: 0;
+}
+body .overview-editorial .balance-snapshot > div + div,
+body .overview-editorial .month-metric + .month-metric {
+  position: relative;
+  border-left: 0;
+}
+body .overview-editorial .balance-snapshot > div + div::before,
+body .overview-editorial .month-metric + .month-metric::before {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  top: 8%;
+  bottom: 8%;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--editorial-metal) 24%,
+    var(--editorial-metal-light) 50%,
+    var(--editorial-metal) 76%,
+    transparent
+  );
+}
+body .overview-editorial .balance-composition,
+body .overview-editorial .monthly-heading,
+body .overview-editorial .month-context {
+  position: relative;
+  border: 0;
+}
+body .overview-editorial .balance-composition::before,
+body .overview-editorial .monthly-heading::after,
+body .overview-editorial .month-context::before {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--editorial-metal) 18%,
+    var(--editorial-metal-light) 50%,
+    var(--editorial-metal) 82%,
+    transparent
+  );
+}
+body .overview-editorial .balance-composition::before,
+body .overview-editorial .month-context::before {
+  top: 0;
+}
+body .overview-editorial .monthly-heading::after {
+  bottom: 0;
+}
+@media (max-width: 760px) {
+  body .overview-editorial .balance-snapshot > div + div,
+  body .overview-editorial .month-metric.result {
+    border-top: 0;
+  }
+  body .overview-editorial .balance-snapshot > div + div::before,
+  body .overview-editorial .month-metric.result::before {
+    top: 0;
+    bottom: auto;
+    left: 5%;
+    right: 5%;
+    width: auto;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--editorial-metal) 24%,
+      var(--editorial-metal-light) 50%,
+      var(--editorial-metal) 76%,
+      transparent
+    );
+  }
+}
