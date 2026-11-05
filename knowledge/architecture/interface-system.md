@@ -45,3 +45,9 @@ Overview reading order was refined after user review: current balances, monthly 
 ## Editorial overview trial
 
 The overview alone loads `overview-editorial.css` after its feature styles. A scoped `overview-editorial` class removes enclosing cards from balances/month/history, increases balance typography, removes repeated metric icons and secondary copy, and uses thin section rules. Monthly figures retain all amounts/comparisons; result carries financial color while income/expense amounts remain neutral. On mobile, income/expense share a row and result occupies its own row. Interactions, privacy, calculations and the order of content are unchanged. This is a reviewable visual trial, not a global redesign. Lint and production compilation pass; actual appearance requires browser review in an environment where the local server/browser can run.
+
+## Shared metallic-rule treatment
+
+`editorial-system.css` extends the approved overview direction across financial summaries, list workspaces, settings, category/counterparty content and import history: transparent surfaces, no outer card frame, static 1px internal gradients fading to transparent at both ends. Semantic theme tokens control the metallic midpoint in light and dark mode. Numeric summary cells are centered with bounded typography and padding; descriptions, account identities and form labels retain their reading alignment. Responsive rules change separators where grids reflow.
+
+Selectable cards, input controls, upload dropzones, dialogs, menus, notifications and error/review states keep their boundaries/state affordances. This is presentation-only and changes no amount, financial classification or data flow. Lint, types, database/domain tests and build verify code behavior; visual browser validation remains unavailable in this environment.

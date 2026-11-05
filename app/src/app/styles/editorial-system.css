@@ -1,0 +1,305 @@
+/* Shared open surfaces and static, metallic internal separators. Inputs, menus,
+   dialogs and selectable objects retain their boundaries and state affordances. */
+:root {
+  --rule-metal: color-mix(in srgb, var(--muted) 48%, transparent);
+  --rule-light: color-mix(in srgb, var(--text) 30%, transparent);
+  --rule-horizontal: linear-gradient(
+    90deg,
+    transparent,
+    var(--rule-metal) 18%,
+    var(--rule-light) 50%,
+    var(--rule-metal) 82%,
+    transparent
+  );
+  --rule-vertical: linear-gradient(
+    180deg,
+    transparent,
+    var(--rule-metal) 20%,
+    var(--rule-light) 50%,
+    var(--rule-metal) 80%,
+    transparent
+  );
+}
+body
+  .page-content
+  :is(
+    .planning-metrics,
+    .wealth-summary,
+    .card-directory-surface,
+    .settings-panel,
+    .category-group-panel,
+    .card-detail,
+    .cashflow-forecast,
+    .wealth-composition
+  ) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  overflow: visible;
+}
+body
+  .page-content
+  :is(
+    .summary-action-bar,
+    .summary-navigation,
+    .wealth-summary-toolbar,
+    .card-workspace-toolbar,
+    .account-directory-toolbar
+  ) {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 14px 0;
+}
+body
+  .page-content
+  :is(
+    .summary-action-bar,
+    .wealth-summary-toolbar,
+    .card-workspace-toolbar,
+    .account-directory-toolbar
+  )::after,
+body .page-content .summary-navigation::before {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--rule-horizontal);
+}
+body
+  .page-content
+  :is(
+    .summary-action-bar,
+    .wealth-summary-toolbar,
+    .card-workspace-toolbar,
+    .account-directory-toolbar
+  )::after {
+  bottom: 0;
+}
+body .page-content .summary-navigation::before {
+  top: 0;
+}
+body
+  .page-content
+  :is(.planning-metrics .planning-metric, .wealth-summary .wealth-overview > .panel) {
+  position: relative;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: clamp(22px, 3vw, 34px) 20px;
+  text-align: center;
+}
+body .page-content :is(.planning-metrics .planning-metric > span, .planning-comparison > div) {
+  justify-content: center;
+}
+body .page-content .planning-comparison > div {
+  gap: 14px;
+}
+body .page-content .planning-comparison dd {
+  font-weight: 500;
+  font-size: clamp(27px, 3vw, 40px);
+  letter-spacing: -0.8px;
+}
+body .page-content .planning-comparison > div:first-child dd {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+body .page-content .planning-meter {
+  max-width: 240px;
+  margin-inline: auto;
+  height: 2px;
+}
+body
+  .page-content
+  :is(
+    .planning-metric + .planning-metric:not(.metric-contribution),
+    .wealth-summary .wealth-overview > .panel + .panel
+  )::before {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  top: 10%;
+  bottom: 10%;
+  width: 1px;
+  background: var(--rule-vertical);
+}
+body .page-content .planning-metrics .metric-contribution {
+  border: 0;
+  background: transparent;
+  padding: 16px 0;
+  position: relative;
+  text-align: left;
+}
+body .page-content .metric-contribution::before {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--rule-horizontal);
+}
+body .page-content .metric-contribution .planning-comparison dd {
+  font-size: 13px;
+  letter-spacing: 0;
+}
+body .page-content .wealth-summary .wealth-overview {
+  gap: 0;
+}
+body .page-content .wealth-summary .wealth-overview strong {
+  font-size: clamp(28px, 3.5vw, 44px);
+  font-weight: 400;
+  letter-spacing: -1px;
+}
+body .page-content .forecast-totals > div {
+  position: relative;
+  text-align: center;
+  padding-inline: 16px;
+}
+body .page-content .forecast-totals > div + div::before {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  top: 12%;
+  bottom: 12%;
+  width: 1px;
+  background: var(--rule-vertical);
+}
+body .page-content :is(.account-record, .commitment-row, .investment-row) {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body .page-content :is(.account-record, .commitment-row, .investment-row)::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--rule-horizontal);
+}
+body .page-content :is(.settings-panel, .category-group-panel) > .section-heading {
+  padding-inline: 0;
+}
+body .page-content .settings-info {
+  padding-inline: 0;
+}
+body .page-content .card-directory-surface .cards-workspace {
+  padding-inline: 0;
+}
+body .page-content .card-directory-footer {
+  border: 0;
+  padding-inline: 0;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+}
+body .page-content .category-row {
+  border-bottom-color: transparent;
+  background-image: var(--rule-horizontal);
+  background-position: bottom;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+}
+body .page-content .movement-entry + .movement-entry {
+  border-top: 0;
+  background-image: var(--rule-horizontal);
+  background-position: top;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+}
+@media (max-width: 760px) {
+  body .page-content .planning-comparison > div {
+    display: grid;
+    gap: 4px;
+  }
+  body
+    .page-content
+    :is(.planning-metrics .planning-metric, .wealth-summary .wealth-overview > .panel) {
+    padding: 24px 12px;
+  }
+  body .page-content .planning-metrics .metric-result::before {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+    background: var(--rule-horizontal);
+  }
+  body .page-content .forecast-totals {
+    gap: 12px;
+  }
+}
+@media (max-width: 600px) {
+  body .page-content .wealth-summary .wealth-overview > .panel + .panel::before {
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: auto;
+    height: 1px;
+    width: auto;
+    background: var(--rule-horizontal);
+  }
+}
+body .page-content :is(.history-panel, .import-guide, .import-receipt, .counterparty-panel) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body .page-content :is(.counterparty-panel, .import-guide) {
+  background-image: var(--rule-horizontal);
+  background-position: bottom;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+}
+body .page-content .history-panel > .section-heading {
+  padding-inline: 0;
+}
+body .page-content .import-history-row {
+  border-bottom: 0;
+  background-image: var(--rule-horizontal);
+  background-position: bottom;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+}
+@media (max-width: 900px) {
+  body .page-content .wealth-summary .wealth-overview > .wealth-net-worth {
+    border: 0;
+  }
+  body .page-content .wealth-summary .wealth-overview > .wealth-net-worth + .panel::before {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    height: 1px;
+    width: auto;
+    background: var(--rule-horizontal);
+  }
+}
+@media (max-width: 600px) {
+  body .page-content .wealth-summary .wealth-overview > .panel:last-child::before {
+    top: 10%;
+    bottom: 10%;
+    right: auto;
+    left: 0;
+    width: 1px;
+    height: auto;
+    background: var(--rule-vertical);
+  }
+  body .page-content .forecast-totals > div:nth-child(3)::before {
+    display: none;
+  }
+}

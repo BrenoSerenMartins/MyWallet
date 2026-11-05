@@ -19,6 +19,7 @@ import './app/styles/task-layouts.css';
 import './shared/feedback/feedback.css';
 import './app/styles/motion.css';
 import './app/styles/topbar.css';
+import './app/styles/editorial-system.css';
 import './shared/ui/controls/controls.css';
 // Installed workers can lag one version behind the newly loaded application bundle.
 try {

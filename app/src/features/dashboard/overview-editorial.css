@@ -215,7 +215,7 @@ body .overview-editorial .balance-snapshot {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   align-items: center;
   gap: 0;
-  padding: 24px 0 32px;
+  padding: 20px 0 28px;
 }
 body .overview-editorial .balance-snapshot > div {
   justify-items: center;
@@ -229,7 +229,7 @@ body .overview-editorial .balance-snapshot > div + div {
   border-left: 1px solid var(--border);
 }
 body .overview-editorial .balance-snapshot .hero-balance {
-  font-size: clamp(46px, 5.8vw, 76px);
+  font-size: clamp(44px, 5.2vw, 68px);
   letter-spacing: -0.055em;
 }
 body .overview-editorial .current-balances > .balance-reference {
