@@ -75,11 +75,7 @@ export function AccountsPage() {
   );
   return (
     <div className="page-enter accounts-page">
-      <FinanceAreaNav />
-      <PageHeader
-        title={<>Minhas contas</>}
-        description={<>Confira os saldos registrados e a origem de cada referência.</>}
-      >
+      <PageHeader title={<>Minhas contas</>} navigation={<FinanceAreaNav />}>
         <Button
           onClick={() => {
             setEditing(undefined);
@@ -93,6 +89,7 @@ export function AccountsPage() {
       </PageHeader>
 
       <ViewSwitcher
+        variant="tabs"
         label="Tipos de contas"
         value={scope}
         onChange={setScope}
@@ -111,7 +108,7 @@ export function AccountsPage() {
         <div className="accounts-grid">
           <p className="account-list-caption">
             {visibleAccounts.length} {visibleAccounts.length === 1 ? 'conta' : 'contas'} neste
-            filtro · benefícios e reservas ficam separados do dinheiro disponível.
+            filtro
           </p>
           {!visibleAccounts.length && (
             <EmptyState title="Nenhuma conta neste filtro">

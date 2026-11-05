@@ -488,3 +488,105 @@ body .cards-workspace .card-detail {
     top: 24px;
   }
 }
+
+/* Accounts use the same quiet reading path as the day ledger. */
+body .accounts-page .page-header .area-navigation {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+body .accounts-page .accounts-grid {
+  gap: 0;
+}
+body .accounts-page .account-list-caption {
+  margin: 16px 0 8px;
+  font-size: 11px;
+}
+body .accounts-page .account-record {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+body .accounts-page .account-record-main {
+  padding: 26px 4px 10px;
+  gap: 20px;
+  flex-wrap: nowrap;
+}
+body .accounts-page .account-record .bank-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+body .accounts-page .account-record h2 {
+  font-size: 17px;
+  font-weight: 500;
+}
+body .accounts-page .account-record-value {
+  margin-left: auto;
+}
+body .accounts-page .account-record-value strong {
+  font-size: clamp(25px, 3vw, 34px);
+  line-height: 1.5;
+}
+body .accounts-page .account-record-actions {
+  border: 0;
+  background: transparent;
+  padding: 0 4px 16px 72px;
+  align-items: flex-start;
+}
+body .accounts-page .account-reference-actions {
+  flex-basis: auto;
+}
+body .accounts-page .account-reference-actions summary {
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 11px;
+}
+body .accounts-page .account-movements-link {
+  min-height: 44px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+body .account-record .action-menu-panel {
+  min-width: 190px;
+}
+@media (max-width: 600px) {
+  body .accounts-page .account-record-main {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 44px;
+    gap: 10px 12px;
+    padding: 22px 0 6px;
+  }
+  body .accounts-page .account-record .bank-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+  }
+  body .accounts-page .account-record-main > .action-menu {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  body .accounts-page .account-record-value {
+    grid-column: 2 / 4;
+    margin: 0;
+    text-align: left;
+  }
+  body .accounts-page .account-record-value > span {
+    font-size: 10px;
+  }
+  body .accounts-page .account-record-actions {
+    padding: 0 0 14px 52px;
+    gap: 4px 14px;
+    flex-wrap: wrap;
+  }
+  body .accounts-page .account-reference-actions {
+    flex: 1 1 100%;
+  }
+  body .accounts-page .account-movements-link {
+    padding: 0;
+  }
+}

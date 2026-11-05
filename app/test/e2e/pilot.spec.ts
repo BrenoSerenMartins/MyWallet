@@ -1,4 +1,11 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
+async function accountAction(page: Page, label: string) {
+  await page
+    .getByRole('button', { name: /^Ações da conta / })
+    .first()
+    .click();
+  await page.getByRole('button', { name: label, exact: true }).click();
+}
 async function chooseSelect(control: Locator, value: string) {
   if ((await control.getAttribute('aria-expanded')) !== 'true') await control.click();
   const options = control.page().getByRole('listbox');
@@ -1546,7 +1553,7 @@ for (const width of [390, 1440])
     await page.getByRole('button', { name: 'Benefícios', exact: true }).click();
     await expect(page.getByRole('link', { name: 'Alelo Alimentação', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: account.name, exact: true })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Corrigir saldo', exact: true }).click();
+    await accountAction(page, 'Corrigir saldo');
     await fillControl(page.getByLabel('Saldo atual correto (R$)'), '192,20');
     await fillControl(page.getByLabel('Motivo da correção'), 'Saldo conferido no Meu Alelo');
     await expect(page.getByText('Diferença a registrar: R$ 72,20')).toBeVisible();
@@ -1786,7 +1793,7 @@ test('account forms use automatic defaults and preserve existing baseline amount
     institution: 'mercado_pago',
     type: 'checking',
   });
-  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  await accountAction(page, 'Editar conta');
   await fillControl(dialog.getByLabel('Nome da conta'), 'Renamed account');
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
   await expect(dialog).toHaveCount(0);
@@ -2211,7 +2218,7 @@ for (const width of [390, 1440])
       return route.fulfill({ json: { id: 'undone' } });
     });
     await page.goto('/accounts');
-    await page.getByRole('button', { name: 'Corrigir saldo', exact: true }).click();
+    await accountAction(page, 'Corrigir saldo');
     await fillControl(page.getByLabel('Saldo atual correto (R$)'), '59,12');
     await fillControl(page.getByLabel('Motivo da correção'), 'Saldo conferido no banco');
     await expect(page.getByText(/Nenhum lançamento financeiro será criado/)).toBeVisible();
@@ -2803,7 +2810,7 @@ test('legacy accounts keep their institution and balance when renamed', async ({
     return route.fulfill({ json: { ...legacy, ...saved } });
   });
   await page.goto('/accounts');
-  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  await accountAction(page, 'Editar conta');
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByLabel('Instituição')).toBeDisabled();
   await expectControlValue(dialog.getByLabel('Instituição'), 'nubank');
@@ -3757,7 +3764,7 @@ async function saveAccountForFeedback(page: Page, clock = false, spaces?: (typeo
   await page.goto('/accounts');
   await expect(page.locator('.account-record')).toBeVisible();
   const before = await page.locator('.account-record').boundingBox();
-  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  await accountAction(page, 'Editar conta');
   const dialog = page.getByRole('dialog', { name: 'Editar conta', exact: true });
   await fillControl(dialog.getByLabel('Nome da conta', { exact: true }), 'Minha conta');
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
@@ -3884,7 +3891,7 @@ test('an operation completing after a space switch cannot add feedback to the ne
     return route.fulfill({ json: { ...account, name: 'Minha conta', version: 2 } });
   });
   await page.goto('/accounts');
-  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  await accountAction(page, 'Editar conta');
   const dialog = page.getByRole('dialog', { name: 'Editar conta', exact: true });
   await fillControl(dialog.getByLabel('Nome da conta', { exact: true }), 'Minha conta');
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
@@ -4013,8 +4020,8 @@ for (const width of [390, 1440])
       'rgba(0, 0, 0, 0)',
     );
     await expect(table).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-    await expect(table.getByRole('columnheader')).toHaveCount(6);
-    await expect(table.getByRole('row')).toHaveCount(2);
+    await expect(table.getByRole('columnheader')).toHaveCount(3);
+    await expect(table.getByRole('row')).toHaveCount(3);
     await expect(page.getByLabel('De', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Até', { exact: true })).toBeVisible();
     await table.getByRole('button', { name: /Situação:/ }).click();
@@ -4208,3 +4215,78 @@ test('app entry fades once per tab and keeps reduced motion static', async ({ pa
   await expect(announcer).toHaveCSS('position', 'absolute');
   await expect(announcer).toHaveCSS('width', '1px');
 });
+
+for (const width of [390, 1440]) {
+  test(`day ledger groups loaded movements while preserving identity, account and detail actions at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    const incoming = {
+      ...transaction,
+      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      amount: 20000,
+      transactionType: 'income',
+      description: 'Crédito identificado',
+    };
+    const prior = {
+      ...transaction,
+      id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      transactionDate: '2026-09-30',
+      description: 'Compra do dia anterior',
+    };
+    await page.route('**/v1/transactions?*', (route) =>
+      route.fulfill({ json: { items: [transaction, incoming, prior], nextCursor: null } }),
+    );
+    await page.route(`**/v1/transactions/${transaction.id}`, (route) =>
+      route.fulfill({ json: transaction }),
+    );
+    await page.goto('/transactions');
+    const ledger = page.getByRole('table', { name: /Movimentos registrados/ });
+    const october = ledger
+      .locator('tbody')
+      .filter({ has: page.locator('time[datetime="2026-10-01"]') });
+    await expect(october.locator('.movement-entry')).toHaveCount(2);
+    await expect(october.locator('time')).toHaveCount(1);
+    await expect(october).toContainText('Crédito identificado');
+    await expect(october.locator('.movement-account-label')).toHaveText([
+      account.name,
+      account.name,
+    ]);
+    await expect(ledger.locator('tbody')).toHaveCount(2);
+    await expect(ledger.locator('.movement-day-count')).toHaveText([
+      '2 movimentos carregados neste dia',
+      '1 movimento carregado neste dia',
+    ]);
+    const first = ledger.getByRole('button', { name: /Abrir despesa: Compra de supermercado/ });
+    await first.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: 'Detalhes do movimento' })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+  test(`account actions are contextual and return focus after editing at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/accounts');
+    const trigger = page.getByRole('button', {
+      name: `Ações da conta ${account.name}`,
+      exact: true,
+    });
+    await expect(
+      page.getByRole('button', { name: 'Corrigir saldo', exact: true }),
+    ).not.toBeVisible();
+    await trigger.click();
+    await page.getByRole('button', { name: 'Editar conta', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Editar conta', exact: true });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await expect(trigger).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+}

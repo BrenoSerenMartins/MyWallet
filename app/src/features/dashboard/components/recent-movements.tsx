@@ -20,7 +20,7 @@ export function RecentMovements({
 }) {
   const navigate = useNavigate();
   return (
-    <section className="panel">
+    <section className="panel recent-movements">
       <div className="section-heading">
         <div>
           <h2>Últimos movimentos</h2>

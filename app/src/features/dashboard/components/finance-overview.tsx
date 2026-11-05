@@ -1,3 +1,4 @@
+import { ArrowUpRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { request } from '../../../shared/api/client';
@@ -15,19 +16,25 @@ export function FinanceOverview({ visible }: { visible: boolean }) {
   return (
     <section className="finance-overview-links" aria-label="Cartões e patrimônio">
       <Link className="panel" to="/cards">
-        <span>Dívida dos cartões</span>
+        <span>
+          Dívida dos cartões <ArrowUpRight size={14} aria-hidden="true" />
+        </span>
         <strong>{query.isPending ? '…' : value(query.data.cardDebt)}</strong>
-        <small>Faturas e parcelas · ver cartões</small>
+        <small>Faturas e parcelas</small>
       </Link>
       <Link className="panel" to="/wealth">
-        <span>Investimentos informados</span>
+        <span>
+          Investimentos informados <ArrowUpRight size={14} aria-hidden="true" />
+        </span>
         <strong>{query.isPending ? '…' : value(query.data.investments)}</strong>
-        <small>Avaliações manuais · ver carteira</small>
+        <small>Avaliações manuais</small>
       </Link>
       <Link className="panel" to="/wealth?view=history">
-        <span>Patrimônio registrado</span>
+        <span>
+          Patrimônio registrado <ArrowUpRight size={14} aria-hidden="true" />
+        </span>
         <strong>{query.isPending ? '…' : value(query.data.netWorth)}</strong>
-        <small>Ativos menos dívidas · ver composição</small>
+        <small>Ativos menos dívidas</small>
       </Link>
     </section>
   );

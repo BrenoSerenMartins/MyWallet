@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, Landmark } from 'lucide-react';
 import type { Account } from '../../../shared/api/resources';
 import { money } from '../../../shared/formatting/money';
+import { ActionMenu } from '../../../shared/ui/action-menu';
 import { BalanceReference } from '../../../shared/ui/balance-reference';
 
 export function AccountRecord({
@@ -62,9 +63,14 @@ export function AccountRecord({
           <span>Saldo registrado</span>
           <strong>{money(a.balance)}</strong>
         </div>
-        <Link className="button secondary compact" to={`/accounts/${a.id}`}>
-          Ver movimentações <ArrowUpRight size={16} />
-        </Link>
+        <ActionMenu label={`Ações da conta ${a.name}`}>
+          <button type="button" onClick={onEdit}>
+            Editar conta
+          </button>
+          <button type="button" onClick={onCorrect}>
+            Corrigir saldo
+          </button>
+        </ActionMenu>
       </div>
       <div className="account-record-actions">
         <details className="account-reference-actions">
@@ -81,12 +87,9 @@ export function AccountRecord({
             )}
           </div>
         </details>
-        <button className="text-button" onClick={onCorrect}>
-          Corrigir saldo
-        </button>
-        <button className="text-button" onClick={onEdit}>
-          Editar
-        </button>
+        <Link className="text-button account-movements-link" to={`/accounts/${a.id}`}>
+          Ver movimentações <ArrowUpRight size={15} />
+        </Link>
       </div>
     </article>
   );

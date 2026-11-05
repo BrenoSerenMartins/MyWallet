@@ -104,10 +104,6 @@ export function DashboardPage() {
                 text="Receitas e despesas usam a data original dos lançamentos. O planejamento pode atribuir o crédito de VA/VR antecipado ao mês seguinte. Transferências não entram no resultado."
               />
             </h2>
-            <p>
-              Todas as contas, incluindo benefícios e reservas. Transferências ficam fora do
-              resultado.
-            </p>
           </div>
           <div className="month-navigation">
             <Tooltip text="Mês anterior">
@@ -121,7 +117,7 @@ export function DashboardPage() {
               </button>
             </Tooltip>
             <label className="period-picker">
-              <span>Mês da análise</span>
+              <span className="sr-only">Mês da análise</span>
               <MonthPicker
                 clearable={false}
                 aria-label="Mês do resumo"
