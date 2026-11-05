@@ -54,7 +54,7 @@ export function BalanceOverview({
           <div>
             <span>Benefícios · uso restrito</span>
             <strong>{amount(summary.benefitBalance)}</strong>
-            <small>Alimentação e refeição · uso restrito</small>
+            <small>Alimentação e refeição</small>
           </div>
         )}
         {summary.accounts.some((a) => a.type === 'reserve') && (

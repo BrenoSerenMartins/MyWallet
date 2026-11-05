@@ -38,7 +38,7 @@ export function HistoryOverview({
       <div className="history-heading">
         <div>
           <h2 id="history-title">Evolução mensal</h2>
-          <p>Receitas e despesas de todas as contas. O período termina no mês da análise.</p>
+          <p>Receitas e despesas ao longo dos meses.</p>
         </div>
         <div className="history-controls">
           <label className="history-range-select">

@@ -1,0 +1,201 @@
+/* An isolated editorial trial: hierarchy comes from type and whitespace, not cards. */
+body .overview-editorial {
+  gap: 48px;
+}
+body .overview-editorial .current-balances {
+  padding: 0 0 22px;
+  border: 0;
+  border-bottom: 1px solid var(--text);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body .overview-editorial .balance-topline {
+  padding-top: 0;
+}
+body .overview-editorial .balance-topline h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+}
+body .overview-editorial .balance-snapshot {
+  padding-block: 20px 28px;
+  gap: 36px;
+  align-items: flex-end;
+}
+body .overview-editorial .balance-snapshot .hero-balance {
+  font-size: clamp(52px, 7vw, 92px);
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 1.15;
+  margin-block: 6px;
+}
+body .overview-editorial .balance-snapshot > div + div {
+  border: 0;
+  padding-left: 0;
+  margin-left: auto;
+  padding-bottom: 8px;
+}
+body .overview-editorial .balance-snapshot > div + div strong {
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 400;
+}
+body .overview-editorial .balance-snapshot span {
+  font-size: 12px;
+}
+body .overview-editorial .balance-snapshot small {
+  font-size: 11px;
+  color: var(--faint);
+}
+body .overview-editorial .current-balances > .balance-reference {
+  padding: 0;
+  margin: 0 0 14px;
+  font-size: 11px;
+}
+body .overview-editorial .balance-composition {
+  border-top: 1px solid var(--border);
+}
+body .overview-editorial .balance-composition > summary {
+  min-height: 44px;
+  font-size: 11px;
+}
+body .overview-editorial .monthly-analysis {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+body .overview-editorial .monthly-heading {
+  padding: 0 0 16px;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+body .overview-editorial .monthly-heading h2,
+body .overview-editorial .section-heading h2,
+body .overview-editorial .history-heading h2 {
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.6px;
+  color: var(--text);
+}
+body .overview-editorial .monthly-metrics {
+  gap: clamp(20px, 4vw, 56px);
+  padding-block: 26px 20px;
+}
+body .overview-editorial .month-metric {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+body .overview-editorial .month-metric + .month-metric {
+  border: 0;
+}
+body .overview-editorial .month-metric:hover {
+  background: transparent;
+}
+body .overview-editorial .month-metric-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+body .overview-editorial .month-metric-label > svg:first-child {
+  display: none;
+}
+body .overview-editorial .month-metric > strong {
+  font-size: clamp(30px, 3.7vw, 48px);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  margin-top: 12px;
+}
+body .overview-editorial .month-metric.result > strong {
+  color: var(--negative);
+}
+body .overview-editorial .month-metric.result > strong.positive-text {
+  color: var(--positive);
+}
+body .overview-editorial .month-metric dl {
+  border: 0;
+  padding-top: 0;
+  margin-top: 18px;
+}
+body .overview-editorial .month-metric dl > div {
+  justify-content: flex-start;
+  gap: 12px;
+}
+body .overview-editorial .month-metric dt,
+body .overview-editorial .month-metric dd {
+  font-size: 11px;
+  color: var(--muted);
+}
+body .overview-editorial .month-metric p {
+  font-size: 11px;
+  margin-top: 8px;
+}
+body .overview-editorial .month-context {
+  padding: 0;
+  border: 0;
+}
+body .overview-editorial .month-context > summary {
+  min-height: 40px;
+  font-size: 11px;
+}
+body .overview-editorial .dashboard-plan-link {
+  padding: 0;
+  border: 0;
+}
+body .overview-editorial .dashboard-plan-link a {
+  font-size: 12px;
+}
+body .overview-editorial .recent-movements {
+  margin: 0;
+}
+body .overview-editorial .recent-movements .transaction-row {
+  border-color: color-mix(in srgb, var(--border) 65%, transparent);
+  padding-block: 14px;
+}
+body .overview-editorial .history-overview {
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 26px 0 0;
+  box-shadow: none;
+  background: transparent;
+}
+body .overview-editorial .history-heading {
+  padding: 0;
+}
+body .overview-editorial .history-heading p {
+  font-size: 11px;
+  color: var(--faint);
+}
+body .overview-editorial .overview-finance-details {
+  border-top: 1px solid var(--border);
+  margin-top: -12px;
+}
+body .overview-editorial > .forecast-compact {
+  border-block: 1px solid var(--border);
+  padding: 22px 0;
+}
+@media (max-width: 760px) {
+  body .overview-editorial {
+    gap: 36px;
+  }
+  body .overview-editorial .balance-snapshot {
+    gap: 22px;
+  }
+  body .overview-editorial .balance-snapshot > div + div {
+    margin-left: 0;
+  }
+  body .overview-editorial .monthly-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+  body .overview-editorial .month-metric.result {
+    grid-column: 1 / -1;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  body .overview-editorial .month-metric.result > strong {
+    font-size: 40px;
+  }
+}

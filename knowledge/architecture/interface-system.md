@@ -41,3 +41,7 @@ Overview no longer gates complementary information behind Summary/Analysis. Curr
 
 
 Overview reading order was refined after user review: current balances, monthly numbers, recent movements, monthly evolution, secondary portfolio disclosure, and upcoming commitments last. Expense distribution is no longer rendered on Overview. The standalone component remains available for a future dedicated report; monthly totals and API calculations are unchanged.
+
+## Editorial overview trial
+
+The overview alone loads `overview-editorial.css` after its feature styles. A scoped `overview-editorial` class removes enclosing cards from balances/month/history, increases balance typography, removes repeated metric icons and secondary copy, and uses thin section rules. Monthly figures retain all amounts/comparisons; result carries financial color while income/expense amounts remain neutral. On mobile, income/expense share a row and result occupies its own row. Interactions, privacy, calculations and the order of content are unchanged. This is a reviewable visual trial, not a global redesign. Lint and production compilation pass; actual appearance requires browser review in an environment where the local server/browser can run.

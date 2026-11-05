@@ -25,7 +25,6 @@ export function RecentMovements({
       <div className="section-heading">
         <div>
           <h2>Últimos movimentos</h2>
-          <p>Movimentos mais recentes do período selecionado.</p>
         </div>
         <Link className="text-button" to={link}>
           Ver todos <ArrowUpRight size={16} />

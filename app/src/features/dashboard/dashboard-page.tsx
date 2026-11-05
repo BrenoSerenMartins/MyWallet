@@ -16,6 +16,7 @@ import { RecentMovements } from './components/recent-movements';
 import { MonthOverview } from './components/month-overview';
 import { HistoryOverview } from './components/history-overview';
 import './dashboard.css';
+import './overview-editorial.css';
 export function DashboardPage() {
   const [params, setParams] = useSearchParams();
   const requestedMonth = params.get('month');
@@ -31,7 +32,7 @@ export function DashboardPage() {
   const [visible, setVisible] = useState(true);
   const { snapshot, summary, movements, plan, transactionsLink } = useDashboard(month);
   return (
-    <div className="page-enter dashboard-page">
+    <div className="page-enter dashboard-page overview-editorial">
       <h1 className="sr-only">Visão geral</h1>
       <div className="dashboard-overview motion-reveal">
         {snapshot.isPending ? (
