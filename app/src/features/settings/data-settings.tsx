@@ -1,4 +1,5 @@
 import { useNotifications } from '../../shared/feedback/notification-provider';
+import { downloadPrefix } from '../../shared/brand';
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Download, FileJson, Upload } from 'lucide-react';
@@ -28,7 +29,7 @@ export function DataSettings() {
       const url = URL.createObjectURL(await requestBlob(`/exports?format=${format}`));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `mywallet-${new Date().toISOString().slice(0, 10)}.${format}`;
+      a.download = `${downloadPrefix}-${new Date().toISOString().slice(0, 10)}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
       setMessage('Arquivo preparado para download.');

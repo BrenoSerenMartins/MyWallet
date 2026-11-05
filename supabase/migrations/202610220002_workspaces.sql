@@ -13,11 +13,11 @@ CREATE FUNCTION wallet.current_workspace_id() RETURNS uuid LANGUAGE sql STABLE
  AS $$ SELECT nullif(current_setting('wallet.workspace_id',true),'')::uuid $$;
 ALTER TABLE wallet.workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallet.workspaces FORCE ROW LEVEL SECURITY;
-CREATE POLICY workspace_owner ON wallet.workspaces TO mywallet_runtime
+CREATE POLICY workspace_owner ON wallet.workspaces TO plannedwallet_runtime
  USING(user_id=wallet.current_user_id()) WITH CHECK(user_id=wallet.current_user_id());
-GRANT SELECT,INSERT ON wallet.workspaces TO mywallet_runtime;
+GRANT SELECT,INSERT ON wallet.workspaces TO plannedwallet_runtime;
 REVOKE ALL ON FUNCTION wallet.current_workspace_id() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION wallet.current_workspace_id() TO mywallet_runtime;
+GRANT EXECUTE ON FUNCTION wallet.current_workspace_id() TO plannedwallet_runtime;
 DO $$ DECLARE tab text; BEGIN
  FOREACH tab IN ARRAY ARRAY['financial_accounts','categories','transfer_groups','import_batches','import_items','transactions','command_receipts','restore_batches'] LOOP
   EXECUTE format('ALTER TABLE wallet.%I ADD COLUMN workspace_id uuid',tab);
@@ -27,7 +27,7 @@ DO $$ DECLARE tab text; BEGIN
   EXECUTE format('ALTER TABLE wallet.%I ADD CONSTRAINT %I FOREIGN KEY(user_id,workspace_id) REFERENCES wallet.workspaces(user_id,id)',tab,tab||'_workspace_owner');
   EXECUTE format('ALTER TABLE wallet.%I ADD CONSTRAINT %I UNIQUE(user_id,workspace_id,id)',tab,tab||'_workspace_identity');
   EXECUTE format('DROP POLICY owned_data ON wallet.%I',tab);
-  EXECUTE format('CREATE POLICY owned_data ON wallet.%I TO mywallet_runtime USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id()) WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())',tab);
+  EXECUTE format('CREATE POLICY owned_data ON wallet.%I TO plannedwallet_runtime USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id()) WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())',tab);
  END LOOP;
 END $$;
 ALTER TABLE wallet.categories DROP CONSTRAINT categories_user_id_name_type_key;

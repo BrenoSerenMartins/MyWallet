@@ -124,7 +124,7 @@ body .space-menu-avatar {
     gap: 8px;
   }
   body .app-header .logo-wordmark {
-    font-size: 21px;
+    font-size: 20px;
   }
   body .header-actions {
     gap: 4px;
@@ -144,5 +144,14 @@ body .space-menu-avatar {
     transition:
       color 150ms ease,
       background-color 150ms ease;
+  }
+}
+
+@media (max-width: 380px) {
+  body .app-header .logo-wordmark {
+    font-size: 19px;
+  }
+  body .header-space-menu {
+    max-width: 100px;
   }
 }

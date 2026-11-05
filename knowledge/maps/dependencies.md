@@ -13,7 +13,7 @@ The [pilot plan](../architecture/pilot-plan.md) describes the implemented direct
 
 | Consumer | Dependency | Boundary |
 | --- | --- | --- |
-| PWA business features | MyWallet REST | Central HTTP client; generated OpenAPI transport types |
+| PWA business features | PlannedWallet REST | Central HTTP client; generated OpenAPI transport types |
 | PWA authentication | Supabase Auth SDK | Public URL/key only; no business data access |
 | Nest modules | Core auth/config/database/HTTP | Public core exports, verified user/workspace scope |
 | Imports | Account reads and ledger import port | Contracts in core/integration, bindings in composition; shared transaction for commit |

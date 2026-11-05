@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "mywallet",
+  "name": "plannedwallet",
   "compatibility_date": "2026-10-22",
   "assets": {
     "directory": "./app/dist",

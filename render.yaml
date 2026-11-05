@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mywallet-pilot
+    name: plannedwallet-pilot
     branch: main
     runtime: docker
     plan: free

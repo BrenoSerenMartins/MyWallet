@@ -81,13 +81,13 @@ async function signedIn(page: Page, rememberSpace = true) {
         user,
       };
       localStorage.setItem('sb-hlcrjoqmyohfbajvafhh-auth-token', JSON.stringify(session));
-      localStorage.setItem('mywallet-theme', 'dark');
+      localStorage.setItem('plannedwallet-theme', 'dark');
       if (rememberSpace)
         localStorage.setItem(
-          'mywallet-workspace:' + user.id,
+          'plannedwallet-workspace:' + user.id,
           '44444444-4444-4444-8444-444444444444',
         );
-      else localStorage.removeItem('mywallet-workspace:' + user.id);
+      else localStorage.removeItem('plannedwallet-workspace:' + user.id);
     },
     { user, rememberSpace },
   );
@@ -220,15 +220,15 @@ for (const width of [360, 390, 768, 1440])
     );
     await page.getByRole('button', { name: 'Tema claro', exact: true }).first().click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await page.screenshot({ path: `/tmp/mywallet-settings-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `/tmp/plannedwallet-settings-${width}.png`, fullPage: true });
     await page.goto('/workspaces');
     await expect(page.getByRole('heading', { name: 'Seus espaços.' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/mywallet-spaces-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `/tmp/plannedwallet-spaces-${width}.png`, fullPage: true });
     await page.goto('/');
-    await page.screenshot({ path: `/tmp/mywallet-dashboard-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `/tmp/plannedwallet-dashboard-${width}.png`, fullPage: true });
   });
 
 test('workspace cards open a space and creation uses its scope', async ({ page }) => {
@@ -259,7 +259,7 @@ test('workspace cards open a space and creation uses its scope', async ({ page }
   await selectedRequest;
   await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
   const scope = await page.evaluate(() =>
-    localStorage.getItem('mywallet-workspace:11111111-1111-4111-8111-111111111111'),
+    localStorage.getItem('plannedwallet-workspace:11111111-1111-4111-8111-111111111111'),
   );
   expect(scope).toBe('55555555-5555-4555-8555-555555555555');
 });
@@ -381,7 +381,7 @@ for (const width of [360, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/mywallet-planning-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `/tmp/plannedwallet-planning-${width}.png`, fullPage: true });
   });
 
 test('old statement can be retained for consultation and searched without confirming transactions', async ({
@@ -549,7 +549,7 @@ test('batch uploads run sequentially, keep successful files after errors and lin
   expect(maximum).toBe(1);
   await expect(page).toHaveURL(/\/imports$/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: '/tmp/mywallet-batch-390.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/plannedwallet-batch-390.png', fullPage: true });
 });
 
 test('stopping the queue finishes only the active file and skips the remaining files', async ({
@@ -863,7 +863,7 @@ for (const width of [390, 1440])
         true,
       );
       await page.screenshot({
-        path: `/tmp/mywallet-categories-${theme}-${width}.png`,
+        path: `/tmp/plannedwallet-categories-${theme}-${width}.png`,
         fullPage: true,
       });
     }
@@ -965,7 +965,7 @@ test('import review separates locked duplicates and supports grouped categories 
   await chooseSelect(page.getByLabel('Categoria do movimento 2'), categoryId);
   await expectControlValue(page.getByLabel('Categoria do movimento 2'), categoryId);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: '/tmp/mywallet-review-390.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/plannedwallet-review-390.png', fullPage: true });
 });
 
 test('mobile more menu exposes imports and category organization', async ({ page }) => {
@@ -1051,7 +1051,7 @@ for (const width of [390, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/mywallet-default-group-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `/tmp/plannedwallet-default-group-${width}.png`, fullPage: true });
   });
 
 test('a later statement points to unfinished history without proposing a new account opening', async ({
@@ -1129,7 +1129,7 @@ test('a later statement points to unfinished history without proposing a new acc
   await expect(
     page.getByRole('link', { name: 'Conferir movimentações da conta', exact: true }),
   ).toHaveAttribute('href', `/accounts/${account.id}`);
-  await page.screenshot({ path: '/tmp/mywallet-reconciliation-gap-390.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/plannedwallet-reconciliation-gap-390.png', fullPage: true });
   await page.getByRole('link', { name: /september.pdf/ }).click();
   await expect(page).toHaveURL(`/imports/${priorId}`);
   await expectControlValue(page.getByLabel('Tipo do movimento 1'), 'income');
@@ -1240,7 +1240,7 @@ test('reprocessing preserves the current draft on source errors and supports sav
   );
   expect(batch.version).toBe(2);
   expect(reads).toBe(beforeError);
-  await page.screenshot({ path: '/tmp/mywallet-reprocess-390.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/plannedwallet-reprocess-390.png', fullPage: true });
   await page
     .getByRole('dialog')
     .locator('input[type=file]')
@@ -1356,7 +1356,7 @@ for (const width of [390, 1440])
         true,
       );
       await page.screenshot({
-        path: `/tmp/mywallet-category-tabs-${theme}-${width}.png`,
+        path: `/tmp/plannedwallet-category-tabs-${theme}-${width}.png`,
         fullPage: true,
       });
     }
@@ -1500,7 +1500,7 @@ for (const width of [390, 1440])
       true,
     );
     await page.screenshot({
-      path: `/tmp/mywallet-planning-comparison-${width}.png`,
+      path: `/tmp/plannedwallet-planning-comparison-${width}.png`,
       fullPage: true,
     });
   });
@@ -1632,7 +1632,7 @@ for (const width of [390, 1440])
     ).toBeVisible();
     await expect(page.getByText('Synthetic benefit purchase', { exact: true })).toBeVisible();
     await expect(page.getByText('Novo · pendente de conciliação', { exact: true })).toBeVisible();
-    await page.screenshot({ path: `/tmp/mywallet-alelo-review-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `/tmp/plannedwallet-alelo-review-${width}.png`, fullPage: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
@@ -1934,7 +1934,7 @@ for (const width of [390, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/mywallet-counterparty-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `/tmp/plannedwallet-counterparty-${width}.png`, fullPage: true });
     await chooseTheme(page, 'claro');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -2361,7 +2361,7 @@ for (const width of [360, 390, 768, 1440]) {
         true,
       );
       await page.screenshot({
-        path: `/tmp/mywallet-overview-${width}-${theme}.png`,
+        path: `/tmp/plannedwallet-overview-${width}-${theme}.png`,
         fullPage: true,
       });
     }
@@ -2610,7 +2610,7 @@ for (const width of [320, 430, 1024, 1280, 1920])
         true,
       );
       await page.screenshot({
-        path: `/tmp/mywallet-premium-home-${width}-${theme}.png`,
+        path: `/tmp/plannedwallet-premium-home-${width}-${theme}.png`,
         fullPage: true,
       });
     }
@@ -2622,7 +2622,7 @@ for (const width of [320, 430, 1024, 1280, 1920])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/mywallet-premium-accounts-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `/tmp/plannedwallet-premium-accounts-${width}.png`, fullPage: true });
     await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
     await fillControl(page.getByLabel('Nome da conta'), 'Conta com texto preservado');
     await expect(
@@ -2890,7 +2890,7 @@ for (const width of [320, 390, 768, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/mywallet-commitment-form-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `/tmp/plannedwallet-commitment-form-${width}.png`, fullPage: true });
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.getByRole('button', { name: 'Pagar', exact: true }).click();
     await expect(
@@ -2900,7 +2900,7 @@ for (const width of [320, 390, 768, 1440])
       true,
     );
     await page.screenshot({
-      path: `/tmp/mywallet-commitment-payment-${width}.png`,
+      path: `/tmp/plannedwallet-commitment-payment-${width}.png`,
       fullPage: false,
     });
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
@@ -3190,7 +3190,7 @@ for (const width of [320, 390, 768, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/mywallet-card-purchase-${width}.png`, fullPage: false });
+    await page.screenshot({ path: `/tmp/plannedwallet-card-purchase-${width}.png`, fullPage: false });
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.getByRole('button', { name: 'Pagar ou vincular', exact: true }).click();
     await expect(
@@ -3214,7 +3214,7 @@ for (const width of [320, 390, 768, 1440])
         .getByRole('dialog')
         .getByLabel('Valor total atualizado da posição (R$)', { exact: true }),
     ).toBeVisible();
-    await page.screenshot({ path: `/tmp/mywallet-investment-value-${width}.png`, fullPage: false });
+    await page.screenshot({ path: `/tmp/plannedwallet-investment-value-${width}.png`, fullPage: false });
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await chooseTheme(page, 'claro');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -3457,14 +3457,14 @@ test('cards and wealth support enlarged text and narrow reflow', async ({ page }
   await page.addStyleTag({ content: 'html{font-size:200% !important}' });
   await expect(page.getByRole('heading', { name: 'Cartões e faturas', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: '/tmp/mywallet-cards-large-text.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/plannedwallet-cards-large-text.png', fullPage: true });
   await page.goto('/wealth');
   await page.addStyleTag({ content: 'html{font-size:200% !important}' });
   await expect(
     page.getByRole('heading', { name: 'Investimentos e patrimônio', exact: true }),
   ).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: '/tmp/mywallet-wealth-large-text.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/plannedwallet-wealth-large-text.png', fullPage: true });
 });
 
 for (const width of [360, 1440])
@@ -3555,7 +3555,7 @@ for (const width of [390, 1440])
       page,
     }, info) => {
       await signedIn(page);
-      await page.addInitScript((value) => localStorage.setItem('mywallet-theme', value), theme);
+      await page.addInitScript((value) => localStorage.setItem('plannedwallet-theme', value), theme);
       await page.setViewportSize({ width, height: 1000 });
       for (const [path, title] of redesignedRoutes) {
         await page.goto(path);
@@ -4218,7 +4218,7 @@ test('app entry fades once per tab and keeps reduced motion static', async ({ pa
   await page.goto('/');
   await expect(page.locator('.app-shell')).toHaveCSS('animation-name', 'none');
   await expect
-    .poll(() => page.evaluate(() => sessionStorage.getItem('mywallet:entered')))
+    .poll(() => page.evaluate(() => sessionStorage.getItem('plannedwallet:entered')))
     .toBe('yes');
   await page.reload();
   await expect(page.locator('.app-shell')).not.toHaveClass(/app-entry/);

@@ -163,7 +163,7 @@ describe('Financial integrity with PostgreSQL RLS', () => {
         ),
       ),
     ).rejects.toThrow();
-    await db.engine.exec('SET ROLE mywallet_runtime');
+    await db.engine.exec('SET ROLE plannedwallet_runtime');
     try {
       expect((await db.engine.query('SELECT * FROM wallet.financial_accounts')).rows).toEqual([]);
     } finally {
@@ -232,10 +232,12 @@ describe('Financial integrity with PostgreSQL RLS', () => {
   });
   it('round-trips a backup into a second isolated owner without trusting source owner IDs', async () => {
     const backup = await db.forUser(db.user, () => backups.backup());
+    expect(backup.format).toBe('plannedwallet');
     await db.forUser(db.other, async () => {
-      const preview = await backups.preview({ ...backup, user_id: db.user });
+      const preview = await backups.preview({ ...backup, format: 'mywallet', user_id: db.user });
       await backups.confirm(preview.id);
       const restored = await backups.backup();
+      expect(restored.format).toBe('plannedwallet');
       expect(restored.accounts.map((a) => a.openingBalance).sort()).toEqual(
         backup.accounts.map((a) => a.openingBalance).sort(),
       );

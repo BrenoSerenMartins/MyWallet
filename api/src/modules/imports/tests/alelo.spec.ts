@@ -272,7 +272,7 @@ it('exports benefit source facts without fake external IDs and keeps MP source k
     entry.sourceEvidence?.some((source) => source.reportType === 'benefit_statement'),
   )!;
   const backup = {
-    format: 'mywallet',
+    format: 'plannedwallet',
     version: 4,
     currency: 'BRL',
     exportedAt: new Date().toISOString(),

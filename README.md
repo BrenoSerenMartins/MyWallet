@@ -1,10 +1,18 @@
-# MyWallet
+# PlannedWallet
 
-**Seu dinheiro, com clareza.**
+**Planejamento financeiro e patrimônio.**
 
 Aplicação de finanças pessoais com visual inspirado em fintechs, espaços independentes e importação manual de extratos. Uma PWA responsiva para acessar pelo navegador ou instalar em dispositivos compatíveis, com temas claro, escuro e automático.
 
 O projeto está em fase de **piloto**. O dashboard mostra os saldos das contas cadastradas e as movimentações do período; a visão completa de patrimônio e investimentos faz parte da evolução do produto.
+
+## Renomeação para PlannedWallet
+
+Para atualizar uma instalação existente, execute `npm install` e `npm run db:setup` antes de reiniciar a API. A migration `202611040001_plannedwallet_identity.sql` renomeia a role restrita, o histórico de migrations e a tarefa de retenção sem recriar os dados financeiros. O setup atualiza a conexão local usando a mesma senha. A API também reconhece configurações de conexão que ainda tragam o nome anterior da role.
+
+Preferências e seleção de espaço são transferidas automaticamente para as novas chaves do navegador. Backups antigos continuam sendo aceitos; novos arquivos usam o identificador `plannedwallet`.
+
+Os manifests locais e o repositório no GitHub usam PlannedWallet. Se existir uma hospedagem configurada com o nome anterior, renomeie o serviço no painel do provedor e confira a associação do Blueprint antes de sincronizá-lo; apenas alterar o nome no YAML não comprova a renomeação do recurso existente. O diretório de trabalho pode ser renomeado para PlannedWallet ao reabrir o projeto.
 
 ## Funcionalidades
 
@@ -43,8 +51,8 @@ Cada usuário acessa seus próprios espaços. Compartilhamento, convites e membr
 Requisitos: Node.js **24.21.0**, npm e um projeto Supabase com acesso ao PostgreSQL.
 
 ```bash
-git clone https://github.com/BrenoSerenMartins/MyWallet.git
-cd MyWallet
+git clone https://github.com/BrenoSerenMartins/PlannedWallet.git
+cd PlannedWallet
 nvm use
 npm ci
 ```
@@ -80,7 +88,7 @@ As credenciais administrativas ficam no ambiente de setup. O navegador recebe ap
 npm run db:setup
 ```
 
-O setup aplica as migrations pendentes, provisiona a credencial restrita `mywallet_runtime`, verifica a conexão com TLS e salva a configuração local da API. O certificado público da CA do Supabase está em `infra/certificates/`; a validação TLS permanece ativada.
+O setup aplica as migrations pendentes, provisiona a credencial restrita `plannedwallet_runtime`, verifica a conexão com TLS e salva a configuração local da API. O certificado público da CA do Supabase está em `infra/certificates/`; a validação TLS permanece ativada.
 
 Para aplicar somente migrations em um ambiente já configurado:
 
@@ -88,7 +96,7 @@ Para aplicar somente migrations em um ambiente já configurado:
 npm run db:migrate
 ```
 
-O histórico fica em `mywallet_migrations.applied`. Use esses comandos para aplicar o SQL de `supabase/migrations/`; não combine esse histórico com `supabase db push`.
+O histórico fica em `plannedwallet_migrations.applied`. Use esses comandos para aplicar o SQL de `supabase/migrations/`; não combine esse histórico com `supabase db push`.
 
 ### 4. Configurar a autenticação
 
@@ -138,13 +146,13 @@ Para disponibilizar publicamente, configure hospedagem, HTTPS, redirects de aute
 
 ### Hospedagem recomendada: Render
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/BrenoSerenMartins/MyWallet)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/BrenoSerenMartins/PlannedWallet)
 
 O Blueprint `render.yaml` configura um único serviço Docker na branch `main`, com frontend e API no mesmo domínio, plano gratuito, porta interna `10000` e health check em `/ready`. Não é necessário criar outro banco: os dados continuam no Supabase.
 
 1. Abra o botão acima ou, no Render, escolha **New → Blueprint**, conecte o GitHub e selecione este repositório. Para repositórios privados, permita acesso ao app do Render no GitHub.
-2. Confira o serviço `mywallet-pilot` e forneça `SUPABASE_PUBLISHABLE_KEY` e `RUNTIME_DATABASE_URL` a partir do seu `.env.local`. `SUPABASE_URL` já está definida no Blueprint para o projeto atual.
-3. Use uma conexão restrita `mywallet_runtime` compatível com o host. O Session pooler do Supabase oferece IPv4; se a configuração atual já usa esse pooler, mantenha o valor. Não substitua a credencial restrita pela conexão administrativa `postgres`.
+2. Confira o serviço `plannedwallet-pilot` e forneça `SUPABASE_PUBLISHABLE_KEY` e `RUNTIME_DATABASE_URL` a partir do seu `.env.local`. `SUPABASE_URL` já está definida no Blueprint para o projeto atual.
+3. Use uma conexão restrita `plannedwallet_runtime` compatível com o host. O Session pooler do Supabase oferece IPv4; se a configuração atual já usa esse pooler, mantenha o valor. Não substitua a credencial restrita pela conexão administrativa `postgres`.
 4. Antes de publicar uma versão com alterações de banco, execute `npm run db:setup` no terminal local com conectividade. O container não aplica migrations automaticamente nem precisa receber a senha administrativa.
 5. Inicie o deploy pelo painel. O Render usa o Dockerfile para construir e executar o serviço; não configure `npx wrangler deploy` ou `npm run deploy` como comando desse serviço Docker.
 6. Quando a URL HTTPS estiver disponível, configure-a como Site URL no Supabase Auth e permita `/auth/callback` e `/reset-password` nesse domínio. Confira `/ready`, faça login e valide leitura/escrita no seu espaço.
@@ -160,7 +168,7 @@ O log `HTTP listening on 0.0.0.0:10000` confirma a porta HTTP no Render; a liber
 | Código                                                          | O que conferir                                                                                               |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `RUNTIME_DATABASE_URL_MISSING`                                  | A variável deve conter a conexão restrita completa, sem o prefixo `RUNTIME_DATABASE_URL=` no valor do painel |
-| `RUNTIME_ROLE_INVALID`                                          | Use a credencial `mywallet_runtime`, não a administrativa `postgres`                                         |
+| `RUNTIME_ROLE_INVALID`                                          | Use a credencial `plannedwallet_runtime`, não a administrativa `postgres`                                         |
 | `28P01` / `28000`                                               | Usuário/senha e sufixo do projeto no usuário do pooler; copie a conexão restrita gerada pelo setup           |
 | `ENETUNREACH` / `EHOSTUNREACH`                                  | Compatibilidade de rede; confira a conexão de Session pooler IPv4                                            |
 | `ENOTFOUND` / `EAI_AGAIN`                                       | Host da conexão e resolução DNS                                                                              |
@@ -181,7 +189,7 @@ docker compose --env-file .env.local up --build -d
 Acesse http://localhost:8083. Para usar outra porta no host:
 
 ```bash
-MYWALLET_PORT=8084 docker compose --env-file .env.local up --build -d
+PLANNEDWALLET_PORT=8084 docker compose --env-file .env.local up --build -d
 ```
 
 O container recebe as credenciais restritas da API. O arquivo `render.yaml` oferece um modelo de hospedagem no Render.
@@ -198,7 +206,7 @@ O arquivo `wrangler.jsonc` na raiz define o frontend em `app/dist` e o tratament
 | Versão do Node     | `24.21.0`                                   |
 | Variáveis de build | `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` |
 
-Ajuste `name` em `wrangler.jsonc` se o nome do Worker criado no painel for diferente de `mywallet`. Com as dependências instaladas, `npm run check:cloudflare` valida o empacotamento sem publicar. O comando local `npm run deploy` continua destinado ao servidor Node e não deve ser usado como deploy command do Cloudflare.
+Ajuste `name` em `wrangler.jsonc` se o nome do Worker criado no painel for diferente de `plannedwallet`. Com as dependências instaladas, `npm run check:cloudflare` valida o empacotamento sem publicar. O comando local `npm run deploy` continua destinado ao servidor Node e não deve ser usado como deploy command do Cloudflare.
 
 Essa configuração publica a interface. A API Nest permanece um serviço Node separado; para o app financeiro funcionar nesse domínio, ainda é necessário hospedar a API e encaminhar `/v1` para ela. O proxy do Vite existe somente no desenvolvimento. Configure também os redirects do Supabase Auth para o domínio publicado. Credenciais PostgreSQL não são necessárias no build do frontend.
 

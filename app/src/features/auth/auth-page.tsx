@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { authClient } from '../../shared/api/auth-client';
 import { Button, Logo, ThemeSwitcher } from '../../shared/ui/primitives';
+import { productName, productTagline } from '../../shared/brand';
 export function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -123,7 +124,7 @@ export function AuthPage() {
           <ThemeSwitcher />
         </div>
         <div className="auth-form-wrap">
-          <span className="eyebrow">BEM-VINDO AO MYWALLET</span>
+          <span className="eyebrow">BEM-VINDO AO {productName.toLocaleUpperCase('pt-BR')}</span>
           <h2>{title}</h2>
           <p className="muted">
             {mode === 'sign-in'
@@ -218,7 +219,9 @@ export function AuthPage() {
             <span>Suas finanças em um espaço só seu.</span>
           </div>
         </div>
-        <p className="auth-bottom">MyWallet · Finanças pessoais com intenção.</p>
+        <p className="auth-bottom">
+          {productName} · {productTagline}.
+        </p>
       </section>
     </div>
   );

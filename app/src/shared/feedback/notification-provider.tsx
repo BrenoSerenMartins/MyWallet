@@ -92,8 +92,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       setItems([]);
       setAnnouncement(undefined);
     };
-    window.addEventListener('mywallet:workspace-changed', clear);
-    return () => window.removeEventListener('mywallet:workspace-changed', clear);
+    window.addEventListener('plannedwallet:workspace-changed', clear);
+    return () => window.removeEventListener('plannedwallet:workspace-changed', clear);
   }, []);
   const push = useCallback((tone: NoticeTone, message: string, options: NoticeOptions = {}) => {
     if (!message.trim()) return;

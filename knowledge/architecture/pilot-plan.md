@@ -22,7 +22,7 @@ Defer credit-card billing/installment accounting, portfolio tracking, full net w
 | State | Component state for interactions, feature hooks for workflows, TanStack Query for server state; context only for auth/theme |
 | Forms | React Hook Form and schema validation for presentation; backend validation remains authoritative |
 | Backend | Nest, TypeScript strict, DTO validation, parameterized SQL through `pg`; follow Tastly's modular organization |
-| Identity | Supabase Auth; browser uses its public Auth SDK, business requests use the MyWallet REST API |
+| Identity | Supabase Auth; browser uses its public Auth SDK, business requests use the PlannedWallet REST API |
 | Data | Supabase PostgreSQL, versioned SQL migrations, row-level security and a restricted API database role |
 | Contract | Versioned REST `/v1`, Nest OpenAPI, generated frontend transport types; no imports from backend implementations |
 | PDF | PDF.js text extraction behind an institution-specific parser/mapper; pin and test the selected package version |
@@ -85,7 +85,7 @@ knowledge/                      architectural memory
 Inside a backend business module, use `index.ts`, `<name>.module.ts`, `contracts/`, `controllers/`, `dto/`, `services/`, `repositories/`, `mappers/`, and `tests/` only when used. Do not generate empty layers. Frontend features similarly get only the folders they need.
 
 ## Adapt Tastly deliberately
-| Observed Tastly pattern | MyWallet adaptation |
+| Observed Tastly pattern | PlannedWallet adaptation |
 | --- | --- |
 | `core`, business modules, composition root | Preserve these boundaries and explicit dependency injection |
 | Public `index.ts` for each module/core area | Enforce external public imports with an automated boundary check |
@@ -96,7 +96,7 @@ Inside a backend business module, use `index.ts`, `<name>.module.ts`, `contracts
 | Colocated tests, HTTP tests, OpenAPI, quality scripts | Preserve this development workflow |
 | Restaurant integrations and operational infrastructure | Do not carry over restaurant rules, billing providers, outbox, role matrices, or delivery workflows |
 
-Reimplement the relevant conventions within MyWallet; do not import sibling source or mutate Tastly. Some Tastly notes describe older application states, so current API code and current README were also inspected. Its broad repository abstractions, global provider wiring, and database connection settings are not copied automatically. Use verified database TLS here.
+Reimplement the relevant conventions within PlannedWallet; do not import sibling source or mutate Tastly. Some Tastly notes describe older application states, so current API code and current README were also inspected. Its broad repository abstractions, global provider wiring, and database connection settings are not copied automatically. Use verified database TLS here.
 
 ## Runtime and infrastructure
 ```mermaid

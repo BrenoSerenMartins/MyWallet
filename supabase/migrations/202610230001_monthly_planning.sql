@@ -26,11 +26,11 @@ ALTER TABLE wallet.monthly_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallet.monthly_plans FORCE ROW LEVEL SECURITY;
 ALTER TABLE wallet.monthly_plan_lines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallet.monthly_plan_lines FORCE ROW LEVEL SECURITY;
-CREATE POLICY owned_plan ON wallet.monthly_plans TO mywallet_runtime
+CREATE POLICY owned_plan ON wallet.monthly_plans TO plannedwallet_runtime
  USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())
  WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id());
-CREATE POLICY owned_plan_line ON wallet.monthly_plan_lines TO mywallet_runtime
+CREATE POLICY owned_plan_line ON wallet.monthly_plan_lines TO plannedwallet_runtime
  USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())
  WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id());
-GRANT SELECT,INSERT,UPDATE,DELETE ON wallet.monthly_plans,wallet.monthly_plan_lines TO mywallet_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON wallet.monthly_plans,wallet.monthly_plan_lines TO plannedwallet_runtime;
 COMMIT;

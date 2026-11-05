@@ -33,7 +33,7 @@ describe('Database readiness diagnostics', () => {
     expect(await service.ready()).toBe(false);
     expect(warn.mock.calls).toEqual([['Database readiness failed: 28P01.']]);
     query.mockResolvedValue({
-      rows: [{ rolname: 'mywallet_runtime', rolsuper: false, rolbypassrls: false }],
+      rows: [{ rolname: 'plannedwallet_runtime', rolsuper: false, rolbypassrls: false }],
     });
     expect(await service.ready()).toBe(true);
     expect(log).toHaveBeenCalledWith('Database readiness: READY.');
@@ -43,7 +43,7 @@ describe('Database readiness diagnostics', () => {
     const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
     for (const role of [
       { rolname: 'postgres', rolsuper: true, rolbypassrls: true },
-      { rolname: 'mywallet_runtime', rolsuper: false, rolbypassrls: true },
+      { rolname: 'plannedwallet_runtime', rolsuper: false, rolbypassrls: true },
     ]) {
       expect(await database(vi.fn().mockResolvedValue({ rows: [role] })).ready()).toBe(false);
     }

@@ -11,7 +11,7 @@ BEGIN
        (NEW.user_id,NEW.id,'Geral','expense','#5ee9b5',true);
  RETURN NEW;
 END $$;
-REVOKE ALL ON FUNCTION wallet.create_default_category_groups() FROM PUBLIC,mywallet_runtime;
+REVOKE ALL ON FUNCTION wallet.create_default_category_groups() FROM PUBLIC,plannedwallet_runtime;
 CREATE TRIGGER workspace_category_defaults AFTER INSERT ON wallet.workspaces
  FOR EACH ROW EXECUTE FUNCTION wallet.create_default_category_groups();
 -- Choose a free name instead of renaming a user-created group called Geral.
@@ -41,10 +41,10 @@ BEGIN
  END IF;
  RETURN NEW;
 END $$;
-REVOKE ALL ON FUNCTION wallet.assign_default_category_group() FROM PUBLIC,mywallet_runtime;
+REVOKE ALL ON FUNCTION wallet.assign_default_category_group() FROM PUBLIC,plannedwallet_runtime;
 CREATE TRIGGER category_default_assignment BEFORE INSERT OR UPDATE OF group_id ON wallet.categories
  FOR EACH ROW EXECUTE FUNCTION wallet.assign_default_category_group();
-GRANT DELETE ON wallet.category_groups TO mywallet_runtime;
+GRANT DELETE ON wallet.category_groups TO plannedwallet_runtime;
 CREATE FUNCTION wallet.protect_default_category_groups() RETURNS trigger
  LANGUAGE plpgsql SET search_path=pg_catalog,wallet AS $$
 BEGIN
@@ -57,7 +57,7 @@ BEGIN
  END IF;
  RETURN NEW;
 END $$;
-REVOKE ALL ON FUNCTION wallet.protect_default_category_groups() FROM PUBLIC,mywallet_runtime;
+REVOKE ALL ON FUNCTION wallet.protect_default_category_groups() FROM PUBLIC,plannedwallet_runtime;
 CREATE TRIGGER protect_category_defaults BEFORE UPDATE OR DELETE ON wallet.category_groups
  FOR EACH ROW EXECUTE FUNCTION wallet.protect_default_category_groups();
 COMMIT;

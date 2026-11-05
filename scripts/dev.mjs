@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-const children = ['@mywallet/api', '@mywallet/app'].map((workspace) =>
+const children = ['@plannedwallet/api', '@plannedwallet/app'].map((workspace) =>
   spawn('npm', ['run', 'dev', '-w', workspace], { stdio: 'inherit', env: process.env }),
 );
 function stop() {

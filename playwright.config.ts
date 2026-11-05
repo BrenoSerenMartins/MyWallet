@@ -22,7 +22,7 @@ export default defineConfig({
     launchOptions: executablePath ? { executablePath } : {},
   },
   webServer: {
-    command: 'npm run dev -w @mywallet/app',
+    command: 'npm run dev -w @plannedwallet/app',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
   },

@@ -2540,7 +2540,7 @@
     }
   },
   "info": {
-    "title": "MyWallet API",
+    "title": "PlannedWallet API",
     "description": "",
     "version": "1.0",
     "contact": {}

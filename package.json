@@ -1,5 +1,5 @@
 {
-  "name": "my-wallet",
+  "name": "planned-wallet",
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
@@ -24,7 +24,7 @@
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "npm run build -w @mywallet/api && npm run build -w @mywallet/app",
+    "build": "npm run build -w @plannedwallet/api && npm run build -w @plannedwallet/app",
     "typecheck": "npm run typecheck --workspaces",
     "lint": "oxlint app/src api/src scripts",
     "format:check": "prettier --check app/src api/src scripts",
@@ -33,16 +33,16 @@
     "verify": "npm run lint && npm run typecheck && npm run arch:boundaries && npm test && npm run build && node scripts/check-secrets.mjs",
     "arch:boundaries": "node scripts/check-boundaries.mjs",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
-    "openapi": "npm run openapi -w @mywallet/api",
+    "openapi": "npm run openapi -w @plannedwallet/api",
     "db:setup": "node --env-file=.env.local scripts/setup-database.mjs",
     "db:diagnose": "node --env-file=.env.local scripts/diagnose-account-balance.mjs",
     "db:cleanup": "node --env-file=.env.local scripts/cleanup-drafts.mjs",
-    "start": "npm run start -w @mywallet/api",
+    "start": "npm run start -w @plannedwallet/api",
     "format": "prettier --write app/src api/src scripts app/test api/test *.ts *.json",
     "contracts": "npm run openapi && openapi-typescript api/openapi.json -o app/src/shared/api/generated.d.ts && prettier --write api/openapi.json app/src/shared/api/generated.d.ts",
     "contracts:check": "node scripts/check-contracts.mjs",
     "deploy": "node scripts/deploy.mjs",
-    "build:cloudflare": "npm run build -w @mywallet/app && node scripts/check-secrets.mjs",
+    "build:cloudflare": "npm run build -w @plannedwallet/app && node scripts/check-secrets.mjs",
     "deploy:cloudflare": "wrangler deploy --config wrangler.jsonc",
     "check:cloudflare": "wrangler deploy --config wrangler.jsonc --dry-run"
   },

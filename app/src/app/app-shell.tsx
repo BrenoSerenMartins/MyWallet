@@ -1,4 +1,5 @@
 import { Tooltip } from '../shared/ui/tooltip';
+import { productName } from '../shared/brand';
 import { NotificationCenter } from '../shared/feedback/notification-center';
 import { useNotifications } from '../shared/feedback/notification-provider';
 import { useWorkspace } from '../features/workspaces/workspace-provider';
@@ -53,14 +54,14 @@ export function AppShell() {
   const location = useLocation();
   const [arriving, setArriving] = useState(() => {
     try {
-      return sessionStorage.getItem('mywallet:entered') !== 'yes';
+      return sessionStorage.getItem('plannedwallet:entered') !== 'yes';
     } catch {
       return true;
     }
   });
   useEffect(() => {
     try {
-      sessionStorage.setItem('mywallet:entered', 'yes');
+      sessionStorage.setItem('plannedwallet:entered', 'yes');
     } catch {
       /* Storage is optional. */
     }
@@ -134,7 +135,7 @@ export function AppShell() {
     >
       <div className="app-main">
         <header className="app-header">
-          <NavLink to="/" className="header-brand" aria-label="MyWallet — início">
+          <NavLink to="/" className="header-brand" aria-label={`${productName} — início`}>
             <Logo />
           </NavLink>
           <nav className="desktop-navigation" aria-label="Navegação principal">

@@ -1,8 +1,8 @@
 BEGIN;
 CREATE SCHEMA IF NOT EXISTS wallet;
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mywallet_runtime') THEN
-    CREATE ROLE mywallet_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'plannedwallet_runtime') THEN
+    CREATE ROLE plannedwallet_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
   END IF;
 END $$;
 CREATE FUNCTION wallet.current_user_id() RETURNS uuid LANGUAGE sql STABLE
@@ -80,13 +80,13 @@ DO $$ DECLARE name text; BEGIN
  FOREACH name IN ARRAY ARRAY['financial_accounts','categories','transfer_groups','import_batches','import_items','transactions','command_receipts','restore_batches'] LOOP
   EXECUTE format('ALTER TABLE wallet.%I ENABLE ROW LEVEL SECURITY',name);
   EXECUTE format('ALTER TABLE wallet.%I FORCE ROW LEVEL SECURITY',name);
-  EXECUTE format('CREATE POLICY owned_data ON wallet.%I TO mywallet_runtime USING (user_id=wallet.current_user_id()) WITH CHECK (user_id=wallet.current_user_id())',name);
+  EXECUTE format('CREATE POLICY owned_data ON wallet.%I TO plannedwallet_runtime USING (user_id=wallet.current_user_id()) WITH CHECK (user_id=wallet.current_user_id())',name);
  END LOOP;
 END $$;
 REVOKE ALL ON SCHEMA wallet FROM PUBLIC;
 REVOKE ALL ON ALL TABLES IN SCHEMA wallet FROM PUBLIC;
 REVOKE ALL ON FUNCTION wallet.current_user_id() FROM PUBLIC;
-GRANT USAGE ON SCHEMA wallet TO mywallet_runtime;
-GRANT EXECUTE ON FUNCTION wallet.current_user_id() TO mywallet_runtime;
-GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA wallet TO mywallet_runtime;
+GRANT USAGE ON SCHEMA wallet TO plannedwallet_runtime;
+GRANT EXECUTE ON FUNCTION wallet.current_user_id() TO plannedwallet_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA wallet TO plannedwallet_runtime;
 COMMIT;

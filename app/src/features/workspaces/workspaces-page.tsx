@@ -1,4 +1,5 @@
 import { Tooltip } from '../../shared/ui/tooltip';
+import { productName } from '../../shared/brand';
 import { NotificationCenter } from '../../shared/feedback/notification-center';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -126,7 +127,7 @@ export function WorkspacesPage() {
           </div>
         )}
         <footer className="spaces-footer">
-          <span>MYWALLET</span>
+          <span>{productName.toLocaleUpperCase('pt-BR')}</span>
           <span>Mais espaço para o que importa.</span>
         </footer>
       </main>

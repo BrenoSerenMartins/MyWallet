@@ -7,7 +7,7 @@ const ThemeContext = createContext<{ mode: Mode; setMode: (value: Mode) => void 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<Mode>(() => {
     try {
-      return (localStorage.getItem('mywallet-theme') as Mode) || 'system';
+      return (localStorage.getItem('plannedwallet-theme') as Mode) || 'system';
     } catch {
       return 'system';
     }
@@ -23,7 +23,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
     apply();
     try {
-      localStorage.setItem('mywallet-theme', mode);
+      localStorage.setItem('plannedwallet-theme', mode);
     } catch {}
     media.addEventListener('change', apply);
     return () => media.removeEventListener('change', apply);

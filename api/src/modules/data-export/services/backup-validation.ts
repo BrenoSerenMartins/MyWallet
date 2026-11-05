@@ -15,9 +15,13 @@ function text(value: unknown, max: number): boolean {
 }
 export function validateBackup(raw: unknown): BackupPayload {
   if (!raw || typeof raw !== 'object') return fail();
-  const b = raw as BackupPayload;
+  // Existing downloaded backups keep their original format tag; normalize only that known identity.
+  const input = raw as { format?: unknown };
+  const b = (
+    input.format === 'mywallet' ? { ...raw, format: 'plannedwallet' } : raw
+  ) as BackupPayload;
   if (
-    b.format !== 'mywallet' ||
+    b.format !== 'plannedwallet' ||
     ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||

@@ -184,7 +184,7 @@ export interface BackupTransaction {
   sourceEvidence?: SourceEvidence[];
 }
 export interface BackupPayload {
-  format: 'mywallet';
+  format: 'plannedwallet';
   version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
   cards?: import('./cards.js').CardsSnapshot;
   wealth?: import('./wealth.js').WealthSnapshot;

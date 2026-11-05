@@ -1,7 +1,7 @@
 # Design system
 
 ## Purpose and direction
-Implemented visual direction: a polished personal-finance app with the clarity and tactile feel of a banking application. Build depth through layered surfaces, spacing, restrained light, and clear visual hierarchy. The product manages finances; labels must not imply that MyWallet holds money or executes bank payments.
+Implemented visual direction: a polished personal-finance app with the clarity and tactile feel of a banking application. Build depth through layered surfaces, spacing, restrained light, and clear visual hierarchy. The product manages finances; labels must not imply that PlannedWallet holds money or executes bank payments.
 
 ## Themes and tokens
 Support `light`, `dark`, and `system`. Start with the system preference and persist an explicit override locally. Apply the resolved theme before first paint, update the browser theme color, and respond to system changes only in system mode. Theme initialization must work with the production Content Security Policy.

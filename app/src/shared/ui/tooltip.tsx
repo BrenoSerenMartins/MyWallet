@@ -69,11 +69,11 @@ export function Tooltip({
         close();
     };
     window.addEventListener('keydown', escape);
-    window.addEventListener('mywallet:dismiss-tooltip', close);
+    window.addEventListener('plannedwallet:dismiss-tooltip', close);
     document.addEventListener('pointerdown', outside);
     return () => {
       window.removeEventListener('keydown', escape);
-      window.removeEventListener('mywallet:dismiss-tooltip', close);
+      window.removeEventListener('plannedwallet:dismiss-tooltip', close);
       document.removeEventListener('pointerdown', outside);
     };
   }, [open]);

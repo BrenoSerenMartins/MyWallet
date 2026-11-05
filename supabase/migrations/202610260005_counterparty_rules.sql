@@ -37,9 +37,9 @@ UPDATE wallet.transactions t SET source_kind=b.report_type FROM wallet.import_ba
 DO $$ DECLARE tab text; BEGIN
  FOREACH tab IN ARRAY ARRAY['counterparties','counterparty_identifiers','classification_rules'] LOOP
   EXECUTE format('ALTER TABLE wallet.%I ENABLE ROW LEVEL SECURITY',tab);
-  EXECUTE format('CREATE POLICY owned_data ON wallet.%I TO mywallet_runtime USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id()) WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())',tab);
-  EXECUTE format('GRANT SELECT,INSERT,UPDATE ON wallet.%I TO mywallet_runtime',tab);
+  EXECUTE format('CREATE POLICY owned_data ON wallet.%I TO plannedwallet_runtime USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id()) WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())',tab);
+  EXECUTE format('GRANT SELECT,INSERT,UPDATE ON wallet.%I TO plannedwallet_runtime',tab);
  END LOOP;
 END $$;
-GRANT DELETE ON wallet.counterparty_identifiers TO mywallet_runtime;
+GRANT DELETE ON wallet.counterparty_identifiers TO plannedwallet_runtime;
 COMMIT;

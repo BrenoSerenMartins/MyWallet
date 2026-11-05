@@ -1,3 +1,4 @@
+import { migrateProductStorage } from './shared/migrate-product-state';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -19,6 +20,17 @@ import './shared/feedback/feedback.css';
 import './app/styles/motion.css';
 import './app/styles/topbar.css';
 import './shared/ui/controls/controls.css';
+// Installed workers can lag one version behind the newly loaded application bundle.
+try {
+  migrateProductStorage(localStorage);
+} catch {
+  /* Storage is optional. */
+}
+try {
+  migrateProductStorage(sessionStorage);
+} catch {
+  /* Storage is optional. */
+}
 const client = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: true },

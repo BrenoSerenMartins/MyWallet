@@ -14,10 +14,10 @@ CREATE TABLE wallet.transaction_sources (
 );
 ALTER TABLE wallet.transaction_sources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallet.transaction_sources FORCE ROW LEVEL SECURITY;
-CREATE POLICY owned_data ON wallet.transaction_sources TO mywallet_runtime
+CREATE POLICY owned_data ON wallet.transaction_sources TO plannedwallet_runtime
  USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())
  WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id());
-GRANT SELECT,INSERT,UPDATE,DELETE ON wallet.transaction_sources TO mywallet_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON wallet.transaction_sources TO plannedwallet_runtime;
 CREATE INDEX transaction_sources_transaction ON wallet.transaction_sources(user_id,workspace_id,transaction_id);
 ALTER TABLE wallet.import_items ADD COLUMN linked_transaction_id uuid;
 ALTER TABLE wallet.import_items ADD COLUMN confirm_new boolean NOT NULL DEFAULT false;

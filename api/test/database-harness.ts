@@ -39,7 +39,7 @@ export class TestDatabase {
       );
       workspaceId = r.rows[0].id;
     }
-    await this.engine.exec('SET ROLE mywallet_runtime');
+    await this.engine.exec('SET ROLE plannedwallet_runtime');
     try {
       return await this.service.forUser(user, action, readOnly, workspaceId);
     } finally {

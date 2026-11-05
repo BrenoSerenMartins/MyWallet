@@ -64,7 +64,7 @@ describe('Private workspace boundary', () => {
     await expect(db.forUser(db.other, () => accounts.list(), false, personal)).rejects.toThrow(
       'Espaço não encontrado',
     );
-    await db.engine.exec('SET ROLE mywallet_runtime');
+    await db.engine.exec('SET ROLE plannedwallet_runtime');
     try {
       await expect(db.service.forUser(db.user, () => accounts.list())).rejects.toThrow(
         'Selecione um espaço',

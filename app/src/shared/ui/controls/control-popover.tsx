@@ -110,7 +110,7 @@ export function ControlPopover({
           onEscapeKeyDown={(event) => {
             if (document.querySelector('[role="tooltip"]')) {
               event.preventDefault();
-              window.dispatchEvent(new Event('mywallet:dismiss-tooltip'));
+              window.dispatchEvent(new Event('plannedwallet:dismiss-tooltip'));
             } else restoreFocus.current = true;
           }}
           onInteractOutside={(event) => {

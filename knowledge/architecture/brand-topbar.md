@@ -1,9 +1,20 @@
-# Topbar and provisional identity
+# PlannedWallet identity and topbar
 
 The desktop header uses three grid tracks: equal flexible side tracks around the navigation's intrinsic width. The brand sits on the left, navigation is centered against the header itself, and notifications/workspace controls sit on the right. Side controls are constrained to their available track. The mobile header uses two tracks and preserves the bottom navigation.
 
 Desktop links pair existing Lucide destination icons with labels and a soft active surface. Keyboard focus retains an explicit 2px ring. At 1051–1199px, labels are hidden visually to keep controls from overflowing; accessible names and focus/hover tooltips remain available.
 
-The brand is temporarily text-only while a new short abstract name is selected. The rejected W/wallet artwork is removed, including its service-worker cache entry; installation icons use the earlier simple wallet artwork as a temporary fallback. No new product name or definitive brand asset is applied without selection.
+The selected product name is PlannedWallet, with the signature “Planejamento financeiro e patrimônio”. The shared wordmark renders PlannedWallet as text, and `app/src/shared/brand.ts` supplies identity for UI labels and download names. HTML page metadata, PWA installation names, authentication, workspace selection, API documentation and export filenames use the new name. Installation icons retain the simple wallet artwork; the rejected W/wallet artwork is not restored.
 
-`topbar.css` owns the lockup and header presentation. Route, privacy, theme, notification and financial behavior remain unchanged. Motion respects reduced-motion settings. No database changes are required. Production compilation and lint validate the change; local browser execution remains blocked by the environment, so the responsive appearance still needs a browser pass.
+Technical namespaces now use `plannedwallet`: npm workspaces, package scripts/lockfile, browser state, application events, service-worker cache, backup payloads, runtime database role, migration-history schema, cron identity and local/hosting manifests. The local Supabase project label is PlannedWallet. Generic `wallet` SQL schema names remain domain vocabulary, not the former brand.
+
+`202611040001_plannedwallet_identity.sql` renames the legacy runtime role and migration-history schema in place and recreates the retention job under its new name. The migration runner executes this idempotent bridge before checking applied versions so existing financial migrations are never replayed. Historical SQL also targets the new role for fresh installations. `db:setup` reapplies the same runtime secret (PostgreSQL may clear MD5 credentials on role rename), verifies the restricted role, and writes the new local connection URL. The user confirmed applying this migration.
+
+Legacy identity strings remain only in transition readers/migration fixtures and in actual external URLs that have not yet been renamed. Browser preferences/workspace selection move to new keys before React initialization, including when an older service worker serves the HTML theme script. Backups tagged with the old format are normalized at validation; all new exports use `plannedwallet`. Hosted legacy runtime usernames are normalized in configuration without changing their password, database, host or query parameters.
+
+The GitHub API was unreachable from the environment; the user confirmed renaming the repository to PlannedWallet. The Git remote and current documentation links now target that repository. The source directory is still mounted at its original path. Hosting manifests use new resource names, but updating a manifest is not proof that an existing external service has been renamed. Domain availability is not confirmed and no domain has been reserved.
+
+`topbar.css` owns the lockup and header presentation. Route, privacy, theme, notification and financial behavior remain unchanged. Motion respects reduced-motion settings. The identity migration must be applied before deploying this version. Production compilation and lint validate the change; local browser execution remains blocked by the environment, so the responsive appearance still needs a browser pass.
+
+
+Hosting configuration references: [Render Blueprint resource identity](https://render.com/docs/blueprint-spec) and [Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/). Resource names and resource IDs are separate; a configuration-file rename does not confirm that a live resource was renamed.

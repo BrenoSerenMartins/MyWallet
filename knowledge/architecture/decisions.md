@@ -13,7 +13,7 @@
 
 - The user authorized pilot implementation. Use React/Vite plus a modular Nest API and Supabase Auth/PostgreSQL; only Auth is accessed directly from the browser. Public REST shapes generate frontend types from OpenAPI. TypeScript 5.9 satisfies the selected generator's peer contract.
 - User provisioning confirmed that Supabase requires its root CA in this environment. Include the public Supabase Root 2021 CA (SHA-256 `807025AD50D4ED219D2C9C7D299C004F824EB00CF7F65AFEF607D07B72E6CAFA`) from the sibling's existing public CA file; verify TLS in every database client. No sibling credential was copied.
-- The pilot's explicit migration runner owns `mywallet_migrations.applied`; do not combine it with CLI `db push` history. Hosting files are prepared but publication requires a configured hosting account and actual hosted acceptance checks.
+- The pilot's explicit migration runner owns `plannedwallet_migrations.applied`; do not combine it with CLI `db push` history. Hosting files are prepared but publication requires a configured hosting account and actual hosted acceptance checks.
 
 - The user requested workspace selection through Trello-like cards. Workspaces remain private to their owner; shared membership is not introduced. Migration 002 preserves existing financial records under “Pessoal”. Financial tables require owner and workspace scope, with triple composite references to prohibit cross-space relationships. The API validates `X-Workspace-Id`; owner-only workspace listing/creation explicitly runs without financial scope. Frontend workspace switching replaces its financial QueryClient and screen state.
 

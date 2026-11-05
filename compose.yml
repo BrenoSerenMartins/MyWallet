@@ -13,5 +13,5 @@ services:
       RUNTIME_DATABASE_URL: ${RUNTIME_DATABASE_URL}
       DOCS_ENABLED: "false"
     ports:
-      - "${MYWALLET_PORT:-8083}:8083"
+      - "${PLANNEDWALLET_PORT:-8083}:8083"
     restart: unless-stopped

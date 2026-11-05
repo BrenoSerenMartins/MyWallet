@@ -21,7 +21,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   const client = useQueryClient();
   const key = ['workspaces', session!.user.id];
-  const storageKey = `mywallet-workspace:${session!.user.id}`;
+  const storageKey = `plannedwallet-workspace:${session!.user.id}`;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
   const query = useQuery({ queryKey: key, queryFn: () => request<Workspace[]>('/workspaces') });

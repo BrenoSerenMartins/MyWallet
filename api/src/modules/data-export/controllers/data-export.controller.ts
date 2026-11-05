@@ -37,7 +37,7 @@ export class DataExportController {
     );
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="mywallet-backup.${format === 'csv' ? 'csv' : 'json'}"`,
+      `attachment; filename="plannedwallet-backup.${format === 'csv' ? 'csv' : 'json'}"`,
     );
     if (format === 'csv') res.type('text/csv').send(data);
     else res.json(data);

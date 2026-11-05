@@ -14,8 +14,7 @@ export function Logo() {
   return (
     <span className="logo">
       <span className="logo-wordmark">
-        my<span>wallet</span>
-        <span className="logo-dot">.</span>
+        Planned<span>Wallet</span>
       </span>
     </span>
   );
@@ -156,7 +155,7 @@ export function Modal({
           onEscapeKeyDown={(event) => {
             if (document.querySelector('[role="tooltip"]')) {
               event.preventDefault();
-              window.dispatchEvent(new Event('mywallet:dismiss-tooltip'));
+              window.dispatchEvent(new Event('plannedwallet:dismiss-tooltip'));
             }
           }}
           className={`dialog-content ${variant === 'detail' ? 'dialog-detail' : ''}`}

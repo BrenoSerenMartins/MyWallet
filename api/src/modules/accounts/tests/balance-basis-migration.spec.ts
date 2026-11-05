@@ -10,7 +10,7 @@ it('converts active old corrections without changing money and preserves reverse
   try {
     await db.initialize('202610260006_counterparty_external_identifiers.sql');
     // The current transaction guard locks workspace membership; the historical fixture predates that grant.
-    await db.engine.exec('GRANT UPDATE(is_default) ON wallet.workspaces TO mywallet_runtime');
+    await db.engine.exec('GRANT UPDATE(is_default) ON wallet.workspaces TO plannedwallet_runtime');
     const a = randomUUID(),
       purchase = randomUUID(),
       correction = randomUUID(),

@@ -1,7 +1,7 @@
 BEGIN;
 ALTER TABLE wallet.workspaces ADD COLUMN deleted_at timestamptz;
 CREATE INDEX workspace_retention_deadline ON wallet.workspaces(deleted_at) WHERE deleted_at IS NOT NULL;
-GRANT UPDATE(deleted_at,is_default) ON wallet.workspaces TO mywallet_runtime;
+GRANT UPDATE(deleted_at,is_default) ON wallet.workspaces TO plannedwallet_runtime;
 -- Every existing workspace-scoped table participates in the same atomic cascade.
 -- NO ACTION internal references are checked after the cascade statement completes.
 DO $$ DECLARE tab record; fk record; BEGIN
@@ -56,14 +56,14 @@ BEGIN
  RETURN wallet.purge_expired_workspaces(owner_id);
 END $$;
 REVOKE ALL ON FUNCTION wallet.purge_my_expired_workspaces() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION wallet.purge_my_expired_workspaces() TO mywallet_runtime;
+GRANT EXECUTE ON FUNCTION wallet.purge_my_expired_workspaces() TO plannedwallet_runtime;
 
 -- Supabase supports pg_cron: the database runs retention even if the web app sleeps.
 -- Portable test/local engines without pg_cron retain the owner-scoped read cleanup.
 DO $$ BEGIN
  IF EXISTS(SELECT 1 FROM pg_available_extensions WHERE name='pg_cron') THEN
   EXECUTE 'CREATE EXTENSION IF NOT EXISTS pg_cron';
-  EXECUTE $job$SELECT cron.schedule('mywallet-workspace-retention','*/10 * * * *','SELECT wallet.purge_expired_workspaces()')$job$;
+  EXECUTE $job$SELECT cron.schedule('plannedwallet-workspace-retention','*/10 * * * *','SELECT wallet.purge_expired_workspaces()')$job$;
  END IF;
 END $$;
 COMMIT;

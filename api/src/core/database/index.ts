@@ -83,11 +83,11 @@ export class DatabaseService implements OnModuleDestroy {
         'SELECT current_user AS role,rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user',
       );
       if (
-        identity.rows[0]?.role !== 'mywallet_runtime' ||
+        identity.rows[0]?.role !== 'plannedwallet_runtime' ||
         identity.rows[0]?.rolsuper ||
         identity.rows[0]?.rolbypassrls
       )
-        throw new Error('API requires the restricted mywallet_runtime database role.');
+        throw new Error('API requires the restricted plannedwallet_runtime database role.');
       await connection.query(
         readOnly ? 'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY' : 'BEGIN',
       );
@@ -122,7 +122,7 @@ export class DatabaseService implements OnModuleDestroy {
       );
       const role = r.rows[0];
       return this.recordReadiness(
-        role?.rolname === 'mywallet_runtime' && !role.rolsuper && !role.rolbypassrls
+        role?.rolname === 'plannedwallet_runtime' && !role.rolsuper && !role.rolbypassrls
           ? 'READY'
           : 'RUNTIME_ROLE_INVALID',
       );

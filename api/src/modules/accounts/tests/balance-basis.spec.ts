@@ -363,7 +363,7 @@ it('restores old correction transactions into base history exactly once', async 
   const accountId = randomUUID();
   const transactionId = randomUUID();
   const payload = {
-    format: 'mywallet',
+    format: 'plannedwallet',
     version: 4,
     currency: 'BRL',
     exportedAt: new Date().toISOString(),

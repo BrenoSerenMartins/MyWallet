@@ -12,10 +12,10 @@ CREATE TABLE wallet.category_groups (
 );
 ALTER TABLE wallet.category_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallet.category_groups FORCE ROW LEVEL SECURITY;
-CREATE POLICY owned_data ON wallet.category_groups TO mywallet_runtime
+CREATE POLICY owned_data ON wallet.category_groups TO plannedwallet_runtime
  USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())
  WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id());
-GRANT SELECT,INSERT,UPDATE ON wallet.category_groups TO mywallet_runtime;
+GRANT SELECT,INSERT,UPDATE ON wallet.category_groups TO plannedwallet_runtime;
 ALTER TABLE wallet.categories ADD COLUMN group_id uuid;
 ALTER TABLE wallet.categories ADD FOREIGN KEY(user_id,workspace_id,group_id,type)
  REFERENCES wallet.category_groups(user_id,workspace_id,id,type);

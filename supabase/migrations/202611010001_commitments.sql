@@ -38,12 +38,12 @@ ALTER TABLE wallet.commitment_schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallet.commitment_schedules FORCE ROW LEVEL SECURITY;
 ALTER TABLE wallet.commitment_occurrences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallet.commitment_occurrences FORCE ROW LEVEL SECURITY;
-CREATE POLICY owned_commitment ON wallet.commitment_schedules TO mywallet_runtime
+CREATE POLICY owned_commitment ON wallet.commitment_schedules TO plannedwallet_runtime
  USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())
  WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id());
-CREATE POLICY owned_occurrence ON wallet.commitment_occurrences TO mywallet_runtime
+CREATE POLICY owned_occurrence ON wallet.commitment_occurrences TO plannedwallet_runtime
  USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())
  WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id());
-GRANT SELECT,INSERT,UPDATE ON wallet.commitment_schedules TO mywallet_runtime;
-GRANT SELECT,INSERT,UPDATE,DELETE ON wallet.commitment_occurrences TO mywallet_runtime;
+GRANT SELECT,INSERT,UPDATE ON wallet.commitment_schedules TO plannedwallet_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON wallet.commitment_occurrences TO plannedwallet_runtime;
 COMMIT;

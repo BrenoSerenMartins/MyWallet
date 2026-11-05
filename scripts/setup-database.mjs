@@ -55,7 +55,7 @@ if (!/^[a-zA-Z0-9_-]{20,}$/.test(password))
   throw new Error('Existing runtime password needs manual review.');
 try {
   const result = await admin.query(
-    "SELECT rolcanlogin FROM pg_roles WHERE rolname='mywallet_runtime'",
+    "SELECT rolcanlogin FROM pg_roles WHERE rolname='plannedwallet_runtime'",
   );
   if (result.rows[0]?.rolcanlogin && !entries.RUNTIME_DATABASE_URL)
     throw new Error(
@@ -64,8 +64,8 @@ try {
   if (!result.rows[0]?.rolcanlogin) {
     const recovery = new URL(url);
     recovery.username = url.hostname.includes('.pooler.')
-      ? 'mywallet_runtime.' + entries.SUPABASE_PROJECT_REF
-      : 'mywallet_runtime';
+      ? 'plannedwallet_runtime.' + entries.SUPABASE_PROJECT_REF
+      : 'plannedwallet_runtime';
     recovery.password = password;
     entries.RUNTIME_DATABASE_URL = recovery.href;
     await writeFile(
@@ -75,17 +75,18 @@ try {
         .join('\n') + '\n',
       { mode: 0o600 },
     );
-    await admin.query(`ALTER ROLE mywallet_runtime LOGIN PASSWORD '${password}'`);
   }
+  // Reapply the same secret: PostgreSQL clears MD5 hashes when a role is renamed.
+  await admin.query(`ALTER ROLE plannedwallet_runtime LOGIN PASSWORD '${password}'`);
   const runtime = new URL(url);
   runtime.username = url.hostname.includes('.pooler.')
-    ? 'mywallet_runtime.' + entries.SUPABASE_PROJECT_REF
-    : 'mywallet_runtime';
+    ? 'plannedwallet_runtime.' + entries.SUPABASE_PROJECT_REF
+    : 'plannedwallet_runtime';
   runtime.password = password;
   const runtimePool = new Pool({ ...config, connectionString: runtime.href });
   try {
     const result = await runtimePool.query('SELECT current_user');
-    if (result.rows[0].current_user !== 'mywallet_runtime')
+    if (result.rows[0].current_user !== 'plannedwallet_runtime')
       throw new Error('Unexpected runtime role.');
   } finally {
     await runtimePool.end();
@@ -102,7 +103,7 @@ try {
   const cronInstalled = await admin.query("SELECT 1 FROM pg_extension WHERE extname='pg_cron'");
   if (cronInstalled.rows.length) {
     const job = await admin.query(
-      "SELECT schedule,active FROM cron.job WHERE jobname='mywallet-workspace-retention'",
+      "SELECT schedule,active FROM cron.job WHERE jobname='plannedwallet-workspace-retention'",
     );
     if (!job.rows.some((row) => row.active && row.schedule === '*/10 * * * *'))
       throw new Error('Workspace retention job is not active.');

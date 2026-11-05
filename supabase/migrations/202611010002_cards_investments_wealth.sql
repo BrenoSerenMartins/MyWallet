@@ -105,9 +105,9 @@ DO $$ DECLARE tab text; BEGIN
  FOREACH tab IN ARRAY ARRAY['transaction_claims','credit_cards','credit_card_bills','card_purchases','card_bill_entries','card_payments','investment_holdings','investment_events','wealth_items','wealth_history'] LOOP
   EXECUTE format('ALTER TABLE wallet.%I ENABLE ROW LEVEL SECURITY',tab);
   EXECUTE format('ALTER TABLE wallet.%I FORCE ROW LEVEL SECURITY',tab);
-  EXECUTE format('CREATE POLICY owned_managed_data ON wallet.%I TO mywallet_runtime USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id()) WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())',tab);
-  EXECUTE format('GRANT SELECT,INSERT,UPDATE ON wallet.%I TO mywallet_runtime',tab);
+  EXECUTE format('CREATE POLICY owned_managed_data ON wallet.%I TO plannedwallet_runtime USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id()) WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())',tab);
+  EXECUTE format('GRANT SELECT,INSERT,UPDATE ON wallet.%I TO plannedwallet_runtime',tab);
  END LOOP;
 END $$;
-GRANT DELETE ON wallet.transaction_claims TO mywallet_runtime;
+GRANT DELETE ON wallet.transaction_claims TO plannedwallet_runtime;
 COMMIT;

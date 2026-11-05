@@ -27,10 +27,10 @@ CREATE TABLE wallet.account_balance_history (
 CREATE INDEX account_balance_history_account ON wallet.account_balance_history(user_id,workspace_id,account_id,created_at);
 ALTER TABLE wallet.account_balance_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallet.account_balance_history FORCE ROW LEVEL SECURITY;
-CREATE POLICY owned_data ON wallet.account_balance_history TO mywallet_runtime
+CREATE POLICY owned_data ON wallet.account_balance_history TO plannedwallet_runtime
  USING(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id())
  WITH CHECK(user_id=wallet.current_user_id() AND workspace_id=wallet.current_workspace_id());
-GRANT SELECT,INSERT ON wallet.account_balance_history TO mywallet_runtime;
+GRANT SELECT,INSERT ON wallet.account_balance_history TO plannedwallet_runtime;
 -- Fold old correction transactions into the base, preserving every monetary total.
 -- The original rows remain stored and the complete conversion is audited.
 DO $$ DECLARE a record; delta bigint; new_base bigint; anchor bigint; audit_id uuid; basis jsonb; old_rows jsonb; today date := (now() AT TIME ZONE 'America/Sao_Paulo')::date; active_count integer;

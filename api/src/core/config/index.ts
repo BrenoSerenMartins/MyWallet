@@ -1,3 +1,4 @@
+import { runtimeConnectionString } from './runtime-identity.js';
 import { Injectable } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
 @Injectable()
@@ -5,7 +6,7 @@ export class Configuration {
   readonly port = Number(process.env.PORT ?? 8083);
   readonly supabaseUrl = process.env.SUPABASE_URL ?? '';
   readonly publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? '';
-  readonly databaseUrl = process.env.RUNTIME_DATABASE_URL ?? '';
+  readonly databaseUrl = runtimeConnectionString(process.env.RUNTIME_DATABASE_URL ?? '');
   readonly ssl =
     process.env.NODE_ENV === 'test'
       ? false
