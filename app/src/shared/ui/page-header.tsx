@@ -6,20 +6,22 @@ export function PageHeader({
   description,
   navigation,
   children,
+  compact = false,
 }: {
   title: ReactNode;
+  compact?: boolean;
   description?: ReactNode;
   navigation?: ReactNode;
   children?: ReactNode;
 }) {
   return (
-    <header className="page-heading page-header">
+    <header className={`page-heading page-header${compact ? ' page-header-compact' : ''}`}>
       <div className="page-header-copy">
         <div className="page-header-headingline">
-          <h1>{title}</h1>
+          <h1 className={compact ? 'sr-only' : undefined}>{title}</h1>
           {navigation}
         </div>
-        {description && <p>{description}</p>}
+        {description && !compact && <p>{description}</p>}
       </div>
       {children && <div className="page-header-actions">{children}</div>}
     </header>

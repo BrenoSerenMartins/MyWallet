@@ -590,3 +590,48 @@ body .account-record .action-menu-panel {
     padding: 0;
   }
 }
+
+/* Number-led workspaces keep navigation attached to the data it controls. */
+body .page-header-compact {
+  margin-bottom: 18px;
+  min-height: 44px;
+}
+body .page-header-compact .page-header-headingline:empty {
+  display: none;
+}
+body .page-header-compact .page-header-actions {
+  margin-left: auto;
+}
+.summary-navigation {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--border);
+  padding: 6px 22px;
+}
+body .summary-navigation .view-switcher {
+  margin: 0;
+}
+body .wealth-summary {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--surface);
+  margin-bottom: 24px;
+}
+body .wealth-summary .wealth-overview {
+  gap: 0;
+  margin: 0;
+}
+body .wealth-summary .wealth-overview > .panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body .wealth-summary .wealth-overview > .panel + .panel {
+  border-left: 1px solid var(--border);
+}
+@media (max-width: 600px) {
+  .summary-navigation {
+    padding-inline: 16px;
+  }
+}

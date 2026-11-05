@@ -75,7 +75,7 @@ export function AccountsPage() {
   );
   return (
     <div className="page-enter accounts-page">
-      <PageHeader title={<>Minhas contas</>} navigation={<FinanceAreaNav />}>
+      <PageHeader compact title={<>Minhas contas</>} navigation={<FinanceAreaNav />}>
         <Button
           onClick={() => {
             setEditing(undefined);

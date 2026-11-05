@@ -73,6 +73,7 @@ export function CardsPage() {
     <div className="page-enter cards-page">
       <FinanceAreaNav />
       <PageHeader
+        compact
         title={<>Cartões e faturas</>}
         description={<>Compras organizadas, sem contar o pagamento duas vezes.</>}
       >

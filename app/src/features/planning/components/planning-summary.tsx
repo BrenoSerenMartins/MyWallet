@@ -1,9 +1,16 @@
+import type { ReactNode } from 'react';
 import { HelpTip } from '../../../shared/ui/tooltip';
 import { ArrowDownLeft, ArrowUpRight, PiggyBank, Scale } from 'lucide-react';
 import type { MonthlyPlan } from '../../../shared/api/resources';
 import { money } from '../../../shared/formatting/money';
 const display = (value: number | null) => (value === null ? 'Não definido' : money(value));
-export function PlanningSummary({ plan }: { plan: MonthlyPlan }) {
+export function PlanningSummary({
+  plan,
+  navigation,
+}: {
+  plan: MonthlyPlan;
+  navigation?: ReactNode;
+}) {
   const { totals: t } = plan;
   const metrics = [
     {
@@ -109,6 +116,7 @@ export function PlanningSummary({ plan }: { plan: MonthlyPlan }) {
         </dl>
         <p>Resultado previsto após aporte: {display(t.afterContribution)}</p>
       </article>
+      {navigation && <div className="summary-navigation">{navigation}</div>}
     </section>
   );
 }

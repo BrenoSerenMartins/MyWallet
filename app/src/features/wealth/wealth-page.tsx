@@ -83,6 +83,7 @@ export function WealthPage() {
   return (
     <div className="page-enter wealth-page">
       <PageHeader
+        compact
         title={<>Investimentos e patrimônio</>}
         description={<>O que você tem, o que deve e como isso evolui.</>}
       >
@@ -130,46 +131,51 @@ export function WealthPage() {
       ) : (
         data && (
           <>
-            <section className="wealth-overview">
-              <div className="panel wealth-net-worth">
-                <span>
-                  Patrimônio registrado
-                  <HelpTip
-                    label="Cálculo do patrimônio"
-                    text="Contas, reservas, investimentos avaliados e bens, menos dívidas e saldos negativos. Benefícios ficam de fora. As posições e avaliações são as informadas por você."
-                  />
-                </span>
-                <strong className={data.netWorth < 0 ? 'negative' : ''}>
-                  {value(data.netWorth)}
-                </strong>
-                <small>Ativos menos dívidas · pelas posições cadastradas</small>
+            <section className="wealth-summary">
+              <div className="wealth-overview">
+                <div className="panel wealth-net-worth">
+                  <span>
+                    Patrimônio registrado
+                    <HelpTip
+                      label="Cálculo do patrimônio"
+                      text="Contas, reservas, investimentos avaliados e bens, menos dívidas e saldos negativos. Benefícios ficam de fora. As posições e avaliações são as informadas por você."
+                    />
+                  </span>
+                  <strong className={data.netWorth < 0 ? 'negative' : ''}>
+                    {value(data.netWorth)}
+                  </strong>
+                  <small>Ativos menos dívidas · pelas posições cadastradas</small>
+                </div>
+                <div className="panel">
+                  <span>Ativos registrados</span>
+                  <strong>{value(data.assets)}</strong>
+                  <small>Contas, reservas, investimentos e bens</small>
+                </div>
+                <div className="panel">
+                  <span>Dívidas registradas</span>
+                  <strong>{value(data.liabilities)}</strong>
+                  <small>Cartões, contas negativas e outras dívidas</small>
+                </div>
               </div>
-              <div className="panel">
-                <span>Ativos registrados</span>
-                <strong>{value(data.assets)}</strong>
-                <small>Contas, reservas, investimentos e bens</small>
-              </div>
-              <div className="panel">
-                <span>Dívidas registradas</span>
-                <strong>{value(data.liabilities)}</strong>
-                <small>Cartões, contas negativas e outras dívidas</small>
+
+              <div className="summary-navigation">
+                <ViewSwitcher
+                  variant="tabs"
+                  label="Área do patrimônio"
+                  value={view}
+                  onChange={(v) => {
+                    const next = new URLSearchParams(params);
+                    next.set('view', v);
+                    setParams(next);
+                  }}
+                  options={[
+                    { value: 'investments', label: 'Investimentos' },
+                    { value: 'items', label: 'Bens e dívidas' },
+                    { value: 'history', label: 'Evolução' },
+                  ]}
+                />
               </div>
             </section>
-
-            <ViewSwitcher
-              label="Área do patrimônio"
-              value={view}
-              onChange={(v) => {
-                const next = new URLSearchParams(params);
-                next.set('view', v);
-                setParams(next);
-              }}
-              options={[
-                { value: 'investments', label: 'Investimentos' },
-                { value: 'items', label: 'Bens e dívidas' },
-                { value: 'history', label: 'Evolução' },
-              ]}
-            />
             {view === 'investments' ? (
               <>
                 <div className="section-heading">

@@ -77,7 +77,7 @@ export function CommitmentsPage({ navigation }: { navigation?: ReactNode }) {
   }
   return (
     <div className="commitments-page page-enter">
-      <PageHeader title={<>Contas e recebimentos</>} navigation={navigation}>
+      <PageHeader compact title={<>Contas e recebimentos</>} navigation={navigation}>
         <div className="month-navigation">
           <Tooltip text="Mês anterior dos compromissos">
             <button

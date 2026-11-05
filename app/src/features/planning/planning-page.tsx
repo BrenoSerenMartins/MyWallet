@@ -67,7 +67,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
   }
   return (
     <div className="page-enter planning-page">
-      <PageHeader title={<>Planejamento mensal</>} navigation={navigation}>
+      <PageHeader compact title={<>Planejamento mensal</>}>
         <label className="period-picker">
           <span className="sr-only">Mês do plano</span>
           <MonthPicker
@@ -128,7 +128,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
       ) : (
         plan && (
           <>
-            <PlanningSummary plan={plan} />
+            <PlanningSummary plan={plan} navigation={navigation} />
 
             {plan.totals.missingCategoryCount > 0 && (
               <div className="review-banner planning-included">
