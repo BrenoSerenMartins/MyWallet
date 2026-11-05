@@ -47,3 +47,7 @@ Confirmed causes addressed:
 A fresh local production dependency audit separately reproduced two high-severity findings through multer 2.4.0 and Nest's Express adapter. The lockfile now resolves @nestjs/platform-express 12.3.3 with multer 2.5.0 (and required tslib 2.9.1), within the existing package constraints. Installed versions verified; `npm audit --omit=dev` reports zero vulnerabilities. Advisory: https://github.com/advisories/GHSA-q7qp-rjg7-q26m. No forced unrelated dev-tool upgrades were applied.
 
 Browser rerun remains required. Local Playwright still fails at server startup under host restrictions; no tests have been disabled to obtain a pass.
+
+### Complemento dos logs dos shards 1 e 2
+
+Os logs do run 42043543242 confirmam que verify passou lint, tipos, limites, 232 testes, build e contratos; a falha final foi o audit de multer, já corrigido no commit 3d27bb8. Atualizados os testes que ainda usavam filtros, navegação e resultado de previsão anteriores à interface atual. O teste de Escape verifica a dispensa da tooltip antes de fechar o menu. O cenário de texto a 200% recebeu ajustes de largura intrínseca e quebra de texto nos cartões e diagnóstico dos elementos que ultrapassam o viewport. A execução real do navegador continua pendente no CI, pois o ambiente local bloqueia Chromium/servidor de testes. Não considerar a etapa de estabilização concluída antes desse resultado.

@@ -413,3 +413,28 @@ body .card-directory-surface .cards-workspace {
     padding-inline: 16px;
   }
 }
+
+/* Keep intrinsic text widths inside the workspace when text is enlarged. */
+.cards-page .card-detail .section-heading > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cards-page .finance-month-navigation {
+  width: 100%;
+  min-width: 0;
+}
+.cards-page .card-bill-toolbar > .inline-actions {
+  min-width: 0;
+  max-width: 100%;
+}
+.cards-page .card-bill-toolbar > .inline-actions > .button {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.cards-page .card-bill-stats span,
+.cards-page .card-bill-status,
+.cards-page .finance-disclosure summary {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}

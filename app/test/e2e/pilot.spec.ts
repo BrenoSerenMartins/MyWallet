@@ -1,4 +1,19 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
+async function expectNoHorizontalOverflow(page: Page) {
+  const layout = await page.evaluate(() => ({
+    width: innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    overflowing: Array.from(document.querySelectorAll('.page-content *'))
+      .filter((element) => element.getBoundingClientRect().right > innerWidth + 1)
+      .slice(0, 15)
+      .map((element) => ({
+        tag: element.tagName,
+        className: element.className,
+        right: element.getBoundingClientRect().right,
+      })),
+  }));
+  expect(layout.scrollWidth, JSON.stringify(layout)).toBeLessThanOrEqual(layout.width);
+}
 async function accountAction(page: Page, label: string) {
   await page
     .getByRole('button', { name: /^Ações da conta / })
@@ -553,7 +568,9 @@ test('batch uploads run sequentially, keep successful files after errors and lin
     { name: 'same-month.csv', mimeType: 'text/csv', buffer: Buffer.from('synthetic') },
   ]);
   await expect(page.getByText('Lendo e conferindo…', { exact: true })).toBeVisible();
-  await expect(page.getByLabel('Conta de destino')).toBeDisabled();
+  await expect(
+    page.getByRole('combobox', { name: 'Conta de destino', exact: true }),
+  ).toBeDisabled();
   expect(count).toBe(1);
   releaseFirst();
   const results = page.getByRole('region', { name: 'Resultado do envio de extratos' });
@@ -627,7 +644,8 @@ test('leaving the upload screen stops subsequent submissions', async ({ page }) 
     })),
   );
   await expect(page.getByText('Lendo e conferindo…', { exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Minhas contas', exact: true }).click();
+  await page.getByRole('button', { name: 'Contas', exact: true }).click();
+  await page.getByRole('link', { name: 'Contas e saldos', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Minhas contas', exact: true })).toBeVisible();
   const response = page.waitForResponse(
     (response) => response.url().endsWith('/v1/imports') && response.request().method() === 'POST',
@@ -1407,7 +1425,10 @@ for (const width of [390, 1440])
     await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(saved).toMatchObject({ type: 'expense', color: '#f28a97', groupId: groups[0].id });
-    await page.getByRole('button', { name: 'Receitas', exact: true }).click();
+    await page
+      .getByRole('group', { name: 'Tipo de categoria', exact: true })
+      .getByRole('button', { name: /^Receitas(?:\s|$)/ })
+      .click();
     await expect(page.getByRole('tab').first()).toContainText('Geral');
     await page.getByRole('button', { name: 'Adicionar categoria', exact: true }).click();
     await fillControl(page.getByRole('dialog').getByLabel('Nome', { exact: true }), 'Salário');
@@ -1570,7 +1591,10 @@ for (const width of [390, 1440])
     await expect(page.getByText('DINHEIRO DISPONÍVEL', { exact: false })).toBeVisible();
     await expect(page.getByText('Benefícios · uso restrito', { exact: true })).toBeVisible();
     await page.goto('/accounts');
-    await page.getByRole('button', { name: 'Benefícios', exact: true }).click();
+    await chooseSelect(
+      page.getByRole('combobox', { name: 'Tipo de conta', exact: true }),
+      'benefits',
+    );
     await expect(page.getByRole('link', { name: 'Alelo Alimentação', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: account.name, exact: true })).toHaveCount(0);
     await accountAction(page, 'Corrigir saldo');
@@ -2380,7 +2404,14 @@ for (const width of [360, 390, 768, 1440]) {
     await expectControlValue(await movementFilterControl(page, 'De'), '2026-09-01');
     await expectControlValue(await movementFilterControl(page, 'Até'), '2026-09-30');
     await page.goBack();
-    await page.getByRole('link', { name: 'Abrir planejamento deste mês', exact: true }).click();
+    await page
+      .getByRole('navigation', {
+        name: width > 1050 ? 'Navegação principal' : 'Navegação móvel',
+        exact: true,
+      })
+      .getByRole('link', { name: width > 1050 ? 'Planejamento' : 'Planejar', exact: true })
+      .click();
+    await fillControl(page.getByLabel('Mês do planejamento'), '2026-09');
     await expectControlValue(page.getByLabel('Mês do planejamento'), '2026-09');
   });
 }
@@ -2434,6 +2465,10 @@ for (const width of [390, 1440]) {
     const wealth = menu.getByRole('link', { name: 'Investimentos e patrimônio', exact: true });
     if (width > 1050) await expect(wealth).not.toBeVisible();
     else await expect(wealth).toBeVisible();
+    if (await page.getByRole('tooltip').count()) {
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+    }
     await page.keyboard.press('Escape');
     await expect(menu).toHaveCount(0);
     await expect(trigger).toBeFocused();
@@ -2913,7 +2948,7 @@ for (const width of [320, 390, 768, 1440])
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.goto('/');
     await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
-    await expect(page.locator('.forecast-result strong')).toHaveText('••••••');
+    await expect(page.locator('.forecast-preview-result > strong')).toHaveText('••••••');
     await chooseTheme(page, 'claro');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -3469,14 +3504,14 @@ test('cards and wealth support enlarged text and narrow reflow', async ({ page }
   await page.goto('/cards?month=2026-11');
   await page.addStyleTag({ content: 'html{font-size:200% !important}' });
   await expect(page.getByRole('heading', { name: 'Cartões e faturas', exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: '/tmp/plannedwallet-cards-large-text.png', fullPage: true });
   await page.goto('/wealth');
   await page.addStyleTag({ content: 'html{font-size:200% !important}' });
   await expect(
     page.getByRole('heading', { name: 'Investimentos e patrimônio', exact: true }),
   ).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: '/tmp/plannedwallet-wealth-large-text.png', fullPage: true });
 });
 
