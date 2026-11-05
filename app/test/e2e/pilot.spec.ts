@@ -3709,13 +3709,12 @@ test('account filters explain empty results and keep account and card workspaces
   await expect(page.locator('.account-record')).toHaveCount(0);
   await chooseSelect(page.getByLabel('Tipo de conta', { exact: true }), 'all');
   await expect(page.locator('.account-record')).toHaveCount(1);
-  await openAppMenu(page);
-  await page
-    .getByRole('dialog', { name: 'Menu do espaço' })
-    .getByRole('link', { name: 'Cartões e faturas', exact: true })
-    .click();
+  const navigation = page.getByRole('navigation', { name: 'Navegação principal', exact: true });
+  await navigation.getByRole('button', { name: 'Contas', exact: true }).click();
+  await navigation.getByRole('link', { name: 'Cartões e faturas', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Cartões e faturas' })).toBeVisible();
-  await page.goto('/accounts');
+  await navigation.getByRole('button', { name: 'Contas', exact: true }).click();
+  await navigation.getByRole('link', { name: 'Contas e saldos', exact: true }).click();
   await expect(page.locator('.account-record')).toHaveCount(1);
 });
 test('directory creation is isolated from browsing, retains failed input and refreshes automation filters', async ({
