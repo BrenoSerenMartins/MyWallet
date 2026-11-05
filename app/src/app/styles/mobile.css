@@ -619,3 +619,137 @@
     background: transparent;
   }
 }
+
+.planning-title-short {
+  display: none;
+}
+@media (max-width: 600px) {
+  body .page-content .planning-page .planning-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  body .page-content .planning-page .summary-action-bar {
+    grid-row: 1;
+  }
+  body .page-content .planning-page .metric-result {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    padding: 24px 8px 28px;
+  }
+  body .page-content .planning-page .metric-income {
+    grid-row: 3;
+    grid-column: 1;
+  }
+  body .page-content .planning-page .metric-expense {
+    grid-row: 3;
+    grid-column: 2;
+  }
+  body .page-content .planning-page .metric-contribution {
+    grid-row: 4;
+  }
+  body .page-content .planning-page .summary-navigation {
+    grid-row: 5;
+  }
+  body .page-content .planning-page .planning-title-full {
+    display: none;
+  }
+  body .page-content .planning-page .planning-title-short {
+    display: inline;
+  }
+  body .page-content .planning-page :is(.metric-income, .metric-expense) > span > svg {
+    display: none;
+  }
+  body .page-content .planning-page :is(.metric-income, .metric-expense) > span {
+    display: grid;
+    grid-template-columns: 24px minmax(0, auto) 24px;
+    justify-content: center;
+    min-height: 44px;
+    gap: 0;
+  }
+  body .page-content .planning-page :is(.metric-income, .metric-expense) > span > .help-tip {
+    grid-column: 3;
+    justify-self: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+  body
+    .page-content
+    .planning-page
+    :is(.metric-income, .metric-expense, .metric-result)
+    .planning-comparison {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  body
+    .page-content
+    .planning-page
+    :is(.metric-income, .metric-expense, .metric-result)
+    .planning-comparison
+    > div:first-child {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+  }
+  body
+    .page-content
+    .planning-page
+    :is(.metric-income, .metric-expense, .metric-result)
+    .planning-comparison
+    > div:last-child
+    dt {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  body .page-content .planning-page :is(.metric-income, .metric-expense) .planning-comparison dd {
+    font-size: clamp(23px, 6vw, 30px);
+  }
+  body .page-content .planning-page .metric-result .planning-comparison dd {
+    font-size: clamp(38px, 10vw, 48px);
+    font-weight: 400;
+    letter-spacing: -1.2px;
+  }
+  body
+    .page-content
+    .planning-page
+    :is(.metric-income, .metric-expense, .metric-result)
+    .planning-comparison
+    > div:first-child
+    dd {
+    font-size: 13px;
+    letter-spacing: 0;
+  }
+  body .page-content .planning-page .metric-expense::before {
+    top: 10%;
+    bottom: 10%;
+    left: 0;
+    right: auto;
+    height: auto;
+    width: 1px;
+    background: var(--rule-vertical);
+  }
+  body .page-content .planning-page .metric-result::before {
+    display: none;
+  }
+  body .page-content .planning-page .metric-result {
+    background: var(--rule-horizontal) bottom / 100% 1px no-repeat;
+  }
+  body .page-content .planning-page .metric-income::before {
+    display: none;
+  }
+  body .page-content .planning-page :is(.metric-income, .metric-expense) .planning-difference {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 600px) {
+  body .page-content .planning-page :is(.metric-income, .metric-expense) .planning-metric-title {
+    grid-column: 2;
+  }
+}

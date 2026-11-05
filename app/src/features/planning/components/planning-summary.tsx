@@ -56,7 +56,12 @@ export function PlanningSummary({
         >
           <span>
             <Icon size={17} />
-            <span className="planning-metric-title">{label}</span>
+            <span className="planning-metric-title">
+              <span className="planning-title-full">{label}</span>
+              <span className="planning-title-short">
+                {kind === 'income' ? 'Receitas' : kind === 'expense' ? 'Despesas' : label}
+              </span>
+            </span>
             <HelpTip
               label={label}
               text={

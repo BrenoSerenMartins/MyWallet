@@ -4314,15 +4314,12 @@ for (const width of [320, 390, 768]) {
       await expect(page.locator('main').first()).toBeVisible();
       await expect(page.getByRole('status', { name: 'Carregando', exact: true })).toHaveCount(0);
       if (path === '/planning' && width <= 600) {
-        const aligned = await page
-          .locator('.planning-metric:not(.metric-contribution)')
-          .evaluateAll((nodes) => {
-            const boxes = nodes.map((node) => node.getBoundingClientRect());
-            return boxes.every(
-              (box) => Math.abs(box.x - boxes[0].x) < 1 && Math.abs(box.width - boxes[0].width) < 1,
-            );
-          });
-        expect(aligned).toBe(true);
+        const income = await page.locator('.metric-income').boundingBox();
+        const expense = await page.locator('.metric-expense').boundingBox();
+        const result = await page.locator('.metric-result').boundingBox();
+        expect(result!.y).toBeLessThan(income!.y);
+        expect(Math.abs(income!.y - expense!.y)).toBeLessThan(1);
+        expect(result!.width).toBeGreaterThan(income!.width * 1.9);
       }
       const overflow = await page.evaluate(() => ({
         width: innerWidth,
