@@ -4289,6 +4289,8 @@ for (const width of [320, 390, 768]) {
     await page.setViewportSize({ width, height: 844 });
     await signedIn(page);
     await financeFixtures(page);
+    await page.route('**/v1/counterparties', (route) => route.fulfill({ json: [automationAgent] }));
+    await page.route('**/v1/categories', (route) => route.fulfill({ json: [automationCategory] }));
     await page.route('**/v1/commitments?*', (route) =>
       route.fulfill({ json: commitmentsFixture('2026-11', true) }),
     );
@@ -4321,6 +4323,19 @@ for (const width of [320, 390, 768]) {
         expect(result!.y).toBeLessThan(income!.y);
         expect(Math.abs(income!.y - expense!.y)).toBeLessThan(1);
         expect(result!.width).toBeGreaterThan(income!.width * 1.9);
+      }
+      if (path !== '/workspaces') {
+        const bar = page.getByRole('navigation', { name: 'Navegação móvel', exact: true });
+        const bounds = await bar.boundingBox();
+        expect(bounds).not.toBeNull();
+        expect(Math.abs(bounds!.y + bounds!.height - 844)).toBeLessThanOrEqual(1);
+        for (const item of await bar.locator('a, button').all()) {
+          const itemBounds = await item.boundingBox();
+          expect(itemBounds!.y).toBeGreaterThanOrEqual(bounds!.y);
+          expect(itemBounds!.y + itemBounds!.height).toBeLessThanOrEqual(
+            bounds!.y + bounds!.height,
+          );
+        }
       }
       const overflow = await page.evaluate(() => ({
         width: innerWidth,

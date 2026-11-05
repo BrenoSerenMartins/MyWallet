@@ -787,3 +787,281 @@ body .page-content .planning-page .summary-action-bar > div {
     padding-top: 20px;
   }
 }
+
+@media (max-width: 1050px) {
+  :root {
+    --mobile-nav-height: calc(68px + env(safe-area-inset-bottom));
+  }
+  body .app-main {
+    padding-bottom: 0;
+  }
+  body .page-content {
+    padding-bottom: calc(var(--mobile-nav-height) + 24px);
+  }
+  body .bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 4px;
+    inset: auto 0 0;
+    height: var(--mobile-nav-height);
+    margin: 0;
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+    border-radius: 0;
+  }
+  body .bottom-nav a,
+  body .bottom-nav button {
+    display: grid;
+    grid-template-rows: 24px 16px;
+    align-content: center;
+    justify-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    height: 55px;
+    margin: 0;
+    padding: 4px 2px;
+    font-size: 10px;
+    line-height: 16px;
+  }
+  body .bottom-nav :is(a, button) > svg {
+    align-self: center;
+  }
+  body .bottom-nav :is(a, button) > span {
+    white-space: nowrap;
+    line-height: 16px;
+  }
+  body .bottom-nav :is(a, button):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -3px;
+  }
+}
+@media (max-width: 760px) {
+  /* Actions and text entry each get a deliberate row, rather than competing for half a field. */
+  body .page-content .transactions-page .movement-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    gap: 12px;
+  }
+  body .page-content .transactions-page .movement-toolbar > .button {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: 100%;
+    margin: 0;
+    order: initial;
+  }
+  body .page-content .transactions-page .movement-toolbar > .search-field {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+  }
+  body .page-content .transactions-page .movement-filter-trigger {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    width: 48px;
+    height: 48px;
+  }
+  body .page-content .transactions-page .movement-period {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  body .page-content .transactions-page .movement-preset {
+    grid-column: 1 / -1;
+  }
+  body .page-content .transactions-page .movement-preset .select-field,
+  body .page-content .transactions-page .movement-date .date-field {
+    width: 100%;
+  }
+  body .page-content .transactions-page .movement-date {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+  body .page-content .transactions-page .movement-date input.date-trigger {
+    font-size: 14px;
+    padding-left: 0;
+  }
+  body .page-content .movement-typebar .view-switcher,
+  body .page-content .category-group-tabs {
+    scrollbar-width: none;
+  }
+  body .page-content .movement-typebar .view-switcher::-webkit-scrollbar,
+  body .page-content .category-group-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  body .page-content .directory-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  body .page-content .directory-toolbar > .button,
+  body .page-content .directory-toolbar > label {
+    width: 100%;
+    min-width: 0;
+    order: initial;
+  }
+  body .page-content .directory-toolbar > .button {
+    grid-row: 1;
+  }
+  body .page-content .directory-toolbar .search-field {
+    grid-row: 2;
+  }
+  body .page-content .counterparties-page {
+    gap: 16px;
+  }
+  body .page-content .counterparties-page .counterparty-panel {
+    padding: 0;
+  }
+  body .page-content .counterparties-page .counterparty-panel > summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px 12px;
+    min-height: 80px;
+    padding: 16px 0;
+  }
+  body .page-content .counterparty-panel > summary > strong {
+    overflow-wrap: anywhere;
+    min-width: 0;
+    font-size: 14px;
+  }
+  body .page-content .counterparty-panel > summary > span {
+    grid-column: 1;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  body .page-content .counterparty-panel > summary::after {
+    content: '+';
+    grid-column: 2;
+    grid-row: 1 / 3;
+    color: var(--muted);
+    font-size: 20px;
+  }
+  body .page-content .counterparty-panel[open] > summary::after {
+    content: '−';
+  }
+  body .page-content .account-directory-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  body .page-content .account-directory-toolbar > .button {
+    grid-row: 1;
+    width: 100%;
+  }
+  body .page-content .account-type-filter {
+    grid-row: 2;
+  }
+  body .page-content .account-record-actions > .text-button {
+    flex: 0 1 auto;
+    margin-left: auto;
+  }
+  body .page-content .category-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  body .page-content .category-toolbar > .button {
+    order: initial;
+    grid-row: 1;
+    width: 100%;
+  }
+  body .page-content .category-toolbar > .search-field {
+    grid-row: 3;
+    min-width: 0;
+  }
+  body .page-content .category-list-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  body .page-content .category-list-actions {
+    justify-self: end;
+    margin: 0;
+  }
+  body .page-content .wealth-summary .wealth-overview > .panel:not(.wealth-net-worth) {
+    display: grid;
+    grid-template-rows: 44px auto 1fr;
+    align-content: start;
+    align-items: start;
+    gap: 12px;
+    padding: 20px 10px;
+  }
+  body .page-content .wealth-summary .wealth-overview > .panel:not(.wealth-net-worth) > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+  body .page-content .wealth-summary .wealth-overview > .wealth-net-worth + .panel::before {
+    display: none;
+  }
+  body .page-content .wealth-summary .wealth-overview > .wealth-net-worth {
+    position: relative;
+    background: var(--rule-horizontal) bottom / 100% 1px no-repeat;
+  }
+  body .page-content .wealth-summary-toolbar > span {
+    flex-basis: auto;
+  }
+  body .page-content .wealth-summary-toolbar {
+    align-items: center;
+  }
+  body .page-content .wealth-summary-toolbar > .inline-actions {
+    margin: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+  body .page-content .upload-panel {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 20px 0;
+  }
+  body .page-content .upload-panel h2 {
+    font-size: 24px;
+    line-height: 1.3;
+  }
+  body .page-content .upload-panel > p {
+    font-size: 13px;
+    line-height: 1.7;
+    margin-block: 12px 20px;
+  }
+  body .page-content .workspace-section-select {
+    max-width: none;
+    width: 100%;
+  }
+  body .page-content .theme-options button {
+    min-height: 80px;
+    padding: 12px;
+  }
+  body .page-content .theme-preview {
+    width: 76px;
+    min-height: 48px;
+    flex-shrink: 0;
+  }
+  body .spaces-topbar {
+    min-height: 68px;
+    padding: 12px 16px;
+    flex-wrap: nowrap;
+    gap: 12px;
+  }
+  body .spaces-topbar .logo-wordmark {
+    font-size: 18px;
+  }
+  body .spaces-topbar .logo-symbol {
+    width: 28px;
+    height: 28px;
+  }
+  body .spaces-topbar > div {
+    gap: 4px;
+  }
+}
