@@ -1,3 +1,4 @@
+import { Select } from '../../../shared/ui/controls/select';
 import { HelpTip } from '../../../shared/ui/tooltip';
 import type { Account } from '../../../shared/api/resources';
 import { useState, type FormEvent } from 'react';
@@ -50,7 +51,7 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
       <div className="form-grid">
         <label>
           Instituição
-          <select
+          <Select
             value={institution}
             disabled={!!legacyInstitution}
             onChange={(e) => {
@@ -64,11 +65,11 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
             {legacyInstitution && (
               <option value={account.institution}>Instituição anterior (histórico)</option>
             )}
-          </select>
+          </Select>
         </label>
         <label>
           Tipo
-          <select value={type} onChange={(e) => setType(e.target.value)}>
+          <Select value={type} onChange={(e) => setType(e.target.value)}>
             {institution === 'alelo' ? (
               <>
                 <option value="benefit_food">Vale-alimentação</option>
@@ -82,21 +83,21 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
                 <option value="reserve">Conta de reserva</option>
               </>
             )}
-          </select>
+          </Select>
         </label>
       </div>
       {['benefit_food', 'benefit_meal'].includes(type) && (
         <>
           <label>
             Crédito do VA/VR no planejamento
-            <select
+            <Select
               aria-label="Crédito do VA/VR no planejamento"
               value={benefitCreditMonth}
               onChange={(e) => setBenefitCreditMonth(e.target.value as 'received' | 'following')}
             >
               <option value="received">Mês em que o crédito caiu</option>
               <option value="following">Mês seguinte ao crédito</option>
-            </select>
+            </Select>
           </label>
           <div className="field-assistance">
             <HelpTip

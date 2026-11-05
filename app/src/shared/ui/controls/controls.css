@@ -1,0 +1,307 @@
+/* Shared controls use the same geometry on desktop, touch and inside dialogs. */
+body .select-field,
+body .month-field,
+body .date-field {
+  display: block;
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
+body .select-trigger,
+body .month-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  line-height: 1.4;
+}
+body .select-trigger > span,
+body .month-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body .select-trigger svg,
+body .month-trigger svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+body .select-trigger[aria-expanded='true'],
+body .month-trigger[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+body .select-trigger[aria-invalid='true'],
+body .month-trigger[aria-invalid='true'],
+body input.date-trigger[aria-invalid='true'] {
+  border-color: var(--negative);
+}
+body .period-picker .month-trigger {
+  background: transparent;
+  border: 0;
+  padding: 8px 2px;
+  min-height: 44px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+body .period-picker .month-field {
+  width: auto;
+}
+body .control-popover {
+  position: fixed;
+  z-index: 100;
+  padding: 12px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow:
+    0 16px 50px #00000026,
+    0 2px 8px #0000000a;
+  color: var(--text);
+  font-size: 13px;
+  isolation: isolate;
+}
+@supports (backdrop-filter: blur(20px)) {
+  body .control-popover,
+  body .action-menu-panel {
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+}
+body .select-options {
+  padding: 6px;
+}
+.select-group-heading {
+  color: var(--muted);
+  font-size: 11px;
+  padding: 14px 12px 5px;
+  font-weight: 600;
+}
+.select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.select-option svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.select-option[data-highlighted='true'] {
+  background: var(--surface-raised);
+}
+.select-option[aria-selected='true'] {
+  color: var(--accent);
+}
+.select-option[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+body .calendar-header .icon-button {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  border-radius: 9px;
+}
+body .calendar-header .icon-button:hover {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+body .calendar-year {
+  margin: 0;
+}
+body .calendar-year input {
+  width: 90px;
+  min-height: 44px;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+body .calendar-year input:hover {
+  border-color: var(--border);
+}
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+body .month-grid button {
+  min-height: 48px;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+}
+body .month-grid button:hover:not(:disabled) {
+  background: var(--surface-raised);
+}
+body .month-grid button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.calendar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 6px;
+}
+body .calendar-footer .text-button {
+  min-height: 44px;
+  padding: 6px 10px;
+  color: var(--accent);
+  font-size: 12px;
+}
+body .date-field input.date-trigger {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 10px 45px 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  background: var(--surface-soft);
+  font-variant-numeric: tabular-nums;
+}
+body .date-calendar-button {
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+}
+body .date-calendar-button:hover {
+  color: var(--text);
+  background: var(--surface-raised);
+}
+.control-field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--negative);
+}
+body .date-popover .month-trigger {
+  padding-inline: 4px;
+  background: transparent;
+  border: 0;
+  justify-content: center;
+  font-size: 12px;
+}
+body .date-popover .month-trigger svg {
+  display: none;
+}
+.date-grid > [role='row'] {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+.calendar-weekdays {
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+  padding-block: 4px 8px;
+}
+body .date-grid button {
+  height: 38px;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--text);
+  background: transparent;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+body .date-grid button:hover:not(:disabled) {
+  background: var(--surface-raised);
+}
+body .date-grid button[data-outside='true'] {
+  color: var(--faint);
+}
+body .date-grid button[data-today='true'] {
+  border-color: var(--border);
+}
+body .date-grid button[aria-selected='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+body .movement-preset .select-field {
+  width: 155px;
+}
+body .movement-date .date-field {
+  flex: 1;
+  width: 148px;
+}
+body .movement-date input.date-trigger {
+  border: 0;
+  background: transparent;
+  padding-left: 6px;
+}
+body .movement-date .date-calendar-button {
+  right: 0;
+}
+@media (max-width: 600px) {
+  body .movement-preset .select-field {
+    width: 100%;
+  }
+  body .movement-date .date-field {
+    width: 100%;
+  }
+  body .date-grid button {
+    height: 40px;
+  }
+}
+
+body .review-table .select-field + .select-field {
+  margin-top: 8px;
+}
+body .review-table .select-trigger {
+  min-height: 44px;
+  font-size: 13px;
+}

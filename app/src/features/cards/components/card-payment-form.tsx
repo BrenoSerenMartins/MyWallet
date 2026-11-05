@@ -1,3 +1,5 @@
+import { DatePicker } from '../../../shared/ui/controls/date-picker';
+import { Select } from '../../../shared/ui/controls/select';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { request } from '../../../shared/api/client';
@@ -90,7 +92,7 @@ export function CardPaymentForm({
         />
         <label>
           Conta do pagamento
-          <select
+          <Select
             required
             aria-label="Conta do pagamento"
             value={account}
@@ -106,7 +108,7 @@ export function CardPaymentForm({
                   {a.name}
                 </option>
               ))}
-          </select>
+          </Select>
         </label>
         {mode === 'link' ? (
           <>
@@ -119,9 +121,8 @@ export function CardPaymentForm({
               <div className="form-grid">
                 <label>
                   De
-                  <input
+                  <DatePicker
                     required
-                    type="date"
                     value={from}
                     max={to}
                     onChange={(e) => {
@@ -132,9 +133,8 @@ export function CardPaymentForm({
                 </label>
                 <label>
                   Até
-                  <input
+                  <DatePicker
                     required
-                    type="date"
                     value={to}
                     min={from}
                     max={dateToday()}
@@ -154,7 +154,7 @@ export function CardPaymentForm({
             ) : candidates.data?.length ? (
               <label>
                 Saída do extrato
-                <select
+                <Select
                   required
                   aria-label="Saída do extrato"
                   value={transaction}
@@ -166,7 +166,7 @@ export function CardPaymentForm({
                       {shortDate(t.transactionDate)} · {t.description} · {money(Math.abs(t.amount))}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             ) : (
               <p>
@@ -195,9 +195,8 @@ export function CardPaymentForm({
             </label>
             <label>
               Data do pagamento
-              <input
+              <DatePicker
                 required
-                type="date"
                 min="1900-01-01"
                 max={dateToday()}
                 value={date}

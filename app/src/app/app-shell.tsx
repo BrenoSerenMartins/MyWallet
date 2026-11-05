@@ -52,6 +52,20 @@ export function AppShell() {
   const wasOnline = useRef(navigator.onLine);
   const { active } = useWorkspace();
   const location = useLocation();
+  const [arriving, setArriving] = useState(() => {
+    try {
+      return sessionStorage.getItem('mywallet:entered') !== 'yes';
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('mywallet:entered', 'yes');
+    } catch {
+      /* Storage is optional. */
+    }
+  }, []);
   const [more, setMore] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
@@ -112,7 +126,13 @@ export function AppShell() {
     session?.user.email?.split('@')[0] ??
     'Você';
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell${arriving ? ' app-entry' : ''}`}
+      onAnimationEnd={(event) => {
+        if (event.target === event.currentTarget && event.animationName === 'app-arrive')
+          setArriving(false);
+      }}
+    >
       <div className="app-main">
         <header className="app-header">
           <NavLink to="/" className="header-brand" aria-label="MyWallet — início">

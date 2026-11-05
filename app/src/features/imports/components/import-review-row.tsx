@@ -1,3 +1,4 @@
+import { Select } from '../../../shared/ui/controls/select';
 import { ImportCounterpartyEditor } from './import-counterparty-editor';
 import type { ImportItem, Category } from '../../../shared/api/resources';
 import { CategorySelect } from '../../../shared/ui/category-select';
@@ -70,7 +71,7 @@ export function ImportReviewRow({
         {!!item.refundCandidates?.length && !item.duplicateLocked && (
           <label>
             Operação original da devolução
-            <select
+            <Select
               aria-label={`Origem da devolução ${item.sourceRow}`}
               value={item.refundOfId ?? ''}
               disabled={locked}
@@ -84,7 +85,7 @@ export function ImportReviewRow({
                   {candidate.description}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         )}
         {item.refundOfId && (
@@ -109,7 +110,7 @@ export function ImportReviewRow({
         {item.action === 'review' && !!item.candidateDescriptions?.length && (
           <label>
             Vincular ao movimento existente
-            <select
+            <Select
               aria-label={`Vínculo do movimento ${item.sourceRow}`}
               value={item.linkedTransactionId ?? ''}
               disabled={locked}
@@ -129,7 +130,7 @@ export function ImportReviewRow({
                   {candidate.description}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         )}
         {item.duplicateLocked && !item.action ? (
@@ -152,7 +153,7 @@ export function ImportReviewRow({
         <SettlementDetails metadata={item.metadata} />
       </td>
       <td data-label="Classificação">
-        <select
+        <Select
           aria-label={`Tipo do movimento ${item.sourceRow}`}
           value={item.transactionType}
           disabled={locked || !!item.refundOfId}
@@ -178,7 +179,7 @@ export function ImportReviewRow({
             <option value="expense">Despesa</option>
           )}
           <option value="transfer">Transferência</option>
-        </select>
+        </Select>
         {['income', 'expense'].includes(item.transactionType) && (
           <CategorySelect
             aria-label={`Categoria do movimento ${item.sourceRow}`}

@@ -9,10 +9,19 @@ export function ActionMenu({ label, children }: { label: string; children: React
   useEffect(() => {
     if (!open) return;
     const outside = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) root.current?.removeAttribute('open');
+      if (
+        !(event.target as Element).closest('[data-control-popup]') &&
+        !root.current?.contains(event.target as Node)
+      )
+        root.current?.removeAttribute('open');
     };
     const escape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
+      if (
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        document.querySelector('[data-control-popup]')
+      )
+        return;
       event.preventDefault();
       root.current?.removeAttribute('open');
       root.current?.querySelector('summary')?.focus();
@@ -40,7 +49,10 @@ export function ActionMenu({ label, children }: { label: string; children: React
         role="group"
         aria-label={label}
         onClickCapture={(event) => {
-          if ((event.target as Element).closest('button, a')) {
+          if (
+            !(event.target as Element).closest('[data-control-trigger], [data-control-popup]') &&
+            (event.target as Element).closest('button, a')
+          ) {
             root.current?.removeAttribute('open');
             root.current?.querySelector('summary')?.focus();
           }

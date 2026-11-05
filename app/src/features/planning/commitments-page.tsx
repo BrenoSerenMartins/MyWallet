@@ -1,3 +1,5 @@
+import { Select } from '../../shared/ui/controls/select';
+import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import type { ReactNode } from 'react';
 import { Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
@@ -89,9 +91,9 @@ export function CommitmentsPage({ navigation }: { navigation?: ReactNode }) {
           </Tooltip>
           <label className="period-picker">
             <span className="sr-only">Mês dos vencimentos</span>
-            <input
+            <MonthPicker
+              clearable={false}
               aria-label="Mês dos compromissos"
-              type="month"
               min="1900-01"
               max={maxMonth}
               value={month}
@@ -171,14 +173,14 @@ export function CommitmentsPage({ navigation }: { navigation?: ReactNode }) {
             </label>
             <label>
               <span className="sr-only">Filtrar conta dos compromissos</span>
-              <select value={accountFilter} onChange={(e) => setAccount(e.target.value)}>
+              <Select value={accountFilter} onChange={(e) => setAccount(e.target.value)}>
                 <option value="">Todas as contas</option>
                 {accounts.data?.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           </div>
           {query.data.totalItems > 1000 && (

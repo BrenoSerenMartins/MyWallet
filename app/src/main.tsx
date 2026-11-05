@@ -17,6 +17,7 @@ import './app/styles/experience.css';
 import './app/styles/task-layouts.css';
 import './shared/feedback/feedback.css';
 import './app/styles/motion.css';
+import './shared/ui/controls/controls.css';
 const client = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: true },

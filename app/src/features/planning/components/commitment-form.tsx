@@ -1,3 +1,5 @@
+import { DatePicker } from '../../../shared/ui/controls/date-picker';
+import { Select } from '../../../shared/ui/controls/select';
 import { useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { request } from '../../../shared/api/client';
@@ -87,7 +89,7 @@ export function CommitmentForm({
       <div className="form-grid">
         <label>
           Tipo
-          <select
+          <Select
             value={type}
             disabled={!!schedule}
             onChange={(e) => {
@@ -97,11 +99,11 @@ export function CommitmentForm({
           >
             <option value="expense">Conta a pagar</option>
             <option value="income">Receita a receber</option>
-          </select>
+          </Select>
         </label>
         <label>
           Conta
-          <select
+          <Select
             required
             value={accountId}
             disabled={!!schedule}
@@ -115,7 +117,7 @@ export function CommitmentForm({
                   {a.name}
                 </option>
               ))}
-          </select>
+          </Select>
         </label>
         <label>
           Valor previsto (R$)
@@ -139,20 +141,19 @@ export function CommitmentForm({
         </label>
         <label>
           Repetição
-          <select
+          <Select
             value={frequency}
             disabled={!!schedule}
             onChange={(e) => setFrequency(e.target.value as 'once' | 'monthly')}
           >
             <option value="monthly">Todo mês</option>
             <option value="once">Uma vez</option>
-          </select>
+          </Select>
         </label>
         <label>
           {frequency === 'monthly' ? 'Primeiro vencimento' : 'Vencimento'}
-          <input
+          <DatePicker
             required
-            type="date"
             min="1900-01-01"
             max="9998-12-31"
             disabled={!!schedule}
@@ -163,8 +164,7 @@ export function CommitmentForm({
         {frequency === 'monthly' && (
           <label>
             Último vencimento (opcional)
-            <input
-              type="date"
+            <DatePicker
               min={startDate}
               max="9998-12-31"
               value={endDate}

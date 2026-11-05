@@ -700,3 +700,44 @@
     align-items: flex-end;
   }
 }
+
+/* Space belongs to the layout, independently of optional notices. */
+body .planning-page {
+  display: grid;
+  gap: clamp(28px, 4vw, 44px);
+}
+body .planning-page > .page-header,
+body .planning-page > .review-banner,
+body .planning-page > .planning-preferences,
+body .planning-page > .planning-note {
+  margin: 0;
+}
+body .planning-page .budget-section {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+body .planning-page .budget-section .section-heading {
+  padding: 0 0 20px;
+}
+body .planning-page .budget-group > summary {
+  padding-inline: 4px;
+}
+body .planning-page .budget-line {
+  background: transparent;
+}
+body .planning-page .planning-metrics {
+  background: var(--surface);
+}
+@supports (backdrop-filter: blur(16px)) {
+  body .planning-page .planning-metrics {
+    background: color-mix(in srgb, var(--surface) 78%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  body .planning-metrics .metric-contribution {
+    background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+  }
+}

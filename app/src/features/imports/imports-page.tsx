@@ -1,3 +1,4 @@
+import { Select } from '../../shared/ui/controls/select';
 import { PageHeader } from '../../shared/ui/page-header';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { CheckCircle2 } from 'lucide-react';
@@ -135,7 +136,7 @@ export function ImportsPage() {
                   <>
                     <label>
                       Conta de destino
-                      <select
+                      <Select
                         value={account}
                         disabled={busy}
                         onChange={(e) => setAccount(e.target.value)}
@@ -152,7 +153,7 @@ export function ImportsPage() {
                               {a.name}
                             </option>
                           ))}
-                      </select>
+                      </Select>
                     </label>
                     <input
                       ref={input}

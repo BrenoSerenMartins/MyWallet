@@ -1,3 +1,5 @@
+import { Select } from '../../shared/ui/controls/select';
+import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { ActionMenu } from '../../shared/ui/action-menu';
 import type { ReactNode } from 'react';
 import { useNotifications } from '../../shared/feedback/notification-provider';
@@ -68,9 +70,9 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
       <PageHeader title={<>Planejamento mensal</>} navigation={navigation}>
         <label className="period-picker">
           <span className="sr-only">Mês do plano</span>
-          <input
+          <MonthPicker
+            clearable={false}
             aria-label="Mês do planejamento"
-            type="month"
             min="1900-01"
             max="9998-12"
             value={month}
@@ -99,7 +101,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
         <ActionMenu label="Mais ações do planejamento">
           <label>
             Realizado de
-            <select
+            <Select
               aria-label="Contas no realizado"
               value={scope}
               onChange={(e) => setScope(e.target.value)}
@@ -107,7 +109,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
               <option value="all">Todas as contas</option>
               <option value="cash">Sem benefícios</option>
               <option value="benefits">Só benefícios</option>
-            </select>
+            </Select>
           </label>
           <button
             type="button"

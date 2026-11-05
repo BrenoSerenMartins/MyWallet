@@ -1,3 +1,4 @@
+import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { FinanceAreaNav } from '../../shared/navigation/finance-area-nav';
@@ -189,9 +190,9 @@ export function CardsPage() {
                       </Tooltip>
                       <label className="period-picker">
                         <span>Mês de vencimento</span>
-                        <input
+                        <MonthPicker
+                          clearable={false}
                           aria-label="Mês da fatura"
-                          type="month"
                           min="1900-01"
                           max="9998-12"
                           value={month}
@@ -605,9 +606,8 @@ function RefundForm({
       </label>
       <label>
         Fatura que recebeu o crédito
-        <input
+        <MonthPicker
           required
-          type="month"
           min={entry.billMonth}
           max="9998-12"
           value={billMonth}

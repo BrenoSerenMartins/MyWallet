@@ -1,3 +1,4 @@
+import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { ActionMenu } from '../../shared/ui/action-menu';
 import { HelpTip } from '../../shared/ui/tooltip';
 import { Tooltip } from '../../shared/ui/tooltip';
@@ -121,9 +122,9 @@ export function DashboardPage() {
             </Tooltip>
             <label className="period-picker">
               <span>Mês da análise</span>
-              <input
+              <MonthPicker
+                clearable={false}
                 aria-label="Mês do resumo"
-                type="month"
                 min="1900-01"
                 max="9998-12"
                 value={month}

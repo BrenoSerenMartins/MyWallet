@@ -1,3 +1,5 @@
+import { DatePicker } from '../../../shared/ui/controls/date-picker';
+import { Select } from '../../../shared/ui/controls/select';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { InvestmentHolding, ManagedEntry, WealthItem } from '../../../shared/api/resources';
@@ -75,13 +77,13 @@ export function HoldingForm({
       <div className="form-grid">
         <label>
           Tipo de investimento
-          <select value={product} onChange={(e) => setProduct(e.target.value as typeof product)}>
+          <Select value={product} onChange={(e) => setProduct(e.target.value as typeof product)}>
             {Object.entries(productNames).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <label>
           Instituição ou custódia
@@ -128,9 +130,8 @@ export function HoldingForm({
           </div>
           <label>
             Data desse valor
-            <input
+            <DatePicker
               required
-              type="date"
               min="1900-01-01"
               max={dateToday()}
               value={date}
@@ -187,14 +188,14 @@ export function WealthItemForm({
       </label>
       <label>
         Tipo da posição
-        <select
+        <Select
           value={kind}
           disabled={!!item}
           onChange={(e) => setKind(e.target.value as 'asset' | 'debt')}
         >
           <option value="asset">Bem ou outro ativo</option>
           <option value="debt">Dívida ou obrigação</option>
-        </select>
+        </Select>
       </label>
       <div className="form-grid">
         <label>
@@ -209,9 +210,8 @@ export function WealthItemForm({
         </label>
         <label>
           Data da avaliação
-          <input
+          <DatePicker
             required
-            type="date"
             min="1900-01-01"
             max={dateToday()}
             value={date}
@@ -361,13 +361,13 @@ export function InvestmentOperationForm({
         </p>
         <label>
           Operação
-          <select value={kind} onChange={(e) => changeKind(e.target.value)}>
+          <Select value={kind} onChange={(e) => changeKind(e.target.value)}>
             {Object.entries(operationNames).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         {financial && (
           <>
@@ -386,7 +386,7 @@ export function InvestmentOperationForm({
             />
             <label>
               Conta da movimentação
-              <select
+              <Select
                 required
                 aria-label="Conta da movimentação"
                 value={account}
@@ -404,7 +404,7 @@ export function InvestmentOperationForm({
                       {a.name}
                     </option>
                   ))}
-              </select>
+              </Select>
             </label>
             {mode === 'link' && (
               <>
@@ -413,8 +413,7 @@ export function InvestmentOperationForm({
                   <div className="form-grid">
                     <label>
                       De
-                      <input
-                        type="date"
+                      <DatePicker
                         required
                         value={from}
                         max={to}
@@ -426,8 +425,7 @@ export function InvestmentOperationForm({
                     </label>
                     <label>
                       Até
-                      <input
-                        type="date"
+                      <DatePicker
                         required
                         value={to}
                         min={from}
@@ -449,7 +447,7 @@ export function InvestmentOperationForm({
                 ) : (
                   <label>
                     Movimento do extrato
-                    <select
+                    <Select
                       aria-label="Movimento do extrato"
                       required
                       value={transaction}
@@ -473,7 +471,7 @@ export function InvestmentOperationForm({
                           {money(Math.abs(t.amount))}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </label>
                 )}
                 <p className="field-help">
@@ -521,9 +519,8 @@ export function InvestmentOperationForm({
         )}
         <label>
           {kind === 'valuation' ? 'Data da avaliação' : 'Data da operação'}
-          <input
+          <DatePicker
             required
-            type="date"
             min={
               kind === 'income' || included
                 ? '1900-01-01'

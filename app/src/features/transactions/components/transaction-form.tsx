@@ -1,3 +1,5 @@
+import { DatePicker } from '../../../shared/ui/controls/date-picker';
+import { Select } from '../../../shared/ui/controls/select';
 import { CounterpartyFields } from '../../counterparties/components/counterparty-fields';
 import { CategorySelect } from '../../../shared/ui/category-select';
 import { useState, type FormEvent } from 'react';
@@ -139,7 +141,7 @@ export function TransactionForm({
       <div className="form-grid">
         <label>
           {kind === 'transfer' ? 'Conta de origem' : 'Conta'}
-          <select
+          <Select
             required
             value={account}
             disabled={!!entry}
@@ -150,17 +152,17 @@ export function TransactionForm({
                 {a.name}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <label>
           Data
-          <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <DatePicker required value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
       </div>
       {kind === 'transfer' ? (
         <label>
           Conta de destino
-          <select required value={destination} onChange={(e) => setDestination(e.target.value)}>
+          <Select required value={destination} onChange={(e) => setDestination(e.target.value)}>
             <option value="">Selecione uma conta</option>
             {accounts
               .filter((a) => a.id !== account)
@@ -169,7 +171,7 @@ export function TransactionForm({
                   {a.name}
                 </option>
               ))}
-          </select>
+          </Select>
         </label>
       ) : (
         <label>

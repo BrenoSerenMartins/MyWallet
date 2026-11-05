@@ -1,3 +1,5 @@
+import { Select } from '../../../shared/ui/controls/select';
+import { DatePicker } from '../../../shared/ui/controls/date-picker';
 import { useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -105,8 +107,7 @@ export function SettleCommitment({
               <div className="form-grid">
                 <label>
                   De
-                  <input
-                    type="date"
+                  <DatePicker
                     required
                     value={from}
                     max={to}
@@ -118,8 +119,7 @@ export function SettleCommitment({
                 </label>
                 <label>
                   Até
-                  <input
-                    type="date"
+                  <DatePicker
                     required
                     value={to}
                     min={from}
@@ -149,7 +149,7 @@ export function SettleCommitment({
                 {candidates.data.length ? (
                   <label>
                     Lançamento realizado
-                    <select
+                    <Select
                       required
                       value={transactionId}
                       onChange={(e) => setTransaction(e.target.value)}
@@ -161,7 +161,7 @@ export function SettleCommitment({
                           {money(Math.abs(t.amount))}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </label>
                 ) : (
                   <p>
@@ -179,9 +179,8 @@ export function SettleCommitment({
               </p>
               <label>
                 Data realizada
-                <input
+                <DatePicker
                   required
-                  type="date"
                   min="1900-01-01"
                   max={dateToday()}
                   value={date}

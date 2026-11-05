@@ -1,3 +1,5 @@
+import { DatePicker } from '../../shared/ui/controls/date-picker';
+import { Select } from '../../shared/ui/controls/select';
 import './transactions.css';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -223,7 +225,7 @@ export function TransactionsPage() {
           <div className="movement-period">
             <label className="movement-preset">
               <span className="sr-only">Período</span>
-              <select
+              <Select
                 aria-label="Período dos movimentos"
                 value={period}
                 onChange={(e) => changePeriod(e.target.value)}
@@ -232,13 +234,12 @@ export function TransactionsPage() {
                 <option value="current">Mês atual</option>
                 <option value="previous">Mês anterior</option>
                 <option value="custom">Personalizado</option>
-              </select>
+              </Select>
             </label>
             <label className="movement-date">
               <span>De</span>
-              <input
+              <DatePicker
                 ref={fromInput}
-                type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
                 aria-invalid={rangeInvalid}
@@ -247,8 +248,7 @@ export function TransactionsPage() {
             </label>
             <label className="movement-date">
               <span>Até</span>
-              <input
-                type="date"
+              <DatePicker
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
                 aria-invalid={rangeInvalid}
@@ -305,7 +305,7 @@ export function TransactionsPage() {
           <div className="expanded-filters">
             <label>
               Conciliação
-              <select
+              <Select
                 aria-label="Filtrar conciliação"
                 value={reconciliation}
                 onChange={(event) => setReconciliation(event.target.value)}
@@ -313,11 +313,11 @@ export function TransactionsPage() {
                 <option value="">Todas</option>
                 <option value="pending">Pendentes</option>
                 <option value="reconciled">Conferidas por arquivo</option>
-              </select>
+              </Select>
             </label>
             <label>
               Conta
-              <select
+              <Select
                 aria-label="Filtrar conta"
                 value={account}
                 onChange={(e) => setAccount(e.target.value)}
@@ -328,7 +328,7 @@ export function TransactionsPage() {
                     {a.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label>
               Categoria

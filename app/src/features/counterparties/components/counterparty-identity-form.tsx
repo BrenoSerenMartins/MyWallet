@@ -1,3 +1,4 @@
+import { Select } from '../../../shared/ui/controls/select';
 import { useState } from 'react';
 import type { Account } from '../../../shared/api/resources';
 import { Button } from '../../../shared/ui/primitives';
@@ -25,7 +26,7 @@ export function CounterpartyIdentityForm({
       >
         <label>
           Conta da descrição
-          <select required value={accountId} onChange={(event) => setAccount(event.target.value)}>
+          <Select required value={accountId} onChange={(event) => setAccount(event.target.value)}>
             <option value="">Selecione a conta</option>
             {accounts
               .filter((account) => !account.archived)
@@ -34,15 +35,15 @@ export function CounterpartyIdentityForm({
                   {account.name}
                 </option>
               ))}
-          </select>
+          </Select>
         </label>
         <label>
           Origem da descrição
-          <select value={sourceKind} onChange={(event) => setSource(event.target.value)}>
+          <Select value={sourceKind} onChange={(event) => setSource(event.target.value)}>
             <option value="account_statement">Extrato bancário</option>
             <option value="benefit_statement">Extrato de benefício</option>
             <option value="manual">Lançamento manual</option>
-          </select>
+          </Select>
         </label>
         <label>
           Nova descrição do extrato

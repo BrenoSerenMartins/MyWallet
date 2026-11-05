@@ -1,3 +1,4 @@
+import { Select } from '../../../shared/ui/controls/select';
 import '../counterparties.css';
 import { useEffect, useState, type ReactNode } from 'react';
 import { CounterpartySuggestions } from './counterparty-suggestions';
@@ -81,7 +82,7 @@ export function CounterpartyFields({
         <div className="form-stack">
           <label>
             Pessoa ou estabelecimento
-            <select
+            <Select
               value={agent}
               onChange={(e) => {
                 onAgent(e.target.value);
@@ -99,7 +100,7 @@ export function CounterpartyFields({
                   </option>
                 ))}
               <option value="new">Criar pessoa ou estabelecimento</option>
-            </select>
+            </Select>
           </label>
           {agent === 'new' && (
             <label>

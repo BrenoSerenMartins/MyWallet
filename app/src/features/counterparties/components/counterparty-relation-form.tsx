@@ -1,3 +1,4 @@
+import { Select } from '../../../shared/ui/controls/select';
 import { useState } from 'react';
 import type { Account, Category } from '../../../shared/api/resources';
 import { CategorySelect } from '../../../shared/ui/category-select';
@@ -38,7 +39,7 @@ export function CounterpartyRelationForm({
         <div className="form-grid">
           <label>
             Conta da relação
-            <select required value={accountId} onChange={(e) => setAccount(e.target.value)}>
+            <Select required value={accountId} onChange={(e) => setAccount(e.target.value)}>
               <option value="">Selecione</option>
               {accounts
                 .filter((a) => !a.archived)
@@ -47,15 +48,15 @@ export function CounterpartyRelationForm({
                     {a.name}
                   </option>
                 ))}
-            </select>
+            </Select>
           </label>
           <label>
             Origem da identificação
-            <select value={sourceKind} onChange={(e) => setSource(e.target.value)}>
+            <Select value={sourceKind} onChange={(e) => setSource(e.target.value)}>
               <option value="account_statement">Extrato bancário</option>
               <option value="benefit_statement">Extrato de benefício</option>
               <option value="manual">Lançamento manual</option>
-            </select>
+            </Select>
           </label>
         </div>
         <label>
@@ -72,7 +73,7 @@ export function CounterpartyRelationForm({
         <div className="form-grid">
           <label>
             Tipo da regra
-            <select
+            <Select
               value={transactionType}
               onChange={(e) => {
                 setType(e.target.value as 'income' | 'expense');
@@ -81,7 +82,7 @@ export function CounterpartyRelationForm({
             >
               <option value="expense">Despesa</option>
               <option value="income">Receita</option>
-            </select>
+            </Select>
           </label>
           <label>
             Categoria da relação

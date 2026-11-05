@@ -1,3 +1,4 @@
+import { Select } from '../../../shared/ui/controls/select';
 import { useState, type FormEvent } from 'react';
 import type { Category, CategoryGroup } from '../../../shared/api/resources';
 import { Button } from '../../../shared/ui/primitives';
@@ -69,7 +70,7 @@ export function CategoryForm({
       {kind === 'category' && (
         <label>
           Grupo
-          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+          <Select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             {!groups.some((group) => group.isDefault && group.type === type) && (
               <option value="">Grupo padrão</option>
             )}
@@ -80,7 +81,7 @@ export function CategoryForm({
                   {g.name}
                 </option>
               ))}
-          </select>
+          </Select>
         </label>
       )}
       {kind === 'group' && (

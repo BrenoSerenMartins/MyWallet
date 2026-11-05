@@ -1,4 +1,29 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
+async function chooseSelect(control: Locator, value: string) {
+  if ((await control.getAttribute('aria-expanded')) !== 'true') await control.click();
+  const options = control.page().getByRole('listbox');
+  await options.locator('[data-value=' + JSON.stringify(value) + ']').click();
+  await expect(options).toBeHidden();
+}
+async function fillControl(control: Locator, value: string) {
+  if ((await control.getAttribute('data-control')) === 'month') {
+    await control.click();
+    const popup = control
+      .page()
+      .getByRole('dialog', { name: /^Selecionar mês:/ })
+      .last();
+    if (value) {
+      await popup.getByRole('textbox', { name: 'Ano', exact: true }).fill(value.slice(0, 4));
+      await popup.locator('[data-month=' + JSON.stringify(value) + ']').click();
+    } else await popup.getByRole('button', { name: 'Limpar', exact: true }).click();
+    await expect(popup).toBeHidden();
+  } else await control.fill(value);
+}
+async function expectControlValue(control: Locator, value: string) {
+  if ((await control.getAttribute('data-value')) !== null)
+    await expect(control).toHaveAttribute('data-value', value);
+  else await expect(control).toHaveValue(value);
+}
 const user = {
   id: '11111111-1111-4111-8111-111111111111',
   email: 'pilot@example.test',
@@ -170,7 +195,7 @@ for (const width of [360, 390, 768, 1440])
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('dialog').getByLabel('Saldo inicial (R$)')).toHaveCount(0);
     await expect(page.getByRole('dialog').getByLabel('Data inicial')).toHaveCount(0);
-    await page.getByRole('dialog').getByLabel('Nome da conta').fill('Nova conta');
+    await fillControl(page.getByRole('dialog').getByLabel('Nome da conta'), 'Nova conta');
     await page.getByRole('button', { name: 'Tema claro', exact: true }).isVisible();
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.goto('/transactions');
@@ -180,7 +205,7 @@ for (const width of [360, 390, 768, 1440])
     );
     await page.goto('/imports');
     await expect(page.getByRole('heading', { name: /Seus movimentos/ })).toBeVisible();
-    await page.getByLabel('Conta de destino').selectOption(account.id);
+    await chooseSelect(page.getByLabel('Conta de destino'), account.id);
     await expect(page.getByRole('button', { name: 'Selecionar extratos' })).toBeEnabled();
     await page.goto('/settings');
     await expect(page.getByRole('heading', { name: 'Preferências', exact: true })).toBeVisible();
@@ -217,7 +242,7 @@ test('workspace cards open a space and creation uses its scope', async ({ page }
   await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
   await openWorkspaceSwitcher(page);
   await page.getByRole('button', { name: 'Criar espaço', exact: true }).click();
-  await page.getByLabel('Nome do espaço').fill('Meu negócio');
+  await fillControl(page.getByLabel('Nome do espaço'), 'Meu negócio');
   await page.getByRole('button', { name: 'Azul', exact: true }).click();
   const selectedRequest = page.waitForRequest(
     (request) =>
@@ -325,7 +350,7 @@ for (const width of [360, 1440])
       return route.fulfill({ json: path.endsWith('/2026-01') ? monthlyPlan('2026-01') : plan });
     });
     await page.goto('/planning');
-    await page.getByLabel('Mês do planejamento').fill(month);
+    await fillControl(page.getByLabel('Mês do planejamento'), month);
     await expect(
       page.getByRole('heading', { name: 'Planejamento mensal', exact: true }),
     ).toBeVisible();
@@ -334,8 +359,8 @@ for (const width of [360, 1440])
       true,
     );
     await page.getByRole('button', { name: 'Editar planejamento', exact: true }).click();
-    await page.getByLabel('Previsto · Alimentação').fill('600,00');
-    await page.getByLabel('Notas do mês').fill('Notas preservadas');
+    await fillControl(page.getByLabel('Previsto · Alimentação'), '600,00');
+    await fillControl(page.getByLabel('Notas do mês'), 'Notas preservadas');
     await page.getByRole('button', { name: 'Salvar planejamento', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(saved).toBe(true);
@@ -407,9 +432,9 @@ test('old statement can be retained for consultation and searched without confir
   await page.getByRole('button', { name: 'Salvar apenas como histórico' }).click();
   await expect(page.getByText('Histórico para consulta · não afeta seus saldos')).toBeVisible();
   expect(history).toBe(true);
-  await page.getByRole('searchbox', { name: 'Buscar no extrato' }).fill('does-not-exist');
+  await fillControl(page.getByRole('searchbox', { name: 'Buscar no extrato' }), 'does-not-exist');
   await expect(page.getByText(transaction.description, { exact: true })).toHaveCount(0);
-  await page.getByRole('searchbox', { name: 'Buscar no extrato' }).fill('2026-01-01');
+  await fillControl(page.getByRole('searchbox', { name: 'Buscar no extrato' }), '2026-01-01');
   await expect(page.getByText(transaction.description, { exact: true })).toBeVisible();
 });
 
@@ -452,7 +477,7 @@ test('CSV statement upload uses the same review and history workflow', async ({ 
   });
   await page.route(`**/v1/imports/${batch.id}`, (route) => route.fulfill({ json: batch }));
   await page.goto('/imports');
-  await page.getByLabel('Conta de destino').selectOption(account.id);
+  await chooseSelect(page.getByLabel('Conta de destino'), account.id);
   await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.csv.*\.xlsx/);
   await page.locator('input[type=file]').setInputFiles({
     name: 'synthetic.csv',
@@ -494,7 +519,7 @@ test('batch uploads run sequentially, keep successful files after errors and lin
     return route.fulfill({ status: 201, json: { id, status: 'draft' } });
   });
   await page.goto('/imports');
-  await page.getByLabel('Conta de destino').selectOption(account.id);
+  await chooseSelect(page.getByLabel('Conta de destino'), account.id);
   await page.locator('input[type=file]').setInputFiles([
     { name: 'month.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-synthetic') },
     {
@@ -540,7 +565,7 @@ test('stopping the queue finishes only the active file and skips the remaining f
     });
   });
   await page.goto('/imports');
-  await page.getByLabel('Conta de destino').selectOption(account.id);
+  await chooseSelect(page.getByLabel('Conta de destino'), account.id);
   await page.locator('input[type=file]').setInputFiles(
     ['first.csv', 'second.csv'].map((name) => ({
       name,
@@ -570,7 +595,7 @@ test('leaving the upload screen stops subsequent submissions', async ({ page }) 
     return route.fulfill({ json: { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', status: 'draft' } });
   });
   await page.goto('/imports');
-  await page.getByLabel('Conta de destino').selectOption(account.id);
+  await chooseSelect(page.getByLabel('Conta de destino'), account.id);
   await page.locator('input[type=file]').setInputFiles(
     ['first.csv', 'second.csv'].map((name) => ({
       name,
@@ -810,16 +835,17 @@ for (const width of [390, 1440])
     });
     await page.goto('/categories');
     await page.getByRole('button', { name: 'Novo grupo', exact: true }).click();
-    await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Casa');
+    await fillControl(page.getByRole('dialog').getByLabel('Nome', { exact: true }), 'Casa');
     await page.getByRole('button', { name: 'Criar grupo', exact: true }).click();
     await expect(
       page.getByRole('tabpanel').getByRole('heading', { name: 'Casa', exact: true }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Adicionar categoria', exact: true }).click();
-    await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Luz');
-    await expect(
+    await fillControl(page.getByRole('dialog').getByLabel('Nome', { exact: true }), 'Luz');
+    await expectControlValue(
       page.getByRole('dialog').getByRole('combobox', { name: 'Grupo', exact: true }),
-    ).toHaveValue(groups[0].id);
+      groups[0].id,
+    );
     await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
     await expect(
       page.getByRole('button', { name: 'Editar categoria Luz', exact: true }),
@@ -836,19 +862,19 @@ for (const width of [390, 1440])
       });
     }
     await page.goto('/transactions?new=1');
-    await expect(
-      page
-        .getByRole('dialog')
-        .getByRole('combobox', { name: 'Categoria', exact: true })
-        .locator('optgroup[label="Casa"] option'),
-    ).toHaveText('Luz');
     await page
       .getByRole('dialog')
       .getByRole('combobox', { name: 'Categoria', exact: true })
-      .selectOption(categories[0].id);
-    await expect(
+      .click();
+    await expect(page.getByRole('listbox').locator('[data-group="Casa"]')).toHaveText('Luz');
+    await chooseSelect(
       page.getByRole('dialog').getByRole('combobox', { name: 'Categoria', exact: true }),
-    ).toHaveValue(categories[0].id);
+      categories[0].id,
+    );
+    await expectControlValue(
+      page.getByRole('dialog').getByRole('combobox', { name: 'Categoria', exact: true }),
+      categories[0].id,
+    );
   });
 
 test('import review separates locked duplicates and supports grouped categories on mobile', async ({
@@ -930,8 +956,8 @@ test('import review separates locked duplicates and supports grouped categories 
   await expect(page.getByLabel('Selecionar movimento 1')).toBeDisabled();
   await page.getByRole('button', { name: /Prontos/ }).click();
   await expect(page.getByText('Already recorded', { exact: true })).toHaveCount(0);
-  await page.getByLabel('Categoria do movimento 2').selectOption(categoryId);
-  await expect(page.getByLabel('Categoria do movimento 2')).toHaveValue(categoryId);
+  await chooseSelect(page.getByLabel('Categoria do movimento 2'), categoryId);
+  await expectControlValue(page.getByLabel('Categoria do movimento 2'), categoryId);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: '/tmp/mywallet-review-390.png', fullPage: true });
 });
@@ -1100,7 +1126,7 @@ test('a later statement points to unfinished history without proposing a new acc
   await page.screenshot({ path: '/tmp/mywallet-reconciliation-gap-390.png', fullPage: true });
   await page.getByRole('link', { name: /september.pdf/ }).click();
   await expect(page).toHaveURL(`/imports/${priorId}`);
-  await expect(page.getByLabel('Tipo do movimento 1')).toHaveValue('income');
+  await expectControlValue(page.getByLabel('Tipo do movimento 1'), 'income');
   await expect(
     page.getByRole('button', { name: 'Classificar entradas e saídas', exact: true }),
   ).toHaveCount(0);
@@ -1196,7 +1222,7 @@ test('reprocessing preserves the current draft on source errors and supports sav
       }),
   ).toBeVisible();
   expect(saved).toBe(1);
-  await expect(page.getByLabel('Tipo do movimento 1')).toHaveValue('transfer');
+  await expectControlValue(page.getByLabel('Tipo do movimento 1'), 'transfer');
   await page.getByRole('button', { name: 'Reprocessar importação', exact: true }).click();
   const beforeError = reads;
   await page
@@ -1331,33 +1357,33 @@ for (const width of [390, 1440])
     await expect(page.getByRole('dialog').locator('input[type=color]')).toHaveCount(0);
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.getByRole('button', { name: 'Editar grupo Casa', exact: true }).click();
-    await expect(page.getByRole('dialog').locator('input[type=color]')).toHaveValue('#123456');
+    await expectControlValue(page.getByRole('dialog').locator('input[type=color]'), '#123456');
     await page.getByRole('button', { name: 'Restaurar cor padrão', exact: true }).click();
-    await expect(page.getByRole('dialog').locator('input[type=color]')).toHaveValue('#f28a97');
+    await expectControlValue(page.getByRole('dialog').locator('input[type=color]'), '#f28a97');
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.getByRole('tab').first().focus();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('tab', { name: /Casa/ })).toBeFocused();
     await page.keyboard.press('Home');
     await expect(page.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true');
-    await page.getByRole('textbox', { name: 'Buscar grupos e categorias' }).fill('Luz');
+    await fillControl(page.getByRole('textbox', { name: 'Buscar grupos e categorias' }), 'Luz');
     await expect(
       page.getByRole('button', { name: 'Editar categoria Luz', exact: true }),
     ).toBeVisible();
-    await page.getByRole('textbox', { name: 'Buscar grupos e categorias' }).fill('');
+    await fillControl(page.getByRole('textbox', { name: 'Buscar grupos e categorias' }), '');
     await expect(
       page.getByRole('button', { name: 'Editar categoria Luz', exact: true }),
     ).toHaveCount(0);
     await page.getByRole('tab', { name: /Casa/ }).click();
     await page.getByRole('button', { name: 'Adicionar categoria', exact: true }).click();
-    await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Água');
+    await fillControl(page.getByRole('dialog').getByLabel('Nome', { exact: true }), 'Água');
     await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(saved).toMatchObject({ type: 'expense', color: '#f28a97', groupId: groups[0].id });
     await page.getByRole('button', { name: 'Receitas', exact: true }).click();
     await expect(page.getByRole('tab').first()).toContainText('Geral');
     await page.getByRole('button', { name: 'Adicionar categoria', exact: true }).click();
-    await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Salário');
+    await fillControl(page.getByRole('dialog').getByLabel('Nome', { exact: true }), 'Salário');
     await page.getByRole('button', { name: 'Criar categoria', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(saved).toMatchObject({ type: 'income', color: '#5ee9b5', groupId: groups[2].id });
@@ -1521,8 +1547,8 @@ for (const width of [390, 1440])
     await expect(page.getByRole('link', { name: 'Alelo Alimentação', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: account.name, exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Corrigir saldo', exact: true }).click();
-    await page.getByLabel('Saldo atual correto (R$)').fill('192,20');
-    await page.getByLabel('Motivo da correção').fill('Saldo conferido no Meu Alelo');
+    await fillControl(page.getByLabel('Saldo atual correto (R$)'), '192,20');
+    await fillControl(page.getByLabel('Motivo da correção'), 'Saldo conferido no Meu Alelo');
     await expect(page.getByText('Diferença a registrar: R$ 72,20')).toBeVisible();
     let posted = 0;
     await page.route(`**/v1/accounts/${benefit.id}/balance-adjustments`, async (route) => {
@@ -1541,7 +1567,7 @@ for (const width of [390, 1440])
     await expect(page.getByRole('dialog', { name: 'Corrigir saldo atual' })).toHaveCount(0);
     expect(posted).toBe(1);
     await page.goto('/imports');
-    await page.getByLabel('Conta de destino').selectOption(benefit.id);
+    await chooseSelect(page.getByLabel('Conta de destino'), benefit.id);
     const batchId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
     const batch = {
       id: batchId,
@@ -1713,11 +1739,11 @@ test('first statement initializes opening automatically and refund review links 
     return route.fulfill({ json: edi });
   });
   await page.reload();
-  await page.getByLabel('Origem da devolução 1').selectOption(transaction.id);
+  await chooseSelect(page.getByLabel('Origem da devolução 1'), transaction.id);
   await expect(
     page.getByText('Devolução vinculada · reduz a categoria original', { exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel('Tipo do movimento 1')).toHaveValue('expense');
+  await expectControlValue(page.getByLabel('Tipo do movimento 1'), 'expense');
   await expect(page.getByLabel('Tipo do movimento 1')).toBeDisabled();
   await expect(
     page.getByRole('button', { name: 'Confirmar 1 movimento', exact: true }),
@@ -1746,15 +1772,13 @@ test('account forms use automatic defaults and preserve existing baseline amount
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByLabel('Saldo inicial (R$)')).toHaveCount(0);
   await expect(dialog.getByLabel('Data inicial')).toHaveCount(0);
-  await expect(dialog.getByLabel('Instituição').locator('option')).toHaveText([
-    'Alelo',
-    'Mercado Pago',
-  ]);
-  await dialog.getByLabel('Instituição').selectOption('alelo');
-  await expect(dialog.getByRole('combobox', { name: /^Tipo/ })).toHaveValue('benefit_food');
-  await dialog.getByLabel('Instituição').selectOption('mercado_pago');
-  await expect(dialog.getByRole('combobox', { name: /^Tipo/ })).toHaveValue('checking');
-  await dialog.getByLabel('Nome da conta').fill('Imported wallet');
+  await dialog.getByLabel('Instituição').click();
+  await expect(page.getByRole('listbox').getByRole('option')).toHaveText(['Alelo', 'Mercado Pago']);
+  await chooseSelect(dialog.getByLabel('Instituição'), 'alelo');
+  await expectControlValue(dialog.getByRole('combobox', { name: /^Tipo/ }), 'benefit_food');
+  await chooseSelect(dialog.getByLabel('Instituição'), 'mercado_pago');
+  await expectControlValue(dialog.getByRole('combobox', { name: /^Tipo/ }), 'checking');
+  await fillControl(dialog.getByLabel('Nome da conta'), 'Imported wallet');
   await dialog.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(writes[0]).toEqual({
@@ -1763,7 +1787,7 @@ test('account forms use automatic defaults and preserve existing baseline amount
     type: 'checking',
   });
   await page.getByRole('button', { name: 'Editar', exact: true }).click();
-  await dialog.getByLabel('Nome da conta').fill('Renamed account');
+  await fillControl(dialog.getByLabel('Nome da conta'), 'Renamed account');
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(writes[1]).toEqual({
@@ -1824,21 +1848,23 @@ test('a transaction can explicitly remember an agent category without imposing a
   });
   await page.goto('/transactions?new=1');
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Valor (R$)').fill('12,50');
-  await dialog.getByLabel('Descrição', { exact: true }).fill('Supermercado Exemplo');
-  await dialog.getByLabel('Data', { exact: true }).fill('2025-01-01');
+  await fillControl(dialog.getByLabel('Valor (R$)'), '12,50');
+  await fillControl(dialog.getByLabel('Descrição', { exact: true }), 'Supermercado Exemplo');
+  await fillControl(dialog.getByLabel('Data', { exact: true }), '2025-01-01');
   await expect(dialog.getByLabel('Data', { exact: true })).not.toHaveAttribute('min', /.+/);
-  await dialog
-    .getByRole('combobox', { name: 'Categoria', exact: true })
-    .selectOption(automationCategory.id);
+  await chooseSelect(
+    dialog.getByRole('combobox', { name: 'Categoria', exact: true }),
+    automationCategory.id,
+  );
   await dialog
     .locator('summary')
     .filter({ hasText: /^Pessoa ou estabelecimento/ })
     .click();
-  await dialog
-    .getByRole('combobox', { name: 'Pessoa ou estabelecimento', exact: true })
-    .selectOption('new');
-  await dialog.getByLabel('Nome da pessoa ou estabelecimento').fill('Supermercado Exemplo');
+  await chooseSelect(
+    dialog.getByRole('combobox', { name: 'Pessoa ou estabelecimento', exact: true }),
+    'new',
+  );
+  await fillControl(dialog.getByLabel('Nome da pessoa ou estabelecimento'), 'Supermercado Exemplo');
   await dialog.getByLabel(/Usar esta categoria para esta pessoa/).check();
   await dialog.getByRole('button', { name: 'Registrar movimento', exact: true }).click();
   await expect(dialog).toHaveCount(0);
@@ -1876,20 +1902,21 @@ for (const width of [390, 1440])
     ).toBeVisible();
     await page.getByText(automationAgent.name, { exact: true }).click();
     await page.getByText('Relacionar uma origem e aplicar ao histórico', { exact: true }).click();
-    await page
-      .getByRole('combobox', { name: 'Conta da relação', exact: true })
-      .selectOption(account.id);
-    await expect(
-      page
-        .getByRole('combobox', { name: 'Origem da identificação', exact: true })
-        .locator('option[value=settlement]'),
-    ).toHaveCount(0);
-    await page
-      .getByLabel('Descrição como aparece no extrato', { exact: true })
-      .fill('Pix enviado Mercado Exemplo');
-    await page
-      .getByRole('combobox', { name: 'Categoria da relação', exact: true })
-      .selectOption(automationCategory.id);
+    await chooseSelect(
+      page.getByRole('combobox', { name: 'Conta da relação', exact: true }),
+      account.id,
+    );
+    await page.getByRole('combobox', { name: 'Origem da identificação', exact: true }).click();
+    await expect(page.getByRole('listbox').locator('[data-value="settlement"]')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await fillControl(
+      page.getByLabel('Descrição como aparece no extrato', { exact: true }),
+      'Pix enviado Mercado Exemplo',
+    );
+    await chooseSelect(
+      page.getByRole('combobox', { name: 'Categoria da relação', exact: true }),
+      automationCategory.id,
+    );
     await page
       .getByRole('button', { name: 'Relacionar e aplicar ao histórico', exact: true })
       .click();
@@ -1962,9 +1989,10 @@ test('import review saves learning intent for confirmation and shows the automat
   });
   await page.goto(`/imports/${id}`);
   await expect(page.getByText('Categoria automática · regra salva', { exact: true })).toBeVisible();
-  await page
-    .getByRole('combobox', { name: 'Pessoa ou estabelecimento', exact: true })
-    .selectOption(automationAgent.id);
+  await chooseSelect(
+    page.getByRole('combobox', { name: 'Pessoa ou estabelecimento', exact: true }),
+    automationAgent.id,
+  );
   await page.getByLabel(/Usar esta categoria para esta pessoa/).check();
   await page
     .getByRole('button', { name: 'Salvar relação para a confirmação', exact: true })
@@ -2039,8 +2067,11 @@ for (const width of [390, 1440])
     });
     await page.goto('/transactions?new=1');
     const dialog = page.getByRole('dialog');
-    await dialog.getByLabel('Valor (R$)').fill('25,00');
-    await dialog.getByLabel('Descrição', { exact: true }).fill('Pagamento cartão Maria Oliv');
+    await fillControl(dialog.getByLabel('Valor (R$)'), '25,00');
+    await fillControl(
+      dialog.getByLabel('Descrição', { exact: true }),
+      'Pagamento cartão Maria Oliv',
+    );
     await expect(
       dialog.getByText('Possível pessoa ou estabelecimento', { exact: true }),
     ).toBeVisible();
@@ -2051,9 +2082,10 @@ for (const width of [390, 1440])
         exact: true,
       })
       .click();
-    await expect(
+    await expectControlValue(
       dialog.getByRole('combobox', { name: 'Pessoa ou estabelecimento', exact: true }),
-    ).toHaveValue(maria.id);
+      maria.id,
+    );
     await expect(
       dialog.getByLabel(
         'Reconhecer esta descrição no histórico e nos próximos movimentos desta conta',
@@ -2093,12 +2125,14 @@ test('links an additional statement description from the person page without req
   await page.goto('/counterparties');
   await page.getByText('Maria Oliveira', { exact: true }).click();
   await page.getByText('Adicionar descrição de reconhecimento', { exact: true }).click();
-  await page
-    .getByRole('combobox', { name: 'Conta da descrição', exact: true })
-    .selectOption(account.id);
-  await page
-    .getByLabel('Nova descrição do extrato', { exact: true })
-    .fill('Pagamento cartão Maria Oliveira');
+  await chooseSelect(
+    page.getByRole('combobox', { name: 'Conta da descrição', exact: true }),
+    account.id,
+  );
+  await fillControl(
+    page.getByLabel('Nova descrição do extrato', { exact: true }),
+    'Pagamento cartão Maria Oliveira',
+  );
   await page
     .getByRole('button', { name: 'Vincular descrição e aplicar ao histórico', exact: true })
     .click();
@@ -2178,8 +2212,8 @@ for (const width of [390, 1440])
     });
     await page.goto('/accounts');
     await page.getByRole('button', { name: 'Corrigir saldo', exact: true }).click();
-    await page.getByLabel('Saldo atual correto (R$)').fill('59,12');
-    await page.getByLabel('Motivo da correção').fill('Saldo conferido no banco');
+    await fillControl(page.getByLabel('Saldo atual correto (R$)'), '59,12');
+    await fillControl(page.getByLabel('Motivo da correção'), 'Saldo conferido no banco');
     await expect(page.getByText(/Nenhum lançamento financeiro será criado/)).toBeVisible();
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Registrar correção de saldo', exact: true }).click();
@@ -2310,10 +2344,10 @@ for (const width of [360, 390, 768, 1440]) {
     await expect(page.locator('.balance-composition')).not.toContainText('R$');
     await page.getByRole('button', { name: 'Mostrar valores', exact: true }).click();
     await page.getByRole('button', { name: 'Mês anterior', exact: true }).click();
-    await expect(page.getByLabel('Mês do resumo')).toHaveValue('2026-08');
+    await expectControlValue(page.getByLabel('Mês do resumo'), '2026-08');
     await expect(page.locator('.hero-balance')).toHaveText('R$ 59,12');
     await page.goBack();
-    await expect(page.getByLabel('Mês do resumo')).toHaveValue('2026-09');
+    await expectControlValue(page.getByLabel('Mês do resumo'), '2026-09');
     for (const theme of ['claro', 'escuro']) {
       await chooseTheme(page, theme);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -2326,11 +2360,11 @@ for (const width of [360, 390, 768, 1440]) {
     }
     await page.getByRole('link', { name: 'Ver despesas do período', exact: true }).click();
     await expect(page).toHaveURL(/from=2026-09-01.*to=2026-09-30.*type=expense/);
-    await expect(page.getByLabel('De', { exact: true })).toHaveValue('2026-09-01');
-    await expect(page.getByLabel('Até', { exact: true })).toHaveValue('2026-09-30');
+    await expectControlValue(page.getByLabel('De', { exact: true }), '2026-09-01');
+    await expectControlValue(page.getByLabel('Até', { exact: true }), '2026-09-30');
     await page.goBack();
     await page.getByRole('link', { name: 'Abrir planejamento deste mês', exact: true }).click();
-    await expect(page.getByLabel('Mês do planejamento')).toHaveValue('2026-09');
+    await expectControlValue(page.getByLabel('Mês do planejamento'), '2026-09');
   });
 }
 
@@ -2438,7 +2472,7 @@ for (const width of [360, 768, 1440])
     await page.keyboard.press('Enter');
     await expect(history.locator('.history-selection')).toContainText('novembro de 2025');
     await history.getByRole('button', { name: 'Abrir mês', exact: true }).click();
-    await expect(page.getByLabel('Mês do resumo')).toHaveValue('2025-11');
+    await expectControlValue(page.getByLabel('Mês do resumo'), '2025-11');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
@@ -2579,7 +2613,7 @@ for (const width of [320, 430, 1024, 1280, 1920])
     );
     await page.screenshot({ path: `/tmp/mywallet-premium-accounts-${width}.png`, fullPage: true });
     await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
-    await page.getByLabel('Nome da conta').fill('Conta com texto preservado');
+    await fillControl(page.getByLabel('Nome da conta'), 'Conta com texto preservado');
     await expect(
       page.getByRole('dialog').getByRole('button', { name: 'Adicionar conta', exact: true }),
     ).toBeInViewport();
@@ -2587,7 +2621,7 @@ for (const width of [320, 430, 1024, 1280, 1920])
       await page.setViewportSize({ width, height: 480 });
       const dialog = await page.getByRole('dialog').boundingBox();
       expect(dialog!.height).toBeLessThanOrEqual(480);
-      await expect(page.getByLabel('Nome da conta')).toHaveValue('Conta com texto preservado');
+      await expectControlValue(page.getByLabel('Nome da conta'), 'Conta com texto preservado');
     }
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.goto('/workspaces');
@@ -2603,14 +2637,14 @@ test('transaction detail panel preserves URL filters and browser back', async ({
   );
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/transactions?from=2026-10-01&to=2026-10-31&type=expense');
-  await page.getByLabel('Buscar movimentos').fill('supermercado');
+  await fillControl(page.getByLabel('Buscar movimentos'), 'supermercado');
   await page.getByRole('button', { name: /Compra de supermercado/ }).click();
   await expect(page.locator('.dialog-detail')).toBeVisible();
-  await expect(page.getByLabel('Descrição', { exact: true })).toHaveValue(transaction.description);
+  await expectControlValue(page.getByLabel('Descrição', { exact: true }), transaction.description);
   await page.goBack();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByLabel('Buscar movimentos')).toHaveValue('supermercado');
-  await expect(page.getByLabel('De', { exact: true })).toHaveValue('2026-10-01');
+  await expectControlValue(page.getByLabel('Buscar movimentos'), 'supermercado');
+  await expectControlValue(page.getByLabel('De', { exact: true }), '2026-10-01');
 });
 
 test('bulk category review affects only visible editable rows and keeps duplicate touch targets locked', async ({
@@ -2718,14 +2752,14 @@ test('bulk category review affects only visible editable rows and keeps duplicat
   const target = await page.locator('.review-select-target').first().boundingBox();
   expect(target!.width).toBeGreaterThanOrEqual(48);
   await expect(page.getByLabel('Selecionar movimento 3')).toBeDisabled();
-  await page.getByRole('searchbox', { name: 'Buscar no extrato' }).fill('Luz');
+  await fillControl(page.getByRole('searchbox', { name: 'Buscar no extrato' }), 'Luz');
   await page.locator('.import-bulk summary').click();
-  await page.getByLabel('Categoria do lote').selectOption(categoryId);
+  await chooseSelect(page.getByLabel('Categoria do lote'), categoryId);
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Aplicar a 1 movimentos', exact: true }).click();
   await expect.poll(() => writes).toBe(1);
   expect(items[1].categoryId).toBeNull();
-  await expect(page.getByLabel('Categoria do movimento 1')).toHaveValue(categoryId);
+  await expectControlValue(page.getByLabel('Categoria do movimento 1'), categoryId);
 });
 
 test('premium accessibility with OS text scaling, reduced motion and narrow reflow', async ({
@@ -2744,7 +2778,7 @@ test('premium accessibility with OS text scaling, reduced motion and narrow refl
   await expect(
     page.getByRole('dialog').getByRole('button', { name: 'Adicionar conta', exact: true }),
   ).toBeInViewport();
-  await page.getByLabel('Nome da conta').fill('Conta com texto ampliado');
+  await fillControl(page.getByLabel('Nome da conta'), 'Conta com texto ampliado');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await cdp.send('Emulation.setEmulatedOSTextScale', { scale: 1 });
@@ -2772,8 +2806,8 @@ test('legacy accounts keep their institution and balance when renamed', async ({
   await page.getByRole('button', { name: 'Editar', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByLabel('Instituição')).toBeDisabled();
-  await expect(dialog.getByLabel('Instituição')).toHaveValue('nubank');
-  await dialog.getByLabel('Nome da conta').fill('Conta preservada');
+  await expectControlValue(dialog.getByLabel('Instituição'), 'nubank');
+  await fillControl(dialog.getByLabel('Nome da conta'), 'Conta preservada');
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(saved).toEqual({ name: 'Conta preservada', institution: 'nubank', type: account.type });
@@ -2886,10 +2920,10 @@ test('creates a monthly commitment with no opening balance or automatic financia
   await page.goto('/planning?view=commitments&month=2026-11');
   await page.getByRole('button', { name: 'Novo compromisso', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Descrição', { exact: true }).fill('Internet');
-  await dialog.getByRole('combobox', { name: /^Conta$/ }).selectOption(account.id);
-  await dialog.getByLabel('Valor previsto (R$)', { exact: true }).fill('90,00');
-  await dialog.getByLabel('Primeiro vencimento', { exact: true }).fill('2026-11-10');
+  await fillControl(dialog.getByLabel('Descrição', { exact: true }), 'Internet');
+  await chooseSelect(dialog.getByRole('combobox', { name: /^Conta$/ }), account.id);
+  await fillControl(dialog.getByLabel('Valor previsto (R$)', { exact: true }), '90,00');
+  await fillControl(dialog.getByLabel('Primeiro vencimento', { exact: true }), '2026-11-10');
   await dialog.getByRole('button', { name: 'Adicionar compromisso', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(saved).toMatchObject({
@@ -2952,7 +2986,7 @@ test('links an imported payment without creating another transaction and preserv
   await page.goto('/planning?view=commitments&month=2026-11');
   await page.getByRole('button', { name: 'Pagar', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Lançamento realizado').selectOption(transaction.id);
+  await chooseSelect(dialog.getByLabel('Lançamento realizado'), transaction.id);
   await dialog.getByRole('button', { name: 'Confirmar vínculo', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText('Falha temporária');
   await dialog.getByRole('button', { name: 'Confirmar vínculo', exact: true }).click();
@@ -2985,8 +3019,8 @@ test('registers the actual payment amount through the commitment workflow', asyn
   await page.getByRole('button', { name: 'Pagar', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: 'Registrar pagamento', exact: true }).click();
-  await dialog.getByLabel('Data realizada', { exact: true }).fill('2026-10-30');
-  await dialog.getByLabel('Valor realizado (R$)', { exact: true }).fill('95,00');
+  await fillControl(dialog.getByLabel('Data realizada', { exact: true }), '2026-10-30');
+  await fillControl(dialog.getByLabel('Valor realizado (R$)', { exact: true }), '95,00');
   await dialog.getByRole('button', { name: 'Confirmar pagamento', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(body).toEqual({ action: 'create', transactionDate: '2026-10-30', amount: 9500 });
@@ -3199,9 +3233,9 @@ test('creates a credit card and sends an exact installment purchase without debi
   await page.goto('/cards?month=2026-11');
   await page.getByRole('button', { name: 'Novo cartão', exact: true }).click();
   let dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome do cartão', { exact: true }).fill('Meu cartão');
-  await dialog.getByLabel('Conta para pagar a fatura', { exact: true }).selectOption(account.id);
-  await dialog.getByLabel('Limite informado (R$)', { exact: true }).fill('2.500,00');
+  await fillControl(dialog.getByLabel('Nome do cartão', { exact: true }), 'Meu cartão');
+  await chooseSelect(dialog.getByLabel('Conta para pagar a fatura', { exact: true }), account.id);
+  await fillControl(dialog.getByLabel('Limite informado (R$)', { exact: true }), '2.500,00');
   await dialog.getByRole('button', { name: 'Adicionar cartão', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(writes[0]).toMatchObject({
@@ -3213,11 +3247,11 @@ test('creates a credit card and sends an exact installment purchase without debi
   });
   await page.getByRole('button', { name: 'Registrar compra', exact: true }).click();
   dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Descrição da compra', { exact: true }).fill('Compra parcelada');
-  await dialog.getByLabel('Valor total da compra (R$)', { exact: true }).fill('100,01');
-  await dialog.getByLabel('Quantidade de parcelas', { exact: true }).fill('3');
-  await dialog.getByLabel('Data da compra', { exact: true }).fill('2026-10-31');
-  await dialog.getByLabel('Primeira fatura (opcional)', { exact: true }).fill('2026-11');
+  await fillControl(dialog.getByLabel('Descrição da compra', { exact: true }), 'Compra parcelada');
+  await fillControl(dialog.getByLabel('Valor total da compra (R$)', { exact: true }), '100,01');
+  await fillControl(dialog.getByLabel('Quantidade de parcelas', { exact: true }), '3');
+  await fillControl(dialog.getByLabel('Data da compra', { exact: true }), '2026-10-31');
+  await fillControl(dialog.getByLabel('Primeira fatura (opcional)', { exact: true }), '2026-11');
   await dialog.getByRole('button', { name: 'Registrar compra', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(writes[1]).toMatchObject({
@@ -3259,7 +3293,7 @@ test('links a card payment from the statement with an idempotent retry', async (
   await page.goto('/cards?month=2026-11');
   await page.getByRole('button', { name: 'Pagar ou vincular', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Saída do extrato', { exact: true }).selectOption(transaction.id);
+  await chooseSelect(dialog.getByLabel('Saída do extrato', { exact: true }), transaction.id);
   await dialog.getByRole('button', { name: 'Vincular pagamento', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText('Tente confirmar');
   await dialog.getByRole('button', { name: 'Vincular pagamento', exact: true }).click();
@@ -3289,9 +3323,10 @@ test('values a holding without financial posting and records a redemption with s
   await page.goto('/wealth');
   await page.getByRole('button', { name: 'Atualizar valor', exact: true }).click();
   let dialog = page.getByRole('dialog');
-  await dialog
-    .getByLabel('Valor total atualizado da posição (R$)', { exact: true })
-    .fill('1.200,00');
+  await fillControl(
+    dialog.getByLabel('Valor total atualizado da posição (R$)', { exact: true }),
+    '1.200,00',
+  );
   await dialog.getByRole('button', { name: 'Salvar avaliação', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(writes[0]).toMatchObject({ kind: 'valuation', marketValue: 120000 });
@@ -3299,12 +3334,13 @@ test('values a holding without financial posting and records a redemption with s
   await page.getByRole('button', { name: 'Ver detalhes', exact: false }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Resgate', exact: true }).click();
   dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Conta da movimentação', { exact: true }).selectOption(account.id);
-  await dialog.getByLabel('Valor líquido recebido (R$)', { exact: true }).fill('600,00');
+  await chooseSelect(dialog.getByLabel('Conta da movimentação', { exact: true }), account.id);
+  await fillControl(dialog.getByLabel('Valor líquido recebido (R$)', { exact: true }), '600,00');
   await dialog.getByRole('button', { name: 'Estimar capital proporcional', exact: true }).click();
-  await expect(
+  await expectControlValue(
     dialog.getByLabel('Capital que está sendo resgatado (R$)', { exact: true }),
-  ).toHaveValue('500,00');
+    '500,00',
+  );
   await expect(dialog.locator('.finance-review')).toContainText('R$ 100,00');
   await dialog.getByRole('button', { name: 'Registrar movimentação', exact: true }).click();
   await expect(dialog).toHaveCount(0);
@@ -3336,17 +3372,20 @@ test('registers an existing investment and an asset without duplicating a bank m
   await page.goto('/wealth');
   await page.getByRole('button', { name: 'Novo investimento', exact: true }).click();
   let dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome do investimento', { exact: true }).fill('Aplicação existente');
-  await dialog.getByLabel('Capital já investido (R$)', { exact: true }).fill('1.000,00');
-  await dialog.getByLabel('Valor total atualizado (R$)', { exact: true }).fill('1.100,00');
+  await fillControl(
+    dialog.getByLabel('Nome do investimento', { exact: true }),
+    'Aplicação existente',
+  );
+  await fillControl(dialog.getByLabel('Capital já investido (R$)', { exact: true }), '1.000,00');
+  await fillControl(dialog.getByLabel('Valor total atualizado (R$)', { exact: true }), '1.100,00');
   await dialog.getByRole('button', { name: 'Cadastrar investimento', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(writes[0]).toMatchObject({ capital: 100000, marketValue: 110000 });
   await page.getByRole('button', { name: 'Bens e dívidas', exact: true }).click();
   await page.getByRole('button', { name: 'Adicionar posição', exact: true }).click();
   dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome do bem ou dívida', { exact: true }).fill('Moto');
-  await dialog.getByLabel('Valor atual informado (R$)', { exact: true }).fill('10.000,00');
+  await fillControl(dialog.getByLabel('Nome do bem ou dívida', { exact: true }), 'Moto');
+  await fillControl(dialog.getByLabel('Valor atual informado (R$)', { exact: true }), '10.000,00');
   await dialog.getByRole('button', { name: 'Adicionar posição', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(writes[1]).toMatchObject({ name: 'Moto', kind: 'asset', value: 1000000 });
@@ -3383,8 +3422,8 @@ test('links a historical investment movement already included in the current pos
   await page.getByRole('dialog').getByRole('button', { name: 'Aporte', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: 'Já está no extrato', exact: true }).click();
-  await dialog.getByLabel('Conta da movimentação', { exact: true }).selectOption(account.id);
-  await dialog.getByLabel('Movimento do extrato', { exact: true }).selectOption(transaction.id);
+  await chooseSelect(dialog.getByLabel('Conta da movimentação', { exact: true }), account.id);
+  await chooseSelect(dialog.getByLabel('Movimento do extrato', { exact: true }), transaction.id);
   await dialog
     .getByLabel('Este movimento já está incluído na posição cadastrada', { exact: true })
     .check();
@@ -3566,8 +3605,8 @@ test('new shared forms and account controls remain usable with a narrow viewport
   ).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const field = dialog.getByRole('textbox', { name: 'Nome da conta', exact: true });
-  await field.fill('Minha conta');
-  await expect(field).toHaveValue('Minha conta');
+  await fillControl(field, 'Minha conta');
+  await expectControlValue(field, 'Minha conta');
   await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Adicionar conta', exact: true })).toBeFocused();
 });
@@ -3590,7 +3629,7 @@ test('overview separates daily tasks from analysis and preserves the selected vi
   );
   await page.getByRole('button', { name: 'Mês anterior', exact: true }).click();
   await expect(page).toHaveURL(/view=analysis/);
-  await expect(page.getByLabel('Mês do resumo')).toHaveValue('2026-09');
+  await expectControlValue(page.getByLabel('Mês do resumo'), '2026-09');
   await page.reload();
   await expect(views.getByRole('button', { name: 'Análise', exact: true })).toHaveAttribute(
     'aria-pressed',
@@ -3653,17 +3692,17 @@ test('directory creation is isolated from browsing, retains failed input and ref
   await expect(page.getByRole('button', { name: 'Cadastrar', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Novo cadastro', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Nova pessoa ou estabelecimento' });
-  await dialog.getByLabel('Nome', { exact: true }).fill('Mercado do bairro');
+  await fillControl(dialog.getByLabel('Nome', { exact: true }), 'Mercado do bairro');
   await dialog.getByRole('button', { name: 'Cadastrar', exact: true }).click();
   await expect(dialog.getByRole('alert')).toBeVisible();
-  await expect(dialog.getByLabel('Nome', { exact: true })).toHaveValue('Mercado do bairro');
+  await expectControlValue(dialog.getByLabel('Nome', { exact: true }), 'Mercado do bairro');
   fail = false;
   await dialog.getByRole('button', { name: 'Cadastrar', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(page.locator('.counterparty-panel > summary')).toContainText('Mercado do bairro');
-  await page.getByLabel('Filtrar automação', { exact: true }).selectOption('automated');
+  await chooseSelect(page.getByLabel('Filtrar automação', { exact: true }), 'automated');
   await expect(page.getByRole('heading', { name: 'Nenhum cadastro neste filtro' })).toBeVisible();
-  await page.getByLabel('Filtrar automação', { exact: true }).selectOption('manual');
+  await chooseSelect(page.getByLabel('Filtrar automação', { exact: true }), 'manual');
   await expect(page.locator('.counterparty-panel')).toHaveCount(1);
 });
 test('visible date controls remove one bound without losing movement type or the other date', async ({
@@ -3671,12 +3710,12 @@ test('visible date controls remove one bound without losing movement type or the
 }) => {
   await signedIn(page);
   await page.goto('/transactions?type=income&from=2026-10-01&to=2026-10-31');
-  await page.getByLabel('De', { exact: true }).fill('');
+  await fillControl(page.getByLabel('De', { exact: true }), '');
   const url = new URL(page.url());
   expect(url.searchParams.has('from')).toBe(false);
   expect(url.searchParams.get('to')).toBe('2026-10-31');
   expect(url.searchParams.get('type')).toBe('income');
-  await expect(page.getByLabel('Até', { exact: true })).toHaveValue('2026-10-31');
+  await expectControlValue(page.getByLabel('Até', { exact: true }), '2026-10-31');
   await expect(page.getByRole('status').filter({ hasText: '1 movimento carregado' })).toBeVisible();
 });
 test('settings retain the chosen section on reload and offer labelled theme previews', async ({
@@ -3720,7 +3759,7 @@ async function saveAccountForFeedback(page: Page, clock = false, spaces?: (typeo
   const before = await page.locator('.account-record').boundingBox();
   await page.getByRole('button', { name: 'Editar', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Editar conta', exact: true });
-  await dialog.getByLabel('Nome da conta', { exact: true }).fill('Minha conta');
+  await fillControl(dialog.getByLabel('Nome da conta', { exact: true }), 'Minha conta');
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(
@@ -3819,7 +3858,7 @@ test.describe('help on touch screens', () => {
     await expect(tooltip).toHaveCount(0);
     await page.goto('/?month=2026-10');
     await page.getByRole('button', { name: 'Mês anterior', exact: true }).tap();
-    await expect(page.getByLabel('Mês do resumo')).toHaveValue('2026-09');
+    await expectControlValue(page.getByLabel('Mês do resumo'), '2026-09');
   });
 });
 
@@ -3847,7 +3886,7 @@ test('an operation completing after a space switch cannot add feedback to the ne
   await page.goto('/accounts');
   await page.getByRole('button', { name: 'Editar', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Editar conta', exact: true });
-  await dialog.getByLabel('Nome da conta', { exact: true }).fill('Minha conta');
+  await fillControl(dialog.getByLabel('Nome da conta', { exact: true }), 'Minha conta');
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
   await expect.poll(() => started).toBe(true);
   await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
@@ -3878,7 +3917,7 @@ for (const width of [390, 1440])
       page.getByRole('button', { name: 'Copiar mês anterior', exact: true }),
     ).not.toBeVisible();
     await page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }).click();
-    await page.getByLabel('Contas no realizado', { exact: true }).selectOption('cash');
+    await chooseSelect(page.getByLabel('Contas no realizado', { exact: true }), 'cash');
     await expect(page.locator('.scope-indicator')).toHaveText('Sem benefícios');
     await page.keyboard.press('Escape');
     await expect(
@@ -3921,9 +3960,9 @@ for (const example of [
       return route.fulfill({ json: { items: [transaction], nextCursor: null } });
     });
     await page.goto('/transactions?type=expense');
-    await page.getByLabel('Período dos movimentos', { exact: true }).selectOption('previous');
-    await expect(page.getByLabel('De', { exact: true })).toHaveValue(example.previousFrom);
-    await expect(page.getByLabel('Até', { exact: true })).toHaveValue(example.previousTo);
+    await chooseSelect(page.getByLabel('Período dos movimentos', { exact: true }), 'previous');
+    await expectControlValue(page.getByLabel('De', { exact: true }), example.previousFrom);
+    await expectControlValue(page.getByLabel('Até', { exact: true }), example.previousTo);
     await expect
       .poll(() =>
         queries.some(
@@ -3934,9 +3973,9 @@ for (const example of [
         ),
       )
       .toBe(true);
-    await page.getByLabel('Período dos movimentos', { exact: true }).selectOption('all');
-    await expect(page.getByLabel('De', { exact: true })).toHaveValue('');
-    await expect(page.getByLabel('Até', { exact: true })).toHaveValue('');
+    await chooseSelect(page.getByLabel('Período dos movimentos', { exact: true }), 'all');
+    await expectControlValue(page.getByLabel('De', { exact: true }), '');
+    await expectControlValue(page.getByLabel('Até', { exact: true }), '');
     expect(new URL(page.url()).searchParams.get('type')).toBe('expense');
   });
 test('invalid date ranges are explained beside the visible controls without issuing an invalid query', async ({
@@ -3950,13 +3989,13 @@ test('invalid date ranges are explained beside the visible controls without issu
   });
   await page.goto('/transactions?type=income&from=2026-10-01&to=2026-10-31');
   await expect(page.getByRole('table')).toBeVisible();
-  await page.getByLabel('De', { exact: true }).fill('2026-11-01');
+  await fillControl(page.getByLabel('De', { exact: true }), '2026-11-01');
   await expect(page.getByRole('alert')).toContainText('A data inicial deve ser anterior ou igual');
   await expect(page.getByLabel('De', { exact: true })).toHaveAttribute('aria-invalid', 'true');
   expect(queries.some((q) => q.get('from') === '2026-11-01' && q.get('to') === '2026-11-01')).toBe(
     false,
   );
-  await page.getByLabel('De', { exact: true }).fill('2026-10-30');
+  await fillControl(page.getByLabel('De', { exact: true }), '2026-10-30');
   await expect(page.getByRole('table')).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
@@ -3984,7 +4023,8 @@ for (const width of [390, 1440])
     expect(new URL(page.url()).searchParams.has('transaction')).toBe(false);
     await table.getByRole('button', { name: /Compra de supermercado/ }).click();
     await expect(page.getByRole('dialog', { name: 'Detalhes do movimento' })).toBeVisible();
-    await expect(page.getByLabel('Descrição', { exact: true })).toHaveValue(
+    await expectControlValue(
+      page.getByLabel('Descrição', { exact: true }),
       transaction.description,
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -4045,4 +4085,126 @@ test('filter changes preserve the visible ledger while preventing reuse of the o
   await expect(page.locator('.movement-table')).toContainText(income.description);
   await expect(page.locator('.ledger-table-area')).not.toHaveAttribute('inert', '');
   expect(queries.some((q) => q.get('type') === 'income' && q.has('cursor'))).toBe(false);
+});
+
+for (const width of [390, 1440]) {
+  test(`styled month picker supports Portuguese labels and uncluttered planning spacing at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/planning?month=2026-11');
+    const month = page.getByRole('combobox', { name: 'Mês do planejamento', exact: true });
+    await expect(month).toContainText('Novembro 2026');
+    await month.click();
+    const popup = page.getByRole('dialog', {
+      name: 'Selecionar mês: Mês do planejamento',
+      exact: true,
+    });
+    await expect(
+      popup.getByRole('button', { name: 'Novembro de 2026', exact: true }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(popup.getByRole('button', { name: 'Limpar', exact: true })).toHaveCount(0);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Enter');
+    await expectControlValue(month, '2026-10');
+    await expect(month).toBeFocused();
+    const box = await page.locator('.planning-metrics').boundingBox();
+    const section = await page.locator('.budget-section').first().boundingBox();
+    expect(box).not.toBeNull();
+    expect(section).not.toBeNull();
+    expect(section!.y - (box!.y + box!.height)).toBeGreaterThanOrEqual(28);
+    await expect(page.locator('.budget-section').first()).toHaveCSS(
+      'background-color',
+      'rgba(0, 0, 0, 0)',
+    );
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+}
+
+test('styled selects stay open inside action menus and support keyboard selection', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/planning?month=2026-11');
+  const menu = page.getByRole('button', { name: 'Mais ações do planejamento', exact: true });
+  await menu.click();
+  const select = page.getByRole('combobox', { name: 'Contas no realizado', exact: true });
+  await select.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await expect(select).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expectControlValue(select, 'cash');
+  await expect(select).toBeFocused();
+  await expect(page.locator('.action-menu')).toHaveAttribute('open', '');
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeFocused();
+});
+
+test('date calendar keeps localized display and ISO filters, with independent nested month selection', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/transactions?from=2026-10-01&to=2026-10-31');
+  const from = page.getByLabel('De', { exact: true });
+  await expect(from).toHaveValue('01/10/2026');
+  await page.getByRole('button', { name: 'Abrir calendário: De', exact: true }).click();
+  const calendar = page.getByRole('dialog', { name: 'Selecionar data: De', exact: true });
+  await expect(calendar).toBeVisible();
+  await calendar.getByRole('combobox', { name: 'Mês do calendário', exact: true }).click();
+  const months = page.getByRole('dialog', {
+    name: 'Selecionar mês: Mês do calendário',
+    exact: true,
+  });
+  await months.getByRole('button', { name: 'Setembro de 2026', exact: true }).click();
+  await expect(months).toBeHidden();
+  await expect(calendar).toBeVisible();
+  await calendar.locator('[data-date="2026-09-15"]').click();
+  await expect(calendar).toBeHidden();
+  await expect(from).toHaveValue('15/09/2026');
+  await expectControlValue(from, '2026-09-15');
+  await expect(page).toHaveURL(/from=2026-09-15/);
+  await expect(from).toBeFocused();
+});
+
+test('invalid typed dates prevent a financial form from saving the previous date', async ({
+  page,
+}) => {
+  await signedIn(page);
+  let writes = 0;
+  await page.route('**/v1/transactions', async (route) => {
+    if (route.request().method() === 'POST') writes++;
+    return route.fulfill({ json: transaction });
+  });
+  await page.goto('/transactions?new=1');
+  const form = page.getByRole('dialog');
+  await form.getByLabel('Descrição', { exact: true }).fill('Teste de data');
+  await form.getByLabel('Valor (R$)', { exact: true }).fill('10,00');
+  const date = form.getByLabel('Data', { exact: true });
+  await date.fill('31/02/2026');
+  await date.press('Tab');
+  await expect(date).toHaveAttribute('aria-invalid', 'true');
+  await form.getByRole('button', { name: 'Registrar movimento', exact: true }).click();
+  expect(writes).toBe(0);
+  await expect(form).toBeVisible();
+  await expect(date).toBeFocused();
+});
+
+test('app entry fades once per tab and keeps reduced motion static', async ({ page }) => {
+  await signedIn(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('.app-shell')).toHaveCSS('animation-name', 'none');
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('mywallet:entered')))
+    .toBe('yes');
+  await page.reload();
+  await expect(page.locator('.app-shell')).not.toHaveClass(/app-entry/);
+  const announcer = page.locator('.sr-only').first();
+  await expect(announcer).toHaveCSS('position', 'absolute');
+  await expect(announcer).toHaveCSS('width', '1px');
 });

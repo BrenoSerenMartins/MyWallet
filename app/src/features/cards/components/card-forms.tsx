@@ -1,3 +1,6 @@
+import { MonthPicker } from '../../../shared/ui/controls/month-picker';
+import { DatePicker } from '../../../shared/ui/controls/date-picker';
+import { Select } from '../../../shared/ui/controls/select';
 import { useState } from 'react';
 import type { CreditCard, CardPurchase } from '../../../shared/api/resources';
 import {
@@ -59,7 +62,7 @@ export function CardForm({
         </label>
         <label>
           Conta para pagar a fatura
-          <select
+          <Select
             aria-label="Conta para pagar a fatura"
             required
             value={bank}
@@ -73,7 +76,7 @@ export function CardForm({
                   {a.name}
                 </option>
               ))}
-          </select>
+          </Select>
         </label>
         <div className="form-grid">
           <label>
@@ -201,9 +204,8 @@ export function CardPurchaseForm({
           </label>
           <label>
             Data da compra
-            <input
+            <DatePicker
               required
-              type="date"
               min="1900-01-01"
               max={dateToday()}
               value={date}
@@ -222,8 +224,7 @@ export function CardPurchaseForm({
         </div>
         <label>
           Primeira fatura (opcional)
-          <input
-            type="month"
+          <MonthPicker
             min={date.slice(0, 7)}
             max="9998-12"
             value={month}
@@ -276,9 +277,8 @@ export function CardOpeningForm({
       </label>
       <label>
         Fatura de vencimento
-        <input
+        <MonthPicker
           required
-          type="month"
           min="1900-02"
           max="9998-12"
           value={billMonth}

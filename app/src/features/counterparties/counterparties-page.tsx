@@ -1,3 +1,4 @@
+import { Select } from '../../shared/ui/controls/select';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { Plus, Search } from 'lucide-react';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -108,7 +109,7 @@ export function CounterpartiesPage() {
         </label>
         <label className="compact-filter">
           <span className="sr-only">Filtrar automação</span>
-          <select
+          <Select
             aria-label="Filtrar automação"
             value={ruleFilter}
             onChange={(e) => setRuleFilter(e.target.value)}
@@ -116,7 +117,7 @@ export function CounterpartiesPage() {
             <option value="all">Todos os cadastros</option>
             <option value="automated">Com automação</option>
             <option value="manual">Sem automação</option>
-          </select>
+          </Select>
         </label>
         <span className="result-count">{filtered.length} cadastros</span>
       </div>

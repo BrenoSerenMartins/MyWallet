@@ -1,11 +1,12 @@
-import type { SelectHTMLAttributes } from 'react';
+import { Select } from './controls/select';
+import type { SelectProps } from './controls/select';
 import type { Category } from '../api/resources';
 export function CategorySelect({
   categories,
   type,
   emptyLabel = 'Sem categoria',
   ...props
-}: SelectHTMLAttributes<HTMLSelectElement> & {
+}: SelectProps & {
   categories: Category[];
   type?: string;
   emptyLabel?: string;
@@ -13,7 +14,7 @@ export function CategorySelect({
   const available = categories.filter((c) => !type || c.type === type);
   const groups = [...new Set(available.map((c) => c.groupId ?? ''))];
   return (
-    <select {...props}>
+    <Select {...props}>
       <option value="">{emptyLabel}</option>
       {groups.map((id) => (
         <optgroup
@@ -29,6 +30,6 @@ export function CategorySelect({
             ))}
         </optgroup>
       ))}
-    </select>
+    </Select>
   );
 }
