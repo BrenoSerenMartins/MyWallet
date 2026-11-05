@@ -14,7 +14,7 @@ export function PeriodBudget({
 }) {
   if (!budget) return null;
   const display = (value: number | null) =>
-    !visible ? '••••••' : value == null ? 'Histórico incompleto' : money(value);
+    !visible ? '••••••' : value == null ? 'Não disponível' : money(value);
   const reasons: Record<string, string> = {
     'missing-reference': 'Falta uma referência de saldo para este período.',
     'reference-after-cut': 'A referência disponível é posterior ao início deste período.',
@@ -23,57 +23,52 @@ export function PeriodBudget({
   return (
     <section className="period-budget" aria-label="Disponível no período">
       <div className="period-budget-head">
-        <div>
-          <span>Saldo trazido</span>
-          <strong>{display(budget.carried)}</strong>
-        </div>
-        <div>
-          <span>Disponível no fim do período</span>
-          <strong>{display(budget.available)}</strong>
-        </div>
+        {budget.carried != null || budget.available != null ? (
+          <>
+            {budget.carried != null && (
+              <div>
+                <span>Saldo trazido</span>
+                <strong>{display(budget.carried)}</strong>
+              </div>
+            )}
+            {budget.available != null && (
+              <div>
+                <span>Disponível</span>
+                <strong>{display(budget.available)}</strong>
+              </div>
+            )}
+          </>
+        ) : (
+          <span className="period-budget-unavailable">Saldo trazido ainda não disponível</span>
+        )}
       </div>
-      {forecast && (
+      <details className="period-budget-details">
+        <summary>Detalhes</summary>
         <p className="field-help">
-          Disponível previsto após a meta de poupança:{' '}
-          <strong>
-            {!visible
-              ? '••••••'
-              : budget.carried == null
-                ? 'Histórico incompleto'
-                : forecast.result == null
-                  ? 'Previsão não definida'
-                  : money(budget.carried + forecast.result - (forecast.contribution ?? 0))}
-          </strong>
-          . Essa previsão usa receitas e despesas planejadas; não desconta os aportes realizados
-          outra vez.
+          Reservas ficam fora do disponível. Benefícios antecipados entram no mês configurado, sem
+          duplicar o saldo trazido.
         </p>
-      )}
-      <p className="field-help">
-        Inclui contas de dinheiro e benefícios; reservas e investimentos ficam fora. Saldo trazido
-        não é receita nova. Créditos destinados a meses futuros ainda não estão disponíveis neste
-        período.
-      </p>
-      {budget.coverage !== 'complete' && (
-        <p role="status">
-          Saldo trazido incompleto. Confira as referências das contas nos detalhes. Receitas e
-          despesas conhecidas continuam no resultado do mês.
-        </p>
-      )}
-      <details>
-        <summary>Composição do disponível</summary>
-        <p className="field-help">
-          O disponível acompanha as contas, enquanto o resultado do mês mede receitas menos
-          despesas. Pagamento de fatura e aportes são saídas de recursos, sem contar a compra ou a
-          poupança como despesa outra vez.
-        </p>
+        {budget.coverage !== 'complete' && (
+          <p className="field-help">
+            Falta uma referência de saldo para completar este período. Confira as contas abaixo.
+          </p>
+        )}
+        {forecast && budget.carried != null && forecast.result != null && (
+          <p className="field-help">
+            Disponível previsto após poupar:{' '}
+            <strong>
+              {display(budget.carried + forecast.result - (forecast.contribution ?? 0))}
+            </strong>
+          </p>
+        )}
         <dl className="period-budget-flows">
           {[
             ['Saldo trazido', budget.carried],
             ['Entradas nas contas', budget.income],
             ['Despesas nas contas', -budget.expense],
-            ['Transferências líquidas', budget.transfers],
-            ['A revisar (líquido)', budget.unclassified],
-            ['Ajustes de posição', budget.adjustments],
+            ...(budget.transfers ? [['Transferências líquidas', budget.transfers]] : []),
+            ...(budget.unclassified ? [['A revisar', budget.unclassified]] : []),
+            ...(budget.adjustments ? [['Ajustes de saldo', budget.adjustments]] : []),
             ['Disponível final', budget.available],
           ].map(([label, amount]) => (
             <div key={label as string}>
@@ -81,15 +76,13 @@ export function PeriodBudget({
               <dd>{display(amount as number | null)}</dd>
             </div>
           ))}
-          <div>
-            <dt>Guardado líquido em reservas/investimentos (incluído nas transferências)</dt>
-            <dd>{display(budget.reserved)}</dd>
-          </div>
+          {!!budget.reserved && (
+            <div>
+              <dt>Guardado no período (incluído nas transferências)</dt>
+              <dd>{display(budget.reserved)}</dd>
+            </div>
+          )}
         </dl>
-        <p className="field-help">
-          A meta de poupar é uma intenção; o guardado realizado vem das transferências. Se houve
-          consumo antecipado do benefício, o saldo trazido ajustado pode ser negativo.
-        </p>
         {budget.accounts.map((account) => (
           <details key={account.accountId} className="period-budget-account">
             <summary>{account.name}</summary>

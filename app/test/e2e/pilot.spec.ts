@@ -4565,7 +4565,7 @@ for (const width of [390, 1440]) {
     const panel = page.getByRole('region', { name: 'Disponível no período', exact: true });
     await expect(panel.locator('.period-budget-head')).toContainText('R$ 100,00');
     await expect(panel.locator('.period-budget-head')).toContainText('R$ 800,00');
-    await panel.getByText('Composição do disponível', { exact: true }).click();
+    await panel.getByText('Detalhes', { exact: true }).click();
     await panel.getByText('Benefício', { exact: true }).click();
     await expect(panel).toContainText('R$ 700,00');
     await expectNoHorizontalOverflow(page);
