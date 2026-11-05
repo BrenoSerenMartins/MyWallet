@@ -1,5 +1,4 @@
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
-import { ActionMenu } from '../../shared/ui/action-menu';
 import { HelpTip } from '../../shared/ui/tooltip';
 import { Tooltip } from '../../shared/ui/tooltip';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
@@ -9,7 +8,7 @@ import { CashflowForecast } from '../planning/components/cashflow-forecast';
 import '../planning/commitments.css';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, ArrowRight, ChevronLeft, ChevronRight, Upload, Plus } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ErrorState, Loading } from '../../shared/ui/primitives';
 import { dateToday } from '../../shared/formatting/money';
 import { validMonth, shiftMonth } from '../../shared/formatting/month';
@@ -67,17 +66,6 @@ export function DashboardPage() {
             </button>
           </Tooltip>
         )}
-        <Link className="button compact" to="/imports">
-          <Upload size={16} />
-          Importar extrato
-        </Link>
-        <ActionMenu label="Mais ações da visão geral">
-          <Link to="/transactions?new=1">
-            <Plus size={16} />
-            Novo lançamento
-          </Link>
-          <Link to={`/planning?month=${month}`}>Planejar este mês</Link>
-        </ActionMenu>
       </PageHeader>
       <div className="dashboard-overview motion-reveal" hidden={view !== 'summary'}>
         {snapshot.isPending ? (
