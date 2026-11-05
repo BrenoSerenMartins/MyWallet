@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import {
   ACCOUNT_READS,
+  periodBudget,
   type AccountReads,
   CATEGORY_READS,
   LEDGER_READS,
@@ -36,8 +37,18 @@ export class PlanningService implements PlanningBackup {
       await this.categories.list(true),
       await this.ledger.planningActuals(from, to, scope),
     );
+    const accounts = await this.accounts.list();
+    const budget = periodBudget(
+      from,
+      to,
+      accounts,
+      await this.accounts.positions([from, to]),
+      await this.ledger.budgetActivity(from, to),
+      scope,
+    );
     return {
       ...summary,
+      budget,
       benefitAccounts: (await this.accounts.list())
         .filter((a) => ['benefit_food', 'benefit_meal'].includes(a.type))
         .map((a) => ({

@@ -1,3 +1,4 @@
+import { PeriodBudgetDto } from './budget-dto.js';
 import { BalanceBasisDto } from './balance-basis-dto.js';
 import { CounterpartyCandidateDto } from './counterparty-candidate-dto.js';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -51,6 +52,7 @@ export class TransactionResourceDto {
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) accountId!: string;
   @ApiProperty({ type: String, nullable: true }) categoryId!: string | null;
+  @ApiPropertyOptional({ type: String }) reportingDate?: string;
   @ApiProperty({ type: String }) transactionDate!: string;
   @ApiProperty({ type: String }) description!: string;
   @ApiProperty({ type: Number }) amount!: number;
@@ -117,6 +119,7 @@ export class ImportItemResourceDto {
   metadata!: SettlementMetadataResourceDto | null;
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: Number }) sourceRow!: number;
+  @ApiPropertyOptional({ type: String }) reportingDate?: string;
   @ApiProperty({ type: String }) transactionDate!: string;
   @ApiProperty({ type: String }) description!: string;
   @ApiProperty({ type: Number }) amount!: number;
@@ -165,6 +168,7 @@ export class ImportBatchResourceDto {
   @ApiProperty({ type: () => [ImportItemResourceDto] }) items!: ImportItemResourceDto[];
 }
 export class DashboardHistoryMonthDto {
+  @ApiPropertyOptional({ type: PeriodBudgetDto }) budget?: PeriodBudgetDto;
   @ApiProperty({ type: String }) month!: string;
   @ApiProperty({ type: Number }) income!: number;
   @ApiProperty({ type: Number }) expense!: number;
@@ -191,6 +195,7 @@ export class DashboardExpenseGroupDto {
   @ApiProperty({ type: Number }) count!: number;
 }
 export class DashboardResourceDto {
+  @ApiPropertyOptional({ type: PeriodBudgetDto }) budget?: PeriodBudgetDto;
   @ApiProperty({ type: [DashboardExpenseCategoryDto] })
   expenseCategories!: DashboardExpenseCategoryDto[];
   @ApiProperty({ type: [DashboardExpenseGroupDto] }) expenseGroups!: DashboardExpenseGroupDto[];

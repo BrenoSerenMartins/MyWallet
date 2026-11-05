@@ -4241,6 +4241,9 @@
             "type": "string",
             "nullable": true
           },
+          "reportingDate": {
+            "type": "string"
+          },
           "transactionDate": {
             "type": "string"
           },
@@ -4403,6 +4406,150 @@
         },
         "required": ["fromAccountId", "toAccountId", "amount", "transactionDate", "description"]
       },
+      "BudgetAccountDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "openingBankBalance": {
+            "type": "number",
+            "nullable": true
+          },
+          "closingBankBalance": {
+            "type": "number",
+            "nullable": true
+          },
+          "deferredOpening": {
+            "type": "number"
+          },
+          "deferredClosing": {
+            "type": "number"
+          },
+          "carried": {
+            "type": "number",
+            "nullable": true
+          },
+          "available": {
+            "type": "number",
+            "nullable": true
+          },
+          "income": {
+            "type": "number"
+          },
+          "expense": {
+            "type": "number"
+          },
+          "transfers": {
+            "type": "number"
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "unclassified": {
+            "type": "number"
+          },
+          "adjustments": {
+            "type": "number",
+            "nullable": true
+          },
+          "referenceDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "accountId",
+          "name",
+          "type",
+          "openingBankBalance",
+          "closingBankBalance",
+          "deferredOpening",
+          "deferredClosing",
+          "carried",
+          "available",
+          "income",
+          "expense",
+          "transfers",
+          "reserved",
+          "unclassified",
+          "adjustments",
+          "referenceDate",
+          "reason"
+        ]
+      },
+      "PeriodBudgetDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "coverage": {
+            "type": "string",
+            "enum": ["complete", "partial", "unavailable"]
+          },
+          "carried": {
+            "type": "number",
+            "nullable": true
+          },
+          "available": {
+            "type": "number",
+            "nullable": true
+          },
+          "adjustments": {
+            "type": "number",
+            "nullable": true
+          },
+          "income": {
+            "type": "number"
+          },
+          "expense": {
+            "type": "number"
+          },
+          "transfers": {
+            "type": "number"
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "unclassified": {
+            "type": "number"
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetAccountDto"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "coverage",
+          "carried",
+          "available",
+          "adjustments",
+          "income",
+          "expense",
+          "transfers",
+          "reserved",
+          "unclassified",
+          "accounts"
+        ]
+      },
       "PlanningBenefitAccountDto": {
         "type": "object",
         "properties": {
@@ -4552,6 +4699,9 @@
       "MonthlyPlanResourceDto": {
         "type": "object",
         "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/PeriodBudgetDto"
+          },
           "benefitAccounts": {
             "type": "array",
             "items": {
@@ -5192,6 +5342,9 @@
           "sourceRow": {
             "type": "number"
           },
+          "reportingDate": {
+            "type": "string"
+          },
           "transactionDate": {
             "type": "string"
           },
@@ -5512,6 +5665,9 @@
       "DashboardHistoryMonthDto": {
         "type": "object",
         "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/PeriodBudgetDto"
+          },
           "month": {
             "type": "string"
           },
@@ -5596,6 +5752,9 @@
       "DashboardResourceDto": {
         "type": "object",
         "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/PeriodBudgetDto"
+          },
           "expenseCategories": {
             "type": "array",
             "items": {

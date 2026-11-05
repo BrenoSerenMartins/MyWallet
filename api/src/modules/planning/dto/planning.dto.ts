@@ -1,3 +1,4 @@
+import { PeriodBudgetDto } from '../../../core/integration/index.js';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -72,6 +73,7 @@ export class PlanningBenefitAccountDto {
   @ApiProperty({ enum: ['received', 'following'] }) benefitCreditMonth!: 'received' | 'following';
 }
 export class MonthlyPlanResourceDto {
+  @ApiPropertyOptional({ type: PeriodBudgetDto }) budget?: PeriodBudgetDto;
   @ApiPropertyOptional({ type: [PlanningBenefitAccountDto] })
   benefitAccounts?: PlanningBenefitAccountDto[];
   @ApiProperty({ type: String }) month!: string;

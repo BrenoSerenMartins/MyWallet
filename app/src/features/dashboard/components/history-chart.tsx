@@ -19,8 +19,10 @@ export function HistoryChart({
   mode,
   selected,
   onSelect,
+  labels = ['Receitas', 'Despesas'],
 }: {
   items: Month[];
+  labels?: [string, string];
   mode: 'bars' | 'lines';
   selected: string;
   onSelect: (month: string) => void;
@@ -64,8 +66,8 @@ export function HistoryChart({
         role="group"
         aria-label={
           mode === 'bars'
-            ? 'Receitas e despesas mensais em barras'
-            : 'Receitas e despesas mensais em linhas'
+            ? `${labels.join(' e ')} mensais em barras`
+            : `${labels.join(' e ')} mensais em linhas`
         }
       >
         {Array.from(
@@ -111,7 +113,7 @@ export function HistoryChart({
             role="button"
             tabIndex={0}
             aria-pressed={selected === item.month}
-            aria-label={`${historyMonthLabel(item.month)}. Receitas ${money(item.income)}. Despesas ${money(item.expense)}. Selecionar mês.`}
+            aria-label={`${historyMonthLabel(item.month)}. ${labels[0]} ${money(item.income)}. ${labels[1]} ${money(item.expense)}. Selecionar mês.`}
             onClick={() => onSelect(item.month)}
             onFocus={() => onSelect(item.month)}
             onMouseEnter={() => onSelect(item.month)}

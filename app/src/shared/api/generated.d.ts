@@ -1774,6 +1774,7 @@ export interface components {
       id: string;
       accountId: string;
       categoryId: string | null;
+      reportingDate?: string;
       transactionDate: string;
       description: string;
       amount: number;
@@ -1819,6 +1820,40 @@ export interface components {
       transactionDate: string;
       description: string;
     };
+    BudgetAccountDto: {
+      accountId: string;
+      name: string;
+      type: string;
+      openingBankBalance: number | null;
+      closingBankBalance: number | null;
+      deferredOpening: number;
+      deferredClosing: number;
+      carried: number | null;
+      available: number | null;
+      income: number;
+      expense: number;
+      transfers: number;
+      reserved: number;
+      unclassified: number;
+      adjustments: number | null;
+      referenceDate: string | null;
+      reason: string | null;
+    };
+    PeriodBudgetDto: {
+      from: string;
+      to: string;
+      /** @enum {string} */
+      coverage: 'complete' | 'partial' | 'unavailable';
+      carried: number | null;
+      available: number | null;
+      adjustments: number | null;
+      income: number;
+      expense: number;
+      transfers: number;
+      reserved: number;
+      unclassified: number;
+      accounts: components['schemas']['BudgetAccountDto'][];
+    };
     PlanningBenefitAccountDto: {
       version: number;
       id: string;
@@ -1857,6 +1892,7 @@ export interface components {
       unclassifiedOutflow: number;
     };
     MonthlyPlanResourceDto: {
+      budget?: components['schemas']['PeriodBudgetDto'];
       benefitAccounts?: components['schemas']['PlanningBenefitAccountDto'][];
       month: string;
       version: number;
@@ -2031,6 +2067,7 @@ export interface components {
       metadata: components['schemas']['SettlementMetadataResourceDto'] | null;
       id: string;
       sourceRow: number;
+      reportingDate?: string;
       transactionDate: string;
       description: string;
       amount: number;
@@ -2118,6 +2155,7 @@ export interface components {
       resetClassification?: boolean;
     };
     DashboardHistoryMonthDto: {
+      budget?: components['schemas']['PeriodBudgetDto'];
       month: string;
       income: number;
       expense: number;
@@ -2144,6 +2182,7 @@ export interface components {
       count: number;
     };
     DashboardResourceDto: {
+      budget?: components['schemas']['PeriodBudgetDto'];
       expenseCategories: components['schemas']['DashboardExpenseCategoryDto'][];
       expenseGroups: components['schemas']['DashboardExpenseGroupDto'][];
       benefitBalance: number;

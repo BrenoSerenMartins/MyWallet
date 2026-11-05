@@ -1,3 +1,5 @@
+export * from './budget-dto.js';
+export * from './budget.js';
 export * from './cards.js';
 export * from './wealth.js';
 export * from './managed-finance.js';
@@ -75,6 +77,7 @@ export interface TransactionInput {
   transferGroupId?: string;
 }
 export interface AccountReads {
+  positions(dates: string[]): Promise<import('./budget.js').HistoricalPosition[]>;
   list(): Promise<AccountResource[]>;
   find(id: string, lock?: boolean): Promise<AccountResource>;
 }
@@ -103,6 +106,10 @@ export interface PlanningActual {
   outflow: number;
 }
 export interface LedgerReads {
+  budgetActivities(
+    periods: { from: string; to: string }[],
+  ): Promise<{ from: string; to: string; activity: import('./budget.js').BudgetActivity[] }[]>;
+  budgetActivity(from: string, to: string): Promise<import('./budget.js').BudgetActivity[]>;
   monthlySummary(
     from: string,
     to: string,

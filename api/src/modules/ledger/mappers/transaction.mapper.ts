@@ -12,6 +12,7 @@ export function transactionResource(row: Record<string, any>) {
     accountId: row.account_id,
     categoryId: row.category_id,
     transactionDate: isoDate(row.transaction_date),
+    ...(row.reporting_date ? { reportingDate: isoDate(row.reporting_date) } : {}),
     description: row.description,
     amount: Number(row.amount_minor),
     transactionType: row.transaction_type,

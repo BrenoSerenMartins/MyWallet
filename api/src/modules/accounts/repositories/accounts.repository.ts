@@ -28,6 +28,68 @@ export class AccountsRepository {
       archived: !!r.archived_at,
     }));
   }
+  async positions(
+    dates: string[],
+  ): Promise<import('../../../core/integration/index.js').HistoricalPosition[]> {
+    // Walk only the active reference lineage. An undone/replaced observation must
+    // not become an anchor merely because it exists in the append-only audit.
+    const rows = await this.db.query(
+      `WITH RECURSIVE anchors AS (
+        SELECT a.id,a.user_id,a.workspace_id,a.opening_date,a.balance_basis AS basis,
+          a.opening_balance_minor AS base,0 AS depth,ARRAY[]::uuid[] AS visited
+        FROM wallet.financial_accounts a WHERE a.user_id=$1
+        UNION ALL
+        SELECT x.id,x.user_id,x.workspace_id,x.opening_date,h.previous_basis,h.previous_base_minor,x.depth+1,x.visited||h.id
+        FROM anchors x JOIN wallet.account_balance_history h ON h.id::text=x.basis->>'originId'
+          AND h.account_id=x.id AND h.user_id=x.user_id AND h.workspace_id=x.workspace_id
+        WHERE NOT h.id=ANY(x.visited) AND x.depth<100
+      ), cuts AS (
+        SELECT a.id,a.user_id,a.workspace_id,cut.date,chosen.basis,chosen.base,chosen.reference
+        FROM wallet.financial_accounts a CROSS JOIN unnest($2::date[]) AS cut(date)
+        LEFT JOIN LATERAL (
+          SELECT x.basis,x.base,coalesce(x.basis->>'referenceDate',CASE WHEN x.basis->>'kind'='legacy' THEN x.opening_date::text END) AS reference
+          FROM anchors x WHERE x.id=a.id
+            AND (coalesce(x.basis->>'referenceDate',CASE WHEN x.basis->>'kind'='legacy' THEN x.opening_date::text END)<cut.date::text
+              OR (x.basis->>'kind'='legacy' AND x.opening_date<=cut.date)
+              OR (x.basis->>'kind'='statement' AND coalesce(x.basis->>'referencePoint','')<>'closing' AND x.basis->>'referenceDate'=cut.date::text))
+          ORDER BY x.depth LIMIT 1
+        ) chosen ON true WHERE a.user_id=$1
+      )
+      SELECT c.id,c.date,c.basis,c.reference,
+        CASE WHEN c.basis->>'kind'='legacy' THEN c.base
+          ELSE (c.basis->>'referenceBalance')::bigint END
+        +coalesce(sum(t.amount_minor),0) AS balance
+      FROM cuts c
+      LEFT JOIN wallet.account_balance_history anchor ON anchor.id::text=c.basis->>'originId'
+        AND anchor.account_id=c.id AND anchor.user_id=c.user_id AND anchor.workspace_id=c.workspace_id
+      LEFT JOIN wallet.transactions t ON t.account_id=c.id AND t.user_id=c.user_id AND t.workspace_id=c.workspace_id
+        AND t.reversed_at IS NULL AND t.transaction_date<c.date
+        AND (CASE WHEN c.basis->>'kind'='legacy' THEN t.transaction_date>=c.reference::date
+          WHEN c.basis->>'kind'='statement' AND coalesce(c.basis->>'referencePoint','')<>'closing' THEN t.transaction_date>=c.reference::date
+          ELSE t.transaction_date>c.reference::date OR (t.transaction_date=c.reference::date
+            AND NOT CASE WHEN anchor.details ? 'knownSameDayIds' THEN (anchor.details->'knownSameDayIds') ? t.id::text ELSE t.balance_basis_included END) END)
+      GROUP BY c.id,c.date,c.basis,c.reference,c.base`,
+      [this.db.userId, dates],
+    );
+    return rows.map((row) => {
+      const known =
+        row.basis &&
+        !row.basis.reviewRequired &&
+        row.basis.kind !== 'unknown' &&
+        row.balance != null;
+      return {
+        accountId: row.id,
+        date: isoDate(row.date),
+        balance: known ? Number(row.balance) : null,
+        referenceDate: row.reference ?? null,
+        reason: known
+          ? null
+          : row.basis?.reviewRequired
+            ? 'reference-under-review'
+            : 'missing-reference',
+      };
+    });
+  }
   async lock(id: string) {
     await this.db.query(
       'SELECT id FROM wallet.financial_accounts WHERE user_id=$1 AND id=$2 FOR UPDATE',

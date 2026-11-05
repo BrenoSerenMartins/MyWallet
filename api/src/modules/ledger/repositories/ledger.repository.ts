@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../../../core/database/index.js';
 import type { PlanningActual, TransactionInput } from '../../../core/integration/index.js';
 import { sourceEvidenceKey, type SourceEvidence } from '../../../core/integration/index.js';
-import { exactAmount } from '../../../core/rest/index.js';
+import { isoDate, exactAmount } from '../../../core/rest/index.js';
 import { transactionResource } from '../mappers/transaction.mapper.js';
 function reconciliationSql(alias = 'wallet.transactions') {
   return `EXISTS(SELECT 1 FROM wallet.transaction_sources proof
@@ -252,7 +252,7 @@ export class LedgerRepository {
   }
   async find(id: string, lock = false) {
     const rows = await this.db.query(
-      `SELECT *,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE user_id=$1 AND id=$2 AND reversed_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
+      `SELECT *,${reportingDateSql()} AS reporting_date,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE user_id=$1 AND id=$2 AND reversed_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
       [this.db.userId, id],
     );
     return rows[0] ? transactionResource(rows[0]) : null;
@@ -278,7 +278,7 @@ export class LedgerRepository {
     }
     values.push(filter.limit + 1);
     const rows = await this.db.query(
-      `SELECT *,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE ${where.join(' AND ')} ORDER BY transaction_date DESC,id DESC LIMIT $${values.length}`,
+      `SELECT *,${reportingDateSql()} AS reporting_date,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE ${where.join(' AND ')} ORDER BY transaction_date DESC,id DESC LIMIT $${values.length}`,
       values,
     );
     const items = rows.slice(0, filter.limit).map(transactionResource);
@@ -342,6 +342,44 @@ export class LedgerRepository {
       [this.db.userId, accountId, date],
     );
     return Number(r.total);
+  }
+  async budgetActivity(
+    from: string,
+    to: string,
+  ): Promise<import('../../../core/integration/index.js').BudgetActivity[]> {
+    return (await this.budgetActivities([{ from, to }]))[0].activity;
+  }
+  async budgetActivities(periods: { from: string; to: string }[]) {
+    const rows = await this.db.query(
+      `SELECT cut.start_date,cut.end_date,t.account_id,
+        coalesce(sum(t.amount_minor) FILTER(WHERE t.transaction_type='income' AND (${reportingDateSql('t')}) >=cut.start_date AND (${reportingDateSql('t')}) <cut.end_date),0) AS income,
+        coalesce(-sum(t.amount_minor) FILTER(WHERE t.transaction_type='expense' AND (${reportingDateSql('t')}) >=cut.start_date AND (${reportingDateSql('t')}) <cut.end_date),0) AS expense,
+        coalesce(sum(t.amount_minor) FILTER(WHERE t.transaction_type='transfer' AND t.transaction_date >=cut.start_date AND t.transaction_date <cut.end_date),0) AS transfers,
+        coalesce(sum(t.amount_minor) FILTER(WHERE t.transaction_type='unclassified' AND t.transaction_date >=cut.start_date AND t.transaction_date <cut.end_date),0) AS unclassified,
+        coalesce(-sum(t.amount_minor) FILTER(WHERE t.transaction_type='transfer' AND t.transaction_date >=cut.start_date AND t.transaction_date <cut.end_date
+          AND EXISTS(SELECT 1 FROM wallet.transactions other JOIN wallet.financial_accounts destination ON destination.id=other.account_id AND destination.workspace_id=other.workspace_id AND destination.user_id=other.user_id
+            WHERE other.transfer_group_id=t.transfer_group_id AND other.account_id<>t.account_id AND other.user_id=t.user_id AND other.workspace_id=t.workspace_id AND other.reversed_at IS NULL AND destination.type IN ('reserve','investment'))),0) AS reserved,
+        coalesce(sum(t.amount_minor) FILTER(WHERE t.transaction_date <cut.start_date AND (${reportingDateSql('t')}) >=cut.start_date),0) AS deferred_opening,
+        coalesce(sum(t.amount_minor) FILTER(WHERE t.transaction_date <cut.end_date AND (${reportingDateSql('t')}) >=cut.end_date),0) AS deferred_closing
+       FROM unnest($2::date[], $3::date[]) AS cut(start_date,end_date) JOIN wallet.transactions t ON t.transaction_date<cut.end_date WHERE t.user_id=$1 AND t.reversed_at IS NULL AND t.transaction_date <cut.end_date
+       GROUP BY cut.start_date,cut.end_date,t.account_id`,
+      [this.db.userId, periods.map((p) => p.from), periods.map((p) => p.to)],
+    );
+    return periods.map((period) => ({
+      ...period,
+      activity: rows
+        .filter((r) => isoDate(r.start_date) === period.from && isoDate(r.end_date) === period.to)
+        .map((r) => ({
+          accountId: r.account_id,
+          income: Number(r.income),
+          expense: Number(r.expense),
+          transfers: Number(r.transfers),
+          unclassified: Number(r.unclassified),
+          reserved: Number(r.reserved),
+          deferredOpening: Number(r.deferred_opening),
+          deferredClosing: Number(r.deferred_closing),
+        })),
+    }));
   }
   async monthlySummary(from: string, to: string) {
     const rows = await this.db.query(

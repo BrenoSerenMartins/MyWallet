@@ -22,6 +22,9 @@ export class AccountsService implements AccountReads {
   createManaged(name: string, type: 'credit_card' | 'investment', openingBalance = 0) {
     return this.create({ name, institution: type, type, openingBalance });
   }
+  positions(dates: string[]) {
+    return this.repository.positions(dates);
+  }
   list() {
     return this.repository.list();
   }

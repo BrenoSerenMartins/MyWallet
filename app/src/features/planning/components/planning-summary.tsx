@@ -1,3 +1,4 @@
+import { PeriodBudget } from '../../../shared/ui/period-budget';
 import type { ReactNode } from 'react';
 import { HelpTip } from '../../../shared/ui/tooltip';
 import { ArrowDownLeft, ArrowUpRight, PiggyBank, Scale } from 'lucide-react';
@@ -41,94 +42,102 @@ export function PlanningSummary({
     },
   ];
   return (
-    <section className="planning-metrics" aria-label="Resumo do planejamento">
-      {actions && (
-        <div className="summary-action-bar">
-          <div>{actions}</div>
-        </div>
-      )}
-      {metrics.map(({ label, Icon, planned, actual, difference, kind }) => (
+    <>
+      <PeriodBudget
+        budget={plan.budget}
+        forecast={{ result: t.plannedResult, contribution: plan.contribution }}
+      />
+      <section className="planning-metrics" aria-label="Resumo do planejamento">
+        {actions && (
+          <div className="summary-action-bar">
+            <div>{actions}</div>
+          </div>
+        )}
+        {metrics.map(({ label, Icon, planned, actual, difference, kind }) => (
+          <article
+            className={`panel planning-metric comparison-metric metric-${kind}`}
+            key={kind}
+            aria-label={label}
+          >
+            <span>
+              <Icon size={17} />
+              <span className="planning-metric-title">
+                <span className="planning-title-full">{label}</span>
+                <span className="planning-title-short">
+                  {kind === 'income' ? 'Receitas' : kind === 'expense' ? 'Despesas' : label}
+                </span>
+              </span>
+              <HelpTip
+                label={label}
+                text={
+                  kind === 'result'
+                    ? 'Receitas menos despesas do mês. Esse resultado não é o saldo atual das contas e não inclui transferências.'
+                    : kind === 'expense'
+                      ? 'Compara o orçamento com as despesas registradas, incluindo gastos sem categoria em Outros.'
+                      : 'Compara as receitas previstas com as registradas. O VA/VR segue a configuração de mês de cada conta.'
+                }
+              />
+            </span>
+            <dl className="planning-comparison">
+              <div>
+                <dt>Previsto</dt>
+                <dd>{display(planned)}</dd>
+              </div>
+              <div>
+                <dt>Realizado</dt>
+                <dd>{money(actual)}</dd>
+              </div>
+            </dl>
+            {kind !== 'result' && planned !== null && planned > 0 && (
+              <div
+                className="planning-meter"
+                role="img"
+                aria-label={`${label}: ${Math.round((actual / planned) * 100)}% do previsto`}
+              >
+                <span
+                  style={{ width: `${Math.min(100, Math.max(0, (actual / planned) * 100))}%` }}
+                />
+              </div>
+            )}
+            <p
+              className={`planning-difference ${difference == null ? '' : difference < 0 ? 'negative-text' : difference > 0 ? 'positive-text' : ''}`}
+            >
+              {difference == null
+                ? 'Sem previsão para comparar'
+                : difference === 0
+                  ? 'Dentro do previsto'
+                  : kind === 'expense'
+                    ? `${money(Math.abs(difference))} ${difference < 0 ? 'acima do orçamento' : 'disponíveis no orçamento'}`
+                    : `${money(Math.abs(difference))} ${difference < 0 ? 'abaixo' : 'acima'} do previsto`}
+            </p>
+          </article>
+        ))}
         <article
-          className={`panel planning-metric comparison-metric metric-${kind}`}
-          key={kind}
-          aria-label={label}
+          className="panel planning-metric comparison-metric metric-contribution"
+          aria-label="Aporte planejado"
         >
           <span>
-            <Icon size={17} />
-            <span className="planning-metric-title">
-              <span className="planning-title-full">{label}</span>
-              <span className="planning-title-short">
-                {kind === 'income' ? 'Receitas' : kind === 'expense' ? 'Despesas' : label}
-              </span>
-            </span>
+            <PiggyBank size={17} />
+            Aporte planejado
             <HelpTip
-              label={label}
-              text={
-                kind === 'result'
-                  ? 'Receitas menos despesas do mês. Esse resultado não é o saldo atual das contas e não inclui transferências.'
-                  : kind === 'expense'
-                    ? 'Compara o orçamento com as despesas registradas, incluindo gastos sem categoria em Outros.'
-                    : 'Compara as receitas previstas com as registradas. O VA/VR segue a configuração de mês de cada conta.'
-              }
+              label="Aporte planejado"
+              text="É o valor que você pretende reservar ou investir. O realizado ainda não é identificado automaticamente nesta comparação."
             />
           </span>
           <dl className="planning-comparison">
             <div>
               <dt>Previsto</dt>
-              <dd>{display(planned)}</dd>
+              <dd>{display(plan.contribution)}</dd>
             </div>
             <div>
               <dt>Realizado</dt>
-              <dd>{money(actual)}</dd>
+              <dd className="planning-unavailable">Não identificado</dd>
             </div>
           </dl>
-          {kind !== 'result' && planned !== null && planned > 0 && (
-            <div
-              className="planning-meter"
-              role="img"
-              aria-label={`${label}: ${Math.round((actual / planned) * 100)}% do previsto`}
-            >
-              <span style={{ width: `${Math.min(100, Math.max(0, (actual / planned) * 100))}%` }} />
-            </div>
-          )}
-          <p
-            className={`planning-difference ${difference == null ? '' : difference < 0 ? 'negative-text' : difference > 0 ? 'positive-text' : ''}`}
-          >
-            {difference == null
-              ? 'Sem previsão para comparar'
-              : difference === 0
-                ? 'Dentro do previsto'
-                : kind === 'expense'
-                  ? `${money(Math.abs(difference))} ${difference < 0 ? 'acima do orçamento' : 'disponíveis no orçamento'}`
-                  : `${money(Math.abs(difference))} ${difference < 0 ? 'abaixo' : 'acima'} do previsto`}
-          </p>
+          <p>Resultado previsto após aporte: {display(t.afterContribution)}</p>
         </article>
-      ))}
-      <article
-        className="panel planning-metric comparison-metric metric-contribution"
-        aria-label="Aporte planejado"
-      >
-        <span>
-          <PiggyBank size={17} />
-          Aporte planejado
-          <HelpTip
-            label="Aporte planejado"
-            text="É o valor que você pretende reservar ou investir. O realizado ainda não é identificado automaticamente nesta comparação."
-          />
-        </span>
-        <dl className="planning-comparison">
-          <div>
-            <dt>Previsto</dt>
-            <dd>{display(plan.contribution)}</dd>
-          </div>
-          <div>
-            <dt>Realizado</dt>
-            <dd className="planning-unavailable">Não identificado</dd>
-          </div>
-        </dl>
-        <p>Resultado previsto após aporte: {display(t.afterContribution)}</p>
-      </article>
-      {navigation && <div className="summary-navigation">{navigation}</div>}
-    </section>
+        {navigation && <div className="summary-navigation">{navigation}</div>}
+      </section>
+    </>
   );
 }

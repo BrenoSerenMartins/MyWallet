@@ -1,3 +1,4 @@
+import { ExportMovements } from './components/export-movements';
 import { Search as EmptyStateIcon } from 'lucide-react';
 import { DatePicker } from '../../shared/ui/controls/date-picker';
 import { Select } from '../../shared/ui/controls/select';
@@ -268,7 +269,7 @@ export function TransactionsPage() {
           open={filtersOpen}
           onOpenChange={setFiltersOpen}
           title="Filtros avançados"
-          description="Escolha o período, a conta e os demais filtros da lista."
+          description="O período segue a competência dos benefícios. Os demais lançamentos seguem a data original."
         >
           <div className="movement-period">
             <label className="movement-preset">
@@ -368,6 +369,12 @@ export function TransactionsPage() {
               Ver movimentos
             </Button>
           </div>
+          <ExportMovements
+            query={query.toString()}
+            accounts={accounts.data ?? []}
+            categories={categories.data ?? []}
+            disabled={rangeInvalid}
+          />
         </Modal>
         {(activeFilters.length > 0 || search) && (
           <div className="active-filters" aria-label="Filtros aplicados">
@@ -481,6 +488,15 @@ export function TransactionsPage() {
               <p>ID externo: {selected.sourceOperationId ?? 'Ainda não vinculado'}</p>
             </div>
           </div>
+        )}
+        {selected?.reportingDate && selected.reportingDate !== selected.transactionDate && (
+          <p className="field-help">
+            Competência do benefício:{' '}
+            {new Date(selected.reportingDate + 'T12:00:00Z').toLocaleDateString('pt-BR', {
+              timeZone: 'UTC',
+            })}
+            . A data do lançamento abaixo é a original do extrato.
+          </p>
         )}
         {selected?.refundOfId && (
           <div className="review-banner">

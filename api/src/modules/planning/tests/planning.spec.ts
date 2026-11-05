@@ -872,3 +872,302 @@ it('changes benefit planning preferences independently with version and workspac
     );
   });
 });
+
+it('carries benefit leftovers once, excludes future credits and reconciles reserves without inventing income', async () => {
+  await benefitPlanningSpace(async () => {
+    const benefit = await accounts.create({
+      name: 'Carry VA',
+      institution: 'alelo',
+      type: 'benefit_food',
+      openingBalance: 10000,
+      openingDate: '2026-10-01',
+      benefitCreditMonth: 'following',
+    });
+    const cash = await accounts.create({
+      name: 'Cash',
+      institution: 'mercado_pago',
+      type: 'checking',
+      openingBalance: 100000,
+      openingDate: '2026-10-01',
+    });
+    const reserve = await accounts.create({
+      name: 'Saved',
+      institution: 'mercado_pago',
+      type: 'reserve',
+      openingBalance: 80000,
+      openingDate: '2026-10-01',
+    });
+    const credit = await ledger.create({
+      accountId: benefit.id,
+      amount: 70000,
+      transactionDate: '2026-10-31',
+      description: 'November credit',
+      transactionType: 'income',
+    });
+    await ledger.create({
+      accountId: benefit.id,
+      amount: -70000,
+      transactionDate: '2026-11-15',
+      description: 'November purchases',
+      transactionType: 'expense',
+    });
+    await ledger.create({
+      accountId: benefit.id,
+      amount: 70000,
+      transactionDate: '2026-11-30',
+      description: 'December credit',
+      transactionType: 'income',
+    });
+    await ledger.transfer(
+      {
+        fromAccountId: cash.id,
+        toAccountId: reserve.id,
+        amount: 40000,
+        transactionDate: '2026-11-20',
+        description: 'Save',
+      },
+      randomUUID(),
+    );
+    const nov = (await planning.summary('2026-11')).budget!;
+    expect(nov).toMatchObject({
+      coverage: 'complete',
+      carried: 110000,
+      income: 70000,
+      expense: 70000,
+      transfers: -40000,
+      reserved: 40000,
+      available: 70000,
+      adjustments: 0,
+    });
+    expect(nov.accounts.find((a) => a.accountId === benefit.id)).toMatchObject({
+      carried: 10000,
+      available: 10000,
+      deferredOpening: 70000,
+      deferredClosing: 70000,
+    });
+    expect(nov.accounts.some((a) => a.accountId === reserve.id)).toBe(false);
+    const dec = (await planning.summary('2026-12')).budget!;
+    expect(dec).toMatchObject({ carried: 70000, income: 70000, available: 140000, adjustments: 0 });
+    const dashboard = new DashboardService(accounts, ledger);
+    expect((await dashboard.summary('2026-11-01', '2026-12-01')).budget).toEqual(nov);
+    expect((await dashboard.history('2026-12', 2)).items[0].budget).toEqual(nov);
+    const rows = await ledger.list({
+      accountId: benefit.id,
+      from: '2026-11-01',
+      to: '2026-12-01',
+      limit: 10,
+    });
+    expect(rows.items.find((t) => t.id === credit.id)).toMatchObject({
+      transactionDate: '2026-10-31',
+      reportingDate: '2026-11-01',
+    });
+  });
+});
+
+it('retains negative carryover for early spending and never fabricates history before a reference', async () => {
+  await benefitPlanningSpace(async () => {
+    const benefit = await accounts.create({
+      name: 'Early VA',
+      institution: 'alelo',
+      type: 'benefit_meal',
+      openingBalance: 1,
+      openingDate: '2026-10-01',
+      benefitCreditMonth: 'following',
+    });
+    await ledger.create({
+      accountId: benefit.id,
+      amount: 70000,
+      transactionDate: '2026-10-31',
+      description: 'Advance',
+      transactionType: 'income',
+    });
+    await ledger.create({
+      accountId: benefit.id,
+      amount: -5001,
+      transactionDate: '2026-10-31',
+      description: 'Early use',
+      transactionType: 'expense',
+    });
+    expect((await planning.summary('2026-11')).budget).toMatchObject({
+      carried: -5000,
+      income: 70000,
+      available: 65000,
+      adjustments: 0,
+    });
+    const unknown = await accounts.create({
+      name: 'Unproven',
+      institution: 'mercado_pago',
+      type: 'checking',
+    });
+    const partial = (await planning.summary('2026-11')).budget!;
+    expect(partial.coverage).toBe('partial');
+    expect(partial.available).toBeNull();
+    expect(partial.accounts.find((a) => a.accountId === unknown.id)?.reason).toBe(
+      'missing-reference',
+    );
+    expect((await planning.summary('2026-09')).budget?.carried).toBeNull();
+    const state = await accounts.find(benefit.id);
+    expect(state.balance).toBe(65000);
+  });
+});
+
+it('reconstructs the active prior balance reference and isolates manual corrections from income', async () => {
+  await benefitPlanningSpace(async () => {
+    const a = await accounts.create({
+      name: 'Observed',
+      institution: 'mercado_pago',
+      type: 'checking',
+      openingBalance: 10000,
+      openingDate: '2026-10-01',
+    });
+    await ledger.create({
+      accountId: a.id,
+      amount: -2000,
+      transactionDate: '2026-11-10',
+      description: 'Purchase',
+      transactionType: 'expense',
+    });
+    const repo = new BalanceBasisRepository(db.service);
+    const id = randomUUID();
+    const basis = {
+      kind: 'manual' as const,
+      referenceDate: '2026-11-15',
+      referenceBalance: 9000,
+      originId: id,
+    };
+    await repo.append({
+      id,
+      accountId: a.id,
+      operation: 'manual',
+      previousBase: 10000,
+      newBase: 11000,
+      previousBasis: { kind: 'legacy' },
+      newBasis: basis,
+      reason: 'Observed position',
+      details: { knownSameDayIds: [] },
+      undoOfId: null,
+      createdAt: '2026-11-15T12:00:00Z',
+    });
+    await repo.write(a.id, 11000, basis);
+    expect((await planning.summary('2026-11')).budget).toMatchObject({
+      carried: 10000,
+      income: 0,
+      expense: 2000,
+      adjustments: 1000,
+      available: 9000,
+    });
+    expect((await planning.summary('2026-10')).budget).toMatchObject({
+      carried: 10000,
+      available: 10000,
+      adjustments: 0,
+    });
+    await db.service.query('UPDATE wallet.financial_accounts SET archived_at=now() WHERE id=$1', [
+      a.id,
+    ]);
+    expect((await planning.summary('2026-11')).budget?.available).toBe(9000);
+  });
+});
+
+it('keeps a partial leap-month period, year rollover, received credits and reversals consistent', async () => {
+  await benefitPlanningSpace(async () => {
+    const a = await accounts.create({
+      name: 'Boundary',
+      institution: 'alelo',
+      type: 'benefit_meal',
+      openingBalance: 10000,
+      openingDate: '2023-12-01',
+      benefitCreditMonth: 'following',
+    });
+    const credit = await ledger.create({
+      accountId: a.id,
+      amount: 70000,
+      transactionDate: '2023-12-31',
+      transactionType: 'income',
+      description: 'January',
+    });
+    await ledger.create({
+      accountId: a.id,
+      amount: -10000,
+      transactionDate: '2024-02-29',
+      transactionType: 'expense',
+      description: 'Leap purchase',
+    });
+    const january = (await planning.summary('2024-01')).budget!;
+    expect(january).toMatchObject({
+      carried: 10000,
+      income: 70000,
+      available: 80000,
+      adjustments: 0,
+    });
+    const dashboard = new DashboardService(accounts, ledger);
+    expect((await dashboard.summary('2024-02-29', '2024-03-01')).budget).toMatchObject({
+      carried: 80000,
+      income: 0,
+      expense: 10000,
+      available: 70000,
+      adjustments: 0,
+    });
+    const current = await accounts.find(a.id);
+    await accounts.setBenefitMonth(a.id, 'received', String(current.version));
+    expect((await planning.summary('2024-01')).budget).toMatchObject({
+      carried: 80000,
+      income: 0,
+      available: 80000,
+    });
+    await db.service.query('UPDATE wallet.transactions SET reversed_at=now() WHERE id=$1', [
+      credit.id,
+    ]);
+    expect((await planning.summary('2024-01')).budget).toMatchObject({
+      carried: 10000,
+      income: 0,
+      available: 10000,
+    });
+  });
+});
+
+it('restores derived carryover from backup facts without creating monthly entries or crossing spaces', async () => {
+  const source = await benefitPlanningSpace(async () => {
+    const a = await accounts.create({
+      name: 'Portable leftover',
+      institution: 'alelo',
+      type: 'benefit_food',
+      openingBalance: 10000,
+      openingDate: '2026-10-01',
+      benefitCreditMonth: 'following',
+    });
+    await ledger.create({
+      accountId: a.id,
+      amount: 70000,
+      transactionDate: '2026-10-31',
+      description: 'November',
+      transactionType: 'income',
+    });
+    await ledger.create({
+      accountId: a.id,
+      amount: -60000,
+      transactionDate: '2026-11-10',
+      description: 'Use',
+      transactionType: 'expense',
+    });
+    return { backup: await backups.backup(), budget: (await planning.summary('2026-11')).budget! };
+  });
+  await benefitPlanningSpace(async () => {
+    expect((await planning.summary('2026-11')).budget).toMatchObject({
+      carried: 0,
+      available: 0,
+      income: 0,
+    });
+    const preview = await backups.preview(source.backup);
+    await backups.confirm(preview.id);
+    const restored = (await planning.summary('2026-11')).budget!;
+    expect(restored).toMatchObject({
+      carried: source.budget.carried,
+      available: source.budget.available,
+      income: source.budget.income,
+      expense: source.budget.expense,
+      adjustments: 0,
+      coverage: 'complete',
+    });
+    expect((await ledger.exportRecords()).length).toBe(2);
+  });
+});

@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/common';
 import {
   ACCOUNT_READS,
+  periodBudget,
   ACCOUNT_BALANCE_BASIS,
   type AccountBalanceBasis,
   LEDGER_READS,
@@ -23,7 +24,27 @@ export class DashboardService {
     const start = new Date(Date.UTC(year, number - months, 1)).toISOString().slice(0, 10);
     const from = start < '1900-01-01' ? '1900-01-01' : start;
     const to = new Date(Date.UTC(year, number, 1)).toISOString().slice(0, 10);
-    return { items: await this.ledger.monthlySummary(from, to), from, to, months };
+    const items = await this.ledger.monthlySummary(from, to);
+    const cuts = items.map((item) => `${item.month}-01`).concat(to);
+    const accounts = await this.accounts.list();
+    const positions = await this.accounts.positions(cuts);
+    const activities = await this.ledger.budgetActivities(
+      items.map((_, index) => ({ from: cuts[index], to: cuts[index + 1] })),
+    );
+    const enriched = [];
+    for (let index = 0; index < items.length; index++) {
+      enriched.push({
+        ...items[index],
+        budget: periodBudget(
+          cuts[index],
+          cuts[index + 1],
+          accounts,
+          positions,
+          activities[index].activity,
+        ),
+      });
+    }
+    return { items: enriched, from, to, months };
   }
   async summary(from: string, to: string) {
     await this.balanceBasis?.upgradeLegacyReferences();
@@ -33,6 +54,13 @@ export class DashboardService {
     const summary = await this.ledger.summary(from, to);
     return {
       ...summary,
+      budget: periodBudget(
+        from,
+        to,
+        await this.accounts.list(),
+        await this.accounts.positions([from, to]),
+        await this.ledger.budgetActivity(from, to),
+      ),
       balance: accounts
         .filter((a) => !['benefit_food', 'benefit_meal', 'reserve'].includes(a.type))
         .reduce((sum, a) => sum + a.balance, 0),

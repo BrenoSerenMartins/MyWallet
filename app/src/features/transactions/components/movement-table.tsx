@@ -121,6 +121,9 @@ export function MovementTable({
                         {item.description}
                       </button>
                       <div className="movement-context">
+                        {item.reportingDate && item.reportingDate !== item.transactionDate && (
+                          <span>Competência: {date(item.reportingDate)}</span>
+                        )}
                         <span className={category ? 'movement-category-label' : 'muted'}>
                           {category ? (
                             <>

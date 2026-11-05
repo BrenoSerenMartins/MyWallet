@@ -19,11 +19,25 @@ export function HistoryOverview({
   visible: boolean;
   onMonthChange: (month: string) => void;
 }) {
+  const [series, setSeries] = useState<'flows' | 'available'>('flows');
   const [months, setMonths] = useState('4');
   const [mode, setMode] = useState<'bars' | 'lines'>('bars');
   const [selected, setSelected] = useState(month);
   const history = useDashboardHistory(month, months);
   const items = history.data?.items ?? [];
+  const availabilityKnown =
+    items.length > 0 &&
+    items.every((item) => item.budget?.carried != null && item.budget.available != null);
+  const plotted =
+    series === 'flows'
+      ? items
+      : items.map((item) => ({
+          ...item,
+          income: item.budget?.carried ?? 0,
+          expense: item.budget?.available ?? 0,
+        }));
+  const labels: [string, string] =
+    series === 'flows' ? ['Receitas', 'Despesas'] : ['Saldo trazido', 'Disponível final'];
   const current = items.at(-1),
     previous = items.at(-2);
   const detail = items.find((item) => item.month === selected) ?? current;
@@ -42,7 +56,7 @@ export function HistoryOverview({
             <span id="history-title">Evolução mensal</span>
             <HelpTip
               label="Sobre a evolução mensal"
-              text={`O intervalo termina no mês selecionado na visão geral. Apenas lançamentos registrados entram no gráfico; transferências e ajustes de saldo ficam fora.${month === dateToday().slice(0, 7) ? ' O mês atual está em andamento; o mês anterior é comparado por inteiro.' : ''}${items.some((item) => item.unclassified > 0) ? ' Há movimentos sem tipo financeiro que ainda não entram nas receitas e despesas.' : ''}`}
+              text={`O intervalo termina no mês selecionado na visão geral. Receitas e despesas seguem a competência dos benefícios e não incluem sobras, transferências ou ajustes. A série Disponível mostra o saldo trazido e a posição final, excluindo reservas e créditos destinados a períodos futuros.${month === dateToday().slice(0, 7) ? ' O mês atual está em andamento; o mês anterior é comparado por inteiro.' : ''}${items.some((item) => item.unclassified > 0) ? ' Há movimentos sem tipo financeiro que ainda não entram nas receitas e despesas.' : ''}`}
             />
           </h2>
         </div>
@@ -82,26 +96,59 @@ export function HistoryOverview({
         </p>
       ) : (
         <>
-          {items.some((item) => item.count > 0) ? (
+          {items.some((item) => item.count > 0 || item.budget?.available != null) ? (
             <>
+              <label>
+                <span className="sr-only">Série do gráfico</span>
+                <Select
+                  aria-label="Série do gráfico"
+                  value={series}
+                  onChange={(event) => setSeries(event.target.value as 'flows' | 'available')}
+                >
+                  <option value="flows">Receitas e despesas</option>
+                  <option value="available">Disponível no mês</option>
+                </Select>
+              </label>
               <div className="history-legend">
-                <span className="income">Receitas</span>
-                <span className="expense">Despesas</span>
+                <span className="income">{labels[0]}</span>
+                <span className="expense">{labels[1]}</span>
               </div>
-              <HistoryChart
-                items={items}
-                mode={mode}
-                selected={detail?.month ?? month}
-                onSelect={setSelected}
-              />
+              {series === 'available' && !availabilityKnown ? (
+                <p role="status">
+                  Histórico de saldo incompleto neste intervalo. Confira as referências das contas
+                  para comparar o disponível.
+                </p>
+              ) : (
+                <HistoryChart
+                  items={plotted}
+                  labels={labels}
+                  mode={mode}
+                  selected={detail?.month ?? month}
+                  onSelect={setSelected}
+                />
+              )}
               {detail && (
                 <div className="history-selection" aria-live="polite">
                   <strong>{historyMonthLabel(detail.month)}</strong>
                   <span>
-                    Receitas <b className="positive-text">{money(detail.income)}</b>
+                    {labels[0]}{' '}
+                    <b className="positive-text">
+                      {series === 'flows'
+                        ? money(detail.income)
+                        : detail.budget?.carried == null
+                          ? 'Histórico incompleto'
+                          : money(detail.budget.carried)}
+                    </b>
                   </span>
                   <span>
-                    Despesas <b className="negative-text">{money(detail.expense)}</b>
+                    {labels[1]}{' '}
+                    <b className="negative-text">
+                      {series === 'flows'
+                        ? money(detail.expense)
+                        : detail.budget?.available == null
+                          ? 'Histórico incompleto'
+                          : money(detail.budget.available)}
+                    </b>
                   </span>
                   <button
                     type="button"
@@ -118,7 +165,7 @@ export function HistoryOverview({
               Escolha outro período para comparar receitas e despesas.
             </EmptyState>
           )}
-          {current && previous && (
+          {series === 'flows' && current && previous && (
             <details className="history-comparison-details">
               <summary>Comparar meses</summary>
               <p className="history-comparison-caption">

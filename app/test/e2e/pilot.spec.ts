@@ -4517,3 +4517,100 @@ for (const width of [390, 1440]) {
     }
   });
 }
+
+for (const width of [390, 1440]) {
+  test(`carryover shows leftovers separately from benefit income and reserves at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    const budget = {
+      from: '2026-12-01',
+      to: '2027-01-01',
+      coverage: 'complete',
+      carried: 10000,
+      available: 80000,
+      income: 70000,
+      expense: 0,
+      transfers: 0,
+      reserved: 0,
+      unclassified: 0,
+      adjustments: 0,
+      accounts: [
+        {
+          accountId: account.id,
+          name: 'Benefício',
+          type: 'benefit_food',
+          openingBankBalance: 80000,
+          closingBankBalance: 80000,
+          deferredOpening: 70000,
+          deferredClosing: 0,
+          carried: 10000,
+          available: 80000,
+          income: 70000,
+          expense: 0,
+          transfers: 0,
+          reserved: 0,
+          unclassified: 0,
+          adjustments: 0,
+          referenceDate: '2026-10-01',
+          reason: null,
+        },
+      ],
+    };
+    await page.route('**/v1/planning/*', (route) =>
+      route.fulfill({ json: { ...monthlyPlan('2026-12'), budget } }),
+    );
+    await page.goto('/planning?month=2026-12');
+    const panel = page.getByRole('region', { name: 'Disponível no período', exact: true });
+    await expect(panel.locator('.period-budget-head')).toContainText('R$ 100,00');
+    await expect(panel.locator('.period-budget-head')).toContainText('R$ 800,00');
+    await panel.getByText('Composição do disponível', { exact: true }).click();
+    await panel.getByText('Benefício', { exact: true }).click();
+    await expect(panel).toContainText('R$ 700,00');
+    await expectNoHorizontalOverflow(page);
+    await page.goto('/?month=2026-12');
+    await expect(panel.locator('.period-budget-head')).toContainText('R$ 100,00');
+    await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
+    await expect(panel).not.toContainText('R$');
+  });
+}
+
+test('filtered CSV exports every page with original and reporting dates', async ({ page }) => {
+  await signedIn(page);
+  await page.route('**/v1/transactions?*', (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    if (query.get('limit') !== '100')
+      return route.fulfill({ json: { items: [transaction], nextCursor: null } });
+    expect(query.get('from')).toBe('2026-11-01');
+    expect(query.get('to')).toBe('2026-12-01');
+    return route.fulfill({
+      json: query.has('cursor')
+        ? {
+            items: [{ ...transaction, id: 'second-export-row', description: 'Second export page' }],
+            nextCursor: null,
+          }
+        : {
+            items: [
+              {
+                ...transaction,
+                reportingDate: '2026-11-01',
+                transactionDate: '2026-10-31',
+                description: 'Benefit advance',
+              },
+            ],
+            nextCursor: 'next-export-page',
+          },
+    });
+  });
+  await page.goto('/transactions?from=2026-11-01&to=2026-11-30');
+  await page.getByRole('button', { name: 'Filtros avançados', exact: true }).click();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exportar consulta CSV', exact: true }).click();
+  const file = await download;
+  const path = await file.path();
+  const { readFile } = await import('node:fs/promises');
+  const csv = await readFile(path!, 'utf8');
+  expect(csv).toContain('"2026-10-31";"2026-11-01"');
+  expect(csv).toContain('Second export page');
+});

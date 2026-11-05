@@ -115,3 +115,7 @@ Privacidade oculta todos os valores derivados. Preservar filtros, URL, paginaç�
 Entregar em mudanças pequenas e revisáveis, com frontend/contratos compatíveis. Não ativar um “disponível” parcial sem rótulo de cobertura. Nenhuma etapa autoriza alterar extratos, reclassificar despesas, apagar a configuração de benefícios ou converter saldos em receitas.
 
 Concluído quando a soma fecha por conta e por espaço, a sobra atravessa meses sem duplicação, o benefício segue sua competência, reservas não financiam automaticamente o orçamento e todas as visualizações explicam os mesmos valores.
+
+## Execução registrada
+
+2026-11-05: cálculo derivado, leitura da linhagem ativa de referências, decomposição de transferências/ajustes, integração de planejamento/dashboard, série de disponível e CSV de consulta implementados. A exportação de backup continua no formato existente, pois os novos totais são derivados. Valores sem prova histórica são apresentados como incompletos, sem extrapolação do saldo atual. Validação local: 237 testes, tipos, lint, limites, build e contratos passaram. Novos cenários de navegador adicionados; execução real pelo CI e revisão em dispositivo continuam pendentes. Recursos de metas e alocação virtual permanecem no plano do próximo ciclo.

@@ -1,3 +1,4 @@
+import { PeriodBudget } from '../../../shared/ui/period-budget';
 import { Link } from 'react-router-dom';
 import { ArrowDownLeft, ArrowUpRight, Scale } from 'lucide-react';
 import type { MonthlyPlan } from '../../../shared/api/resources';
@@ -44,6 +45,13 @@ export function MonthOverview({
   const display = (value: number) => (visible ? money(value) : '••••••');
   return (
     <>
+      <PeriodBudget
+        budget={plan?.budget}
+        visible={visible}
+        forecast={
+          plan ? { result: plan.totals.plannedResult, contribution: plan.contribution } : undefined
+        }
+      />
       <div className="monthly-metrics">
         {metrics.map(({ title, actual, planned, Icon, type, tone }) => {
           const difference =
