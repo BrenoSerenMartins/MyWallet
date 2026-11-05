@@ -12,6 +12,12 @@ function reconciliationSql(alias = 'wallet.transactions') {
     AND (proof.source_data->>'amount')::bigint=${alias}.amount_minor
     AND ${alias}.transaction_date IN ((proof.source_data->>'date')::date,(proof.source_data->>'originDate')::date))`;
 }
+function cardPaymentSql(alias = 'wallet.transactions') {
+  return `(SELECT json_build_object('cardId',p.card_id,'billMonth',p.bill_month,'cardName',c.name,'paymentId',p.id)
+    FROM wallet.card_payments p JOIN wallet.credit_cards c ON c.id=p.card_id AND c.user_id=p.user_id AND c.workspace_id=p.workspace_id
+    WHERE p.user_id=${alias}.user_id AND p.workspace_id=${alias}.workspace_id AND NOT p.voided
+      AND ${alias}.id IN (p.debit_id,p.credit_id) LIMIT 1)`;
+}
 /** Reporting competence only; bank dates and balance/reconciliation evidence stay unchanged. */
 function reportingDateSql(alias = 'wallet.transactions') {
   return `CASE WHEN ${alias}.transaction_type='income' AND ${alias}.amount_minor>0
@@ -73,7 +79,7 @@ export class LedgerRepository {
     return (
       await this.db.query(
         `SELECT t.*,coalesce((SELECT sum(abs(r.amount_minor)) FROM wallet.transactions r WHERE r.refund_of_id=t.id AND r.reversed_at IS NULL),0) AS refunded_amount FROM wallet.transactions t WHERE t.user_id=$1 AND t.account_id=$2 AND t.transaction_date BETWEEN $3 AND $4 AND t.reversed_at IS NULL AND t.managed_kind IS NULL AND t.refund_of_id IS NULL AND t.balance_adjustment IS NULL AND t.transfer_group_id IS NULL
-      AND ${direction === 'income' ? "t.transaction_type IN ('income','transfer') AND t.amount_minor>0" : "t.transaction_type IN ('expense','transfer') AND t.amount_minor<0 AND NOT EXISTS(SELECT 1 FROM wallet.transactions r WHERE r.refund_of_id=t.id AND r.reversed_at IS NULL)"}
+      AND ${direction === 'income' ? "t.transaction_type IN ('income','transfer') AND t.amount_minor>0" : "t.transaction_type IN ('expense','transfer','unclassified') AND t.amount_minor<0 AND NOT EXISTS(SELECT 1 FROM wallet.transactions r WHERE r.refund_of_id=t.id AND r.reversed_at IS NULL)"}
       AND NOT EXISTS(SELECT 1 FROM wallet.transaction_claims c WHERE c.user_id=t.user_id AND c.workspace_id=t.workspace_id AND c.transaction_id=t.id) ORDER BY t.transaction_date DESC,t.id LIMIT 100`,
         [this.db.userId, accountId, from, to],
       )
@@ -104,10 +110,19 @@ export class LedgerRepository {
       [this.db.userId, id, groupId, kind],
     );
   }
-  async detachManagedDebit(id: string) {
+  async detachManagedDebit(
+    id: string,
+    original?: { transactionType: string; categoryId: string | null } | null,
+  ) {
     await this.db.query(
-      'UPDATE wallet.transactions SET transfer_group_id=NULL,managed_kind=NULL,version=version+1,updated_at=now() WHERE user_id=$1 AND id=$2',
-      [this.db.userId, id],
+      'UPDATE wallet.transactions SET transfer_group_id=NULL,managed_kind=NULL,transaction_type=CASE WHEN $5 THEN $3 ELSE transaction_type END,category_id=CASE WHEN $5 THEN $4 ELSE category_id END,version=version+1,updated_at=now() WHERE user_id=$1 AND id=$2',
+      [
+        this.db.userId,
+        id,
+        original?.transactionType ?? null,
+        original?.categoryId ?? null,
+        !!original,
+      ],
     );
   }
   async setManagedCategory(ids: string[], categoryId: string | null, kind: string) {
@@ -252,7 +267,7 @@ export class LedgerRepository {
   }
   async find(id: string, lock = false) {
     const rows = await this.db.query(
-      `SELECT *,${reportingDateSql()} AS reporting_date,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE user_id=$1 AND id=$2 AND reversed_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
+      `SELECT *,${cardPaymentSql()} AS card_payment,${reportingDateSql()} AS reporting_date,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE user_id=$1 AND id=$2 AND reversed_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
       [this.db.userId, id],
     );
     return rows[0] ? transactionResource(rows[0]) : null;
@@ -278,7 +293,7 @@ export class LedgerRepository {
     }
     values.push(filter.limit + 1);
     const rows = await this.db.query(
-      `SELECT *,${reportingDateSql()} AS reporting_date,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE ${where.join(' AND ')} ORDER BY transaction_date DESC,id DESC LIMIT $${values.length}`,
+      `SELECT *,${cardPaymentSql()} AS card_payment,${reportingDateSql()} AS reporting_date,${reconciliationSql()} AS reconciled FROM wallet.transactions WHERE ${where.join(' AND ')} ORDER BY transaction_date DESC,id DESC LIMIT $${values.length}`,
       values,
     );
     const items = rows.slice(0, filter.limit).map(transactionResource);

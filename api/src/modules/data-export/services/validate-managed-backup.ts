@@ -209,6 +209,22 @@ export function validateManagedBackup(b: BackupPayload, unique: (id: string) => 
       fail();
   }
   for (const p of cards.payments) {
+    if (p.originalDebit) {
+      if (
+        b.version < 11 ||
+        p.mode !== 'link' ||
+        !['expense', 'transfer', 'unclassified'].includes(p.originalDebit.transactionType)
+      )
+        fail();
+      if (p.originalDebit.categoryId !== null) {
+        requireUuid(p.originalDebit.categoryId);
+        if (
+          p.originalDebit.transactionType !== 'expense' ||
+          categories.get(p.originalDebit.categoryId)?.type !== 'expense'
+        )
+          fail();
+      }
+    }
     unique(p.id);
     month(p.billMonth);
     date(p.paymentDate);

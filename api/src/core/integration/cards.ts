@@ -40,6 +40,7 @@ export interface CardBillEntry {
   description: string;
 }
 export interface CardPayment {
+  originalDebit?: { transactionType: string; categoryId: string | null } | null;
   id: string;
   cardId: string;
   billMonth: string;

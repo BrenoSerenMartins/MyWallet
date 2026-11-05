@@ -38,7 +38,15 @@ export class BalanceAdjustmentResourceDto {
   @ApiProperty({ type: Number }) targetBalance!: number;
   @ApiProperty({ type: String }) reason!: string;
 }
+export class LinkedCardPaymentDto {
+  @ApiProperty({ type: String }) cardId!: string;
+  @ApiProperty({ type: String }) billMonth!: string;
+  @ApiProperty({ type: String }) cardName!: string;
+  @ApiProperty({ type: String }) paymentId!: string;
+}
 export class TransactionResourceDto {
+  @ApiPropertyOptional({ type: LinkedCardPaymentDto, nullable: true })
+  cardPayment?: LinkedCardPaymentDto | null;
   @ApiPropertyOptional({ enum: ['card', 'investment'], nullable: true }) managedKind?:
     'card' | 'investment' | null;
   @ApiPropertyOptional({ type: String, nullable: true }) counterpartyId?: string | null;

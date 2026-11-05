@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useId } from 'react';
 import {
   ArrowDownLeft,
@@ -87,7 +88,13 @@ export function MovementTable({
                     ? ArrowDownLeft
                     : ArrowUpRight;
             const reconciled = item.reconciliationStatus === 'reconciled';
-            const status = reconciled ? 'Conferida por arquivo' : 'Pendente de conciliação';
+            const status = item.cardPayment
+              ? reconciled
+                ? 'Pagamento vinculado · conferido por arquivo'
+                : 'Pagamento vinculado · sem conferência por arquivo'
+              : reconciled
+                ? 'Conferida por arquivo'
+                : 'Pendente de conciliação';
             const details = `${types[item.transactionType]}. ${status}. ${item.importBatchId ? 'Importado de extrato.' : 'Lançamento manual.'}${item.classificationRuleId ? ' Categoria automática.' : ''}`;
             const amountTone = ['transfer', 'unclassified'].includes(item.transactionType)
               ? ''
@@ -121,6 +128,13 @@ export function MovementTable({
                         {item.description}
                       </button>
                       <div className="movement-context">
+                        {item.cardPayment && (
+                          <Link
+                            to={`/cards?card=${item.cardPayment.cardId}&month=${item.cardPayment.billMonth}`}
+                          >
+                            Fatura vinculada · {item.cardPayment.cardName}
+                          </Link>
+                        )}
                         {item.reportingDate && item.reportingDate !== item.transactionDate && (
                           <span>Competência: {date(item.reportingDate)}</span>
                         )}

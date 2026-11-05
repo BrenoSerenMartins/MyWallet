@@ -70,7 +70,11 @@ export function CardForm({
           >
             <option value="">Selecione a conta</option>
             {choices.accounts.data
-              ?.filter((a) => !a.archived)
+              ?.filter(
+                (a) =>
+                  !a.archived &&
+                  !['benefit_food', 'benefit_meal', 'credit_card', 'investment'].includes(a.type),
+              )
               .map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -249,7 +253,7 @@ export function CardOpeningForm({
   card: CreditCard;
   month: string;
   write: Writer;
-  onSaved: () => void;
+  onSaved: (month?: string) => void;
 }) {
   const [value, setValue] = useState('');
   const [billMonth, setMonth] = useState(month);
@@ -262,7 +266,7 @@ export function CardOpeningForm({
           { billMonth, amount: parseMoney(value) },
           card.version,
         );
-        onSaved();
+        onSaved(billMonth);
       }}
     >
       <label>
@@ -286,8 +290,9 @@ export function CardOpeningForm({
         />
       </label>
       <p className="field-help">
-        Use somente para uma dívida anterior às compras cadastradas. Esse valor compõe a fatura e a
-        dívida, sem criar uma despesa nova no mês.
+        Informe apenas a dívida que ainda não foi registrada. Cada inclusão soma ao mês escolhido,
+        sem criar uma despesa nova. Se houver outros valores anteriores, você pode adicioná-los
+        separadamente.
       </p>
     </FinanceForm>
   );

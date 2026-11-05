@@ -5,6 +5,7 @@ import { WorkspacesPage } from '../features/workspaces/workspaces-page';
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../features/auth/auth-provider';
+import { LandingPage } from '../features/auth/landing-page';
 import { AuthPage } from '../features/auth/auth-page';
 import { Loading } from '../shared/ui/primitives';
 import { AppShell } from './app-shell';
@@ -64,7 +65,12 @@ export function Application() {
           <Routes>
             <Route path="/reset-password" element={<AuthPage />} />
             {!session ? (
-              <Route path="*" element={<AuthPage />} />
+              <>
+                <Route index element={<LandingPage />} />
+                <Route path="login" element={<AuthPage />} />
+                <Route path="painel" element={<AuthPage />} />
+                <Route path="*" element={<AuthPage />} />
+              </>
             ) : (
               <>
                 <Route path="workspaces" element={<WorkspacesPage />} />

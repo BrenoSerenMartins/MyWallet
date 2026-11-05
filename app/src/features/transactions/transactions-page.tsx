@@ -481,10 +481,25 @@ export function TransactionsPage() {
           <div className="review-banner">
             <div>
               <strong>
-                {selected.reconciliationStatus === 'reconciled'
-                  ? 'Conferida por arquivo'
-                  : 'Pendente de conciliação'}
+                {selected.cardPayment
+                  ? 'Pagamento de fatura vinculado'
+                  : selected.reconciliationStatus === 'reconciled'
+                    ? 'Conferida por arquivo'
+                    : 'Pendente de conciliação'}
               </strong>
+              {selected.cardPayment && (
+                <p>
+                  <Link
+                    to={`/cards?card=${selected.cardPayment.cardId}&month=${selected.cardPayment.billMonth}`}
+                  >
+                    {selected.cardPayment.cardName} · fatura {selected.cardPayment.billMonth}
+                  </Link>
+                  .{' '}
+                  {selected.reconciliationStatus === 'reconciled'
+                    ? 'Conferido por arquivo.'
+                    : 'Sem conferência por arquivo; o vínculo do pagamento já está registrado.'}
+                </p>
+              )}
               <p>ID externo: {selected.sourceOperationId ?? 'Ainda não vinculado'}</p>
             </div>
           </div>

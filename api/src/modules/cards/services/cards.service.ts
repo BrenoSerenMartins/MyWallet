@@ -189,17 +189,6 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
       const card = await this.lockedCard(id, version);
       exactAmount(amount);
       if (amount <= 0) throw new UnprocessableEntityException('Informe o saldo devedor.');
-      const state = await this.repo.snapshot();
-      if (
-        (
-          await this.ledger.managedEntries(
-            state.entries
-              .filter((e) => e.cardId === id && e.kind === 'opening')
-              .flatMap((e) => (e.transactionId ? [e.transactionId] : [])),
-          )
-        ).length
-      )
-        throw new ConflictException('Este cartão já possui uma dívida anterior registrada.');
       const bill = await this.ensureBill(card, month);
       const transaction = await this.ledger.postManaged(
         {
@@ -363,6 +352,13 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
         throw new UnprocessableEntityException(
           'Confira o modo de pagamento e o lançamento escolhido.',
         );
+      const original =
+        input.mode === 'link' && input.transactionId
+          ? (await this.ledger.managedEntries([input.transactionId]))[0]
+          : undefined;
+      const originalDebit = original
+        ? { transactionType: original.transactionType, categoryId: original.categoryId }
+        : null;
       const paymentId = randomUUID();
       const pair = await this.ledger.transferManaged({
         fromAccountId: input.accountId,
@@ -376,6 +372,7 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
         ownerKey: paymentId,
       });
       const payment = {
+        originalDebit,
         id: paymentId,
         cardId: id,
         billMonth: month,
@@ -407,7 +404,14 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
       const current = (await this.repo.snapshot()).payments.find((p) => p.id === paymentId);
       if (!current || current.voided) throw new ConflictException('O pagamento já foi desfeito.');
       if (payment.mode === 'link')
-        await this.ledger.detachManagedTransfer(payment.debitId, payment.creditId, payment.id);
+        await this.ledger.detachManagedTransfer(
+          payment.debitId,
+          payment.creditId,
+          payment.id,
+          'card',
+          'debit',
+          payment.originalDebit,
+        );
       else {
         const debit = entries.find((e) => e.id === payment.debitId);
         if (!debit) throw new ConflictException('O pagamento mudou.');
@@ -597,6 +601,14 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
         ...p,
         id,
         cardId: cardIds.get(p.cardId)!,
+        originalDebit: p.originalDebit
+          ? {
+              ...p.originalDebit,
+              categoryId: p.originalDebit.categoryId
+                ? (categories.get(p.originalDebit.categoryId) ?? null)
+                : null,
+            }
+          : null,
         debitId,
         creditId,
         version: 1,

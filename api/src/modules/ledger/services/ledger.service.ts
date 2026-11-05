@@ -111,7 +111,7 @@ export class LedgerService implements LedgerWrites, LedgerReads {
         current.accountId !== from.id ||
         current.amount !== -input.amount ||
         current.transactionDate !== input.date ||
-        !['expense', 'transfer'].includes(current.transactionType) ||
+        !['expense', 'transfer', 'unclassified'].includes(current.transactionType) ||
         current.refundOfId ||
         current.balanceAdjustment ||
         current.transferGroupId ||
@@ -152,6 +152,7 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     ownerKey: string,
     kind: ManagedKind = 'card',
     preserve: 'debit' | 'credit' = 'debit',
+    originalDebit?: { transactionType: string; categoryId: string | null } | null,
   ) {
     const debit = await this.find(debitId);
     const credit = await this.find(creditId);
@@ -166,7 +167,7 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       throw new ConflictException('O pagamento mudou. Revise antes de desvincular.');
     const kept = preserve === 'debit' ? debit : credit;
     const removed = preserve === 'debit' ? credit : debit;
-    await this.repository.detachManagedDebit(kept.id);
+    await this.repository.detachManagedDebit(kept.id, preserve === 'debit' ? originalDebit : null);
     await this.repository.reverse(removed.id);
     await this.releaseEntry(kept.id, ownerKey);
     await this.balanceBasis.refresh(removed.accountId);

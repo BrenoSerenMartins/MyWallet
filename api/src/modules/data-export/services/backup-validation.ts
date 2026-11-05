@@ -22,7 +22,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   ) as BackupPayload;
   if (
     b.format !== 'plannedwallet' ||
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(b.version) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||

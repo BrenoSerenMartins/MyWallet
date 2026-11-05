@@ -2606,9 +2606,31 @@
           "amount"
         ]
       },
+      "CardPaymentOriginDto": {
+        "type": "object",
+        "properties": {
+          "transactionType": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["transactionType", "categoryId"]
+      },
       "CardPaymentResourceDto": {
         "type": "object",
         "properties": {
+          "originalDebit": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CardPaymentOriginDto"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -4180,6 +4202,24 @@
           "conflictingNames"
         ]
       },
+      "LinkedCardPaymentDto": {
+        "type": "object",
+        "properties": {
+          "cardId": {
+            "type": "string"
+          },
+          "billMonth": {
+            "type": "string"
+          },
+          "cardName": {
+            "type": "string"
+          },
+          "paymentId": {
+            "type": "string"
+          }
+        },
+        "required": ["cardId", "billMonth", "cardName", "paymentId"]
+      },
       "BalanceAdjustmentResourceDto": {
         "type": "object",
         "properties": {
@@ -4198,6 +4238,15 @@
       "TransactionResourceDto": {
         "type": "object",
         "properties": {
+          "cardPayment": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LinkedCardPaymentDto"
+              }
+            ]
+          },
           "managedKind": {
             "type": "string",
             "enum": ["card", "investment"],

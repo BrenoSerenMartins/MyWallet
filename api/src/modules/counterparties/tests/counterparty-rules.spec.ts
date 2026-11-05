@@ -436,7 +436,7 @@ it('learns an EDI store ID from a proved statement match so generic future EDI r
 
 it('backs up and restores agents, aliases, rules and transaction provenance without relearning', async () => {
   const backup = await run(() => backups.backup());
-  expect(backup.version).toBe(10);
+  expect(backup.version).toBe(11);
   expect(backup.counterparties!.rules.length).toBeGreaterThan(0);
   const bad = structuredClone(backup);
   bad.counterparties!.rules[0].accountId = '00000000-0000-4000-8000-000000000001';

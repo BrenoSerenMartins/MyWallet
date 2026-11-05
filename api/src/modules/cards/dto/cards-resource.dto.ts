@@ -35,7 +35,13 @@ export class CardEntryResourceDto {
   @ApiProperty({ type: Number }) amount!: number;
   @ApiPropertyOptional({ type: Boolean }) active?: boolean;
 }
+export class CardPaymentOriginDto {
+  @ApiProperty({ type: String }) transactionType!: string;
+  @ApiProperty({ type: String, nullable: true }) categoryId!: string | null;
+}
 export class CardPaymentResourceDto {
+  @ApiPropertyOptional({ type: CardPaymentOriginDto, nullable: true })
+  originalDebit?: CardPaymentOriginDto | null;
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) cardId!: string;
   @ApiProperty({ type: String }) billMonth!: string;

@@ -44,20 +44,30 @@ export function CardPaymentForm({
   const [to, setTo] = useState(
     bill.dueDate > dateToday() ? dateToday() : shift(15) > dateToday() ? dateToday() : shift(15),
   );
+  const availableAccounts =
+    choices.accounts.data?.filter(
+      (a) =>
+        !a.archived &&
+        !['benefit_food', 'benefit_meal', 'credit_card', 'investment'].includes(a.type),
+    ) ?? [];
+  const validAccount = availableAccounts.some((a) => a.id === account);
   const candidates = useQuery({
     queryKey: ['card-candidates', card.id, account, from, to],
     queryFn: () =>
       request<ManagedEntry[]>(
         `/cards/${card.id}/candidates?${new URLSearchParams({ accountId: account, from, to })}`,
       ),
-    enabled: mode === 'link' && !!account && !!from && !!to && from <= to,
+    enabled: mode === 'link' && validAccount && !!from && !!to && from <= to,
   });
   const selected = candidates.data?.find((t) => t.id === transaction);
   return (
     <FinanceChoices accounts={choices.accounts}>
       <FinanceForm
         label={mode === 'link' ? 'Vincular pagamento' : 'Registrar pagamento'}
-        disabled={mode === 'link' && !selected}
+        disabled={
+          !validAccount ||
+          (mode === 'link' && (!selected || Math.abs(selected.amount) > bill.remaining))
+        }
         onSubmit={async () => {
           const value = mode === 'link' ? Math.abs(selected!.amount) : parseMoney(amount);
           if (value > bill.remaining || value <= 0)
@@ -101,13 +111,12 @@ export function CardPaymentForm({
               setTransaction('');
             }}
           >
-            {choices.accounts.data
-              ?.filter((a) => !a.archived && !a.type.startsWith('benefit_'))
-              .map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
+            <option value="">Selecione a conta</option>
+            {availableAccounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
           </Select>
         </label>
         {mode === 'link' ? (
@@ -147,7 +156,11 @@ export function CardPaymentForm({
               </div>
               <p className="field-help">Até 366 dias e 100 resultados por busca.</p>
             </details>
-            {candidates.isPending ? (
+            {!validAccount ? (
+              <p>Escolha uma conta de dinheiro ou reserva disponível para buscar o pagamento.</p>
+            ) : from > to ? (
+              <p role="alert">A data inicial deve vir antes da final.</p>
+            ) : candidates.isPending ? (
               <Loading />
             ) : candidates.isError ? (
               <ErrorState error={candidates.error} retry={() => void candidates.refetch()} />
@@ -162,7 +175,7 @@ export function CardPaymentForm({
                 >
                   <option value="">Escolha o pagamento</option>
                   {candidates.data.map((t) => (
-                    <option key={t.id} value={t.id}>
+                    <option key={t.id} value={t.id} disabled={Math.abs(t.amount) > bill.remaining}>
                       {shortDate(t.transactionDate)} · {t.description} · {money(Math.abs(t.amount))}
                     </option>
                   ))}
@@ -174,6 +187,11 @@ export function CardPaymentForm({
                 ainda não estiver na conta.
               </p>
             )}
+            <p className="field-help">
+              Só aparecem saídas livres da conta escolhida. Pagamentos já vinculados ficam em
+              “Pagamentos e vínculos” na fatura. Valores acima do pendente não podem ser vinculados
+              integralmente a esta fatura.
+            </p>
             {selected && (
               <p className="finance-review">
                 Será vinculado {money(Math.abs(selected.amount))}, em{' '}

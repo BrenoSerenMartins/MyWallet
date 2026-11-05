@@ -192,7 +192,7 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'plannedwallet';
-  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   cards?: import('./cards.js').CardsSnapshot;
   wealth?: import('./wealth.js').WealthSnapshot;
   commitments?: import('./commitments.js').CommitmentSnapshot;

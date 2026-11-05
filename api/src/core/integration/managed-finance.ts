@@ -53,6 +53,7 @@ export interface ManagedLedger {
     ownerKey: string,
     kind?: ManagedKind,
     preserve?: 'debit' | 'credit',
+    originalDebit?: { transactionType: string; categoryId: string | null } | null,
   ): Promise<void>;
   tagManagedIncome(id: string, version: number, ownerKey: string): Promise<void>;
   untagManagedIncome(id: string, ownerKey: string): Promise<void>;

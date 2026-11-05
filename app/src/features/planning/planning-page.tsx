@@ -1,3 +1,4 @@
+import { CardPaymentPlanning } from './components/card-payment-planning';
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { ActionMenu } from '../../shared/ui/action-menu';
 import type { ReactNode } from 'react';
@@ -93,6 +94,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
                         }
                       }}
                     />
+                    <CardPaymentPlanning key={month} month={month} />
                   </label>
                   <ActionMenu label="Mais ações do planejamento">
                     <button

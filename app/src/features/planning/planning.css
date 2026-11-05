@@ -741,3 +741,22 @@ body .planning-page .planning-metrics {
     background: transparent;
   }
 }
+
+.planning-card-payments {
+  min-width: 0;
+  padding-block: 8px;
+}
+.planning-card-payments .finance-checkbox {
+  min-width: 0;
+  max-width: 100%;
+  align-items: flex-start;
+}
+.planning-card-payments .finance-checkbox span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.planning-card-payments small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}

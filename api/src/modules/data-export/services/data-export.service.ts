@@ -44,7 +44,7 @@ export class DataExportService {
   async backup(): Promise<BackupPayload> {
     return {
       format: 'plannedwallet',
-      version: 10,
+      version: 11,
       cards: (await this.cards?.exportManaged()) ?? {
         cards: [],
         bills: [],

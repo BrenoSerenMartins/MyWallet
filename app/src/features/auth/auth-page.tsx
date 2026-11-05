@@ -1,16 +1,8 @@
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { NotificationCenter } from '../../shared/feedback/notification-center';
 import { useEffect, useState, type FormEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  ArrowRight,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  ArrowDownLeft,
-  CalendarDays,
-  ChartNoAxesCombined,
-} from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { authClient } from '../../shared/api/auth-client';
 import { Button, Logo, ThemeSwitcher } from '../../shared/ui/primitives';
 import { productName, productTagline } from '../../shared/brand';
@@ -83,73 +75,15 @@ export function AuthPage() {
   return (
     <div className="auth-entry">
       <header className="entry-header">
-        <a href="/" className="entry-brand" aria-label={`${productName} — início`}>
-          <Logo />
-        </a>
-        <span className="entry-header-note">Um novo olhar para o seu dinheiro.</span>
+        <Link to="/" className="text-button">
+          ← Voltar ao início
+        </Link>
         <NotificationCenter />
       </header>
-      <main className="entry-main">
-        <section className="entry-story" aria-labelledby="entry-story-title">
-          <span className="entry-eyebrow">
-            <span aria-hidden="true" /> CLAREZA PARA SEGUIR EM FRENTE
-          </span>
-          <h1 id="entry-story-title">
-            Seu dinheiro,
-            <br />
-            <em>com direção.</em>
-          </h1>
-          <p className="entry-intro">
-            Entenda o presente.
-            <br className="entry-desktop-break" /> Dê espaço aos seus próximos planos.
-          </p>
-          <div className="entry-visual" aria-hidden="true">
-            <svg viewBox="0 0 560 150" fill="none">
-              <path
-                className="entry-chart-grid"
-                d="M0 30H560M0 75H560M0 120H560M80 0V150M200 0V150M320 0V150M440 0V150"
-              />
-              <path
-                className="entry-chart-area"
-                d="M0 130C45 130 54 92 100 100S166 132 214 95S270 112 316 64S380 88 420 43S506 58 560 10V150H0Z"
-              />
-              <path
-                className="entry-chart-line"
-                d="M0 130C45 130 54 92 100 100S166 132 214 95S270 112 316 64S380 88 420 43S506 58 560 10"
-              />
-              <circle cx="420" cy="43" r="5" className="entry-chart-point" />
-            </svg>
-            <div className="entry-visual-caption">
-              <span>Menos ruído.</span>
-              <span>
-                Mais possibilidades. <ArrowRight size={14} />
-              </span>
-            </div>
-          </div>
-          <ul className="entry-features">
-            <li>
-              <ArrowDownLeft size={19} aria-hidden="true" />
-              <span>
-                <strong>Suas contas</strong>
-                <small>Cada movimento, no seu lugar.</small>
-              </span>
-            </li>
-            <li>
-              <CalendarDays size={19} aria-hidden="true" />
-              <span>
-                <strong>Seu mês</strong>
-                <small>Um plano que acompanha você.</small>
-              </span>
-            </li>
-            <li>
-              <ChartNoAxesCombined size={19} aria-hidden="true" />
-              <span>
-                <strong>Seus próximos passos</strong>
-                <small>Patrimônio com perspectiva.</small>
-              </span>
-            </li>
-          </ul>
-        </section>
+      <main className="entry-main" id="main-content">
+        <Link to="/" className="entry-brand" aria-label={`${productName} — início`}>
+          <Logo />
+        </Link>
         <section className="entry-access" aria-labelledby="entry-form-title">
           <div className="entry-form-wrap">
             <span className="entry-eyebrow">
@@ -159,7 +93,7 @@ export function AuthPage() {
                   ? 'COMECE POR AQUI'
                   : 'CUIDANDO DO SEU ACESSO'}
             </span>
-            <h2 id="entry-form-title">{title}</h2>
+            <h1 id="entry-form-title">{title}</h1>
             <p className="entry-form-description">
               {mode === 'sign-in'
                 ? 'Entre para continuar de onde você parou.'

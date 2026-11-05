@@ -202,7 +202,7 @@ async function chooseTheme(page: Page, theme: string) {
   await expect(page).toHaveURL(returnUrl);
 }
 test('sign-in themes and accessible form', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/painel');
   await expect(page.getByRole('heading', { name: 'Bom ter você por aqui.' })).toBeVisible();
   await page.getByRole('button', { name: 'Tema escuro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -4620,7 +4620,7 @@ for (const width of [320, 390, 768, 1440]) {
     page,
   }, info) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/');
+    await page.goto('/painel');
     const email = page.getByRole('textbox', { name: 'E-mail', exact: true });
     await expect(email).toHaveAttribute('autocomplete', 'email');
     await email.fill('preview@example.test');
@@ -4660,3 +4660,51 @@ for (const width of [320, 390, 768, 1440]) {
     await expectNoHorizontalOverflow(page);
   });
 }
+
+for (const width of [390, 1440])
+  test(`optional card cash planning opens the invoice payment without creating a duplicate expense at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await financeFixtures(page);
+    await page.setViewportSize({ width, height: 900 });
+    const writes: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/v1/') && request.method() !== 'GET') writes.push(request.url());
+    });
+    await page.goto('/planning?month=2026-11');
+    await page.getByText('Planejar pagamentos de cartões', { exact: true }).click();
+    const planning = page.locator('.planning-card-payments');
+    await expect(planning.getByRole('checkbox')).not.toBeChecked();
+    await planning.getByRole('checkbox').check();
+    await expect(planning).toContainText('Pagamentos selecionados:');
+    await expect(planning).toContainText('após os pagamentos.');
+    await planning.getByRole('link', { name: 'Registrar ou vincular pagamento' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(
+      page.getByRole('dialog').getByRole('group', { name: 'Modo de pagamento da fatura' }),
+    ).toBeVisible();
+    expect(writes).toEqual([]);
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.getByRole('button', { name: 'Dívida anterior', exact: true }).click();
+    await expect(page.getByRole('dialog')).toContainText('dívida');
+  });
+
+for (const width of [320, 390, 768, 1440])
+  test(`public home leads to a centered login card at ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Tudo conectado.');
+    await expect(page.getByRole('textbox', { name: 'E-mail' })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: info.outputPath(`landing-${width}.png`), fullPage: true });
+    await page.getByRole('link', { name: 'Acessar painel', exact: true }).click();
+    await expect(page).toHaveURL('/painel');
+    await expect(page.getByRole('textbox', { name: 'E-mail', exact: true })).toBeVisible();
+    const box = await page.locator('.entry-access').boundingBox();
+    expect(box).not.toBeNull();
+    expect(Math.abs(box!.x + box!.width / 2 - width / 2)).toBeLessThan(2);
+    await expectNoHorizontalOverflow(page);
+    await page.getByRole('link', { name: '← Voltar ao início', exact: true }).click();
+    await expect(page).toHaveURL('/');
+  });

@@ -2,7 +2,7 @@ import { IconAction } from '../../shared/ui/icon-action';
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -17,6 +17,7 @@ import {
 import { request } from '../../shared/api/client';
 import { useFinanceWrite } from '../../shared/api/use-finance-write';
 import type {
+  Account,
   CardsSummary,
   CardEntry,
   CardPayment,
@@ -48,6 +49,10 @@ export function CardsPage() {
     queryKey: ['cards', month],
     queryFn: () => request<CardsSummary>(`/cards?month=${month}`),
   });
+  const accounts = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => request<Account[]>('/accounts'),
+  });
   const write = useFinanceWrite();
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [visible, setVisible] = useState(true);
@@ -58,6 +63,13 @@ export function CardsPage() {
   const cards = all.filter((c) => showArchived || !c.archived);
   const card = cards.find((c) => c.id === params.get('card')) ?? cards[0];
   const bill = card?.bills.find((b) => b.month === month);
+  useEffect(() => {
+    if (params.get('action') !== 'pay' || !card || card.id !== params.get('card') || !bill) return;
+    setDialog({ kind: 'pay' });
+    const next = new URLSearchParams(params);
+    next.delete('action');
+    setParams(next, { replace: true });
+  }, [params, card, bill, setParams]);
   const update = (changes: Record<string, string>) => {
     const next = new URLSearchParams(params);
     for (const [key, val] of Object.entries(changes)) next.set(key, val);
@@ -180,6 +192,12 @@ export function CardsPage() {
                         <h2>{card.name}</h2>
                         <p>
                           Fecha dia {card.closingDay} · vence dia {card.dueDay}
+                          {' · '}
+                          <Link to={`/accounts/${card.paymentAccountId}`}>
+                            Conta de pagamento:{' '}
+                            {accounts.data?.find((a) => a.id === card.paymentAccountId)?.name ??
+                              'Conferir conta'}
+                          </Link>
                         </p>
                       </div>
                       <Tooltip text="Editar cartão">
@@ -234,17 +252,13 @@ export function CardsPage() {
                         >
                           Registrar compra
                         </Button>
-                        {!card.bills.some((b) =>
-                          b.entries.some((e) => e.kind === 'opening' && e.active),
-                        ) && (
-                          <button
-                            className="text-button"
-                            disabled={card.archived || !navigator.onLine}
-                            onClick={() => setDialog({ kind: 'opening' })}
-                          >
-                            Dívida anterior
-                          </button>
-                        )}
+                        <button
+                          className="text-button"
+                          disabled={card.archived || !navigator.onLine}
+                          onClick={() => setDialog({ kind: 'opening' })}
+                        >
+                          Dívida anterior
+                        </button>
                       </div>
                     </div>
                     {bill ? (

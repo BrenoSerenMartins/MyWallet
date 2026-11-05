@@ -1285,7 +1285,12 @@ export interface components {
       amount: number;
       active?: boolean;
     };
+    CardPaymentOriginDto: {
+      transactionType: string;
+      categoryId: string | null;
+    };
     CardPaymentResourceDto: {
+      originalDebit?: components['schemas']['CardPaymentOriginDto'] | null;
       id: string;
       cardId: string;
       billMonth: string;
@@ -1756,12 +1761,19 @@ export interface components {
       destinationGroupName: string;
       conflictingNames: string[];
     };
+    LinkedCardPaymentDto: {
+      cardId: string;
+      billMonth: string;
+      cardName: string;
+      paymentId: string;
+    };
     BalanceAdjustmentResourceDto: {
       previousBalance: number;
       targetBalance: number;
       reason: string;
     };
     TransactionResourceDto: {
+      cardPayment?: components['schemas']['LinkedCardPaymentDto'] | null;
       /** @enum {string|null} */
       managedKind?: 'card' | 'investment' | null;
       counterpartyId?: string | null;

@@ -73,6 +73,7 @@ export class CardsRepository {
         description: r.description,
       })),
       payments: payments.map((r) => ({
+        originalDebit: r.original_debit ?? null,
         id: r.id,
         cardId: r.card_id,
         billMonth: r.bill_month,
@@ -144,6 +145,7 @@ export class CardsRepository {
   }
   savePayment(r: CardPayment) {
     return this.insert('card_payments', {
+      original_debit: r.originalDebit ? JSON.stringify(r.originalDebit) : null,
       id: r.id,
       card_id: r.cardId,
       bill_month: r.billMonth,

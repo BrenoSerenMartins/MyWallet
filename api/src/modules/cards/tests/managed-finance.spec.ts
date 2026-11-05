@@ -255,7 +255,7 @@ it('links an imported debit while preserving its fact and supports correcting th
   await run(() => cards.undoPayment(card.id, payment.id, String(c.version), randomUUID()));
   expect(await run(() => ledger.find(entry.id))).toMatchObject({
     amount: -5000,
-    transactionType: 'transfer',
+    transactionType: 'expense',
     managedKind: null,
     transferGroupId: null,
   });
@@ -643,9 +643,9 @@ it('consolidates assets and debt once, excludes benefits, and saves reproducible
     wealth.saveItem({ ...home, archived: true }, home.id, String(home.version), randomUUID()),
   );
 });
-it('round-trips cards, positions, liabilities, claims and historical undo pointers in v9 without duplicating money', async () => {
+it('round-trips cards, positions, liabilities, claims and historical undo pointers in v11 without duplicating money', async () => {
   const source = await run(() => backup.backup());
-  expect(source.version).toBe(10);
+  expect(source.version).toBe(11);
   const financialState = async () => {
     const worth = await wealth.summary();
     const cardsState = await cards.summary('2026-11');
@@ -933,4 +933,80 @@ it('protects even empty managed accounts from conversion through the bank-accoun
     ).rejects.toThrow('módulo');
     expect((await run(() => accounts.find(id))).type).toBe(a.type);
   }
+});
+
+it('keeps multiple prior debts and links an unclassified debit without charging cash twice, then restores its type', async () => {
+  const { card, bank } = await makeCard('Multiple prior debts');
+  await run(() => cards.opening(card.id, '2026-10', 3000, '1', randomUUID()));
+  let c = await currentCard(card.id);
+  await run(() => cards.opening(card.id, '2026-11', 4000, String(c.version), randomUUID()));
+  c = await currentCard(card.id);
+  await run(() => cards.opening(card.id, '2026-11', 1000, String(c.version), randomUUID()));
+  c = await currentCard(card.id);
+  expect(c.bills.find((b) => b.month === '2026-11')?.remaining).toBe(5000);
+  const debit = await run(() =>
+    ledger.create(
+      {
+        accountId: bank.id,
+        amount: -5000,
+        transactionDate: '2026-11-12',
+        description: 'Card bill from statement',
+        transactionType: 'unclassified',
+      },
+      true,
+    ),
+  );
+  const bankBalance = (await run(() => accounts.find(bank.id))).balance;
+  const candidates = await run(() =>
+    cards.candidates(card.id, bank.id, '2026-11-01', '2026-11-15'),
+  );
+  expect(candidates.some((t) => t.id === debit.id)).toBe(true);
+  const payment = await run(() =>
+    cards.pay(
+      card.id,
+      '2026-11',
+      {
+        mode: 'link',
+        accountId: bank.id,
+        date: '2026-11-12',
+        amount: 5000,
+        transactionId: debit.id,
+        transactionVersion: debit.version,
+      },
+      String(c.version),
+      randomUUID(),
+    ),
+  );
+  expect((await run(() => accounts.find(bank.id))).balance).toBe(bankBalance);
+  expect((await currentCard(card.id)).bills.find((b) => b.month === '2026-11')?.remaining).toBe(0);
+  expect(await run(() => ledger.find(debit.id))).toMatchObject({
+    cardPayment: { cardId: card.id, billMonth: '2026-11' },
+    transactionType: 'transfer',
+  });
+  const exported = await run(() => backup.backup());
+  const tampered = { ...exported, version: 10 };
+  await expect(run(() => backup.preview(tampered))).rejects.toThrow();
+  await db.forUser(db.other, async () => {
+    const draft = await backup.preview(exported);
+    await backup.confirm(draft.id);
+    const restored = (await cards.summary('2026-11')).cards.find((r) => r.name === card.name)!;
+    const saved = (await backup.backup()).cards!.payments.find(
+      (p) => p.cardId === restored.id && !p.voided,
+    )!;
+    expect(saved.originalDebit?.transactionType).toBe('unclassified');
+    await cards.undoPayment(restored.id, saved.id, String(restored.version), randomUUID());
+    expect(await ledger.find(saved.debitId!)).toMatchObject({
+      transactionType: 'unclassified',
+      amount: -5000,
+      cardPayment: null,
+    });
+  });
+  c = await currentCard(card.id);
+  await run(() => cards.undoPayment(card.id, payment.id, String(c.version), randomUUID()));
+  expect(await run(() => ledger.find(debit.id))).toMatchObject({
+    transactionType: 'unclassified',
+    cardPayment: null,
+    amount: -5000,
+  });
+  expect((await run(() => accounts.find(bank.id))).balance).toBe(bankBalance);
 });

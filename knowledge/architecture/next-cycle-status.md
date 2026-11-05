@@ -77,3 +77,17 @@ Verificação adicional de restauração: os 19 testes do módulo de planejament
 Login, cadastro e recuperação receberam composição editorial própria: marca no cabeçalho, apresentação com desenho vetorial no desktop, formulário aberto com divisória discreta, controles de 44/54px e opções de tema no rodapé. Em telas de até 800px, a apresentação é curta e os elementos decorativos são removidos para priorizar o formulário. Foram eliminadas 315 linhas de estilos antigos de autenticação. Fluxos de autenticação permanecem nos métodos existentes; alternar modo também oculta a senha novamente.
 
 Validação: lint, tipos/build do app, formatação e verificação de credenciais passaram. Adicionados cenários de 320, 390, 768 e 1440px com temas, visibilidade de senha, cadastro, recuperação e viewport baixo; a suíte agora lista 141 testes. Screenshots por tema/tamanho ficam nos resultados desses cenários no CI. Execução visual pelo navegador e conferência em aparelho continuam pendentes neste ambiente.
+
+## Relação entre contas, cartões e planejamento — 2026-11-05
+
+Dívidas anteriores podem ser adicionadas separadamente, inclusive à mesma fatura; cada inclusão soma apenas o valor ainda não registrado. Pagamentos vinculam também débitos importados sem classificação. A lista e o detalhe da movimentação mostram a fatura vinculada e distinguem a conferência por arquivo, sem marcar conciliação bancária artificialmente. Ao desfazer um vínculo novo, o tipo e a categoria originais são restaurados. Backup v11 preserva essa origem e remapeia suas categorias na restauração; backups anteriores permanecem aceitos.
+
+Planejamento oferece uma simulação opcional das faturas pendentes por conta de pagamento, baseada nos saldos atuais, com seleção inicialmente vazia e atalho para registrar/vincular o pagamento. Não persiste seleção, não cria compromissos duplicados e não soma pagamentos como novas despesas. A previsão completa continua em Vencimentos.
+
+Validação: `npm run verify` passou com 37 arquivos/239 testes, incluindo múltiplas dívidas, vínculo de débito sem classificação, desfazer e restauração da origem por backup; contratos atuais. Incluídos dois cenários de navegador para simulação e acesso direto ao pagamento. Migração `202611050001_card_payment_origin.sql` necessária antes de publicar a API; execução local falhou ao resolver o host do Supabase (`EAI_AGAIN`). Não foi aplicada remotamente.
+
+## Home pública e acesso ao painel — 2026-11-05
+
+A home de visitantes apresenta a plataforma em uma landing com prévia ilustrativa do painel e acesso explícito ao painel. `/painel` e `/login` exibem uma tela própria de autenticação: logo acima do card centralizado, identidade visual e temas compartilhados com o sistema. A home autenticada continua sendo a visão geral financeira. Cadastro, recuperação e redefinição mantêm seus fluxos existentes.
+
+Lint e build passaram. A suíte lista 147 cenários, incluindo quatro novos para navegar da landing ao card centralizado em 320/390/768/1440px. A tentativa de executar esses cenários falhou ao iniciar `webServer`, antes de abrir o navegador; screenshots e validação visual continuam pendentes no CI.
