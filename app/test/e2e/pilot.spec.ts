@@ -618,7 +618,7 @@ test('stopping the queue finishes only the active file and skips the remaining f
   release();
   await expect(page.getByText('Não enviado', { exact: true })).toBeVisible();
   expect(count).toBe(1);
-  await expect(page.getByLabel('Conta de destino')).toBeEnabled();
+  await expect(page.getByRole('combobox', { name: 'Conta de destino', exact: true })).toBeEnabled();
 });
 
 test('leaving the upload screen stops subsequent submissions', async ({ page }) => {
@@ -3710,11 +3710,17 @@ test('account filters explain empty results and keep account and card workspaces
   await chooseSelect(page.getByLabel('Tipo de conta', { exact: true }), 'all');
   await expect(page.locator('.account-record')).toHaveCount(1);
   const navigation = page.getByRole('navigation', { name: 'Navegação principal', exact: true });
-  await navigation.getByRole('button', { name: 'Contas', exact: true }).click();
-  await navigation.getByRole('link', { name: 'Cartões e faturas', exact: true }).click();
+  await test.step('Open cards from the accounts navigation', async () => {
+    await navigation.getByRole('button', { name: 'Contas', exact: true }).click();
+    await navigation.getByRole('link', { name: 'Cartões e faturas', exact: true }).click();
+    await expect(page).toHaveURL(/\/cards(?:\?|$)/);
+  });
   await expect(page.getByRole('heading', { level: 1, name: 'Cartões e faturas' })).toBeVisible();
-  await navigation.getByRole('button', { name: 'Contas', exact: true }).click();
-  await navigation.getByRole('link', { name: 'Contas e saldos', exact: true }).click();
+  await test.step('Return to balances from the accounts navigation', async () => {
+    await navigation.getByRole('button', { name: 'Contas', exact: true }).click();
+    await navigation.getByRole('link', { name: 'Contas e saldos', exact: true }).click();
+    await expect(page).toHaveURL(/\/accounts(?:\?|$)/);
+  });
   await expect(page.locator('.account-record')).toHaveCount(1);
 });
 test('directory creation is isolated from browsing, retains failed input and refreshes automation filters', async ({
@@ -3785,6 +3791,8 @@ test('settings retain the chosen section on reload and offer labelled theme prev
 });
 
 async function saveAccountForFeedback(page: Page, clock = false, spaces?: (typeof workspace)[]) {
+  // Measure layout independently of the page-entry translate animation, including with a fake clock.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await signedIn(page);
   let current = { ...account };
   await page.route('**/v1/accounts', (route) => route.fulfill({ json: [current] }));

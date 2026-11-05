@@ -58,7 +58,7 @@ export function ActionMenu({
         className="action-menu-panel"
         role="group"
         aria-label={label}
-        onClickCapture={(event) => {
+        onClick={(event) => {
           if (
             !(event.target as Element).closest('[data-control-trigger], [data-control-popup]') &&
             (event.target as Element).closest('button, a')
