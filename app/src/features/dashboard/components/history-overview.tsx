@@ -4,7 +4,8 @@ import { ChartNoAxesCombined as EmptyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { ErrorState, Loading } from '../../../shared/ui/primitives';
-import { ViewSwitcher } from '../../../shared/ui/view-switcher';
+import { HelpTip, Tooltip } from '../../../shared/ui/tooltip';
+import { ChartColumn, ChartLine } from 'lucide-react';
 import { dateToday, money } from '../../../shared/formatting/money';
 import { useDashboardHistory } from '../hooks/use-dashboard-history';
 import { HistoryChart, historyMonthLabel } from './history-chart';
@@ -37,8 +38,13 @@ export function HistoryOverview({
     <section className="panel history-overview" aria-labelledby="history-title">
       <div className="history-heading">
         <div>
-          <h2 id="history-title">Evolução mensal</h2>
-          <p>Receitas e despesas ao longo dos meses.</p>
+          <h2>
+            <span id="history-title">Evolução mensal</span>
+            <HelpTip
+              label="Sobre a evolução mensal"
+              text={`O intervalo termina no mês selecionado na visão geral. Apenas lançamentos registrados entram no gráfico; transferências e ajustes de saldo ficam fora.${month === dateToday().slice(0, 7) ? ' O mês atual está em andamento; o mês anterior é comparado por inteiro.' : ''}${items.some((item) => item.unclassified > 0) ? ' Há movimentos sem tipo financeiro que ainda não entram nas receitas e despesas.' : ''}`}
+            />
+          </h2>
         </div>
         <div className="history-controls">
           <label className="history-range-select">
@@ -54,15 +60,16 @@ export function HistoryOverview({
               <option value="12">12 meses</option>
             </Select>
           </label>
-          <ViewSwitcher
-            label="Formato do gráfico"
-            value={mode}
-            onChange={setMode}
-            options={[
-              { value: 'bars', label: 'Barras' },
-              { value: 'lines', label: 'Linhas' },
-            ]}
-          />
+          <Tooltip text={mode === 'bars' ? 'Trocar para linhas' : 'Trocar para barras'}>
+            <button
+              type="button"
+              className="icon-button history-mode-toggle"
+              aria-label={mode === 'bars' ? 'Trocar para linhas' : 'Trocar para barras'}
+              onClick={() => setMode(mode === 'bars' ? 'lines' : 'bars')}
+            >
+              {mode === 'bars' ? <ChartColumn size={18} /> : <ChartLine size={18} />}
+            </button>
+          </Tooltip>
         </div>
       </div>
       {history.isPending ? (
@@ -75,55 +82,6 @@ export function HistoryOverview({
         </p>
       ) : (
         <>
-          {current && previous && (
-            <>
-              <p className="history-comparison-caption">
-                {historyMonthLabel(current.month)} em comparação com{' '}
-                {historyMonthLabel(previous.month)}
-              </p>
-              <div className="history-comparisons">
-                {metrics.map((metric) => {
-                  const difference = metric.value - metric.previous;
-                  const percent =
-                    metric.previous > 0 && metric.value >= 0
-                      ? (Math.abs(difference) / metric.previous) * 100
-                      : null;
-                  return (
-                    <article key={metric.label}>
-                      <span>{metric.label}</span>
-                      <strong>{money(metric.value)}</strong>
-                      <small>Anterior: {money(metric.previous)}</small>
-                      <p
-                        className={
-                          difference === 0
-                            ? ''
-                            : (metric.expense ? difference < 0 : difference > 0)
-                              ? 'positive-text'
-                              : 'negative-text'
-                        }
-                      >
-                        {difference === 0
-                          ? 'Sem variação'
-                          : `${money(Math.abs(difference))} a ${difference > 0 ? 'mais' : 'menos'}${percent === null ? '' : ` (${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(percent)}%)`}`}
-                      </p>
-                    </article>
-                  );
-                })}
-              </div>
-            </>
-          )}
-          {month === dateToday().slice(0, 7) && (
-            <p className="history-period-note">
-              Mês atual em andamento: os valores podem mudar com novos lançamentos. O mês anterior é
-              comparado por inteiro.
-            </p>
-          )}
-          {items.some((item) => item.unclassified > 0) && (
-            <p className="history-period-note">
-              Há movimentos sem tipo financeiro neste período; eles ainda não entram nas receitas e
-              despesas.
-            </p>
-          )}
           {items.some((item) => item.count > 0) ? (
             <>
               <div className="history-legend">
@@ -159,6 +117,44 @@ export function HistoryOverview({
             <EmptyState compact icon={<EmptyIcon size={26} />} title="Sem movimentos neste período">
               Escolha outro período para comparar receitas e despesas.
             </EmptyState>
+          )}
+          {current && previous && (
+            <details className="history-comparison-details">
+              <summary>Comparar meses</summary>
+              <p className="history-comparison-caption">
+                {historyMonthLabel(current.month)} em comparação com{' '}
+                {historyMonthLabel(previous.month)}
+              </p>
+              <div className="history-comparisons">
+                {metrics.map((metric) => {
+                  const difference = metric.value - metric.previous;
+                  const percent =
+                    metric.previous > 0 && metric.value >= 0
+                      ? (Math.abs(difference) / metric.previous) * 100
+                      : null;
+                  return (
+                    <article key={metric.label}>
+                      <span>{metric.label}</span>
+                      <strong>{money(metric.value)}</strong>
+                      <small>Anterior: {money(metric.previous)}</small>
+                      <p
+                        className={
+                          difference === 0
+                            ? ''
+                            : (metric.expense ? difference < 0 : difference > 0)
+                              ? 'positive-text'
+                              : 'negative-text'
+                        }
+                      >
+                        {difference === 0
+                          ? 'Sem variação'
+                          : `${money(Math.abs(difference))} a ${difference > 0 ? 'mais' : 'menos'}${percent === null ? '' : ` (${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(percent)}%)`}`}
+                      </p>
+                    </article>
+                  );
+                })}
+              </div>
+            </details>
           )}
           <details className="history-table-details">
             <summary>Ver valores mês a mês</summary>
@@ -201,10 +197,6 @@ export function HistoryOverview({
               </table>
             </div>
           </details>
-          <p className="history-footnote">
-            Apenas lançamentos registrados, incluindo os sem categoria. Transferências e ajustes de
-            saldo ficam fora; devoluções reduzem o valor na data em que foram registradas.
-          </p>
         </>
       )}
     </section>

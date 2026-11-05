@@ -54,11 +54,12 @@ export function DashboardPage() {
               Seu mês
               <HelpTip
                 label="Valores do mês"
-                text="Receitas e despesas usam a data original dos lançamentos. O planejamento pode atribuir o crédito de VA/VR antecipado ao mês seguinte. Transferências não entram no resultado."
+                text="Receitas e despesas usam a data original dos lançamentos. O planejamento pode atribuir o crédito de VA/VR antecipado ao mês seguinte. Transferências não entram no resultado. O saldo atual também inclui valores anteriores; ajustes da base não são receitas ou despesas."
               />
             </h2>
           </div>
-          <div className="month-navigation">
+          <div className="month-navigation" role="group" aria-label="Período da visão geral">
+            <span className="overview-period-label">Período</span>
             <Tooltip text="Mês anterior">
               <button
                 className="icon-button"
@@ -73,7 +74,7 @@ export function DashboardPage() {
               <span className="sr-only">Mês da análise</span>
               <MonthPicker
                 clearable={false}
-                aria-label="Mês do resumo"
+                aria-label="Mês da visão geral"
                 min="1900-01"
                 max="9998-12"
                 value={month}
@@ -121,21 +122,16 @@ export function DashboardPage() {
             )}
           </>
         )}
-        <div className="dashboard-plan-link">
-          <Link className="text-button" to={`/planning?month=${month}`}>
-            {plan.data?.version ? 'Abrir planejamento deste mês' : 'Planejar este mês'}
-            <ArrowRight size={16} />
-          </Link>
-          {plan.isPending && <span role="status">Carregando previsão…</span>}
-          {plan.isError && (
+        {plan.isError && (
+          <div className="dashboard-plan-link">
             <div className="plan-load-error">
               <span>Não foi possível carregar a previsão.</span>
               <button type="button" className="text-button" onClick={() => void plan.refetch()}>
                 Tentar novamente
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </section>
       <RecentMovements
         items={movements.data?.items}

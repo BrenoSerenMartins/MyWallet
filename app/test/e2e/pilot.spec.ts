@@ -2346,10 +2346,10 @@ for (const width of [360, 390, 768, 1440]) {
     await expect(page.locator('.balance-composition')).not.toContainText('R$');
     await page.getByRole('button', { name: 'Mostrar valores', exact: true }).click();
     await page.getByRole('button', { name: 'Mês anterior', exact: true }).click();
-    await expectControlValue(page.getByLabel('Mês do resumo'), '2026-08');
+    await expectControlValue(page.getByLabel('Mês da visão geral'), '2026-08');
     await expect(page.locator('.hero-balance')).toHaveText('R$ 59,12');
     await page.goBack();
-    await expectControlValue(page.getByLabel('Mês do resumo'), '2026-09');
+    await expectControlValue(page.getByLabel('Mês da visão geral'), '2026-09');
     for (const theme of ['claro', 'escuro']) {
       await chooseTheme(page, theme);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -2453,7 +2453,7 @@ for (const width of [360, 768, 1440])
     await expect(history.locator('svg g[role="button"]')).toHaveCount(4);
     await chooseSelect(history.getByLabel('Intervalo do comparativo', { exact: true }), '7');
     await expect(history.locator('svg g[role="button"]')).toHaveCount(7);
-    await history.getByRole('button', { name: 'Linhas', exact: true }).click();
+    await history.getByRole('button', { name: 'Trocar para linhas', exact: true }).click();
     await expect(history.locator('polyline')).toHaveCount(2);
     await chooseSelect(history.getByLabel('Intervalo do comparativo', { exact: true }), '12');
     await expect(history.locator('svg g[role="button"]')).toHaveCount(12);
@@ -2474,7 +2474,7 @@ for (const width of [360, 768, 1440])
     await page.keyboard.press('Enter');
     await expect(history.locator('.history-selection')).toContainText('novembro de 2025');
     await history.getByRole('button', { name: 'Abrir mês', exact: true }).click();
-    await expectControlValue(page.getByLabel('Mês do resumo'), '2025-11');
+    await expectControlValue(page.getByLabel('Mês da visão geral'), '2025-11');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
@@ -3640,7 +3640,7 @@ test('overview unifies analysis and daily tasks while keeping current balances i
     page.getByRole('heading', { name: 'Últimos movimentos', exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Mês anterior', exact: true }).click();
-  await expectControlValue(page.getByLabel('Mês do resumo'), '2026-09');
+  await expectControlValue(page.getByLabel('Mês da visão geral'), '2026-09');
   expect(new URL(page.url()).searchParams.has('view')).toBe(false);
   await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
   await expect(
@@ -3857,7 +3857,7 @@ test.describe('help on touch screens', () => {
     await expect(tooltip).toHaveCount(0);
     await page.goto('/?month=2026-10');
     await page.getByRole('button', { name: 'Mês anterior', exact: true }).tap();
-    await expectControlValue(page.getByLabel('Mês do resumo'), '2026-09');
+    await expectControlValue(page.getByLabel('Mês da visão geral'), '2026-09');
   });
 });
 

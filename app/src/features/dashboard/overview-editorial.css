@@ -424,3 +424,58 @@ body .overview-editorial .monthly-heading::after {
     );
   }
 }
+
+/* Analysis shares one period; supporting detail stays behind disclosures. */
+body .overview-editorial .overview-period-label {
+  color: var(--muted);
+  font-size: 12px;
+  margin-right: 4px;
+}
+body .overview-editorial .month-metric dl {
+  margin-bottom: 0;
+}
+body .overview-editorial .month-metric p {
+  margin-top: 6px;
+}
+body .overview-editorial .history-heading {
+  align-items: center;
+}
+body .overview-editorial .history-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+body .overview-editorial .history-controls {
+  gap: 8px;
+  width: auto;
+  flex-wrap: nowrap;
+}
+body .overview-editorial .history-range-select .select-trigger {
+  width: auto;
+  min-width: 112px;
+  padding: 10px 12px;
+  font-size: 13px;
+  border-color: transparent;
+  background: transparent;
+}
+body .overview-editorial .history-comparison-details {
+  margin-top: 16px;
+}
+body .overview-editorial .history-comparison-details > summary {
+  min-height: 44px;
+  padding: 12px 0;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+}
+body .overview-editorial .history-comparison-caption {
+  margin-top: 8px;
+}
+body .overview-editorial .history-comparisons article {
+  text-align: center;
+}
+@media (max-width: 600px) {
+  body .overview-editorial .overview-period-label {
+    display: none;
+  }
+}
