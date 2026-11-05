@@ -51,3 +51,7 @@ Browser rerun remains required. Local Playwright still fails at server startup u
 ### Complemento dos logs dos shards 1 e 2
 
 Os logs do run 42043543242 confirmam que verify passou lint, tipos, limites, 232 testes, build e contratos; a falha final foi o audit de multer, já corrigido no commit 3d27bb8. Atualizados os testes que ainda usavam filtros, navegação e resultado de previsão anteriores à interface atual. O teste de Escape verifica a dispensa da tooltip antes de fechar o menu. O cenário de texto a 200% recebeu ajustes de largura intrínseca e quebra de texto nos cartões e diagnóstico dos elementos que ultrapassam o viewport. A execução real do navegador continua pendente no CI, pois o ambiente local bloqueia Chromium/servidor de testes. Não considerar a etapa de estabilização concluída antes desse resultado.
+
+### Diagnóstico por trace do run 42070686256
+
+O artefato browser-test-evidence-3 confirmou que o clique em Cartões e faturas era interceptado pelo combobox Tipo de conta do conteúdo principal. O cabeçalho não criava uma camada acima do conteúdo animado. Adicionado position relative e z-index 50 ao cabeçalho; os diálogos e popovers portados mantêm suas camadas próprias. O teste continua navegando por cliques reais, sem force. Notificações: os quatro cenários passaram após isolar suas medições das animações de entrada. Resta confirmar a navegação no novo CI.

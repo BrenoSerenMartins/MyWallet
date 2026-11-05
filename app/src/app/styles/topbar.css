@@ -23,6 +23,8 @@ body .logo-wordmark .logo-dot {
   margin-left: 1px;
 }
 body .app-header {
+  position: relative;
+  z-index: 50;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
