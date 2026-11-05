@@ -818,7 +818,20 @@ body .page-content .planning-page .summary-action-bar > div {
     padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom))
       max(8px, env(safe-area-inset-left));
     border-radius: 0;
+    background: var(--surface);
   }
+  /* Extend the opaque material beyond the lower edge to cover fractional viewport seams. */
+  body .bottom-nav::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: var(--surface);
+    pointer-events: none;
+  }
+
   body .bottom-nav a,
   body .bottom-nav button {
     display: grid;
