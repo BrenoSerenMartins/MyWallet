@@ -4282,3 +4282,78 @@ for (const width of [390, 1440]) {
     );
   });
 }
+
+for (const width of [320, 390, 768]) {
+  test(`mobile layout audit fits all destinations at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await signedIn(page);
+    await financeFixtures(page);
+    await page.route('**/v1/commitments?*', (route) =>
+      route.fulfill({ json: commitmentsFixture('2026-11', true) }),
+    );
+    const routes = [
+      '/',
+      '/transactions',
+      '/accounts',
+      '/cards',
+      '/planning',
+      '/planning?view=commitments',
+      '/wealth',
+      '/categories',
+      '/counterparties',
+      '/imports',
+      '/settings',
+      '/settings?view=data',
+      '/settings?view=account',
+      '/wealth?view=items',
+      '/wealth?view=history',
+      '/workspaces',
+    ];
+    for (const path of routes) {
+      await page.goto(path);
+      await expect(page.locator('main').first()).toBeVisible();
+      await expect(page.getByRole('status', { name: 'Carregando', exact: true })).toHaveCount(0);
+      if (path === '/planning' && width <= 600) {
+        const aligned = await page
+          .locator('.planning-metric:not(.metric-contribution)')
+          .evaluateAll((nodes) => {
+            const boxes = nodes.map((node) => node.getBoundingClientRect());
+            return boxes.every(
+              (box) => Math.abs(box.x - boxes[0].x) < 1 && Math.abs(box.width - boxes[0].width) < 1,
+            );
+          });
+        expect(aligned).toBe(true);
+      }
+      const overflow = await page.evaluate(() => ({
+        width: innerWidth,
+        scroll: document.documentElement.scrollWidth,
+        offenders: [...document.querySelectorAll('main *')]
+          .filter((el) => {
+            const r = el.getBoundingClientRect();
+            return (
+              r.width > 0 &&
+              r.right > innerWidth + 1 &&
+              getComputedStyle(el).position !== 'fixed' &&
+              !el.closest('[hidden]')
+            );
+          })
+          .slice(0, 8)
+          .map((el) => el.className),
+      }));
+      expect(overflow.scroll, `${path}: ${JSON.stringify(overflow)}`).toBeLessThanOrEqual(width);
+      if (width === 390 && ['/', '/planning', '/wealth', '/accounts'].includes(path))
+        await page.screenshot({
+          path: `/tmp/plannedwallet-mobile-${path === '/' ? 'overview' : path.slice(1)}.png`,
+          fullPage: true,
+        });
+    }
+    await page.goto('/accounts');
+    await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const bounds = await dialog.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width + 1);
+    await expect(dialog.getByRole('button', { name: 'Fechar', exact: true })).toBeInViewport();
+  });
+}

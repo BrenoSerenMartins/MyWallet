@@ -21,6 +21,7 @@ import './app/styles/motion.css';
 import './app/styles/topbar.css';
 import './app/styles/editorial-system.css';
 import './shared/ui/controls/controls.css';
+import './app/styles/mobile.css';
 // Installed workers can lag one version behind the newly loaded application bundle.
 try {
   migrateProductStorage(localStorage);

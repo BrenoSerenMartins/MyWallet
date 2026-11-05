@@ -56,7 +56,7 @@ export function PlanningSummary({
         >
           <span>
             <Icon size={17} />
-            {label}
+            <span className="planning-metric-title">{label}</span>
             <HelpTip
               label={label}
               text={
