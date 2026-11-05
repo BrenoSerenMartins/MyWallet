@@ -3863,11 +3863,15 @@ test('notification history is cleared when switching financial spaces', async ({
   await saveAccountForFeedback(page, false, [workspace, other]);
   await openWorkspaceSwitcher(page);
   await page.getByRole('link', { name: 'Abrir espaço Outro', exact: true }).click();
+  await expect(page).toHaveURL('/');
+  await expect(
+    page.getByRole('button', { name: 'Menu do espaço: Outro', exact: true }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Abrir notificações', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Notificações' })).not.toContainText(
-    'Conta salva.',
-  );
-  await expect(page.getByText('Nenhum aviso por aqui.', { exact: true })).toBeVisible();
+  const notifications = page.getByRole('dialog', { name: 'Notificações', exact: true });
+  await expect(notifications).toBeVisible();
+  await expect(notifications).not.toContainText('Conta salva.');
+  await expect(notifications.getByText('Nenhum aviso por aqui.', { exact: true })).toBeVisible();
 });
 test('keyboard tooltips dismiss before the dialog and preserve its close action', async ({
   page,
