@@ -24,7 +24,10 @@ export function BenefitPlanningNotice({ plan, scope }: { plan: MonthlyPlan; scop
         }),
       });
       await client.invalidateQueries({
-        predicate: (q) => q.queryKey.includes('planning') || q.queryKey.includes('accounts'),
+        predicate: (q) =>
+          ['planning', 'accounts', 'dashboard', 'dashboard-history', 'transactions', 'recent'].some(
+            (key) => q.queryKey.includes(key),
+          ),
       });
     } catch (e) {
       if (e instanceof ApiError && e.status === 412) void client.invalidateQueries();
@@ -39,7 +42,8 @@ export function BenefitPlanningNotice({ plan, scope }: { plan: MonthlyPlan; scop
         <strong>VA/VR no realizado</strong>
         <p className="field-help">
           Se o benefício cai no fim do mês anterior, considere o crédito no mês seguinte. A regra
-          vale para o histórico e os próximos meses, mantendo a data do extrato e o saldo.
+          vale para planejamento, gráficos e filtros por período, inclusive no histórico. A data do
+          extrato e o saldo são preservados.
         </p>
       </div>
       <ul>

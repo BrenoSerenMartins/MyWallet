@@ -690,7 +690,32 @@ it('assigns prepaid VA credits to the following planning month while retaining b
       version: 1,
     });
     expect((await accounts.find(alelo.id)).balance).toBe(before.balance);
-    expect((await ledger.summary('2026-10-01', '2026-11-01')).income).toBe(70000);
+    expect((await ledger.summary('2026-10-01', '2026-11-01')).income).toBe(0);
+    expect((await ledger.summary('2026-11-01', '2026-12-01')).income).toBe(370000);
+    const history = await ledger.monthlySummary('2026-10-01', '2026-12-01');
+    expect(history.map((m) => m.income)).toEqual([0, 370000]);
+    const november = await ledger.list({
+      from: '2026-11-01',
+      to: '2026-12-01',
+      accountId: alelo.id,
+      limit: 1,
+    });
+    expect(november.items).toHaveLength(1);
+    expect(november.nextCursor).not.toBeNull();
+    const next = await ledger.list({
+      from: '2026-11-01',
+      to: '2026-12-01',
+      accountId: alelo.id,
+      limit: 1,
+      cursor: november.nextCursor!,
+    });
+    expect(next.items).toEqual([
+      expect.objectContaining({ id: credit.id, transactionDate: '2026-10-30' }),
+    ]);
+    expect(
+      (await ledger.list({ from: '2026-10-01', to: '2026-11-01', accountId: alelo.id, limit: 10 }))
+        .items,
+    ).toHaveLength(0);
   });
 });
 it('shifts only configured positive benefit income across year boundaries and excludes bases, transfers and reversed entries', async () => {

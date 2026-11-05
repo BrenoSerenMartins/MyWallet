@@ -12,6 +12,17 @@ function reconciliationSql(alias = 'wallet.transactions') {
     AND (proof.source_data->>'amount')::bigint=${alias}.amount_minor
     AND ${alias}.transaction_date IN ((proof.source_data->>'date')::date,(proof.source_data->>'originDate')::date))`;
 }
+/** Reporting competence only; bank dates and balance/reconciliation evidence stay unchanged. */
+function reportingDateSql(alias = 'wallet.transactions') {
+  return `CASE WHEN ${alias}.transaction_type='income' AND ${alias}.amount_minor>0
+    AND EXISTS(SELECT 1 FROM wallet.financial_accounts reporting_account
+      WHERE reporting_account.id=${alias}.account_id AND reporting_account.user_id=${alias}.user_id
+      AND reporting_account.workspace_id=${alias}.workspace_id
+      AND reporting_account.type IN ('benefit_food','benefit_meal')
+      AND reporting_account.benefit_credit_month='following')
+    THEN (date_trunc('month',${alias}.transaction_date)+interval '1 month')::date
+    ELSE ${alias}.transaction_date END`;
+}
 export interface LedgerFilter {
   from?: string;
   to?: string;
@@ -255,8 +266,8 @@ export class LedgerRepository {
       values.push(value);
       where.push(expression.replace('?', `$${values.length}`));
     };
-    if (filter.from) add('transaction_date>=?', filter.from);
-    if (filter.to) add('transaction_date<?', filter.to);
+    if (filter.from) add(`(${reportingDateSql()})>=?`, filter.from);
+    if (filter.to) add(`(${reportingDateSql()})<?`, filter.to);
     if (filter.accountId) add('account_id=?', filter.accountId);
     if (filter.categoryId) add('category_id=?', filter.categoryId);
     if (filter.type) add('transaction_type=?', filter.type);
@@ -335,13 +346,13 @@ export class LedgerRepository {
   async monthlySummary(from: string, to: string) {
     const rows = await this.db.query(
       `WITH totals AS (
-        SELECT date_trunc('month',transaction_date)::date AS month,
+        SELECT date_trunc('month',(${reportingDateSql()}))::date AS month,
           coalesce(sum(amount_minor) FILTER(WHERE transaction_type='income'),0) AS income,
           coalesce(-sum(amount_minor) FILTER(WHERE transaction_type='expense'),0) AS expense,
           count(*) FILTER(WHERE transaction_type IN ('income','expense')) AS count,
           count(*) FILTER(WHERE transaction_type='unclassified') AS unclassified
         FROM wallet.transactions
-        WHERE user_id=$1 AND reversed_at IS NULL AND transaction_date>=$2 AND transaction_date<$3
+        WHERE user_id=$1 AND reversed_at IS NULL AND (${reportingDateSql()})>=$2 AND (${reportingDateSql()})<$3
         GROUP BY 1
       )
       SELECT to_char(m.month,'YYYY-MM') AS month,coalesce(t.income,0) AS income,
@@ -360,7 +371,7 @@ export class LedgerRepository {
   }
   async summary(from: string, to: string) {
     const [r] = await this.db.query(
-      `SELECT coalesce(sum(amount_minor) FILTER(WHERE transaction_type='income'),0) income,coalesce(-sum(amount_minor) FILTER(WHERE transaction_type='expense'),0) expense,count(*) FILTER(WHERE transaction_type='unclassified') unclassified FROM wallet.transactions WHERE user_id=$1 AND reversed_at IS NULL AND transaction_date>=$2 AND transaction_date<$3`,
+      `SELECT coalesce(sum(amount_minor) FILTER(WHERE transaction_type='income'),0) income,coalesce(-sum(amount_minor) FILTER(WHERE transaction_type='expense'),0) expense,count(*) FILTER(WHERE transaction_type='unclassified') unclassified FROM wallet.transactions WHERE user_id=$1 AND reversed_at IS NULL AND (${reportingDateSql()})>=$2 AND (${reportingDateSql()})<$3`,
       [this.db.userId, from, to],
     );
     const groups = await this.db.query(
@@ -370,7 +381,7 @@ export class LedgerRepository {
        LEFT JOIN wallet.categories c ON c.id=t.category_id AND c.type='expense'
        LEFT JOIN wallet.category_groups g ON g.id=c.group_id
        WHERE t.user_id=$1 AND t.reversed_at IS NULL AND t.transaction_type='expense'
-         AND t.transaction_date>=$2 AND t.transaction_date<$3
+         AND (${reportingDateSql('t')})>=$2 AND (${reportingDateSql('t')})<$3
        GROUP BY g.id,g.name ORDER BY amount DESC, name, g.id`,
       [this.db.userId, from, to],
     );
@@ -381,7 +392,7 @@ export class LedgerRepository {
        LEFT JOIN wallet.categories c ON c.id=t.category_id AND c.type='expense'
        LEFT JOIN wallet.category_groups g ON g.id=c.group_id
        WHERE t.user_id=$1 AND t.reversed_at IS NULL AND t.transaction_type='expense'
-         AND t.transaction_date>=$2 AND t.transaction_date<$3
+         AND (${reportingDateSql('t')})>=$2 AND (${reportingDateSql('t')})<$3
        GROUP BY c.id,c.name,g.name ORDER BY amount DESC,name,c.id`,
       [this.db.userId, from, to],
     );
@@ -409,11 +420,7 @@ export class LedgerRepository {
     to: string,
     scope: 'all' | 'cash' | 'benefits' = 'all',
   ): Promise<PlanningActual[]> {
-    // Planning can assign prepaid benefit credits to the following month without
-    // changing bank transaction dates, account balances or cash-date reports.
-    const planningDate = `CASE WHEN a.type IN ('benefit_food','benefit_meal') AND a.benefit_credit_month='following'
-      AND t.transaction_type='income' AND t.amount_minor>0
-      THEN (date_trunc('month',t.transaction_date)+interval '1 month')::date ELSE t.transaction_date END`;
+    const planningDate = reportingDateSql('t');
     const rows = await this.db.query(
       `SELECT t.category_id,t.transaction_type,
       coalesce(sum(t.amount_minor),0) AS total,count(*) AS count,

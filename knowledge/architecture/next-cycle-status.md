@@ -55,3 +55,9 @@ Os logs do run 42043543242 confirmam que verify passou lint, tipos, limites, 232
 ### Diagnóstico por trace do run 42070686256
 
 O artefato browser-test-evidence-3 confirmou que o clique em Cartões e faturas era interceptado pelo combobox Tipo de conta do conteúdo principal. O cabeçalho não criava uma camada acima do conteúdo animado. Adicionado position relative e z-index 50 ao cabeçalho; os diálogos e popovers portados mantêm suas camadas próprias. O teste continua navegando por cliques reais, sem force. Notificações: os quatro cenários passaram após isolar suas medições das animações de entrada. Resta confirmar a navegação no novo CI.
+
+### Competência de benefícios em consultas por período
+
+A configuração continua exclusiva de VA/VR. A data de competência usada no planejamento passou a ser compartilhada pelos totais do dashboard, séries mensais dos gráficos e filtros de movimentações. Apenas créditos positivos classificados como receita em benefício configurado para o mês seguinte mudam de período; despesas e demais contas mantêm o critério original. Datas persistidas, conciliação com extratos e cálculos de saldo continuam usando a data bancária. Alterar a configuração invalida também gráficos, dashboard e listas em cache. Teste integrado verifica o mesmo crédito nos totais, histórico, filtro por conta e paginação, preservando sua data original e saldo.
+
+Validação local: 27 testes de planejamento e fluxos financeiros passaram; tipos, lint, limites de módulos, build e verificação de credenciais passaram. A suíte completa não avançou neste ambiente e foi interrompida; sua confirmação, assim como os testes de navegador, fica pendente no CI.

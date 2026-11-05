@@ -102,7 +102,7 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
           <div className="field-assistance">
             <HelpTip
               label="Mês do crédito de VA/VR"
-              text="Escolha o mês do recebimento se o crédito cai no próprio mês, como no dia 1. Para um benefício antecipado no fim do mês anterior, escolha o mês seguinte. Isso muda apenas o planejamento, preservando a data e o saldo do extrato."
+              text="Escolha o mês do recebimento se o crédito cai no próprio mês, como no dia 1. Para um benefício antecipado no fim do mês anterior, escolha o mês seguinte. Essa regra vale para planejamento, gráficos e filtros por período. A data original e o saldo do extrato são preservados."
             />
             <span>Como escolher o mês do crédito</span>
           </div>
