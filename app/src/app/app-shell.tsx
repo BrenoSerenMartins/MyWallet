@@ -1,3 +1,4 @@
+import { ActionMenu } from '../shared/ui/action-menu';
 import { Tooltip } from '../shared/ui/tooltip';
 import { productName } from '../shared/brand';
 import { NotificationCenter } from '../shared/feedback/notification-center';
@@ -26,7 +27,7 @@ import { Logo, Modal } from '../shared/ui/primitives';
 const navigation = [
   { to: '/', label: 'Visão geral', mobile: 'Início', Icon: House },
   { to: '/transactions', label: 'Movimentações', mobile: 'Movimentos', Icon: ArrowDownUp },
-  { to: '/accounts', label: 'Minhas contas', mobile: 'Contas', Icon: Landmark },
+  { to: '/accounts', label: 'Contas', mobile: 'Contas', Icon: Landmark },
   { to: '/planning', label: 'Planejamento', mobile: 'Planejar', Icon: CalendarDays },
   { to: '/cards', label: 'Cartões e faturas', mobile: 'Cartões', Icon: CreditCard },
   {
@@ -143,6 +144,28 @@ export function AppShell() {
               .filter((n) => primaryPaths.includes(n.to))
               .map(({ to, label, Icon }) => {
                 const title = to === '/wealth' ? 'Patrimônio' : label;
+                if (to === '/accounts')
+                  return (
+                    <ActionMenu
+                      key={to}
+                      label="Contas"
+                      active={
+                        location.pathname.startsWith('/accounts') ||
+                        location.pathname.startsWith('/cards')
+                      }
+                      trigger={
+                        <>
+                          <Icon size={17} aria-hidden="true" />
+                          <span>Contas</span>
+                          <ChevronDown size={12} aria-hidden="true" />
+                        </>
+                      }
+                    >
+                      <NavLink to="/accounts">Contas e saldos</NavLink>
+                      <NavLink to="/cards">Cartões e faturas</NavLink>
+                    </ActionMenu>
+                  );
+
                 return (
                   <Tooltip key={to} text={title}>
                     <NavLink to={to} end={to === '/'} aria-label={title}>
@@ -233,7 +256,11 @@ export function AppShell() {
                   <NavLink
                     to={to}
                     key={to}
-                    className={primaryPaths.includes(to) ? 'menu-mobile-destination' : undefined}
+                    className={
+                      primaryPaths.includes(to) || to === '/cards'
+                        ? 'menu-mobile-destination'
+                        : undefined
+                    }
                     onClick={() => setMore(false)}
                   >
                     <Icon size={20} />

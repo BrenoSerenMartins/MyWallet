@@ -1,10 +1,9 @@
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { FinanceAreaNav } from '../../shared/navigation/finance-area-nav';
 import { PageHeader } from '../../shared/ui/page-header';
 import { AccountRecord } from './components/account-record';
 import { BalanceHistoryPanel } from './components/balance-history-panel';
 import { BalanceAdjustmentForm } from './components/balance-adjustment-form';
-import { ViewSwitcher } from '../../shared/ui/view-switcher';
+import { Select } from '../../shared/ui/controls/select';
 import { AccountForm } from './components/account-form';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -75,7 +74,20 @@ export function AccountsPage() {
   );
   return (
     <div className="page-enter accounts-page">
-      <PageHeader compact title={<>Minhas contas</>} navigation={<FinanceAreaNav />}>
+      <PageHeader compact title={<>Minhas contas</>}>
+        <label className="account-type-filter">
+          <span>Tipo</span>
+          <Select
+            aria-label="Tipo de conta"
+            value={scope}
+            onChange={(event) => setScope(event.target.value)}
+          >
+            <option value="all">Todas</option>
+            <option value="cash">Dinheiro</option>
+            <option value="benefits">Benefícios</option>
+            <option value="reserve">Reservas</option>
+          </Select>
+        </label>
         <Button
           onClick={() => {
             setEditing(undefined);
@@ -88,18 +100,6 @@ export function AccountsPage() {
         </Button>
       </PageHeader>
 
-      <ViewSwitcher
-        variant="tabs"
-        label="Tipos de contas"
-        value={scope}
-        onChange={setScope}
-        options={[
-          { value: 'all', label: 'Todas' },
-          { value: 'cash', label: 'Dinheiro' },
-          { value: 'benefits', label: 'Benefícios' },
-          { value: 'reserve', label: 'Reservas' },
-        ]}
-      />
       {accounts.isPending ? (
         <Loading />
       ) : accounts.isError ? (

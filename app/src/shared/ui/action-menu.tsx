@@ -3,7 +3,17 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Ellipsis } from 'lucide-react';
 
 /** Native disclosure with ordinary tab navigation, not a partial ARIA menu. */
-export function ActionMenu({ label, children }: { label: string; children: ReactNode }) {
+export function ActionMenu({
+  label,
+  children,
+  trigger,
+  active = false,
+}: {
+  label: string;
+  children: ReactNode;
+  trigger?: ReactNode;
+  active?: boolean;
+}) {
   const root = useRef<HTMLDetailsElement>(null);
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -36,13 +46,11 @@ export function ActionMenu({ label, children }: { label: string; children: React
   return (
     <details
       ref={root}
-      className="action-menu"
+      className={`action-menu${trigger ? ' navigation-dropdown' : ''}${active ? ' active' : ''}`}
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <Tooltip text={label}>
-        <summary aria-label={label}>
-          <Ellipsis size={19} />
-        </summary>
+        <summary aria-label={label}>{trigger ?? <Ellipsis size={19} />}</summary>
       </Tooltip>
       <div
         className="action-menu-panel"

@@ -1,7 +1,6 @@
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { FinanceAreaNav } from '../../shared/navigation/finance-area-nav';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -71,7 +70,6 @@ export function CardsPage() {
   };
   return (
     <div className="page-enter cards-page">
-      <FinanceAreaNav />
       <PageHeader
         compact
         title={<>Cartões e faturas</>}
