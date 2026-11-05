@@ -225,3 +225,60 @@
 .category-row .icon-button:hover {
   color: var(--negative);
 }
+
+/* Financial type is a navigation choice, not a filled call to action. */
+body .page-content .categories-page .category-toolbar > .view-switcher-tabs {
+  display: flex;
+  justify-content: flex-start;
+  width: auto;
+  gap: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+body .page-content .categories-page .category-toolbar .view-switcher-tabs > button {
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 4px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+body
+  .page-content
+  .categories-page
+  .category-toolbar
+  .view-switcher-tabs
+  > button[aria-pressed='true'] {
+  color: var(--text);
+  background: transparent;
+}
+body .page-content .categories-page .category-toolbar .view-switcher-tabs > button > span {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+body .page-content .categories-page .category-toolbar .view-switcher-tabs > button:focus-visible {
+  outline-offset: -3px;
+}
+body .page-content .categories-page .category-toolbar .view-switcher-indicator {
+  background: var(--accent);
+}
+@media (max-width: 760px) {
+  body .page-content .categories-page .category-toolbar > .view-switcher-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 0;
+    background: var(--rule-horizontal) bottom / 100% 1px no-repeat;
+  }
+  body .page-content .categories-page .category-toolbar .view-switcher-tabs > button {
+    justify-content: center;
+  }
+}

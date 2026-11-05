@@ -50,6 +50,7 @@ export function CategoriesPage() {
           onClick={() => setEditor({ kind: 'group' })}
         />
         <ViewSwitcher
+          variant="tabs"
           label="Tipo de categoria"
           value={type}
           onChange={(value) => {
