@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Layers3, Check, Trash2 } from 'lucide-react';
+import { Layers3, Check, Trash2 } from 'lucide-react';
 import { IconAction } from '../../../shared/ui/icon-action';
 import type { Workspace } from '../../../shared/api/resources';
 export function WorkspaceCard({
@@ -37,7 +37,6 @@ export function WorkspaceCard({
           </div>
           {workspace.description && <p>{workspace.description}</p>}
         </div>
-        <ArrowUpRight size={18} className="space-entry-open" aria-hidden="true" />
       </Link>
       <IconAction
         label={`Excluir espaço ${workspace.name}`}

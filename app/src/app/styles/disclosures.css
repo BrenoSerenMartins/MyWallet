@@ -1,0 +1,200 @@
+/* Expanded details share an open material and consistent internal spacing.
+   Inputs, warnings, and deliberate table scrollers retain their own boundaries. */
+body
+  .page-content
+  :is(
+    .import-bulk,
+    .commitment-schedules,
+    .source-details,
+    .finance-disclosure,
+    .planning-preferences,
+    .forecast-accounts,
+    .import-guide
+  ) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+  padding: 0;
+  min-width: 0;
+}
+body
+  .page-content
+  :is(
+    .import-bulk,
+    .commitment-schedules,
+    .source-details,
+    .finance-disclosure,
+    .planning-preferences,
+    .forecast-accounts,
+    .import-guide
+  )
+  > summary,
+body
+  .dialog-content
+  :is(.finance-disclosure, .finance-period, .commitment-candidate-period)
+  > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+body :is(.page-content, .dialog-content) details > summary:focus-visible {
+  outline-width: 2px;
+  outline-offset: -3px;
+  border-radius: 6px;
+}
+body .page-content .disclosure-content {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 12px 12px 24px;
+}
+body .page-content .import-bulk .bulk-selection {
+  gap: 8px;
+  padding: 0;
+}
+body .page-content .import-bulk .field-help {
+  margin: 0;
+}
+body .page-content .import-bulk .disclosure-content > label {
+  max-width: 480px;
+  min-width: 0;
+}
+body .page-content .source-details .review-summary {
+  margin: 0;
+  gap: 12px;
+}
+body .page-content .source-details .review-summary > .panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 12px;
+  text-align: center;
+}
+body .page-content .source-details .review-summary strong {
+  overflow-wrap: anywhere;
+}
+body .page-content .account-record .account-reference-actions[open] > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 12px 12px 20px;
+  background: transparent;
+}
+body .page-content .account-record .account-reference-actions[open] .balance-reference {
+  margin: 0;
+  padding: 0;
+}
+body .page-content .planning-page .budget-group-content {
+  padding-inline: 12px;
+}
+body .page-content .planning-page .budget-group-content .budget-line {
+  border: 0;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+  padding: 18px 0;
+}
+body .page-content .planning-page .planning-preferences[open] > :not(summary) {
+  margin: 12px;
+}
+body .page-content .planning-page .planning-preferences .benefit-planning-notice {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+body .page-content :is(.commitment-schedules, .forecast-accounts)[open] > ul {
+  padding: 0 12px 16px;
+}
+body .page-content :is(.commitment-schedules, .forecast-accounts) li {
+  padding: 16px 0;
+  border: 0;
+  gap: 12px;
+  background: var(--rule-horizontal) bottom / 100% 1px no-repeat;
+}
+body .page-content :is(.commitment-schedules, .forecast-accounts) li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+body .page-content .finance-disclosure[open] > :not(summary),
+body .dialog-content .finance-disclosure[open] > :not(summary) {
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+body .page-content .finance-disclosure[open] > .card-entry-list,
+body .page-content .wealth-composition[open] > dl {
+  padding-inline: 12px;
+}
+body .dialog-content :is(.finance-period, .commitment-candidate-period) {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+}
+body .dialog-content :is(.finance-period, .commitment-candidate-period)[open] > .form-grid {
+  margin: 0;
+  padding: 12px 0 20px;
+  gap: 16px;
+}
+body .dialog-content .balance-history > article {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+  padding: 20px 0;
+}
+body .dialog-content .balance-history article > details > summary {
+  min-height: 44px;
+  padding-block: 10px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+}
+body .dialog-content .balance-history article > details[open] > p {
+  padding: 8px 12px 16px;
+  overflow-wrap: anywhere;
+}
+body .page-content .review-table .movement-details[open] > p {
+  padding: 8px 0;
+  line-height: 1.6;
+}
+@media (max-width: 760px) {
+  body .page-content .disclosure-content {
+    padding-inline: 10px;
+  }
+  body .page-content .import-bulk .bulk-selection > .button {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+  body .page-content .disclosure-content .button,
+  body .dialog-content .finance-disclosure .text-button {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  body .page-content :is(.commitment-schedules, .forecast-accounts) .inline-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  body .page-content .finance-disclosure .card-entry-list > li {
+    gap: 10px;
+    padding-block: 16px;
+  }
+  body .page-content .wealth-composition[open] > dl {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  body .page-content .wealth-composition dl > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 12px;
+  }
+}

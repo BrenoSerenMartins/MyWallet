@@ -47,9 +47,11 @@ export function BudgetSection({
                     </strong>
                   </span>
                 </summary>
-                {children.map((line) => (
-                  <BudgetLine key={line.categoryId ?? 'uncategorized'} line={line} type={type} />
-                ))}
+                <div className="budget-group-content">
+                  {children.map((line) => (
+                    <BudgetLine key={line.categoryId ?? 'uncategorized'} line={line} type={type} />
+                  ))}
+                </div>
               </details>
             );
           })}

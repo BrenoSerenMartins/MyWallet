@@ -657,3 +657,30 @@ body .spaces-page .spaces-appearance {
 .workspace-trash[open] .workspace-trash-toggle {
   transform: rotate(180deg);
 }
+
+body .spaces-page .page-header-headingline {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+body .spaces-page .spaces-main .page-header {
+  margin-bottom: 12px;
+}
+body .spaces-page .space-entry .space-card {
+  grid-template-columns: 44px minmax(0, 1fr);
+  padding-block: 18px;
+}
+body .spaces-page .workspace-trash {
+  margin-top: 12px;
+  background: transparent;
+}
+body .spaces-page .workspace-trash > summary {
+  color: var(--muted);
+}
+body .spaces-page .workspace-trash[open] > :not(summary) {
+  margin-inline: 12px;
+}
+@media (max-width: 600px) {
+  body .spaces-page .space-entry .space-card {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+}
