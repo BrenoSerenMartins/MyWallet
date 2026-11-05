@@ -1,3 +1,4 @@
+import { Select } from '../../../shared/ui/controls/select';
 import { EmptyState } from '../../../shared/ui/primitives';
 import { ChartNoAxesCombined as EmptyIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -40,17 +41,19 @@ export function HistoryOverview({
           <p>Receitas e despesas de todas as contas. O período termina no mês da análise.</p>
         </div>
         <div className="history-controls">
-          <ViewSwitcher
-            label="Intervalo do comparativo"
-            value={months}
-            onChange={setMonths}
-            options={[
-              { value: '2', label: '2 meses' },
-              { value: '4', label: '4 meses' },
-              { value: '7', label: '7 meses' },
-              { value: '12', label: '12 meses' },
-            ]}
-          />
+          <label className="history-range-select">
+            <span className="sr-only">Intervalo do comparativo</span>
+            <Select
+              aria-label="Intervalo do comparativo"
+              value={months}
+              onChange={(event) => setMonths(event.target.value)}
+            >
+              <option value="2">2 meses</option>
+              <option value="4">4 meses</option>
+              <option value="7">7 meses</option>
+              <option value="12">12 meses</option>
+            </Select>
+          </label>
           <ViewSwitcher
             label="Formato do gráfico"
             value={mode}

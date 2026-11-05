@@ -2337,15 +2337,7 @@ for (const width of [360, 390, 768, 1440]) {
       'As despesas superaram as receitas',
     );
     await expect(page.locator('.month-metric.expense')).toContainText('R$ 500,00');
-    await page
-      .getByRole('group', { name: 'Conteúdo da visão geral' })
-      .getByRole('button', { name: 'Análise', exact: true })
-      .click();
     await expect(page.locator('.expense-groups')).toContainText('Outros');
-    await page
-      .getByRole('group', { name: 'Conteúdo da visão geral' })
-      .getByRole('button', { name: 'Resumo', exact: true })
-      .click();
     await page.getByText('Composição por conta', { exact: false }).click();
     await expect(page.locator('.balance-composition .account-line')).toHaveCount(3);
     await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
@@ -2405,10 +2397,6 @@ test('overview preserves balances when historical analysis fails and supports re
   await expect(page.getByRole('alert')).toContainText('Não foi possível carregar');
   failing = false;
   await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
-  await page
-    .getByRole('group', { name: 'Conteúdo da visão geral' })
-    .getByRole('button', { name: 'Análise', exact: true })
-    .click();
   await expect(page.locator('.expense-groups')).toContainText('Nenhuma despesa registrada');
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
@@ -2463,11 +2451,11 @@ for (const width of [360, 768, 1440])
     await page.goto('/?month=2026-10&view=analysis');
     const history = page.getByRole('region', { name: 'Evolução mensal', exact: true });
     await expect(history.locator('svg g[role="button"]')).toHaveCount(4);
-    await history.getByRole('button', { name: '7 meses', exact: true }).click();
+    await chooseSelect(history.getByLabel('Intervalo do comparativo', { exact: true }), '7');
     await expect(history.locator('svg g[role="button"]')).toHaveCount(7);
     await history.getByRole('button', { name: 'Linhas', exact: true }).click();
     await expect(history.locator('polyline')).toHaveCount(2);
-    await history.getByRole('button', { name: '12 meses', exact: true }).click();
+    await chooseSelect(history.getByLabel('Intervalo do comparativo', { exact: true }), '12');
     await expect(history.locator('svg g[role="button"]')).toHaveCount(12);
     await history.getByText('Ver valores mês a mês', { exact: true }).click();
     await expect(history.locator('tbody tr')).toHaveCount(12);
@@ -3640,35 +3628,24 @@ test('new shared forms and account controls remain usable with a narrow viewport
   await expect(page.getByRole('button', { name: 'Adicionar conta', exact: true })).toBeFocused();
 });
 
-test('overview separates daily tasks from analysis and preserves the selected view across month changes', async ({
+test('overview unifies analysis and daily tasks while keeping current balances independent of month selection', async ({
   page,
 }) => {
   await signedIn(page);
-  await page.goto('/?month=2026-10');
-  const views = page.getByRole('group', { name: 'Conteúdo da visão geral' });
+  await page.goto('/?month=2026-10&view=analysis');
+  await expect(page.getByRole('group', { name: 'Conteúdo da visão geral' })).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Saldos atuais', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Evolução mensal', exact: true })).toBeVisible();
   await expect(
     page.getByRole('heading', { name: 'Últimos movimentos', exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Evolução mensal', exact: true })).toHaveCount(0);
-  await views.getByRole('button', { name: 'Análise', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Evolução mensal', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Últimos movimentos', exact: true })).toHaveCount(
-    0,
-  );
   await page.getByRole('button', { name: 'Mês anterior', exact: true }).click();
-  await expect(page).toHaveURL(/view=analysis/);
   await expectControlValue(page.getByLabel('Mês do resumo'), '2026-09');
-  await page.reload();
-  await expect(views.getByRole('button', { name: 'Análise', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  expect(new URL(page.url()).searchParams.has('view')).toBe(false);
   await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
   await expect(
     page.getByRole('region', { name: 'Evolução mensal', exact: true }),
   ).not.toContainText('R$');
-  await views.getByRole('button', { name: 'Resumo', exact: true }).click();
   await expect(page.locator('.hero-balance')).toHaveText('••••••');
 });
 test('account filters explain empty results and keep account and card workspaces connected', async ({

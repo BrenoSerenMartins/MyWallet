@@ -567,3 +567,27 @@ body .dashboard-page .current-balances .overview-view-navigation {
   margin-top: 0;
   padding: 6px 0;
 }
+
+body .dashboard-page .overview-insights {
+  display: grid;
+  gap: 28px;
+  margin-top: 28px;
+  min-width: 0;
+}
+body .dashboard-page .overview-finance-details {
+  border-top: 1px solid var(--border);
+}
+.overview-finance-details > summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+}
+.history-range-select {
+  min-width: 130px;
+}
+body .dashboard-page > .recent-movements {
+  margin-top: 8px;
+}

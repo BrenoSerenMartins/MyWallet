@@ -1,7 +1,6 @@
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { HelpTip } from '../../shared/ui/tooltip';
 import { Tooltip } from '../../shared/ui/tooltip';
-import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { FinanceOverview } from './components/finance-overview';
 import { CashflowForecast } from '../planning/components/cashflow-forecast';
 import '../planning/commitments.css';
@@ -20,12 +19,12 @@ import { ExpenseGroups } from './components/expense-groups';
 import './dashboard.css';
 export function DashboardPage() {
   const [params, setParams] = useSearchParams();
-  const view = params.get('view') === 'analysis' ? 'analysis' : 'summary';
   const requestedMonth = params.get('month');
   const month = validMonth(requestedMonth) ? requestedMonth : dateToday().slice(0, 7);
   const setMonth = (value: string) => {
     if (validMonth(value)) {
       const next = new URLSearchParams(params);
+      next.delete('view');
       next.set('month', value);
       setParams(next);
     }
@@ -45,32 +44,9 @@ export function DashboardPage() {
             summary={snapshot.data}
             visible={visible}
             onToggle={() => setVisible(!visible)}
-            navigation={
-              <ViewSwitcher
-                variant="tabs"
-                label="Conteúdo da visão geral"
-                value={view}
-                onChange={(value) => {
-                  const next = new URLSearchParams(params);
-                  if (value === 'summary') next.delete('view');
-                  else next.set('view', value);
-                  setParams(next);
-                }}
-                options={[
-                  { value: 'summary', label: 'Resumo' },
-                  { value: 'analysis', label: 'Análise' },
-                ]}
-              />
-            }
           />
         )}
       </div>
-      {view === 'summary' && (
-        <div className="dashboard-overview">
-          <FinanceOverview visible={visible} />
-        </div>
-      )}
-      {view === 'summary' && <CashflowForecast visible={visible} compact />}
       <section className="monthly-analysis" aria-labelledby="monthly-title">
         <div className="monthly-heading">
           <div>
@@ -160,21 +136,8 @@ export function DashboardPage() {
             </div>
           )}
         </div>
-        {view === 'analysis' && (
-          <HistoryOverview month={month} visible={visible} onMonthChange={setMonth} />
-        )}
-        <div key={view} className="dashboard-detail-area motion-reveal">
-          {view === 'summary' && (
-            <RecentMovements
-              items={movements.data?.items}
-              pending={movements.isPending}
-              error={movements.error}
-              retry={() => void movements.refetch()}
-              visible={visible}
-              link={transactionsLink()}
-            />
-          )}
-          {view === 'analysis' && !summary.isPending && !summary.isError && (
+        <div className="overview-insights">
+          {!summary.isPending && !summary.isError && (
             <ExpenseGroups
               groups={summary.data.expenseGroups ?? []}
               categories={summary.data.expenseCategories ?? []}
@@ -182,8 +145,24 @@ export function DashboardPage() {
               link={transactionsLink('expense')}
             />
           )}
+          <HistoryOverview month={month} visible={visible} onMonthChange={setMonth} />
         </div>
       </section>
+      <CashflowForecast visible={visible} compact />
+      <RecentMovements
+        items={movements.data?.items}
+        pending={movements.isPending}
+        error={movements.error}
+        retry={() => void movements.refetch()}
+        visible={visible}
+        link={transactionsLink()}
+      />
+      <details className="overview-finance-details">
+        <summary>Cartões, investimentos e patrimônio</summary>
+        <div className="dashboard-overview">
+          <FinanceOverview visible={visible} />
+        </div>
+      </details>
     </div>
   );
 }
