@@ -228,7 +228,7 @@ for (const width of [360, 390, 768, 1440])
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     await page.screenshot({ path: `/tmp/plannedwallet-settings-${width}.png`, fullPage: true });
     await page.goto('/workspaces');
-    await expect(page.getByRole('heading', { name: 'Seus espaços.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Seus espaços' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
@@ -249,7 +249,7 @@ test('workspace cards open a space and creation uses its scope', async ({ page }
     return route.fulfill({ json: [workspace] });
   });
   await page.goto('/workspaces');
-  await expect(page.getByRole('heading', { name: 'Seus espaços.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Seus espaços' })).toBeVisible();
   await page.getByRole('link', { name: 'Abrir espaço Pessoal' }).click();
   await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
   await openWorkspaceSwitcher(page);
@@ -2494,7 +2494,7 @@ test('a sole active space opens automatically without a saved selection; multipl
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
   await openWorkspaceSwitcher(page);
-  await expect(page.getByRole('heading', { name: 'Seus espaços.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Seus espaços' })).toBeVisible();
   await page.route('**/v1/workspaces', (route) =>
     route.fulfill({
       json: [

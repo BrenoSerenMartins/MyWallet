@@ -493,3 +493,167 @@
 .spaces-grid > .empty-state {
   grid-column: 1 / -1;
 }
+
+/* Spaces use an open directory, matching the financial pages rather than cover cards. */
+body .spaces-page {
+  background: var(--bg);
+}
+body .spaces-page .spaces-topbar {
+  background: var(--bg);
+}
+body .spaces-page .spaces-main {
+  max-width: 960px;
+  padding-top: 32px;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
+body .spaces-page .spaces-main .page-header {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+body .spaces-page .page-header-copy {
+  flex: 1 1 0;
+}
+body .spaces-page .page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: clamp(24px, 4vw, 30px);
+  letter-spacing: -0.7px;
+}
+body .spaces-page .page-header-actions {
+  flex: 0 0 auto;
+  width: auto;
+}
+body .spaces-page .spaces-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+body .spaces-page .space-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 12px;
+  background: var(--rule-horizontal) bottom / 100% 1px no-repeat;
+}
+body .spaces-page .space-entry .space-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 20px;
+  align-items: center;
+  min-width: 0;
+  padding: 22px 0;
+  gap: 16px;
+  height: auto;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--text);
+}
+body .spaces-page .space-entry .space-card:hover {
+  background: color-mix(in srgb, var(--muted) 4%, transparent);
+}
+body .spaces-page .space-entry .space-card-symbol {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--brand);
+  background: var(--surface-soft);
+}
+.space-entry-copy {
+  min-width: 0;
+}
+.space-entry-copy h2 {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.space-entry-status {
+  display: flex;
+  align-items: center;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 6px;
+}
+.space-entry-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+}
+.space-entry-copy p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.space-entry-open {
+  color: var(--muted);
+}
+body .spaces-page .space-delete-action {
+  color: var(--muted);
+  padding: 0;
+}
+body .spaces-page .space-delete-action:hover:not(:disabled) {
+  color: var(--negative);
+}
+body .spaces-page .workspace-trash {
+  padding: 0;
+  margin-top: 24px;
+  border: 0;
+  border-radius: 0;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+  box-shadow: none;
+}
+body .spaces-page .workspace-trash > summary {
+  min-height: 56px;
+  padding: 12px 0;
+  gap: 10px;
+  font-size: 13px;
+}
+.workspace-trash-toggle {
+  margin-left: auto;
+  color: var(--muted);
+}
+body .spaces-page .spaces-appearance {
+  margin-top: 24px;
+  padding-top: 16px;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+}
+@media (max-width: 600px) {
+  body .spaces-page .spaces-main {
+    padding-top: 24px;
+  }
+  body .spaces-page .space-entry {
+    gap: 4px;
+  }
+  body .spaces-page .space-entry .space-card {
+    grid-template-columns: 36px minmax(0, 1fr) 16px;
+    gap: 10px;
+    padding: 20px 0;
+  }
+  body .spaces-page .space-entry .space-card-symbol {
+    width: 36px;
+    height: 40px;
+  }
+  body .spaces-page .space-entry-copy h2 {
+    font-size: 17px;
+  }
+  body .spaces-page .space-entry-copy p {
+    font-size: 12px;
+  }
+  body .spaces-page .workspace-trash li {
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+.workspace-trash[open] .workspace-trash-toggle {
+  transform: rotate(180deg);
+}

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Layers3, Check, Trash2 } from 'lucide-react';
+import { IconAction } from '../../../shared/ui/icon-action';
 import type { Workspace } from '../../../shared/api/resources';
 export function WorkspaceCard({
   workspace,
@@ -13,47 +14,38 @@ export function WorkspaceCard({
   onDelete: () => void;
 }) {
   return (
-    <article className="space-card-container">
+    <article className={`space-card-container space-entry space-${workspace.color}`}>
       <Link
         to="/"
         onClick={onSelect}
         className={`space-card ${active ? 'space-card-active' : ''}`}
         aria-label={`Abrir espaço ${workspace.name}`}
       >
-        <div className={`space-cover space-${workspace.color}`}>
-          <span className="space-cover-rings" aria-hidden="true" />
-          <span className="space-card-symbol">
-            <Layers3 size={27} />
-          </span>
-          {active && (
-            <span className="space-current">
-              <Check size={12} />
-              Em uso
-            </span>
-          )}
-          <ArrowUpRight size={20} className="space-open-icon" />
-        </div>
-        <div className="space-card-body">
-          <div>
-            <h2>{workspace.name}</h2>
-            {workspace.isDefault && <span className="space-kind">Padrão</span>}
+        <span className="space-card-symbol" aria-hidden="true">
+          <Layers3 size={24} />
+        </span>
+        <div className="space-entry-copy">
+          <h2>{workspace.name}</h2>
+          <div className="space-entry-status">
+            {active && (
+              <span className="space-entry-current">
+                <Check size={13} aria-hidden="true" />
+                Em uso
+              </span>
+            )}
+            {workspace.isDefault && <span>Padrão</span>}
           </div>
-          <p>{workspace.description || 'Um novo espaço para organizar suas finanças.'}</p>
-          <span className="space-card-footer">
-            Abrir espaço <ArrowUpRight size={15} />
-          </span>
+          {workspace.description && <p>{workspace.description}</p>}
         </div>
+        <ArrowUpRight size={18} className="space-entry-open" aria-hidden="true" />
       </Link>
-      <button
-        type="button"
-        className="space-delete-button"
-        aria-label={`Excluir espaço ${workspace.name}`}
+      <IconAction
+        label={`Excluir espaço ${workspace.name}`}
+        className="space-delete-action"
+        icon={<Trash2 size={17} />}
         onClick={onDelete}
         disabled={!navigator.onLine}
-      >
-        <Trash2 size={15} />
-        Excluir
-      </button>
+      />
     </article>
   );
 }

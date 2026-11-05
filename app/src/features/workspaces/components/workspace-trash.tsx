@@ -1,7 +1,7 @@
 import { useNotifications } from '../../../shared/feedback/notification-provider';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronDown, RotateCcw, Trash2 } from 'lucide-react';
 import { useAuth } from '../../auth/auth-provider';
 import { request } from '../../../shared/api/client';
 import type { TrashedWorkspace } from '../../../shared/api/resources';
@@ -40,6 +40,7 @@ export function WorkspaceTrash() {
       <summary>
         <Trash2 size={18} />
         Lixeira {query.data && <span className="badge">{query.data.length}</span>}
+        <ChevronDown className="workspace-trash-toggle" size={16} aria-hidden="true" />
       </summary>
       <p>
         Espaços excluídos podem ser restaurados por 7 dias. Após o prazo, são removidos

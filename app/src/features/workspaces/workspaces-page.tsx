@@ -1,11 +1,11 @@
-import { Tooltip } from '../../shared/ui/tooltip';
-import { productName } from '../../shared/brand';
+import { IconAction } from '../../shared/ui/icon-action';
+import { Tooltip, HelpTip } from '../../shared/ui/tooltip';
 import { NotificationCenter } from '../../shared/feedback/notification-center';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Layers3, LogOut, Plus, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, LogOut, Plus } from 'lucide-react';
 import {
   Logo,
   ThemeSwitcher,
@@ -68,17 +68,20 @@ export function WorkspacesPage() {
       </header>
       <main id="main-content" className="spaces-main">
         <PageHeader
-          title={
-            <>
-              Seus espaços<span>.</span>
-            </>
+          title="Seus espaços"
+          navigation={
+            <HelpTip
+              label="Sobre os espaços"
+              text="Cada espaço tem suas próprias contas, categorias e movimentações. Ao trocar, você muda a visão completa das suas finanças."
+            />
           }
-          description={<>Abra um espaço para consultar suas contas e movimentações.</>}
         >
-          <Button onClick={() => setOpen(true)} disabled={loading || !!error || !navigator.onLine}>
-            <Plus size={17} />
-            Criar espaço
-          </Button>
+          <IconAction
+            label="Criar espaço"
+            icon={<Plus size={18} />}
+            onClick={() => setOpen(true)}
+            disabled={loading || !!error || !navigator.onLine}
+          />
         </PageHeader>
 
         {loading ? (
@@ -107,29 +110,12 @@ export function WorkspacesPage() {
           </div>
         )}
         <WorkspaceTrash />
-        <div className="spaces-explanation">
-          <span>
-            <Layers3 size={19} />
-          </span>
-          <div>
-            <strong>Organização que acompanha a sua vida.</strong>
-            <p>
-              Cada espaço tem suas próprias contas, categorias e movimentações. Ao trocar de espaço,
-              você muda a visão completa das suas finanças.
-            </p>
-          </div>
-          <ShieldCheck size={23} />
-        </div>
         {!active && (
           <div className="spaces-appearance">
             <span>Aparência</span>
             <ThemeSwitcher />
           </div>
         )}
-        <footer className="spaces-footer">
-          <span>{productName.toLocaleUpperCase('pt-BR')}</span>
-          <span>Mais espaço para o que importa.</span>
-        </footer>
       </main>
       <Modal
         open={!!deleting}
