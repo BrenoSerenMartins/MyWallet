@@ -1,3 +1,4 @@
+import { IconAction } from '../../shared/ui/icon-action';
 import { Landmark as EmptyStateIcon } from 'lucide-react';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { AccountRecord } from './components/account-record';
@@ -11,7 +12,7 @@ import { Plus } from 'lucide-react';
 import { useAuth } from '../auth/auth-provider';
 import { request } from '../../shared/api/client';
 import type { Account, BalanceReferenceResult } from '../../shared/api/resources';
-import { Button, EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
+import { EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
 export function AccountsPage() {
   const { session } = useAuth();
   const client = useQueryClient();
@@ -77,28 +78,27 @@ export function AccountsPage() {
       <h1 className="sr-only">Minhas contas</h1>
       <div className="account-directory-toolbar">
         <label className="account-type-filter">
-          <span>Tipo</span>
+          <span className="sr-only">Tipo de conta</span>
           <Select
             aria-label="Tipo de conta"
             value={scope}
             onChange={(event) => setScope(event.target.value)}
           >
-            <option value="all">Todas</option>
+            <option value="all">Todas as contas</option>
             <option value="cash">Dinheiro</option>
             <option value="benefits">Benefícios</option>
             <option value="reserve">Reservas</option>
           </Select>
         </label>
-        <Button
+        <IconAction
+          label="Adicionar conta"
+          icon={<Plus size={18} />}
           onClick={() => {
             setEditing(undefined);
             setOpen(true);
           }}
           disabled={!navigator.onLine}
-        >
-          <Plus size={18} />
-          Adicionar conta
-        </Button>
+        />
       </div>
 
       {accounts.isPending ? (

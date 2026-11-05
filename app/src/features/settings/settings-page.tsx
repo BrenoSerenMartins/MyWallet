@@ -1,7 +1,6 @@
 import { Select } from '../../shared/ui/controls/select';
-import { PageHeader } from '../../shared/ui/page-header';
 import { useSearchParams } from 'react-router-dom';
-import { Palette, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { useAuth } from '../auth/auth-provider';
 import { authClient } from '../../shared/api/auth-client';
 import { Button, ThemeSwitcher } from '../../shared/ui/primitives';
@@ -21,10 +20,7 @@ export function SettingsPage() {
 
   return (
     <div className="page-enter settings-page">
-      <PageHeader
-        title={<>Preferências</>}
-        description={<>Seu espaço, suas escolhas e seus dados.</>}
-      ></PageHeader>
+      <h1 className="sr-only">Preferências</h1>
       <label className="workspace-section-select">
         <span className="sr-only">Seções de preferências</span>
         <Select
@@ -41,15 +37,7 @@ export function SettingsPage() {
         {view === 'appearance' && (
           <>
             <section className="panel settings-panel">
-              <div className="section-heading">
-                <div>
-                  <h2>
-                    <Palette size={18} />
-                    Aparência
-                  </h2>
-                  <p>Escolha como prefere enxergar seu espaço.</p>
-                </div>
-              </div>
+              <h2 className="sr-only">Aparência</h2>
               <div className="settings-info">
                 <ThemeSwitcher expanded />
                 <p>

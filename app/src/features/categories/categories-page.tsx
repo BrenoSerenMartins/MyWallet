@@ -1,13 +1,13 @@
+import { IconAction } from '../../shared/ui/icon-action';
 import { FolderTree as EmptyStateIcon } from 'lucide-react';
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { PageHeader } from '../../shared/ui/page-header';
 import { DeleteCategoryDialog } from './components/delete-category-dialog';
 import { CategoryGroupPanel } from './components/category-group-panel';
 import { DeleteGroupDialog } from './components/delete-group-dialog';
 import { useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import type { Category, CategoryGroup } from '../../shared/api/resources';
-import { Button, EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
+import { EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { useCategories } from './hooks/use-categories';
 import { CategoryForm } from './components/category-form';
@@ -42,15 +42,13 @@ export function CategoriesPage() {
   const activeGroup = visibleGroups.find((group) => group.id === selectedGroup) ?? visibleGroups[0];
   return (
     <div className="page-enter categories-page" data-financial-type={type}>
-      <PageHeader
-        title="Categorias"
-        description="Grupos dão contexto. Categorias organizam cada lançamento."
-      ></PageHeader>
+      <h1 className="sr-only">Categorias</h1>
       <div className="category-toolbar">
-        <Button onClick={() => setEditor({ kind: 'group' })}>
-          <Plus size={18} />
-          Novo grupo
-        </Button>
+        <IconAction
+          label="Novo grupo"
+          icon={<Plus size={18} />}
+          onClick={() => setEditor({ kind: 'group' })}
+        />
         <ViewSwitcher
           label="Tipo de categoria"
           value={type}
@@ -78,7 +76,7 @@ export function CategoriesPage() {
             aria-label="Buscar grupos e categorias"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar grupo ou categoria…"
+            placeholder="Buscar…"
           />
         </label>
       </div>

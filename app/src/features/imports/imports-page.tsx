@@ -44,6 +44,7 @@ export function ImportsPage() {
   return (
     <div className="page-enter imports-page">
       <PageHeader
+        compact={!importId}
         title={importId ? 'Revise seu extrato' : 'Importar extrato'}
         description={
           importId

@@ -14,6 +14,7 @@ export function PageHeader({
   navigation?: ReactNode;
   children?: ReactNode;
 }) {
+  if (compact && !navigation && !children) return <h1 className="sr-only">{title}</h1>;
   return (
     <header className={`page-heading page-header${compact ? ' page-header-compact' : ''}`}>
       <div className="page-header-copy">

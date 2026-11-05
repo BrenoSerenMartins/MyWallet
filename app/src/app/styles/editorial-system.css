@@ -416,3 +416,69 @@ body .page-content .cards-page .card-entry-list > li {
     padding: 18px 12px;
   }
 }
+
+/* Directory tasks use quiet, named actions instead of competing primary buttons. */
+body .page-content .quiet-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+body .page-content .quiet-action:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+body .page-content .directory-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(160px, 220px) 44px;
+  gap: 12px;
+}
+body .page-content .directory-toolbar > .search-field {
+  grid-column: 1;
+  grid-row: 1;
+}
+body .page-content .directory-toolbar > .compact-filter {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+body .page-content .directory-toolbar > .quiet-action {
+  grid-column: 3;
+  grid-row: 1;
+}
+body .page-content .directory-toolbar > .result-count {
+  grid-column: 1 / -1;
+}
+body .page-content .category-toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) 44px;
+  gap: 12px;
+}
+body .page-content .category-toolbar > .view-switcher {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+}
+body .page-content .category-toolbar > .search-field {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+body .page-content .category-toolbar > .quiet-action {
+  grid-column: 3;
+  grid-row: 1;
+}
+body .page-content .account-type-filter {
+  flex: 1;
+}
+body .page-content .account-type-filter .select-field {
+  width: 100%;
+}
+body .page-content .wealth-page .wealth-summary-toolbar > .inline-actions {
+  justify-content: flex-end;
+  width: auto;
+  margin-left: auto;
+}
+body .page-content .wealth-page .wealth-summary-toolbar {
+  padding-block: 8px;
+}

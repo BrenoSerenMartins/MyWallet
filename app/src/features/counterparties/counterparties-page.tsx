@@ -1,8 +1,8 @@
+import { IconAction } from '../../shared/ui/icon-action';
 import { UsersRound as EmptyStateIcon } from 'lucide-react';
 import { Select } from '../../shared/ui/controls/select';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { Plus, Search } from 'lucide-react';
-import { PageHeader } from '../../shared/ui/page-header';
 import './counterparties.css';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -81,22 +81,18 @@ export function CounterpartiesPage() {
   });
   return (
     <div className="counterparties-page">
-      <PageHeader
-        title={<>Pessoas e estabelecimentos</>}
-        description="Reconheça quem recebe ou envia dinheiro e automatize a organização."
-      ></PageHeader>
+      <h1 className="sr-only">Pessoas e estabelecimentos</h1>
 
       <div className="directory-toolbar">
-        <Button
+        <IconAction
+          label="Novo cadastro"
+          icon={<Plus size={18} />}
           onClick={() => {
             setError('');
             setCreating(true);
           }}
           disabled={!navigator.onLine}
-        >
-          <Plus size={17} />
-          Novo cadastro
-        </Button>
+        />
         <label className="search-field">
           <Search size={18} />
           <input
@@ -104,7 +100,7 @@ export function CounterpartiesPage() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome ou descrição…"
+            placeholder="Buscar…"
           />
         </label>
         <label className="compact-filter">

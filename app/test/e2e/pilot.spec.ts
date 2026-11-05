@@ -4437,3 +4437,32 @@ for (const width of [390, 1440]) {
     await expect(page.getByRole('dialog', { name: 'Novo lançamento', exact: true })).toBeVisible();
   });
 }
+
+for (const width of [390, 1440]) {
+  test(`quiet directory actions retain their tasks at ${width}px`, async ({ page }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 844 });
+    const destinations = [
+      ['/accounts', 'Adicionar conta', 'Adicionar conta'],
+      ['/categories', 'Novo grupo', 'Novo grupo'],
+      ['/counterparties', 'Novo cadastro', 'Nova pessoa ou estabelecimento'],
+      ['/cards', 'Novo cartão', 'Novo cartão'],
+      ['/wealth', 'Novo investimento', 'Novo investimento'],
+      ['/planning?view=commitments', 'Novo compromisso', 'Novo compromisso'],
+    ];
+    for (const [path, label, title] of destinations) {
+      await page.goto(path);
+      const action = page.getByRole('button', { name: label, exact: true });
+      await expect(action).toBeVisible();
+      await expect(action).toHaveClass(/quiet-action/);
+      await action.click();
+      const dialog = page.getByRole('dialog', { name: title, exact: true });
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+      await expect(dialog).toBeHidden();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+    }
+  });
+}

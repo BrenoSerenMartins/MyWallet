@@ -1,3 +1,4 @@
+import { IconAction } from '../../shared/ui/icon-action';
 import { ChartNoAxesCombined as EmptyStateIcon } from 'lucide-react';
 import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
@@ -93,7 +94,6 @@ export function WealthPage() {
           <>
             <section className="wealth-summary">
               <div className="wealth-summary-toolbar">
-                <span>Sua posição patrimonial</span>
                 <div className="inline-actions">
                   <Tooltip
                     text={
@@ -111,26 +111,24 @@ export function WealthPage() {
                     </button>
                   </Tooltip>
                   {view === 'history' ? (
-                    <Button
+                    <IconAction
+                      label={captureBusy ? 'Salvando posição…' : 'Guardar posição atual'}
+                      icon={<Camera size={17} />}
                       className="secondary compact"
                       disabled={captureBusy || !data || !navigator.onLine}
                       onClick={() => void capture()}
-                    >
-                      <Camera size={17} />
-                      {captureBusy ? 'Salvando…' : 'Guardar posição atual'}
-                    </Button>
+                    />
                   ) : (
-                    <Button
+                    <IconAction
+                      label={view === 'investments' ? 'Novo investimento' : 'Adicionar posição'}
+                      icon={<Plus size={18} />}
                       disabled={!navigator.onLine}
                       onClick={() =>
                         setDialog(
                           view === 'investments' ? { kind: 'newHolding' } : { kind: 'item' },
                         )
                       }
-                    >
-                      <Plus size={17} />
-                      {view === 'investments' ? 'Novo investimento' : 'Adicionar posição'}
-                    </Button>
+                    />
                   )}
                 </div>
               </div>

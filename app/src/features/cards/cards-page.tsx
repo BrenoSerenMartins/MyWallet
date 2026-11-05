@@ -1,3 +1,4 @@
+import { IconAction } from '../../shared/ui/icon-action';
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
@@ -89,10 +90,12 @@ export function CardsPage() {
                 </button>
               </Tooltip>
             )}
-            <Button onClick={() => setDialog({ kind: 'new' })} disabled={!navigator.onLine}>
-              <Plus size={18} />
-              Novo cartão
-            </Button>
+            <IconAction
+              label="Novo cartão"
+              icon={<Plus size={18} />}
+              onClick={() => setDialog({ kind: 'new' })}
+              disabled={!navigator.onLine}
+            />
           </div>
         </div>
 
@@ -127,7 +130,7 @@ export function CardsPage() {
                     : 'Cadastre seu cartão para acompanhar faturas, parcelas e limite disponível.'}
                 </p>
                 {!all.length && (
-                  <span className="card-empty-hint">Use Novo cartão para começar.</span>
+                  <span className="card-empty-hint">Use o botão + para adicionar.</span>
                 )}
               </div>
             ) : (

@@ -1,3 +1,4 @@
+import { IconAction } from '../../shared/ui/icon-action';
 import { CalendarDays as EmptyStateIcon } from 'lucide-react';
 import { Select } from '../../shared/ui/controls/select';
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
@@ -111,10 +112,12 @@ export function CommitmentsPage({ navigation }: { navigation?: ReactNode }) {
             </button>
           </Tooltip>
         </div>
-        <Button onClick={() => setDialog('new')} disabled={!navigator.onLine}>
-          <Plus size={18} />
-          Novo compromisso
-        </Button>
+        <IconAction
+          label="Novo compromisso"
+          icon={<Plus size={18} />}
+          onClick={() => setDialog('new')}
+          disabled={!navigator.onLine}
+        />
       </PageHeader>
 
       {query.isPending ? (
