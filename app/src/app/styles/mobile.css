@@ -1179,3 +1179,12 @@ body .page-content .planning-page .summary-action-bar > div {
     gap: 6px;
   }
 }
+
+@media (max-width: 760px) {
+  body .page-content .contextual-page-title {
+    font-size: clamp(21px, 5.6vw, 26px);
+  }
+  body .page-content .cards-page .card-workspace-toolbar {
+    flex-wrap: nowrap;
+  }
+}

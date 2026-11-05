@@ -70,10 +70,9 @@ export function CardsPage() {
   };
   return (
     <div className="page-enter cards-page">
-      <h1 className="sr-only">Cartões e faturas</h1>
       <section className="card-directory-surface" aria-label="Cartões cadastrados">
         <div className="card-workspace-toolbar">
-          <span>Cartões e faturas</span>
+          <h1 className="contextual-page-title">Cartões e faturas</h1>
           <div className="inline-actions">
             {cards.length > 0 && (
               <Tooltip

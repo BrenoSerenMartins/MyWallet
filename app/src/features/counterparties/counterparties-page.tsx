@@ -81,7 +81,7 @@ export function CounterpartiesPage() {
   });
   return (
     <div className="counterparties-page">
-      <h1 className="sr-only">Pessoas e estabelecimentos</h1>
+      <h1 className="contextual-page-title">Pessoas e estabelecimentos</h1>
 
       <div className="directory-toolbar">
         <IconAction

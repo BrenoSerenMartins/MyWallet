@@ -42,7 +42,7 @@ export function CategoriesPage() {
   const activeGroup = visibleGroups.find((group) => group.id === selectedGroup) ?? visibleGroups[0];
   return (
     <div className="page-enter categories-page" data-financial-type={type}>
-      <h1 className="sr-only">Categorias</h1>
+      <h1 className="contextual-page-title">Categorias</h1>
       <div className="category-toolbar">
         <IconAction
           label="Novo grupo"

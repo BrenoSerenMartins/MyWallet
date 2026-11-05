@@ -83,8 +83,6 @@ export function WealthPage() {
   }
   return (
     <div className="page-enter wealth-page">
-      <h1 className="sr-only">Investimentos e patrimônio</h1>
-
       {query.isPending ? (
         <Loading />
       ) : query.isError ? (
@@ -94,6 +92,9 @@ export function WealthPage() {
           <>
             <section className="wealth-summary">
               <div className="wealth-summary-toolbar">
+                <h1 className="contextual-page-title" aria-label="Investimentos e patrimônio">
+                  Patrimônio
+                </h1>
                 <div className="inline-actions">
                   <Tooltip
                     text={

@@ -44,12 +44,11 @@ export function ImportsPage() {
   return (
     <div className="page-enter imports-page">
       <PageHeader
-        compact={!importId}
         title={importId ? 'Revise seu extrato' : 'Importar extrato'}
         description={
           importId
             ? (batch.data?.fileName ?? 'Confira os movimentos antes de concluir.')
-            : 'Traga seus movimentos para cá. Você confere tudo antes de salvar.'
+            : undefined
         }
       >
         {importId && (

@@ -20,7 +20,7 @@ export function SettingsPage() {
 
   return (
     <div className="page-enter settings-page">
-      <h1 className="sr-only">Preferências</h1>
+      <h1 className="contextual-page-title">Preferências</h1>
       <label className="workspace-section-select">
         <span className="sr-only">Seções de preferências</span>
         <Select
