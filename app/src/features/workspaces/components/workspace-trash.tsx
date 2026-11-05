@@ -1,3 +1,4 @@
+import { useNotifications } from '../../../shared/feedback/notification-provider';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
@@ -10,21 +11,26 @@ export function WorkspaceTrash() {
   const { session } = useAuth();
   const { restore } = useWorkspace();
   const [pending, setPending] = useState<string | null>(null);
-  const [error, setError] = useState<unknown>(null);
-  const [message, setMessage] = useState('');
+  const {
+    success: setMessage,
+    error: notifyError,
+    dismiss: dismissNotice,
+  } = useNotifications('session');
   const query = useQuery({
     queryKey: ['workspace-trash', session!.user.id],
     queryFn: () => request<TrashedWorkspace[]>('/workspaces/trash'),
   });
   async function restoreWorkspace(workspace: TrashedWorkspace) {
     setPending(workspace.id);
-    setError(null);
+    dismissNotice(`restore-workspace:${workspace.id}`);
     setMessage('');
     try {
       await restore(workspace.id);
       setMessage(`Espaço “${workspace.name}” restaurado.`);
     } catch (error) {
-      setError(error);
+      notifyError(error instanceof Error ? error.message : 'Não foi possível restaurar o espaço.', {
+        id: `restore-workspace:${workspace.id}`,
+      });
     } finally {
       setPending(null);
     }
@@ -39,12 +45,7 @@ export function WorkspaceTrash() {
         Espaços excluídos podem ser restaurados por 7 dias. Após o prazo, são removidos
         definitivamente, junto com seus dados.
       </p>
-      {message && (
-        <p className="form-success" role="status">
-          {message}
-        </p>
-      )}
-      {!!error && <ErrorState error={error} />}
+
       {query.isPending ? (
         <Loading />
       ) : query.isError ? (

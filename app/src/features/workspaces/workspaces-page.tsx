@@ -1,3 +1,6 @@
+import { Tooltip } from '../../shared/ui/tooltip';
+import { NotificationCenter } from '../../shared/feedback/notification-center';
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -23,7 +26,7 @@ export function WorkspacesPage() {
   const [deleting, setDeleting] = useState<Workspace | null>(null);
   const [pending, setPending] = useState(false);
   const [deleteError, setDeleteError] = useState<unknown>(null);
-  const [message, setMessage] = useState('');
+  const { success: setMessage } = useNotifications('session');
   async function deleteWorkspace() {
     if (!deleting) return;
     setPending(true);
@@ -43,19 +46,22 @@ export function WorkspacesPage() {
       <header className="spaces-topbar">
         <Logo />
         <div>
+          <NotificationCenter />
           {active && (
             <Link className="space-back" to="/">
               <ArrowLeft size={16} />
               Voltar ao espaço
             </Link>
           )}
-          <button
-            className="icon-button"
-            aria-label="Sair da conta"
-            onClick={() => void authClient.auth.signOut()}
-          >
-            <LogOut size={18} />
-          </button>
+          <Tooltip text="Sair da conta">
+            <button
+              className="icon-button"
+              aria-label="Sair da conta"
+              onClick={() => void authClient.auth.signOut()}
+            >
+              <LogOut size={18} />
+            </button>
+          </Tooltip>
         </div>
       </header>
       <main id="main-content" className="spaces-main">
@@ -72,11 +78,7 @@ export function WorkspacesPage() {
             Criar espaço
           </Button>
         </PageHeader>
-        {message && (
-          <p className="form-success" role="status">
-            {message}
-          </p>
-        )}
+
         {loading ? (
           <Loading />
         ) : error ? (

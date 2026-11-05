@@ -1,3 +1,4 @@
+import { useNotifications } from '../../../shared/feedback/notification-provider';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../auth/auth-provider';
 import type { Category } from '../../../shared/api/resources';
@@ -6,6 +7,7 @@ import { ApiError, jsonBody, request } from '../../../shared/api/client';
 import type { ImportBatch, ImportItem, ImportConfirmation } from '../../../shared/api/resources';
 export function useImportReview(batch: ImportBatch, refresh: () => Promise<unknown>) {
   const { session } = useAuth();
+  const notices = useNotifications();
   const client = useQueryClient();
   const categories = useQuery({
     queryKey: [session?.user.id, 'categories'],
@@ -125,6 +127,7 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
         client.setQueryData([session?.user.id, 'import', batch.id], current);
       }
       setConfirmationSucceeded(true);
+      notices.success('Extrato confirmado. Confira o resultado da importação.');
       // Confirmation has already committed. A refresh failure must not turn it
       // into a failed financial operation or re-enable the confirmation button.
       await refresh().catch(() => {});

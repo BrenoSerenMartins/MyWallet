@@ -1,3 +1,4 @@
+import { useNotifications } from '../../../shared/feedback/notification-provider';
 import { useRef, useState } from 'react';
 import { RefreshCw, Upload } from 'lucide-react';
 import type { ImportBatch } from '../../../shared/api/resources';
@@ -12,8 +13,8 @@ export function ReprocessImport({
 }) {
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState(''),
-    [success, setSuccess] = useState('');
+    [error, setError] = useState('');
+  const { success: setSuccess } = useNotifications();
   const [resetClassification, setResetClassification] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const allowed = batch.canReprocess ?? ['draft', 'history'].includes(batch.status);
@@ -64,11 +65,6 @@ export function ReprocessImport({
         <RefreshCw size={16} />
         Reprocessar importação
       </Button>
-      {success && (
-        <p className="form-success" role="status">
-          {success}
-        </p>
-      )}
       <Modal
         open={open}
         onOpenChange={(value) => !busy && setOpen(value)}

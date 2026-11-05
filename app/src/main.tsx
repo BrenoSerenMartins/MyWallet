@@ -15,6 +15,7 @@ import './app/styles/components.css';
 import './app/styles/refinements.css';
 import './app/styles/experience.css';
 import './app/styles/task-layouts.css';
+import './shared/feedback/feedback.css';
 const client = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: true },

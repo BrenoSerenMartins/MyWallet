@@ -1,3 +1,5 @@
+import { HelpTip } from '../../../shared/ui/tooltip';
+import { Tooltip } from '../../../shared/ui/tooltip';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Eye, EyeOff } from 'lucide-react';
 import type { Dashboard } from '../../../shared/api/resources';
@@ -23,17 +25,25 @@ export function BalanceOverview({
     <section className="current-balances panel" aria-label="Saldos atuais">
       <div className="balance-topline">
         <h2>Saldos atuais</h2>
-        <button
-          className="icon-button"
-          aria-label={visible ? 'Ocultar valores' : 'Mostrar valores'}
-          onClick={onToggle}
-        >
-          {visible ? <Eye size={18} /> : <EyeOff size={18} />}
-        </button>
+        <Tooltip text={visible ? 'Ocultar valores' : 'Mostrar valores'}>
+          <button
+            className="icon-button"
+            aria-label={visible ? 'Ocultar valores' : 'Mostrar valores'}
+            onClick={onToggle}
+          >
+            {visible ? <Eye size={18} /> : <EyeOff size={18} />}
+          </button>
+        </Tooltip>
       </div>
       <div className="balance-snapshot">
         <div className="available-balance">
-          <span>{partial || review ? 'Saldo registrado nas contas' : 'Dinheiro disponível'}</span>
+          <span>
+            {partial || review ? 'Saldo registrado nas contas' : 'Dinheiro disponível'}
+            <HelpTip
+              label="Dinheiro disponível"
+              text="Soma os saldos atuais das contas de dinheiro. Benefícios de uso restrito e reservas ficam separados. Selecionar outro mês não muda este saldo."
+            />
+          </span>
           <strong className="hero-balance">{amount(summary.balance)}</strong>
           <small>Sem benefícios e reservas</small>
         </div>

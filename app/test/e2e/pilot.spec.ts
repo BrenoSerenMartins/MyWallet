@@ -1171,9 +1171,11 @@ test('reprocessing preserves the current draft on source errors and supports sav
     .check();
   await page.getByRole('button', { name: 'Reprocessar dados salvos', exact: true }).click();
   await expect(
-    page.getByText('Importação reprocessada. Confira o resultado antes de confirmar.', {
-      exact: true,
-    }),
+    page
+      .locator('.notification-viewport')
+      .getByText('Importação reprocessada. Confira o resultado antes de confirmar.', {
+        exact: true,
+      }),
   ).toBeVisible();
   expect(saved).toBe(1);
   await expect(page.getByLabel('Tipo do movimento 1')).toHaveValue('transfer');
@@ -3687,4 +3689,163 @@ test('settings retain the chosen section on reload and offer labelled theme prev
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.getByRole('button', { name: 'Tema escuro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
+async function saveAccountForFeedback(page: Page, clock = false, spaces?: (typeof workspace)[]) {
+  await signedIn(page);
+  let current = { ...account };
+  await page.route('**/v1/accounts', (route) => route.fulfill({ json: [current] }));
+  await page.route(`**/v1/accounts/${account.id}`, (route) => {
+    current = { ...current, ...route.request().postDataJSON(), version: current.version + 1 };
+    return route.fulfill({ json: current });
+  });
+  if (spaces) await page.route('**/v1/workspaces', (route) => route.fulfill({ json: spaces }));
+  if (clock) await page.clock.install();
+  await page.goto('/accounts');
+  await expect(page.locator('.account-record')).toBeVisible();
+  const before = await page.locator('.account-record').boundingBox();
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Editar conta', exact: true });
+  await dialog.getByLabel('Nome da conta', { exact: true }).fill('Minha conta');
+  await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(
+    page.locator('.notification-viewport').getByText('Conta salva.', { exact: true }),
+  ).toBeVisible();
+  const after = await page.locator('.account-record').boundingBox();
+  expect(after!.y).toBe(before!.y);
+}
+for (const width of [390, 1440])
+  test(`save feedback floats without changing page layout and remains available in the notification center at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await saveAccountForFeedback(page);
+    await expect(page.locator('.accounts-page .form-success')).toHaveCount(0);
+    await page
+      .locator('.notification-viewport')
+      .getByRole('button', { name: 'Dispensar notificação', exact: true })
+      .click();
+    await expect(page.locator('.notification-toast')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Abrir notificações', exact: true }).click();
+    const history = page.getByRole('dialog', { name: 'Notificações', exact: true });
+    await expect(history.getByText('Conta salva.', { exact: true })).toBeVisible();
+    await history.getByRole('button', { name: 'Limpar notificações', exact: true }).click();
+    await expect(history.getByText('Nenhum aviso por aqui.', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+test('notification timeout pauses while reading and dismissed feedback remains in session history', async ({
+  page,
+}) => {
+  await saveAccountForFeedback(page, true);
+  const toast = page.locator('.notification-toast');
+  await toast.hover();
+  await page.clock.fastForward(12000);
+  await expect(toast).toBeVisible();
+  await page.getByRole('heading', { name: 'Minhas contas', exact: true }).hover();
+  await page.clock.fastForward(8000);
+  await expect(toast).toHaveCount(0);
+  await page.getByRole('button', { name: 'Abrir notificações', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Notificações' }).getByText('Conta salva.', { exact: true }),
+  ).toBeVisible();
+});
+test('notification history is cleared when switching financial spaces', async ({ page }) => {
+  const other = {
+    ...workspace,
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    name: 'Outro',
+    isDefault: false,
+  };
+  await saveAccountForFeedback(page, false, [workspace, other]);
+  await page.getByRole('link', { name: 'Trocar de espaço', exact: true }).click();
+  await page.getByRole('link', { name: 'Abrir espaço Outro', exact: true }).click();
+  await page.getByRole('button', { name: 'Abrir notificações', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Notificações' })).not.toContainText(
+    'Conta salva.',
+  );
+  await expect(page.getByText('Nenhum aviso por aqui.', { exact: true })).toBeVisible();
+});
+test('keyboard tooltips dismiss before the dialog and preserve its close action', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Adicionar conta', exact: true });
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(dialog.getByRole('button', { name: 'Fechar', exact: true })).toBeFocused();
+  await expect(page.getByRole('tooltip').filter({ hasText: 'Fechar' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Adicionar conta', exact: true })).toBeFocused();
+});
+test.describe('help on touch screens', () => {
+  test.use({ hasTouch: true });
+  test('financial help opens with a tap and icon actions still work with the first tap', async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width: 320, height: 850 });
+    await page.goto('/planning?month=2026-11');
+    const help = page.getByRole('button', { name: 'Ajuda: Resultado do mês', exact: true });
+    await help.tap();
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toContainText('não é o saldo atual');
+    const box = await tooltip.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(320);
+    await page.getByRole('heading', { name: 'Planejamento mensal', exact: true }).tap();
+    await expect(tooltip).toHaveCount(0);
+    await page.goto('/?month=2026-10');
+    await page.getByRole('button', { name: 'Mês anterior', exact: true }).tap();
+    await expect(page.getByLabel('Mês do resumo')).toHaveValue('2026-09');
+  });
+});
+
+test('an operation completing after a space switch cannot add feedback to the new space', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const other = {
+    ...workspace,
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    name: 'Outro',
+    isDefault: false,
+  };
+  await page.route('**/v1/workspaces', (route) => route.fulfill({ json: [workspace, other] }));
+  let release!: () => void;
+  let started = false;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/v1/accounts/${account.id}`, async (route) => {
+    started = true;
+    await pending;
+    return route.fulfill({ json: { ...account, name: 'Minha conta', version: 2 } });
+  });
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Editar conta', exact: true });
+  await dialog.getByLabel('Nome da conta', { exact: true }).fill('Minha conta');
+  await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+  await expect.poll(() => started).toBe(true);
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+  await page.getByRole('link', { name: 'Trocar de espaço', exact: true }).click();
+  await page.getByRole('link', { name: 'Abrir espaço Outro', exact: true }).click();
+  const response = page.waitForResponse(
+    (r) => r.request().method() === 'PATCH' && r.url().endsWith(`/accounts/${account.id}`),
+  );
+  release();
+  await (await response).finished();
+  await page.getByRole('button', { name: 'Abrir notificações', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Notificações' })).not.toContainText(
+    'Conta salva.',
+  );
 });

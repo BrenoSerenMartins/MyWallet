@@ -1,3 +1,5 @@
+import { useNotifications } from '../../shared/feedback/notification-provider';
+import { NotificationCenter } from '../../shared/feedback/notification-center';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
@@ -13,7 +15,11 @@ export function AuthPage() {
   const [password, setPassword] = useState('');
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
+  const notices = useNotifications('session');
+  const setMessage = (message: string) => {
+    if (message) notices.info(message, { id: 'auth-feedback', duration: 0 });
+    else notices.dismiss('auth-feedback');
+  };
   const [error, setError] = useState('');
   useEffect(() => {
     if (location.pathname === '/auth/callback') {
@@ -113,6 +119,7 @@ export function AuthPage() {
           <span className="mobile-logo">
             <Logo />
           </span>
+          <NotificationCenter />
           <ThemeSwitcher />
         </div>
         <div className="auth-form-wrap">
@@ -179,11 +186,7 @@ export function AuthPage() {
                 {error}
               </p>
             )}
-            {message && (
-              <p role="status" className="form-success">
-                {message}
-              </p>
-            )}
+
             <Button disabled={busy}>
               {busy
                 ? 'Aguarde…'

@@ -1,3 +1,4 @@
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { DeleteCategoryDialog } from './components/delete-category-dialog';
 import { CategoryGroupPanel } from './components/category-group-panel';
@@ -17,6 +18,7 @@ interface Editor {
 }
 export function CategoriesPage() {
   const { categories, groups, save, deleteGroup, deleteCategory } = useCategories();
+  const notices = useNotifications();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
@@ -203,6 +205,7 @@ export function CategoriesPage() {
                 );
                 if (created) setSelectedGroup(created.id);
               }
+              notices.success(editor.kind === 'group' ? 'Grupo salvo.' : 'Categoria salva.');
               setEditor(null);
             }}
           />

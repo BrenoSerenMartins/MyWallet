@@ -1,3 +1,5 @@
+import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -40,9 +42,13 @@ export function WealthPage() {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [visible, setVisible] = useState(true);
   const [archived, setArchived] = useState(false);
-  const [message, setMessage] = useState('');
+  const { success: setMessage } = useNotifications();
   const [captureBusy, setCaptureBusy] = useState(false);
-  const [error, setError] = useState('');
+  const captureNotices = useNotifications();
+  const setError = (message: string) => {
+    if (message) captureNotices.error(message, { id: 'wealth-capture' });
+    else captureNotices.dismiss('wealth-capture');
+  };
   const [search, setSearch] = useState('');
   const data = query.data;
   const selected =
@@ -81,13 +87,19 @@ export function WealthPage() {
         description={<>O que você tem, o que deve e como isso evolui.</>}
       >
         <div className="inline-actions">
-          <button
-            className="icon-button"
-            aria-label={visible ? 'Ocultar valores do patrimônio' : 'Mostrar valores do patrimônio'}
-            onClick={() => setVisible(!visible)}
+          <Tooltip
+            text={visible ? 'Ocultar valores do patrimônio' : 'Mostrar valores do patrimônio'}
           >
-            {visible ? <Eye size={18} /> : <EyeOff size={18} />}
-          </button>
+            <button
+              className="icon-button"
+              aria-label={
+                visible ? 'Ocultar valores do patrimônio' : 'Mostrar valores do patrimônio'
+              }
+              onClick={() => setVisible(!visible)}
+            >
+              {visible ? <Eye size={18} /> : <EyeOff size={18} />}
+            </button>
+          </Tooltip>
           {view === 'history' ? (
             <Button
               className="secondary compact"
@@ -110,16 +122,7 @@ export function WealthPage() {
           )}
         </div>
       </PageHeader>
-      {message && (
-        <p className="form-success" role="status">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
+
       {query.isPending ? (
         <Loading />
       ) : query.isError ? (
@@ -129,7 +132,13 @@ export function WealthPage() {
           <>
             <section className="wealth-overview">
               <div className="panel wealth-net-worth">
-                <span>Patrimônio registrado</span>
+                <span>
+                  Patrimônio registrado
+                  <HelpTip
+                    label="Cálculo do patrimônio"
+                    text="Contas, reservas, investimentos avaliados e bens, menos dívidas e saldos negativos. Benefícios ficam de fora. As posições e avaliações são as informadas por você."
+                  />
+                </span>
                 <strong className={data.netWorth < 0 ? 'negative' : ''}>
                   {value(data.netWorth)}
                 </strong>
@@ -287,13 +296,15 @@ export function WealthPage() {
                         <strong className={i.kind === 'debt' ? 'negative' : ''}>
                           {value(i.value)}
                         </strong>
-                        <button
-                          className="icon-button"
-                          aria-label={`Editar posição ${i.name}`}
-                          onClick={() => setDialog({ kind: 'item', id: i.id })}
-                        >
-                          <Pencil size={18} />
-                        </button>
+                        <Tooltip text={`Editar posição ${i.name}`}>
+                          <button
+                            className="icon-button"
+                            aria-label={`Editar posição ${i.name}`}
+                            onClick={() => setDialog({ kind: 'item', id: i.id })}
+                          >
+                            <Pencil size={18} />
+                          </button>
+                        </Tooltip>
                       </li>
                     ))}
                   </ul>

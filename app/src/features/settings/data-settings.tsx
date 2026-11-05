@@ -1,3 +1,4 @@
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Download, FileJson, Upload } from 'lucide-react';
@@ -8,7 +9,7 @@ export function DataSettings() {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const { success: setMessage, error: notifyError, dismiss: dismissNotice } = useNotifications();
   const [restore, setRestore] = useState<{
     id: string;
     accounts: number;
@@ -22,6 +23,7 @@ export function DataSettings() {
   async function download(format: 'json' | 'csv') {
     setBusy(true);
     setError('');
+    dismissNotice('data-export');
     try {
       const url = URL.createObjectURL(await requestBlob(`/exports?format=${format}`));
       const a = document.createElement('a');
@@ -29,8 +31,9 @@ export function DataSettings() {
       a.download = `mywallet-${new Date().toISOString().slice(0, 10)}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
+      setMessage('Arquivo preparado para download.');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha na exportação.');
+      notifyError(e instanceof Error ? e.message : 'Falha na exportação.', { id: 'data-export' });
     } finally {
       setBusy(false);
     }
@@ -39,6 +42,7 @@ export function DataSettings() {
     if (!file) return;
     setBusy(true);
     setError('');
+    dismissNotice('backup-file');
     try {
       if (file.size > 5 * 1024 * 1024) throw new Error('O backup deve ter até 5 MB.');
       const preview = await request<{ id: string; accounts: number; transactions: number }>(
@@ -47,7 +51,7 @@ export function DataSettings() {
       );
       setRestore(preview);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Backup inválido.');
+      notifyError(e instanceof Error ? e.message : 'Backup inválido.', { id: 'backup-file' });
     } finally {
       setBusy(false);
     }
@@ -69,16 +73,6 @@ export function DataSettings() {
   }
   return (
     <div className="page-enter">
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
-      {message && (
-        <p className="form-success" role="status">
-          {message}
-        </p>
-      )}
       <section className="panel settings-panel">
         <div className="section-heading">
           <div>

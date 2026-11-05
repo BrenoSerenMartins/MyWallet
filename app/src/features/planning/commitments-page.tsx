@@ -1,3 +1,5 @@
+import { Tooltip } from '../../shared/ui/tooltip';
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -45,7 +47,7 @@ export function CommitmentsPage() {
   const [ending, setEnding] = useState<CommitmentSchedule | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const { success: setMessage } = useNotifications();
   const maxMonth = shiftMonth(current, 12);
   const items =
     query.data?.items.filter(
@@ -83,14 +85,16 @@ export function CommitmentsPage() {
       </PageHeader>
       <div className="commitment-period">
         <div className="month-navigation">
-          <button
-            className="icon-button"
-            aria-label="Mês anterior dos compromissos"
-            disabled={month === '1900-01'}
-            onClick={() => setMonth(shiftMonth(month, -1))}
-          >
-            <ChevronLeft size={18} />
-          </button>
+          <Tooltip text="Mês anterior dos compromissos">
+            <button
+              className="icon-button"
+              aria-label="Mês anterior dos compromissos"
+              disabled={month === '1900-01'}
+              onClick={() => setMonth(shiftMonth(month, -1))}
+            >
+              <ChevronLeft size={18} />
+            </button>
+          </Tooltip>
           <label className="period-picker">
             <span>Mês dos vencimentos</span>
             <input
@@ -102,24 +106,22 @@ export function CommitmentsPage() {
               onChange={(e) => setMonth(e.target.value)}
             />
           </label>
-          <button
-            className="icon-button"
-            aria-label="Próximo mês dos compromissos"
-            disabled={month >= maxMonth}
-            onClick={() => setMonth(shiftMonth(month, 1))}
-          >
-            <ChevronRight size={18} />
-          </button>
+          <Tooltip text="Próximo mês dos compromissos">
+            <button
+              className="icon-button"
+              aria-label="Próximo mês dos compromissos"
+              disabled={month >= maxMonth}
+              onClick={() => setMonth(shiftMonth(month, 1))}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </Tooltip>
         </div>
         <p className="field-help">
           Pendências vencidas também aparecem, mesmo que sejam de outro mês.
         </p>
       </div>
-      {message && (
-        <p role="status" className="form-success">
-          {message}
-        </p>
-      )}
+
       {query.isPending ? (
         <Loading />
       ) : query.isError ? (
@@ -279,14 +281,16 @@ export function CommitmentsPage() {
                     </div>
                     {!rule.endedOn && (
                       <div className="inline-actions">
-                        <button
-                          className="icon-button"
-                          aria-label={`Editar compromisso ${rule.description}`}
-                          onClick={() => setDialog(rule)}
-                          disabled={!navigator.onLine}
-                        >
-                          <Pencil size={18} />
-                        </button>
+                        <Tooltip text={`Editar compromisso ${rule.description}`}>
+                          <button
+                            className="icon-button"
+                            aria-label={`Editar compromisso ${rule.description}`}
+                            onClick={() => setDialog(rule)}
+                            disabled={!navigator.onLine}
+                          >
+                            <Pencil size={18} />
+                          </button>
+                        </Tooltip>
                         <button
                           className="text-button"
                           onClick={() => {

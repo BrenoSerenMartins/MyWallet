@@ -1,3 +1,4 @@
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { money } from '../../shared/formatting/money';
 import { TransactionSources } from './components/transaction-sources';
@@ -22,6 +23,7 @@ function dateFilter(value: string | null) {
 }
 export function TransactionsPage() {
   const { session } = useAuth();
+  const notices = useNotifications();
   const { accountId } = useParams();
   const [params, setParams] = useSearchParams();
   const client = useQueryClient();
@@ -406,6 +408,7 @@ export function TransactionsPage() {
             categories={categories.data ?? []}
             entry={selected}
             onSaved={() => {
+              notices.success('Lançamento salvo.');
               close();
               void client.invalidateQueries();
             }}

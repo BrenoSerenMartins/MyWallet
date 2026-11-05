@@ -1,3 +1,5 @@
+import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { FinanceAreaNav } from '../../shared/navigation/finance-area-nav';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
@@ -50,7 +52,7 @@ export function CardsPage() {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [visible, setVisible] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
-  const [message, setMessage] = useState('');
+  const { success: setMessage } = useNotifications();
   const value = (n: number) => (visible ? money(n) : '••••••');
   const all = query.data?.cards ?? [];
   const cards = all.filter((c) => showArchived || !c.archived);
@@ -74,24 +76,22 @@ export function CardsPage() {
         description={<>Compras organizadas, sem contar o pagamento duas vezes.</>}
       >
         <div className="inline-actions">
-          <button
-            className="icon-button"
-            aria-label={visible ? 'Ocultar valores dos cartões' : 'Mostrar valores dos cartões'}
-            onClick={() => setVisible(!visible)}
-          >
-            {visible ? <Eye size={18} /> : <EyeOff size={18} />}
-          </button>
+          <Tooltip text={visible ? 'Ocultar valores dos cartões' : 'Mostrar valores dos cartões'}>
+            <button
+              className="icon-button"
+              aria-label={visible ? 'Ocultar valores dos cartões' : 'Mostrar valores dos cartões'}
+              onClick={() => setVisible(!visible)}
+            >
+              {visible ? <Eye size={18} /> : <EyeOff size={18} />}
+            </button>
+          </Tooltip>
           <Button onClick={() => setDialog({ kind: 'new' })} disabled={!navigator.onLine}>
             <Plus size={18} />
             Novo cartão
           </Button>
         </div>
       </PageHeader>
-      {message && (
-        <p className="form-success" role="status">
-          {message}
-        </p>
-      )}
+
       {query.isPending ? (
         <Loading />
       ) : query.isError ? (
@@ -165,24 +165,28 @@ export function CardsPage() {
                         Fecha dia {card.closingDay} · vence dia {card.dueDay}
                       </p>
                     </div>
-                    <button
-                      className="icon-button"
-                      aria-label="Editar cartão"
-                      onClick={() => setDialog({ kind: 'edit' })}
-                    >
-                      <Pencil size={18} />
-                    </button>
+                    <Tooltip text="Editar cartão">
+                      <button
+                        className="icon-button"
+                        aria-label="Editar cartão"
+                        onClick={() => setDialog({ kind: 'edit' })}
+                      >
+                        <Pencil size={18} />
+                      </button>
+                    </Tooltip>
                   </div>
                   <div className="card-bill-toolbar">
                     <div className="finance-month-navigation">
-                      <button
-                        className="icon-button"
-                        aria-label="Fatura anterior"
-                        disabled={month === '1900-01'}
-                        onClick={() => update({ month: shiftMonth(month, -1) })}
-                      >
-                        <ChevronLeft size={18} />
-                      </button>
+                      <Tooltip text="Fatura anterior">
+                        <button
+                          className="icon-button"
+                          aria-label="Fatura anterior"
+                          disabled={month === '1900-01'}
+                          onClick={() => update({ month: shiftMonth(month, -1) })}
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+                      </Tooltip>
                       <label className="period-picker">
                         <span>Mês de vencimento</span>
                         <input
@@ -194,14 +198,16 @@ export function CardsPage() {
                           onChange={(e) => e.target.value && update({ month: e.target.value })}
                         />
                       </label>
-                      <button
-                        className="icon-button"
-                        aria-label="Próxima fatura"
-                        disabled={month === '9998-12'}
-                        onClick={() => update({ month: shiftMonth(month, 1) })}
-                      >
-                        <ChevronRight size={18} />
-                      </button>
+                      <Tooltip text="Próxima fatura">
+                        <button
+                          className="icon-button"
+                          aria-label="Próxima fatura"
+                          disabled={month === '9998-12'}
+                          onClick={() => update({ month: shiftMonth(month, 1) })}
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                      </Tooltip>
                     </div>
                     <div className="inline-actions">
                       <Button
@@ -236,7 +242,13 @@ export function CardsPage() {
                           <strong>{value(bill.paid)}</strong>
                         </div>
                         <div>
-                          <span>Créditos aplicados</span>
+                          <span>
+                            Créditos aplicados
+                            <HelpTip
+                              label="Créditos aplicados na fatura"
+                              text="Créditos de devoluções ou de outras faturas podem abater esta cobrança. O valor aplicado já está considerado no saldo a pagar."
+                            />
+                          </span>
                           <strong>{value(bill.creditApplied)}</strong>
                         </div>
                         <div>

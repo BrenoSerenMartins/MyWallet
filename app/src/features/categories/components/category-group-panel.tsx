@@ -1,3 +1,4 @@
+import { Tooltip } from '../../../shared/ui/tooltip';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Category, CategoryGroup } from '../../../shared/api/resources';
 import { Button } from '../../../shared/ui/primitives';
@@ -38,20 +39,24 @@ export function CategoryGroupPanel({
         <div className="category-list-actions">
           {!searching && !group.isDefault && (
             <>
-              <button
-                className="icon-button"
-                aria-label={`Editar grupo ${group.name}`}
-                onClick={onEditGroup}
-              >
-                <Pencil size={17} />
-              </button>
-              <button
-                className="icon-button"
-                aria-label={`Excluir grupo ${group.name}`}
-                onClick={onDelete}
-              >
-                <Trash2 size={17} />
-              </button>
+              <Tooltip text={`Editar grupo ${group.name}`}>
+                <button
+                  className="icon-button"
+                  aria-label={`Editar grupo ${group.name}`}
+                  onClick={onEditGroup}
+                >
+                  <Pencil size={17} />
+                </button>
+              </Tooltip>
+              <Tooltip text={`Excluir grupo ${group.name}`}>
+                <button
+                  className="icon-button"
+                  aria-label={`Excluir grupo ${group.name}`}
+                  onClick={onDelete}
+                >
+                  <Trash2 size={17} />
+                </button>
+              </Tooltip>
             </>
           )}
           <Button className="secondary compact" onClick={onAdd}>
@@ -74,14 +79,16 @@ export function CategoryGroupPanel({
               {searching && <small>{category.groupName}</small>}
             </button>
 
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={`Excluir categoria ${category.name}`}
-              onClick={() => onDeleteCategory(category)}
-            >
-              <Trash2 size={16} />
-            </button>
+            <Tooltip text={`Excluir categoria ${category.name}`}>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label={`Excluir categoria ${category.name}`}
+                onClick={() => onDeleteCategory(category)}
+              >
+                <Trash2 size={16} />
+              </button>
+            </Tooltip>
           </div>
         ))}
       </div>

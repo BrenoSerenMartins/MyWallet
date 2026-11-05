@@ -1,3 +1,4 @@
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { Plus, Search } from 'lucide-react';
 import { PageHeader } from '../../shared/ui/page-header';
 import './counterparties.css';
@@ -14,7 +15,7 @@ export function CounterpartiesPage() {
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
+  const { success: setNotice, error: notifyError } = useNotifications();
   const [newName, setNewName] = useState('');
   const agents = useQuery({
     queryKey: ['counterparties'],
@@ -58,7 +59,9 @@ export function CounterpartiesPage() {
       await client.invalidateQueries();
       onSaved?.();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não foi possível salvar.');
+      const message = e instanceof Error ? e.message : 'Não foi possível salvar.';
+      if (creating) setError(message);
+      else notifyError(message);
     } finally {
       setBusy(false);
     }
@@ -91,11 +94,7 @@ export function CounterpartiesPage() {
           Novo cadastro
         </Button>
       </PageHeader>
-      {notice && (
-        <p className="review-banner" role="status">
-          {notice}
-        </p>
-      )}
+
       <div className="directory-toolbar">
         <label className="search-field">
           <Search size={18} />

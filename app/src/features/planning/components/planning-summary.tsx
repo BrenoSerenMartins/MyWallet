@@ -1,3 +1,4 @@
+import { HelpTip } from '../../../shared/ui/tooltip';
 import { ArrowDownLeft, ArrowUpRight, PiggyBank, Scale } from 'lucide-react';
 import type { MonthlyPlan } from '../../../shared/api/resources';
 import { money } from '../../../shared/formatting/money';
@@ -41,6 +42,16 @@ export function PlanningSummary({ plan }: { plan: MonthlyPlan }) {
           <span>
             <Icon size={17} />
             {label}
+            <HelpTip
+              label={label}
+              text={
+                kind === 'result'
+                  ? 'Receitas menos despesas do mês. Esse resultado não é o saldo atual das contas e não inclui transferências.'
+                  : kind === 'expense'
+                    ? 'Compara o orçamento com as despesas registradas, incluindo gastos sem categoria em Outros.'
+                    : 'Compara as receitas previstas com as registradas. O VA/VR segue a configuração de mês de cada conta.'
+              }
+            />
           </span>
           <dl className="planning-comparison">
             <div>
@@ -81,6 +92,10 @@ export function PlanningSummary({ plan }: { plan: MonthlyPlan }) {
         <span>
           <PiggyBank size={17} />
           Aporte planejado
+          <HelpTip
+            label="Aporte planejado"
+            text="É o valor que você pretende reservar ou investir. O realizado ainda não é identificado automaticamente nesta comparação."
+          />
         </span>
         <dl className="planning-comparison">
           <div>

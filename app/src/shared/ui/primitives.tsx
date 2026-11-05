@@ -1,3 +1,4 @@
+import { Tooltip } from './tooltip';
 import {
   useEffect,
   useRef,
@@ -88,23 +89,24 @@ export function ThemeSwitcher({ expanded = false }: { expanded?: boolean }) {
           { mode: 'system', label: 'Sistema', Icon: Monitor },
         ] as const
       ).map(({ mode: value, label, Icon }) => (
-        <button
-          key={value}
-          title={label}
-          aria-label={`Tema ${label.toLowerCase()}`}
-          aria-pressed={mode === value}
-          onClick={() => setMode(value)}
-        >
-          {expanded && (
-            <span className={`theme-preview preview-${value}`} aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </span>
-          )}
-          <Icon size={16} />
-          {expanded && <span>{label}</span>}
-        </button>
+        <Tooltip key={value} text={`Usar tema ${label.toLocaleLowerCase('pt-BR')}`}>
+          <button
+            type="button"
+            aria-label={`Tema ${label.toLowerCase()}`}
+            aria-pressed={mode === value}
+            onClick={() => setMode(value)}
+          >
+            {expanded && (
+              <span className={`theme-preview preview-${value}`} aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+            )}
+            <Icon size={16} />
+            {expanded && <span>{label}</span>}
+          </button>
+        </Tooltip>
       ))}
     </div>
   );
@@ -153,6 +155,12 @@ export function Modal({
                 } as CSSProperties)
               : undefined
           }
+          onEscapeKeyDown={(event) => {
+            if (document.querySelector('[role="tooltip"]')) {
+              event.preventDefault();
+              window.dispatchEvent(new Event('mywallet:dismiss-tooltip'));
+            }
+          }}
           className={`dialog-content ${variant === 'detail' ? 'dialog-detail' : ''}`}
           onOpenAutoFocus={() => {
             previousFocus.current =
@@ -175,11 +183,11 @@ export function Modal({
                 {description ?? 'Preencha os dados e confira antes de salvar.'}
               </Dialog.Description>
             </div>
-            <Dialog.Close asChild>
-              <button className="icon-button" aria-label="Fechar">
+            <Tooltip text="Fechar">
+              <Dialog.Close className="icon-button" aria-label="Fechar">
                 <X size={20} />
-              </button>
-            </Dialog.Close>
+              </Dialog.Close>
+            </Tooltip>
           </div>
           {children}
         </Dialog.Content>

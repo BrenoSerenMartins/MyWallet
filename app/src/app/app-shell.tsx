@@ -1,3 +1,5 @@
+import { NotificationCenter } from '../shared/feedback/notification-center';
+import { useNotifications } from '../shared/feedback/notification-provider';
 import { useWorkspace } from '../features/workspaces/workspace-provider';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -46,6 +48,8 @@ const navigation = [
 const primaryPaths = ['/', '/transactions', '/accounts', '/planning', '/wealth'];
 export function AppShell() {
   const { session } = useAuth();
+  const notices = useNotifications();
+  const wasOnline = useRef(navigator.onLine);
   const { active } = useWorkspace();
   const location = useLocation();
   const navigate = useNavigate();
@@ -73,6 +77,37 @@ export function AppShell() {
       );
     });
   }, []);
+  useEffect(() => {
+    if (!online)
+      notices.warning(
+        'Você está sem conexão. As alterações ficam indisponíveis até a internet voltar.',
+        { id: 'connection', title: 'Sem conexão' },
+      );
+    else {
+      notices.dismiss('connection');
+      if (!wasOnline.current) notices.success('Conexão restabelecida. Você pode continuar.');
+    }
+    wasOnline.current = online;
+  }, [online, notices.warning, notices.success, notices.dismiss]);
+  useEffect(() => {
+    if (!update) return;
+    notices.info('Salve seus formulários antes de atualizar o aplicativo.', {
+      id: 'app-update',
+      title: 'Nova versão disponível',
+      duration: 0,
+      action: {
+        label: 'Atualizar agora',
+        run: () => {
+          navigator.serviceWorker.addEventListener(
+            'controllerchange',
+            () => window.location.reload(),
+            { once: true },
+          );
+          update.postMessage('ACTIVATE_UPDATE');
+        },
+      },
+    });
+  }, [update, notices.info]);
   const name =
     session?.user.user_metadata?.full_name?.split(' ')[0] ??
     session?.user.email?.split('@')[0] ??
@@ -94,6 +129,12 @@ export function AppShell() {
               ))}
           </nav>
           <div className="header-actions">
+            <NotificationCenter />
+            {!online && (
+              <span className="connection-chip" aria-label="Sem conexão">
+                <WifiOff size={16} />
+              </span>
+            )}
             <NavLink
               to="/workspaces"
               className="workspace-pill"
@@ -128,30 +169,6 @@ export function AppShell() {
             </button>
           </div>
         </header>
-        {!online && (
-          <div className="connection-banner" role="status">
-            <WifiOff size={18} /> Você está sem conexão. As alterações ficam indisponíveis até a
-            internet voltar.
-          </div>
-        )}
-        {update && (
-          <div className="connection-banner" role="status">
-            Nova versão disponível. Salve seus formulários antes de atualizar.
-            <button
-              className="text-button"
-              onClick={() => {
-                navigator.serviceWorker.addEventListener(
-                  'controllerchange',
-                  () => window.location.reload(),
-                  { once: true },
-                );
-                update.postMessage('ACTIVATE_UPDATE');
-              }}
-            >
-              Atualizar agora
-            </button>
-          </div>
-        )}
         <main id="main-content" className="page-content">
           <Outlet />
         </main>

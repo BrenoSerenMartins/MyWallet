@@ -1,3 +1,4 @@
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { FinanceAreaNav } from '../../shared/navigation/finance-area-nav';
 import { PageHeader } from '../../shared/ui/page-header';
 import { AccountRecord } from './components/account-record';
@@ -6,7 +7,6 @@ import { BalanceAdjustmentForm } from './components/balance-adjustment-form';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { AccountForm } from './components/account-form';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../auth/auth-provider';
@@ -17,29 +17,40 @@ export function AccountsPage() {
   const { session } = useAuth();
   const client = useQueryClient();
   const [referenceBusy, setReferenceBusy] = useState<string | null>(null);
-  const [referenceMessage, setReferenceMessage] = useState('');
-  const [referenceError, setReferenceError] = useState<unknown>(null);
+  const {
+    success: setReferenceMessage,
+    warning: notifyWarning,
+    info: notifyInfo,
+    error: notifyError,
+    dismiss: dismissNotice,
+  } = useNotifications();
   async function updateReference(account: Account) {
     setReferenceBusy(account.id);
-    setReferenceError(null);
+    dismissNotice(`balance-reference:${account.id}`);
     setReferenceMessage('');
     try {
       const result = await request<BalanceReferenceResult>(
         `/accounts/${account.id}/balance-reference`,
         { method: 'POST', headers: { 'If-Match': String(account.version) } },
       );
-      setReferenceMessage(
+      const message =
         result.status === 'conflict'
           ? 'Existem referências do mesmo dia sem ordem comprovada. Confira a origem do saldo.'
           : result.status === 'manual_preserved'
             ? 'Sua conferência manual foi preservada porque o extrato não comprova um saldo posterior.'
             : result.status === 'unavailable'
               ? 'Ainda não há extrato confirmado com saldo válido para esta conta.'
-              : 'Referência de saldo conferida com os extratos confirmados.',
-      );
+              : 'Referência de saldo conferida com os extratos confirmados.';
+      if (result.status === 'conflict')
+        notifyWarning(message, { id: `balance-reference:${account.id}` });
+      else if (result.status === 'unavailable' || result.status === 'manual_preserved')
+        notifyInfo(message, { id: `balance-reference:${account.id}` });
+      else setReferenceMessage(message);
       await client.invalidateQueries();
     } catch (error) {
-      setReferenceError(error);
+      notifyError(error instanceof Error ? error.message : 'Não foi possível conferir o saldo.', {
+        id: `balance-reference:${account.id}`,
+      });
     } finally {
       setReferenceBusy(null);
     }
@@ -80,12 +91,7 @@ export function AccountsPage() {
           Adicionar conta
         </Button>
       </PageHeader>
-      {referenceMessage && (
-        <p className="form-success" role="status">
-          {referenceMessage}
-        </p>
-      )}
-      {!!referenceError && <ErrorState error={referenceError} />}
+
       <ViewSwitcher
         label="Tipos de contas"
         value={scope}
@@ -173,6 +179,7 @@ export function AccountsPage() {
             key={adjusting.id}
             account={adjusting}
             onSaved={() => {
+              setReferenceMessage('Saldo corrigido. O histórico foi preservado.');
               setAdjusting(undefined);
               void client.invalidateQueries();
             }}
@@ -189,6 +196,7 @@ export function AccountsPage() {
           key={editing?.id ?? 'new'}
           account={editing}
           onSaved={() => {
+            setReferenceMessage('Conta salva.');
             setOpen(false);
             void client.invalidateQueries();
           }}

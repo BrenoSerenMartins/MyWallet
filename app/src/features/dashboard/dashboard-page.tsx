@@ -1,3 +1,5 @@
+import { HelpTip } from '../../shared/ui/tooltip';
+import { Tooltip } from '../../shared/ui/tooltip';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { PageHeader } from '../../shared/ui/page-header';
 import { FinanceOverview } from './components/finance-overview';
@@ -41,13 +43,15 @@ export function DashboardPage() {
         }
       >
         {view === 'analysis' && (
-          <button
-            className="icon-button"
-            aria-label={visible ? 'Ocultar valores' : 'Mostrar valores'}
-            onClick={() => setVisible(!visible)}
-          >
-            {visible ? <Eye size={18} /> : <EyeOff size={18} />}
-          </button>
+          <Tooltip text={visible ? 'Ocultar valores' : 'Mostrar valores'}>
+            <button
+              className="icon-button"
+              aria-label={visible ? 'Ocultar valores' : 'Mostrar valores'}
+              onClick={() => setVisible(!visible)}
+            >
+              {visible ? <Eye size={18} /> : <EyeOff size={18} />}
+            </button>
+          </Tooltip>
         )}
         <Link className="button secondary compact" to="/imports">
           <Upload size={16} />
@@ -86,21 +90,29 @@ export function DashboardPage() {
       <section className="monthly-analysis" aria-labelledby="monthly-title">
         <div className="monthly-heading">
           <div>
-            <h2 id="monthly-title">Seu mês</h2>
+            <h2 id="monthly-title">
+              Seu mês
+              <HelpTip
+                label="Valores do mês"
+                text="Receitas e despesas usam a data original dos lançamentos. O planejamento pode atribuir o crédito de VA/VR antecipado ao mês seguinte. Transferências não entram no resultado."
+              />
+            </h2>
             <p>
               Todas as contas, incluindo benefícios e reservas. Transferências ficam fora do
               resultado.
             </p>
           </div>
           <div className="month-navigation">
-            <button
-              className="icon-button"
-              aria-label="Mês anterior"
-              disabled={month === '1900-01'}
-              onClick={() => setMonth(shiftMonth(month, -1))}
-            >
-              <ChevronLeft size={18} />
-            </button>
+            <Tooltip text="Mês anterior">
+              <button
+                className="icon-button"
+                aria-label="Mês anterior"
+                disabled={month === '1900-01'}
+                onClick={() => setMonth(shiftMonth(month, -1))}
+              >
+                <ChevronLeft size={18} />
+              </button>
+            </Tooltip>
             <label className="period-picker">
               <span>Mês da análise</span>
               <input
@@ -112,14 +124,16 @@ export function DashboardPage() {
                 onChange={(e) => setMonth(e.target.value)}
               />
             </label>
-            <button
-              className="icon-button"
-              aria-label="Próximo mês"
-              disabled={month === '9998-12'}
-              onClick={() => setMonth(shiftMonth(month, 1))}
-            >
-              <ChevronRight size={18} />
-            </button>
+            <Tooltip text="Próximo mês">
+              <button
+                className="icon-button"
+                aria-label="Próximo mês"
+                disabled={month === '9998-12'}
+                onClick={() => setMonth(shiftMonth(month, 1))}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </Tooltip>
           </div>
         </div>
         {summary.isPending ? (

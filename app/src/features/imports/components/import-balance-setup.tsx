@@ -1,3 +1,4 @@
+import { useNotifications } from '../../../shared/feedback/notification-provider';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Account, ImportBatch } from '../../../shared/api/resources';
@@ -12,8 +13,8 @@ export function ImportBalanceSetup({
   refresh: () => Promise<unknown>;
 }) {
   const [open, setOpen] = useState(false),
-    [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false);
+  const notices = useNotifications();
   const account = useQuery({
     queryKey: ['import-balance-account', batch.accountId, batch.version],
     queryFn: () => request<Account>(`/accounts/${batch.accountId}`),
@@ -34,17 +35,18 @@ export function ImportBalanceSetup({
         `/accounts/${batch.accountId}/balance-basis/imports/${batch.id}`,
         { method: 'POST' },
       );
-      setMessage(
+      const message =
         result.status === 'applied'
           ? 'Saldo base identificado no extrato.'
           : result.status === 'partial'
             ? 'Há movimentos do arquivo sem confirmação; confira o saldo atual ou conclua a revisão.'
-            : 'A referência existente foi preservada. Confira o saldo atual para resolver a diferença.',
-      );
+            : 'A referência existente foi preservada. Confira o saldo atual para resolver a diferença.';
+      if (result.status === 'applied') notices.success(message);
+      else notices.warning(message);
       await account.refetch();
       await refresh();
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Não foi possível conferir.');
+      notices.error(e instanceof Error ? e.message : 'Não foi possível conferir.');
     } finally {
       setBusy(false);
     }
@@ -71,7 +73,6 @@ export function ImportBalanceSetup({
               Usar saldo informado no extrato
             </Button>
           )}
-          {message && <p>{message}</p>}
         </div>
       </div>
       <Modal open={open} onOpenChange={setOpen} title="Conferir saldo atual">

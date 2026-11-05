@@ -1,3 +1,4 @@
+import { HelpTip } from '../../../shared/ui/tooltip';
 import type { Account } from '../../../shared/api/resources';
 import { useState, type FormEvent } from 'react';
 import { request, jsonBody } from '../../../shared/api/client';
@@ -97,10 +98,13 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
               <option value="following">Mês seguinte ao crédito</option>
             </select>
           </label>
-          <p className="field-help">
-            Use o mês seguinte quando a empresa antecipa o benefício no fim do mês. A regra vale
-            para os créditos de VA/VR no planejamento; a data do extrato e o saldo continuam iguais.
-          </p>
+          <div className="field-assistance">
+            <HelpTip
+              label="Mês do crédito de VA/VR"
+              text="Escolha o mês do recebimento se o crédito cai no próprio mês, como no dia 1. Para um benefício antecipado no fim do mês anterior, escolha o mês seguinte. Isso muda apenas o planejamento, preservando a data e o saldo do extrato."
+            />
+            <span>Como escolher o mês do crédito</span>
+          </div>
         </>
       )}
       <p className="field-help">

@@ -1,3 +1,4 @@
+import { HelpTip, Tooltip } from '../../../shared/ui/tooltip';
 import { ImportBulkReview } from './import-bulk-review';
 import { money } from '../../../shared/formatting/money';
 import { ImportBalanceSetup } from './import-balance-setup';
@@ -79,19 +80,15 @@ export function ImportReview({
       />
       <ImportSourceSummary batch={batch} />
       {batch.reportType === 'benefit_statement' && (
-        <div className="review-banner">
+        <div className="context-help-line">
           <div>
             <strong>Alelo Alimentação · histórico parcial</strong>
-            <p>
-              Este PDF não informa o saldo anterior ao período nem o saldo após cada compra. O saldo
-              será calculado pelos movimentos confirmados; use Corrigir saldo se precisar registrar
-              uma diferença conhecida.
-            </p>
-            <p>
-              Os movimentos serão conferidos por este extrato ao confirmar. Isso não comprova o
-              saldo total da conta. Revise possíveis compras repetidas.
-            </p>
+            <span>Saldo total não comprovado pelo PDF.</span>
           </div>
+          <HelpTip
+            label="Cobertura do extrato Alelo"
+            text="O PDF não informa o saldo anterior nem o saldo após cada compra. Os movimentos serão conferidos ao confirmar, mas isso não comprova o saldo total. Revise compras repetidas e use Corrigir saldo para uma diferença conhecida."
+          />
         </div>
       )}
       {canIntegrate && duplicates.length > 0 && (
@@ -311,22 +308,26 @@ export function ImportReview({
             Página {page + 1} de {Math.max(1, Math.ceil(items.length / 25))}
           </span>
           <div>
-            <button
-              className="icon-button"
-              aria-label="Página anterior"
-              disabled={!page}
-              onClick={() => setPage(page - 1)}
-            >
-              <ChevronLeft size={19} />
-            </button>
-            <button
-              className="icon-button"
-              aria-label="Próxima página"
-              disabled={(page + 1) * 25 >= items.length}
-              onClick={() => setPage(page + 1)}
-            >
-              <ChevronRight size={19} />
-            </button>
+            <Tooltip text="Página anterior">
+              <button
+                className="icon-button"
+                aria-label="Página anterior"
+                disabled={!page}
+                onClick={() => setPage(page - 1)}
+              >
+                <ChevronLeft size={19} />
+              </button>
+            </Tooltip>
+            <Tooltip text="Próxima página">
+              <button
+                className="icon-button"
+                aria-label="Próxima página"
+                disabled={(page + 1) * 25 >= items.length}
+                onClick={() => setPage(page + 1)}
+              >
+                <ChevronRight size={19} />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

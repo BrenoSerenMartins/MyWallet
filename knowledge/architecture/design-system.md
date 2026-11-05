@@ -92,3 +92,6 @@ See [Shared interface system](interface-system.md) for the complete route covera
 
 ## Task and content review
 The follow-up [navigation and task layout review](navigation-task-review.md) defines each destination’s purpose, primary action, default content and supporting disclosures. Changes to area structure should preserve URL context and filtered empty states rather than adding another permanent block to every page.
+
+## Notifications and help
+Use [shared notifications and contextual help](notifications-help.md) for temporary feedback and compact explanations. Action confirmations use floating notices with session history; field validation and decisions affecting a financial operation remain beside their data. Use hover/focus descriptions for icon controls and explicit touch help for financial concepts. Tooltips must preserve the original action and accessible name.

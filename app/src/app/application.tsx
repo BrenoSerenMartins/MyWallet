@@ -1,3 +1,4 @@
+import { NotificationProvider } from '../shared/feedback/notification-provider';
 import { WorkspaceProvider } from '../features/workspaces/workspace-provider';
 import { WorkspaceBoundary } from '../features/workspaces/workspace-boundary';
 import { WorkspacesPage } from '../features/workspaces/workspaces-page';
@@ -54,7 +55,7 @@ export function Application() {
       </div>
     );
   return (
-    <>
+    <NotificationProvider key={session?.user.id ?? 'guest'}>
       <a className="skip-link" href="#main-content">
         Pular para o conteúdo
       </a>
@@ -93,7 +94,7 @@ export function Application() {
           </Routes>
         </Suspense>
       </WorkspaceSession>
-    </>
+    </NotificationProvider>
   );
 }
 

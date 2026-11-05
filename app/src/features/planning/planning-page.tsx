@@ -1,3 +1,4 @@
+import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { BenefitPlanningNotice } from './components/benefit-planning-notice';
 import { CommitmentsPage } from './commitments-page';
@@ -47,7 +48,7 @@ function MonthlyBudgetPage() {
     if (validMonth(value)) setParams({ month: value });
   };
   const [dialog, setDialog] = useState<'edit' | 'copy' | null>(null);
-  const [message, setMessage] = useState('');
+  const { success: setMessage } = useNotifications();
   const [scope, setScope] = useState('all');
   const { query, save, copy } = useMonthlyPlan(month, scope);
   const plan = query.data;
@@ -121,11 +122,7 @@ function MonthlyBudgetPage() {
                 </Button>
               </div>
             </div>
-            {message && (
-              <p className="form-success" role="status">
-                {message}
-              </p>
-            )}
+
             <PlanningSummary plan={plan} />
             <p className="planning-explanation">
               Previsto e realizado, lado a lado. O resultado do mês é diferente do saldo disponível.
