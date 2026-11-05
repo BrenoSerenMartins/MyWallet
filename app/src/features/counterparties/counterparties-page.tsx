@@ -103,19 +103,23 @@ export function CounterpartiesPage() {
             placeholder="Buscar…"
           />
         </label>
-        <label className="compact-filter">
-          <span className="sr-only">Filtrar automação</span>
-          <Select
-            aria-label="Filtrar automação"
-            value={ruleFilter}
-            onChange={(e) => setRuleFilter(e.target.value)}
-          >
-            <option value="all">Todos os cadastros</option>
-            <option value="automated">Com automação</option>
-            <option value="manual">Sem automação</option>
-          </Select>
-        </label>
-        <span className="result-count">{filtered.length} cadastros</span>
+        <div className="directory-filter-summary">
+          <label className="compact-filter">
+            <span className="sr-only">Filtrar automação</span>
+            <Select
+              aria-label="Filtrar automação"
+              value={ruleFilter}
+              onChange={(e) => setRuleFilter(e.target.value)}
+            >
+              <option value="all">Todos os cadastros</option>
+              <option value="automated">Com automação</option>
+              <option value="manual">Sem automação</option>
+            </Select>
+          </label>
+          <span className="result-count">
+            {filtered.length} {filtered.length === 1 ? 'cadastro' : 'cadastros'}
+          </span>
+        </div>
       </div>
       {error && !creating && (
         <p className="form-error" role="alert">
