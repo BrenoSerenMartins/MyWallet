@@ -108,14 +108,7 @@ export function CardsPage() {
             Mostrar cartões arquivados
           </label>
           {!cards.length ? (
-            <EmptyState
-              title="Seu crédito, com clareza"
-              action={
-                <Button onClick={() => setDialog({ kind: 'new' })}>
-                  Adicionar primeiro cartão
-                </Button>
-              }
-            >
+            <EmptyState title="Seu crédito, com clareza">
               Cadastre o fechamento e o vencimento para organizar compras e parcelas.
             </EmptyState>
           ) : (

@@ -1,6 +1,6 @@
 import { PageHeader } from '../../shared/ui/page-header';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Palette, ShieldCheck, FolderTree, ArrowUpRight } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Palette, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../auth/auth-provider';
 import { authClient } from '../../shared/api/auth-client';
 import { Button, ThemeSwitcher } from '../../shared/ui/primitives';
@@ -55,14 +55,6 @@ export function SettingsPage() {
                 </p>
               </div>
             </section>
-            <Link to="/categories" className="panel settings-shortcut">
-              <FolderTree size={22} />
-              <span>
-                <strong>Grupos e categorias</strong>
-                <small>Organize Casa, Alimentação e cada detalhe.</small>
-              </span>
-              <ArrowUpRight size={18} />
-            </Link>
           </>
         )}
         {view === 'data' && <DataSettings />}
@@ -78,11 +70,6 @@ export function SettingsPage() {
               </div>
             </div>
             <div className="settings-info">
-              <strong>Seus espaços financeiros.</strong>
-              <p>As informações ficam isoladas por espaço e pertencem à sua conta.</p>
-              <Link to="/workspaces" className="button secondary">
-                Gerenciar espaços
-              </Link>
               <Button className="secondary" onClick={() => void authClient.auth.signOut()}>
                 Sair da conta
               </Button>

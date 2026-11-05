@@ -201,13 +201,6 @@ export function WealthPage() {
                         ? 'Nenhuma posição neste filtro'
                         : 'Sua carteira, em um lugar'
                     }
-                    action={
-                      !data.holdings.length ? (
-                        <Button onClick={() => setDialog({ kind: 'newHolding' })}>
-                          Cadastrar primeiro investimento
-                        </Button>
-                      ) : undefined
-                    }
                   >
                     Informe posições existentes ou comece zerado e registre seus aportes. Valores e
                     avaliações ficam com data de referência.

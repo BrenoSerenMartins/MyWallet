@@ -196,11 +196,6 @@ export function CommitmentsPage({ navigation }: { navigation?: ReactNode }) {
                   ? 'Nenhum vencimento neste filtro'
                   : 'Seus próximos compromissos, organizados'
               }
-              action={
-                !query.data.schedules.length ? (
-                  <Button onClick={() => setDialog('new')}>Adicionar primeiro compromisso</Button>
-                ) : undefined
-              }
             >
               Cadastre contas fixas, pagamentos avulsos e receitas previstas. Eles só viram
               lançamentos quando você confirmar.

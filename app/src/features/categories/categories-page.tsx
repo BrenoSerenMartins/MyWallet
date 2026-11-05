@@ -87,14 +87,7 @@ export function CategoriesPage() {
       ) : categories.isPending || groups.isPending ? (
         <Loading />
       ) : !visibleGroups.length ? (
-        <EmptyState
-          title={search ? 'Nenhum resultado' : 'Comece pelos grandes grupos'}
-          action={
-            !search && (
-              <Button onClick={() => setEditor({ kind: 'group' })}>Criar primeiro grupo</Button>
-            )
-          }
-        >
+        <EmptyState title={search ? 'Nenhum resultado' : 'Comece pelos grandes grupos'}>
           {search
             ? 'Tente outro nome.'
             : 'Crie Casa e adicione Luz, Água e Aluguel. Depois crie Alimentação com Mercado e Comer fora.'}

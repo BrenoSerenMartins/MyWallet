@@ -181,7 +181,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
             <section className="panel planning-note">
               <h2>Notas e próximos passos</h2>
               <p>{plan.notes || 'Registre seus compromissos e intenções ao preparar o mês.'}</p>
-              <Link to="/settings/categories">
+              <Link to="/categories">
                 Gerenciar categorias <ArrowRight size={14} />
               </Link>
             </section>

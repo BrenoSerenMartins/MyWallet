@@ -146,13 +146,13 @@ async function appMenuTrigger(page: Page) {
     : page.getByRole('button', { name: /^Menu do espaço:/ });
 }
 async function openAppMenu(page: Page) {
-  const menu = page.getByRole('dialog', { name: 'Menu e preferências' });
+  const menu = page.getByRole('dialog', { name: 'Menu do espaço' });
   if (!(await menu.isVisible())) await (await appMenuTrigger(page)).click();
 }
 async function openWorkspaceSwitcher(page: Page) {
   await openAppMenu(page);
   await page
-    .getByRole('dialog', { name: 'Menu e preferências' })
+    .getByRole('dialog', { name: 'Menu do espaço' })
     .getByRole('link', { name: 'Trocar de espaço', exact: true })
     .click();
 }
@@ -162,15 +162,15 @@ async function chooseTheme(page: Page, theme: string) {
     await control.click();
     return;
   }
+  const returnUrl = page.url();
   await openAppMenu(page);
   await page
-    .getByRole('dialog', { name: 'Menu e preferências' })
-    .getByRole('button', { name: `Tema ${theme}`, exact: true })
+    .getByRole('dialog', { name: 'Menu do espaço' })
+    .getByRole('link', { name: 'Preferências', exact: true })
     .click();
-  await page
-    .getByRole('dialog', { name: 'Menu e preferências' })
-    .getByRole('button', { name: 'Fechar', exact: true })
-    .click();
+  await page.getByRole('button', { name: `Tema ${theme}`, exact: true }).click();
+  await page.goBack();
+  await expect(page).toHaveURL(returnUrl);
 }
 test('sign-in themes and accessible form', async ({ page }) => {
   await page.goto('/');
@@ -203,7 +203,6 @@ for (const width of [360, 390, 768, 1440])
     await expect(page.getByRole('dialog').getByLabel('Saldo inicial (R$)')).toHaveCount(0);
     await expect(page.getByRole('dialog').getByLabel('Data inicial')).toHaveCount(0);
     await fillControl(page.getByRole('dialog').getByLabel('Nome da conta'), 'Nova conta');
-    await page.getByRole('button', { name: 'Tema claro', exact: true }).isVisible();
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.goto('/transactions');
     await expect(page.getByRole('button', { name: /Compra de supermercado/ })).toBeVisible();
@@ -1345,6 +1344,7 @@ for (const width of [390, 1440])
     ).toBeVisible();
     for (const theme of ['claro', 'escuro']) {
       await chooseTheme(page, theme);
+      await page.getByRole('tab', { name: /Casa/ }).click();
       const dot = page
         .locator('.category-row')
         .filter({ has: page.getByRole('button', { name: 'Editar categoria Luz', exact: true }) })
@@ -2420,10 +2420,14 @@ for (const width of [390, 1440]) {
     const trigger = await appMenuTrigger(page);
     await trigger.focus();
     await page.keyboard.press('Enter');
-    const menu = page.getByRole('dialog', { name: 'Menu e preferências' });
+    const menu = page.getByRole('dialog', { name: 'Menu do espaço' });
     await expect(menu.getByRole('link', { name: 'Importar extrato', exact: true })).toBeVisible();
-    await expect(menu.getByRole('button', { name: 'Sair da conta', exact: true })).toBeVisible();
-    await menu.getByRole('button', { name: 'Tema claro', exact: true }).click();
+    await expect(menu.getByRole('link', { name: 'Preferências', exact: true })).toBeVisible();
+    await expect(menu.getByRole('button', { name: /^Tema / })).toHaveCount(0);
+    await expect(menu.getByRole('button', { name: 'Sair da conta', exact: true })).toHaveCount(0);
+    const wealth = menu.getByRole('link', { name: 'Investimentos e patrimônio', exact: true });
+    if (width > 1050) await expect(wealth).not.toBeVisible();
+    else await expect(wealth).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(menu).toHaveCount(0);
     await expect(trigger).toBeFocused();
@@ -3587,7 +3591,7 @@ test('additional finance modules are discoverable from the shared mobile navigat
     .getByRole('navigation', { name: 'Navegação móvel' })
     .getByRole('button', { name: 'Mais' });
   await more.click();
-  const menu = page.getByRole('dialog', { name: 'Menu e preferências' });
+  const menu = page.getByRole('dialog', { name: 'Menu do espaço' });
   await menu.getByRole('link', { name: 'Cartões e faturas' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Cartões e faturas' })).toBeVisible();
   await expect(menu).not.toBeVisible();
@@ -3749,6 +3753,13 @@ test('settings retain the chosen section on reload and offer labelled theme prev
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.getByRole('button', { name: 'Tema escuro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('.settings-shortcut')).toHaveCount(0);
+  await page
+    .getByRole('group', { name: 'Seções de preferências' })
+    .getByRole('button', { name: 'Conta', exact: true })
+    .click();
+  await expect(page.getByRole('button', { name: 'Sair da conta', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Gerenciar espaços', exact: true })).toHaveCount(0);
 });
 
 async function saveAccountForFeedback(page: Page, clock = false, spaces?: (typeof workspace)[]) {

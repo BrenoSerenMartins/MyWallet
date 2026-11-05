@@ -193,55 +193,6 @@
   padding-top: 17px;
   margin-top: 19px;
 }
-.space-create-card {
-  min-height: 340px;
-  border: 1px dashed var(--border);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--surface) 45%, transparent);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 30px;
-  color: var(--text);
-  transition:
-    border-color 0.18s,
-    background 0.18s;
-}
-.space-create-card:hover {
-  border-color: var(--accent);
-  background: var(--surface);
-}
-.space-create-card > span:first-child {
-  display: grid;
-  place-items: center;
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  width: 52px;
-  height: 52px;
-  color: var(--accent);
-  margin-bottom: 23px;
-}
-.space-create-card strong {
-  font-size: 13px;
-}
-.space-create-card p {
-  font-size: 11px;
-  color: var(--muted);
-  max-width: 235px;
-  line-height: 1.8;
-  margin-top: 9px;
-}
-.space-create-link {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-  font-size: 10px;
-  color: var(--accent);
-  margin-top: 24px;
-}
 .spaces-explanation {
   display: flex;
   align-items: center;
@@ -405,16 +356,6 @@
   .space-card-body {
     padding: 21px;
   }
-  .space-create-card {
-    min-height: 225px;
-    padding: 25px;
-  }
-  .space-create-card > span:first-child {
-    margin-bottom: 16px;
-  }
-  .space-create-link {
-    margin-top: 15px;
-  }
   .spaces-explanation {
     padding: 19px;
     gap: 13px;
@@ -547,4 +488,8 @@
   .workspace-trash li {
     flex-wrap: wrap;
   }
+}
+
+.spaces-grid > .empty-state {
+  grid-column: 1 / -1;
 }

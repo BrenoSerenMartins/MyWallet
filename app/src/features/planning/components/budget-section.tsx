@@ -26,7 +26,7 @@ export function BudgetSection({
       {!lines.length ? (
         <div className="planning-empty">
           Crie categorias de {type === 'income' ? 'receita' : 'despesa'} para organizar seu plano.{' '}
-          <Link to="/settings/categories">Gerenciar categorias</Link>
+          <Link to="/categories">Gerenciar categorias</Link>
         </div>
       ) : (
         <div className="budget-lines" role="list">

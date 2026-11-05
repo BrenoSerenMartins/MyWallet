@@ -4,12 +4,13 @@ import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowUpRight, Layers3, LogOut, Plus, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Layers3, LogOut, Plus, ShieldCheck } from 'lucide-react';
 import {
   Logo,
   ThemeSwitcher,
   Button,
   Loading,
+  EmptyState,
   ErrorState,
   Modal,
 } from '../../shared/ui/primitives';
@@ -97,20 +98,11 @@ export function WorkspacesPage() {
                 }}
               />
             ))}
-            <button
-              className="space-create-card"
-              onClick={() => setOpen(true)}
-              disabled={!navigator.onLine}
-            >
-              <span>
-                <Plus size={25} />
-              </span>
-              <strong>Um novo espaço para seus planos</strong>
-              <p>Separe suas finanças do jeito que faz sentido para você.</p>
-              <span className="space-create-link">
-                Criar espaço <ArrowUpRight size={15} />
-              </span>
-            </button>
+            {!workspaces.length && (
+              <EmptyState title="Seu primeiro espaço">
+                Use Criar espaço para começar a organizar suas contas.
+              </EmptyState>
+            )}
           </div>
         )}
         <WorkspaceTrash />
@@ -127,10 +119,12 @@ export function WorkspacesPage() {
           </div>
           <ShieldCheck size={23} />
         </div>
-        <div className="spaces-appearance">
-          <span>Aparência</span>
-          <ThemeSwitcher />
-        </div>
+        {!active && (
+          <div className="spaces-appearance">
+            <span>Aparência</span>
+            <ThemeSwitcher />
+          </div>
+        )}
         <footer className="spaces-footer">
           <span>MYWALLET</span>
           <span>Mais espaço para o que importa.</span>

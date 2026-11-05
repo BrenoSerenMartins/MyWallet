@@ -133,20 +133,7 @@ export function AccountsPage() {
         </div>
       ) : (
         <div className="panel">
-          <EmptyState
-            title="Dê um lugar para o seu dinheiro"
-            action={
-              <Button
-                onClick={() => {
-                  setEditing(undefined);
-                  setOpen(true);
-                }}
-              >
-                <Plus size={17} />
-                Criar minha primeira conta
-              </Button>
-            }
-          >
+          <EmptyState title="Dê um lugar para o seu dinheiro">
             Adicione sua conta Mercado Pago ou Alelo para começar.
           </EmptyState>
         </div>

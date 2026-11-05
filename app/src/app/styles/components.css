@@ -1403,21 +1403,6 @@ button.transaction-row:hover {
 .view-content {
   margin-top: 22px;
 }
-.settings-shortcut {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-top: 20px;
-  padding: 24px;
-}
-.settings-shortcut > span {
-  flex: 1;
-}
-.settings-shortcut small {
-  display: block;
-  margin-top: 6px;
-  color: var(--muted);
-}
 .settings-info > .button {
   margin: 12px 10px 0 0;
 }

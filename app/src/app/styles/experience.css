@@ -320,11 +320,6 @@ body .more-menu a.active {
   background: var(--surface-soft);
   color: var(--text);
 }
-body .menu-preferences {
-  border-top: 1px solid var(--border);
-  padding-top: 20px;
-  margin-top: 20px;
-}
 /* Overview: one account snapshot, a quiet adjacent portfolio, then analysis. */
 .dashboard-overview {
   display: grid;
@@ -653,8 +648,7 @@ body .commitment-row {
   background: var(--surface);
   border-radius: var(--radius-md);
 }
-body .settings-panel,
-body .settings-shortcut {
+body .settings-panel {
   box-shadow: none;
 }
 body .settings-info {
@@ -707,8 +701,7 @@ body .spaces-topbar {
   background: var(--bg);
   border-color: var(--border);
 }
-body .space-card,
-body .space-create-card {
+body .space-card {
   border-radius: var(--radius-lg);
   box-shadow: none;
 }

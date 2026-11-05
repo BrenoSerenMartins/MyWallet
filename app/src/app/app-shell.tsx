@@ -15,14 +15,12 @@ import {
   ChevronDown,
   House,
   Landmark,
-  LogOut,
   Settings2,
   Upload,
   WifiOff,
 } from 'lucide-react';
 import { useAuth } from '../features/auth/auth-provider';
-import { authClient } from '../shared/api/auth-client';
-import { Logo, ThemeSwitcher, Modal } from '../shared/ui/primitives';
+import { Logo, Modal } from '../shared/ui/primitives';
 const navigation = [
   { to: '/', label: 'Visão geral', mobile: 'Início', Icon: House },
   { to: '/transactions', label: 'Movimentações', mobile: 'Movimentos', Icon: ArrowDownUp },
@@ -207,8 +205,8 @@ export function AppShell() {
       <Modal
         open={more}
         onOpenChange={setMore}
-        title="Menu e preferências"
-        description="Importe extratos, organize seus dados e ajuste a aparência."
+        title="Menu do espaço"
+        description="Acesse as áreas e gerencie seus espaços."
         onCloseAutoFocus={(event) => {
           event.preventDefault();
           menuTrigger.current?.focus();
@@ -224,7 +222,12 @@ export function AppShell() {
               {navigation
                 .filter((n) => group.paths.includes(n.to))
                 .map(({ to, label, Icon }) => (
-                  <NavLink to={to} key={to} onClick={() => setMore(false)}>
+                  <NavLink
+                    to={to}
+                    key={to}
+                    className={primaryPaths.includes(to) ? 'menu-mobile-destination' : undefined}
+                    onClick={() => setMore(false)}
+                  >
                     <Icon size={20} />
                     <span>{label}</span>
                     <ChevronRight size={16} />
@@ -238,20 +241,9 @@ export function AppShell() {
             <ChevronRight size={17} />
           </NavLink>
         </nav>
-        <div className="menu-preferences">
-          <span>Aparência</span>
-          <ThemeSwitcher />
-        </div>
         <div className="menu-profile">
           <strong>{name}</strong>
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => void authClient.auth.signOut()}
-          >
-            <LogOut size={17} />
-            Sair da conta
-          </button>
+          <span>{session?.user.email}</span>
         </div>
       </Modal>
     </div>

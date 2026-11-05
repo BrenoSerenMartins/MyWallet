@@ -276,7 +276,6 @@
 .more-menu a span {
   flex: 1;
 }
-.menu-preferences,
 .menu-profile {
   display: flex;
   align-items: center;
@@ -557,5 +556,22 @@ body .commitments-page .page-header .period-picker input {
   .action-menu > summary {
     min-height: 48px;
     width: 48px;
+  }
+}
+
+.menu-profile {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.menu-profile > span {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+@media (min-width: 1051px) {
+  .more-menu a.menu-mobile-destination {
+    display: none;
   }
 }
