@@ -11,6 +11,10 @@ A base atual já inclui compromissos, faturas, investimentos manuais, patrimôni
 
 Não fazem parte deste ciclo: novos bancos, Open Finance, sincronização financeira offline, cotações automáticas e cobrança de assinatura. Esses itens precisam de planejamento próprio.
 
+## Complemento: saldo disponível e virada do mês
+
+O [plano de saldo trazido, benefícios e reservas](monthly-carryover-plan.md) detalha a continuidade entre meses e a competência única em resumo, gráficos e filtros. Executar sua especificação financeira e cálculo histórico antes de concluir metas/reservas; estabilização e evidência de CI continuam como pré-requisito. Esse complemento é planejamento, não implementação.
+
 ## Ordem e dependências
 
 1. Estabilização e inventário técnico.
