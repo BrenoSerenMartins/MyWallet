@@ -83,7 +83,9 @@ export function CounterpartiesPage() {
       <PageHeader
         title={<>Pessoas e estabelecimentos</>}
         description="Reconheça quem recebe ou envia dinheiro e automatize a organização."
-      >
+      ></PageHeader>
+
+      <div className="directory-toolbar">
         <Button
           onClick={() => {
             setError('');
@@ -94,9 +96,6 @@ export function CounterpartiesPage() {
           <Plus size={17} />
           Novo cadastro
         </Button>
-      </PageHeader>
-
-      <div className="directory-toolbar">
         <label className="search-field">
           <Search size={18} />
           <input

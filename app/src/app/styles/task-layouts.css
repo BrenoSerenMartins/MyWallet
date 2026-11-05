@@ -671,3 +671,98 @@ body .wealth-summary .wealth-overview > .panel + .panel {
     justify-content: space-between;
   }
 }
+
+/* Shared contextual controls: owned by their summary or list, never floating above it. */
+.summary-action-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.summary-action-bar > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.summary-action-bar > div {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.summary-action-bar .period-picker {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.workspace-section-select {
+  display: block;
+  max-width: 230px;
+  margin-bottom: 16px;
+}
+.account-directory-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+body .category-toolbar > .button,
+body .directory-toolbar > .button {
+  order: 3;
+  flex-shrink: 0;
+}
+body .movement-toolbar > .button {
+  order: 4;
+  flex-shrink: 0;
+}
+@media (max-width: 760px) {
+  .summary-action-bar {
+    flex-wrap: wrap;
+    padding: 12px 16px;
+  }
+  .summary-action-bar > div {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .account-directory-toolbar {
+    flex-wrap: wrap;
+  }
+  body .movement-toolbar > .button {
+    order: 0;
+    margin-left: auto;
+  }
+  body .category-toolbar > .button,
+  body .directory-toolbar > .button {
+    order: 0;
+  }
+}
+
+.card-workspace-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  background: var(--surface);
+}
+.card-workspace-toolbar > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .card-workspace-toolbar {
+    flex-wrap: wrap;
+    padding: 12px 16px;
+  }
+  .card-workspace-toolbar .inline-actions {
+    margin-left: auto;
+  }
+}

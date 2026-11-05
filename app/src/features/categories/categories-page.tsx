@@ -44,13 +44,12 @@ export function CategoriesPage() {
       <PageHeader
         title="Categorias"
         description="Grupos dão contexto. Categorias organizam cada lançamento."
-      >
+      ></PageHeader>
+      <div className="category-toolbar">
         <Button onClick={() => setEditor({ kind: 'group' })}>
           <Plus size={18} />
           Novo grupo
         </Button>
-      </PageHeader>
-      <div className="category-toolbar">
         <ViewSwitcher
           label="Tipo de categoria"
           value={type}

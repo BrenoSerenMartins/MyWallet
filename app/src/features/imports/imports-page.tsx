@@ -1,6 +1,5 @@
 import { Select } from '../../shared/ui/controls/select';
 import { PageHeader } from '../../shared/ui/page-header';
-import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { CheckCircle2 } from 'lucide-react';
 import { ImportReview } from './components/import-review';
 import { useRef, useState } from 'react';
@@ -104,15 +103,17 @@ export function ImportsPage() {
         )
       ) : (
         <>
-          <ViewSwitcher
-            label="Seções de importação"
-            value={view}
-            onChange={setView}
-            options={[
-              { value: 'upload', label: 'Enviar arquivos' },
-              { value: 'history', label: 'Histórico', count: history.data?.length },
-            ]}
-          />
+          <label className="workspace-section-select">
+            <span className="sr-only">Seções de importação</span>
+            <Select
+              aria-label="Seções de importação"
+              value={view}
+              onChange={(event) => setView(event.target.value)}
+            >
+              <option value="upload">Enviar arquivos</option>
+              <option value="history">Histórico</option>
+            </Select>
+          </label>
           <div hidden={view !== 'upload'} className="view-content">
             <div className="import-grid">
               <section className="panel upload-panel">

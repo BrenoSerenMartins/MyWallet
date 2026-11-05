@@ -1,10 +1,10 @@
+import { Select } from '../../shared/ui/controls/select';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useSearchParams } from 'react-router-dom';
 import { Palette, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../auth/auth-provider';
 import { authClient } from '../../shared/api/auth-client';
 import { Button, ThemeSwitcher } from '../../shared/ui/primitives';
-import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { DataSettings } from './data-settings';
 export function SettingsPage() {
   const { session } = useAuth();
@@ -25,16 +25,18 @@ export function SettingsPage() {
         title={<>Preferências</>}
         description={<>Seu espaço, suas escolhas e seus dados.</>}
       ></PageHeader>
-      <ViewSwitcher
-        label="Seções de preferências"
-        value={view}
-        onChange={setView}
-        options={[
-          { value: 'appearance', label: 'Aparência' },
-          { value: 'data', label: 'Dados e backup' },
-          { value: 'account', label: 'Conta' },
-        ]}
-      />
+      <label className="workspace-section-select">
+        <span className="sr-only">Seções de preferências</span>
+        <Select
+          aria-label="Seções de preferências"
+          value={view}
+          onChange={(event) => setView(event.target.value)}
+        >
+          <option value="appearance">Aparência</option>
+          <option value="data">Dados e backup</option>
+          <option value="account">Conta</option>
+        </Select>
+      </label>
       <div className="view-content">
         {view === 'appearance' && (
           <>

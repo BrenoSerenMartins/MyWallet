@@ -3,7 +3,6 @@ import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { ActionMenu } from '../../shared/ui/action-menu';
 import type { ReactNode } from 'react';
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { PageHeader } from '../../shared/ui/page-header';
 import { BenefitPlanningNotice } from './components/benefit-planning-notice';
 import { CommitmentsPage } from './commitments-page';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
@@ -67,60 +66,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
   }
   return (
     <div className="page-enter planning-page">
-      <PageHeader compact title={<>Planejamento mensal</>}>
-        <label className="period-picker">
-          <span className="sr-only">Mês do plano</span>
-          <MonthPicker
-            clearable={false}
-            aria-label="Mês do planejamento"
-            min="1900-01"
-            max="9998-12"
-            value={month}
-            onChange={(e) => {
-              if (e.target.value) {
-                setMonth(e.target.value);
-                setMessage('');
-              }
-            }}
-          />
-        </label>
-        <Button
-          className="compact"
-          aria-label={plan?.version ? 'Editar planejamento' : 'Preparar meu mês'}
-          disabled={!plan || !navigator.onLine}
-          onClick={() => setDialog('edit')}
-        >
-          <Pencil size={15} />
-          <span>{plan?.version ? 'Editar' : 'Preparar mês'}</span>
-        </Button>
-        {scope !== 'all' && (
-          <span className="scope-indicator">
-            {scope === 'cash' ? 'Sem benefícios' : 'Só benefícios'}
-          </span>
-        )}
-        <ActionMenu label="Mais ações do planejamento">
-          <label>
-            Realizado de
-            <Select
-              aria-label="Contas no realizado"
-              value={scope}
-              onChange={(e) => setScope(e.target.value)}
-            >
-              <option value="all">Todas as contas</option>
-              <option value="cash">Sem benefícios</option>
-              <option value="benefits">Só benefícios</option>
-            </Select>
-          </label>
-          <button
-            type="button"
-            disabled={!plan || !navigator.onLine || month === '1900-01'}
-            onClick={() => setDialog('copy')}
-          >
-            <Copy size={16} />
-            Copiar mês anterior
-          </button>
-        </ActionMenu>
-      </PageHeader>
+      <h1 className="sr-only">Planejamento mensal</h1>
       {query.isPending ? (
         <Loading />
       ) : query.isError ? (
@@ -128,7 +74,66 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
       ) : (
         plan && (
           <>
-            <PlanningSummary plan={plan} navigation={navigation} />
+            <PlanningSummary
+              plan={plan}
+              navigation={navigation}
+              actions={
+                <>
+                  <label className="period-picker">
+                    <span className="sr-only">Mês do plano</span>
+                    <MonthPicker
+                      clearable={false}
+                      aria-label="Mês do planejamento"
+                      min="1900-01"
+                      max="9998-12"
+                      value={month}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setMonth(e.target.value);
+                          setMessage('');
+                        }
+                      }}
+                    />
+                  </label>
+                  <Button
+                    className="compact"
+                    aria-label={plan?.version ? 'Editar planejamento' : 'Preparar meu mês'}
+                    disabled={!plan || !navigator.onLine}
+                    onClick={() => setDialog('edit')}
+                  >
+                    <Pencil size={15} />
+                    <span>{plan?.version ? 'Editar' : 'Preparar mês'}</span>
+                  </Button>
+                  {scope !== 'all' && (
+                    <span className="scope-indicator">
+                      {scope === 'cash' ? 'Sem benefícios' : 'Só benefícios'}
+                    </span>
+                  )}
+                  <ActionMenu label="Mais ações do planejamento">
+                    <label>
+                      Realizado de
+                      <Select
+                        aria-label="Contas no realizado"
+                        value={scope}
+                        onChange={(e) => setScope(e.target.value)}
+                      >
+                        <option value="all">Todas as contas</option>
+                        <option value="cash">Sem benefícios</option>
+                        <option value="benefits">Só benefícios</option>
+                      </Select>
+                    </label>
+                    <button
+                      type="button"
+                      disabled={!plan || !navigator.onLine || month === '1900-01'}
+                      onClick={() => setDialog('copy')}
+                    >
+                      <Copy size={16} />
+                      Copiar mês anterior
+                    </button>
+                  </ActionMenu>
+                </>
+              }
+            />
 
             {plan.totals.missingCategoryCount > 0 && (
               <div className="review-banner planning-included">

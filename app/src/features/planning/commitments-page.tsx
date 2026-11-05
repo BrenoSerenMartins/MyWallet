@@ -13,7 +13,6 @@ import type { Account, CommitmentSchedule, CommitmentOccurrence } from '../../sh
 import { dateToday, money, shortDate } from '../../shared/formatting/money';
 import { shiftMonth, validMonth } from '../../shared/formatting/month';
 import { Button, EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
-import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { useCommitments } from './hooks/use-commitments';
 import { ForecastDetails } from './components/cashflow-forecast';
 import { CommitmentForm } from './components/commitment-form';
@@ -152,16 +151,18 @@ export function CommitmentsPage({ navigation }: { navigation?: ReactNode }) {
             </section>
           )}
           <div className="commitment-filters">
-            <ViewSwitcher
-              label="Situação dos compromissos"
-              value={filter}
-              onChange={setFilter}
-              options={[
-                { value: 'pending', label: 'Pendentes' },
-                { value: 'done', label: 'Concluídos' },
-                { value: 'all', label: 'Todos' },
-              ]}
-            />
+            <label className="workspace-section-select">
+              <span className="sr-only">Situação dos compromissos</span>
+              <Select
+                aria-label="Situação dos compromissos"
+                value={filter}
+                onChange={(event) => setFilter(event.target.value)}
+              >
+                <option value="pending">Pendentes</option>
+                <option value="done">Concluídos</option>
+                <option value="all">Todos</option>
+              </Select>
+            </label>
             <label>
               <span className="sr-only">Buscar compromisso</span>
               <input

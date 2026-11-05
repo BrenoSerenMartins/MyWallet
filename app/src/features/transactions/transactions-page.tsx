@@ -198,21 +198,20 @@ export function TransactionsPage() {
   };
   return (
     <div className="page-enter transactions-page">
-      <PageHeader title={accountName ?? 'Movimentações'}>
-        <Button
-          onClick={() => {
-            const next = new URLSearchParams(params);
-            next.set('new', '1');
-            setParams(next, { preventScrollReset: true });
-          }}
-        >
-          <Plus size={18} />
-          Novo lançamento
-        </Button>
-      </PageHeader>
+      <PageHeader title={accountName ?? 'Movimentações'}></PageHeader>
       {requestedTransaction.isError && <ErrorState error={requestedTransaction.error} />}
       <section className="movements-workbench" aria-label="Lista de movimentações">
         <div className="movement-toolbar">
+          <Button
+            onClick={() => {
+              const next = new URLSearchParams(params);
+              next.set('new', '1');
+              setParams(next, { preventScrollReset: true });
+            }}
+          >
+            <Plus size={18} />
+            Novo lançamento
+          </Button>
           <label className="search-field">
             <Search size={17} />
             <input

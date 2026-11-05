@@ -7,9 +7,11 @@ const display = (value: number | null) => (value === null ? 'Não definido' : mo
 export function PlanningSummary({
   plan,
   navigation,
+  actions,
 }: {
   plan: MonthlyPlan;
   navigation?: ReactNode;
+  actions?: ReactNode;
 }) {
   const { totals: t } = plan;
   const metrics = [
@@ -40,6 +42,12 @@ export function PlanningSummary({
   ];
   return (
     <section className="planning-metrics" aria-label="Resumo do planejamento">
+      {actions && (
+        <div className="summary-action-bar">
+          <span>Seu orçamento</span>
+          <div>{actions}</div>
+        </div>
+      )}
       {metrics.map(({ label, Icon, planned, actual, difference, kind }) => (
         <article
           className={`panel planning-metric comparison-metric metric-${kind}`}

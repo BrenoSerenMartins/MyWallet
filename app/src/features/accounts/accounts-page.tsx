@@ -1,5 +1,4 @@
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { PageHeader } from '../../shared/ui/page-header';
 import { AccountRecord } from './components/account-record';
 import { BalanceHistoryPanel } from './components/balance-history-panel';
 import { BalanceAdjustmentForm } from './components/balance-adjustment-form';
@@ -74,7 +73,8 @@ export function AccountsPage() {
   );
   return (
     <div className="page-enter accounts-page">
-      <PageHeader compact title={<>Minhas contas</>}>
+      <h1 className="sr-only">Minhas contas</h1>
+      <div className="account-directory-toolbar">
         <label className="account-type-filter">
           <span>Tipo</span>
           <Select
@@ -98,7 +98,7 @@ export function AccountsPage() {
           <Plus size={18} />
           Adicionar conta
         </Button>
-      </PageHeader>
+      </div>
 
       {accounts.isPending ? (
         <Loading />

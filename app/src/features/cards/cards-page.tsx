@@ -1,7 +1,6 @@
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -70,11 +69,9 @@ export function CardsPage() {
   };
   return (
     <div className="page-enter cards-page">
-      <PageHeader
-        compact
-        title={<>Cartões e faturas</>}
-        description={<>Compras organizadas, sem contar o pagamento duas vezes.</>}
-      >
+      <h1 className="sr-only">Cartões e faturas</h1>
+      <div className="card-workspace-toolbar">
+        <span>Cartões e faturas</span>
         <div className="inline-actions">
           <Tooltip text={visible ? 'Ocultar valores dos cartões' : 'Mostrar valores dos cartões'}>
             <button
@@ -90,7 +87,7 @@ export function CardsPage() {
             Novo cartão
           </Button>
         </div>
-      </PageHeader>
+      </div>
 
       {query.isPending ? (
         <Loading />

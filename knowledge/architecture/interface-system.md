@@ -23,3 +23,8 @@ Final checks: 206 domain/database tests in 30 suites passed, along with lint, ty
 ## Number-led workspaces
 
 Overview keeps its view switcher inside the balance card. Budget and wealth now attach their section navigation to the bottom of their numerical summary. Accounts, cards and commitments use compact page headers: the page title remains an accessible h1, while visible controls concentrate on period, creation and local navigation. Descriptive headings remain in task-heavy organisation/import flows. Values, reporting rules and audit actions are unchanged. `PageHeader.compact` centralises this visual choice. Browser scenarios that expect visible h1 text on these routes must instead check semantic presence and the visible summary/task controls; compilation is not a browser pass.
+
+
+## Contextual actions and compact selectors
+
+Budget actions (month, edit and scope/copy menu) are inside its numerical summary; wealth actions remain inside its position summary. Account creation and type selection share a directory toolbar. Category, counterparty and movement creation share their search/filter toolbar. Cards use an owned workspace toolbar rather than controls aligned to an invisible title. Preferences, import sections and commitment status use the shared accessible Select; overview/wealth analysis and financial category direction retain visible tabs for frequent alternate readings. Desktop account/card navigation remains in the header dropdown and mobile access is preserved. No financial calculation or persistence changes are introduced. Lint and frontend compilation validate this revision; visual browser verification and maintenance of older browser selectors remain outstanding.

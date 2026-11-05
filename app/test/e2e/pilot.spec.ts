@@ -1051,7 +1051,10 @@ for (const width of [390, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/plannedwallet-default-group-${width}.png`, fullPage: true });
+    await page.screenshot({
+      path: `/tmp/plannedwallet-default-group-${width}.png`,
+      fullPage: true,
+    });
   });
 
 test('a later statement points to unfinished history without proposing a new account opening', async ({
@@ -2622,7 +2625,10 @@ for (const width of [320, 430, 1024, 1280, 1920])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/plannedwallet-premium-accounts-${width}.png`, fullPage: true });
+    await page.screenshot({
+      path: `/tmp/plannedwallet-premium-accounts-${width}.png`,
+      fullPage: true,
+    });
     await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
     await fillControl(page.getByLabel('Nome da conta'), 'Conta com texto preservado');
     await expect(
@@ -2890,7 +2896,10 @@ for (const width of [320, 390, 768, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/plannedwallet-commitment-form-${width}.png`, fullPage: true });
+    await page.screenshot({
+      path: `/tmp/plannedwallet-commitment-form-${width}.png`,
+      fullPage: true,
+    });
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.getByRole('button', { name: 'Pagar', exact: true }).click();
     await expect(
@@ -3190,7 +3199,10 @@ for (const width of [320, 390, 768, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await page.screenshot({ path: `/tmp/plannedwallet-card-purchase-${width}.png`, fullPage: false });
+    await page.screenshot({
+      path: `/tmp/plannedwallet-card-purchase-${width}.png`,
+      fullPage: false,
+    });
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await page.getByRole('button', { name: 'Pagar ou vincular', exact: true }).click();
     await expect(
@@ -3214,7 +3226,10 @@ for (const width of [320, 390, 768, 1440])
         .getByRole('dialog')
         .getByLabel('Valor total atualizado da posição (R$)', { exact: true }),
     ).toBeVisible();
-    await page.screenshot({ path: `/tmp/plannedwallet-investment-value-${width}.png`, fullPage: false });
+    await page.screenshot({
+      path: `/tmp/plannedwallet-investment-value-${width}.png`,
+      fullPage: false,
+    });
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
     await chooseTheme(page, 'claro');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -3555,7 +3570,10 @@ for (const width of [390, 1440])
       page,
     }, info) => {
       await signedIn(page);
-      await page.addInitScript((value) => localStorage.setItem('plannedwallet-theme', value), theme);
+      await page.addInitScript(
+        (value) => localStorage.setItem('plannedwallet-theme', value),
+        theme,
+      );
       await page.setViewportSize({ width, height: 1000 });
       for (const [path, title] of redesignedRoutes) {
         await page.goto(path);
@@ -3734,30 +3752,16 @@ test('settings retain the chosen section on reload and offer labelled theme prev
 }) => {
   await signedIn(page);
   await page.goto('/settings?view=data');
-  await expect(
-    page
-      .getByRole('group', { name: 'Seções de preferências' })
-      .getByRole('button', { name: 'Dados e backup' }),
-  ).toHaveAttribute('aria-pressed', 'true');
+  await expectControlValue(page.getByLabel('Seções de preferências', { exact: true }), 'data');
   await page.reload();
-  await expect(
-    page
-      .getByRole('group', { name: 'Seções de preferências' })
-      .getByRole('button', { name: 'Dados e backup' }),
-  ).toHaveAttribute('aria-pressed', 'true');
-  await page
-    .getByRole('group', { name: 'Seções de preferências' })
-    .getByRole('button', { name: 'Aparência' })
-    .click();
+  await expectControlValue(page.getByLabel('Seções de preferências', { exact: true }), 'data');
+  await chooseSelect(page.getByLabel('Seções de preferências', { exact: true }), 'appearance');
   await page.getByRole('button', { name: 'Tema claro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.getByRole('button', { name: 'Tema escuro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('.settings-shortcut')).toHaveCount(0);
-  await page
-    .getByRole('group', { name: 'Seções de preferências' })
-    .getByRole('button', { name: 'Conta', exact: true })
-    .click();
+  await chooseSelect(page.getByLabel('Seções de preferências', { exact: true }), 'account');
   await expect(page.getByRole('button', { name: 'Sair da conta', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Gerenciar espaços', exact: true })).toHaveCount(0);
 });
