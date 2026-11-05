@@ -729,15 +729,15 @@ body .planning-page .budget-line {
   background: transparent;
 }
 body .planning-page .planning-metrics {
-  background: var(--surface);
+  background: transparent;
 }
 @supports (backdrop-filter: blur(16px)) {
   body .planning-page .planning-metrics {
-    background: color-mix(in srgb, var(--surface) 78%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
   body .planning-metrics .metric-contribution {
-    background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+    background: transparent;
   }
 }
