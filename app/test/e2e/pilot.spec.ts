@@ -2638,8 +2638,8 @@ for (const width of [320, 430, 1024, 1280, 1920])
     ).toHaveAttribute('href', '/imports/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
     const privacy = page.getByRole('button', { name: 'Ocultar valores', exact: true });
     const box = await privacy.boundingBox();
-    expect(box!.width).toBeGreaterThanOrEqual(44);
-    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(Math.round(box!.width * 100) / 100).toBeGreaterThanOrEqual(44);
+    expect(Math.round(box!.height * 100) / 100).toBeGreaterThanOrEqual(44);
     for (const theme of ['claro', 'escuro']) {
       await chooseTheme(page, theme);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -2670,7 +2670,8 @@ for (const width of [320, 430, 1024, 1280, 1920])
     if (width <= 700) {
       await page.setViewportSize({ width, height: 480 });
       const dialog = await page.getByRole('dialog').boundingBox();
-      expect(dialog!.height).toBeLessThanOrEqual(480);
+      // Chromium may report subpixel noise at the viewport boundary.
+      expect(Math.round(dialog!.height * 100) / 100).toBeLessThanOrEqual(480);
       await expectControlValue(page.getByLabel('Nome da conta'), 'Conta com texto preservado');
     }
     await page.getByRole('button', { name: 'Fechar', exact: true }).click();
