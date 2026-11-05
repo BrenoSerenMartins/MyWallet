@@ -216,7 +216,9 @@ for (const width of [360, 390, 768, 1440])
       true,
     );
     await page.goto('/imports');
-    await expect(page.getByRole('heading', { name: /Seus movimentos/ })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Importar extrato', exact: true }),
+    ).toBeVisible();
     await chooseSelect(page.getByLabel('Conta de destino'), account.id);
     await expect(page.getByRole('button', { name: 'Selecionar extratos' })).toBeEnabled();
     await page.goto('/settings');
@@ -2340,11 +2342,9 @@ for (const width of [360, 390, 768, 1440]) {
     await expect(page.getByRole('link', { name: 'Ver movimentos do período' })).toContainText(
       '-R$ 20,00',
     );
-    await expect(page.locator('.month-result-note')).toContainText(
-      'As despesas superaram as receitas',
-    );
+    await expect(page.locator('.month-metric.result')).toContainText('-R$ 20,00');
     await expect(page.locator('.month-metric.expense')).toContainText('R$ 500,00');
-    await expect(page.locator('.expense-groups')).toContainText('Outros');
+    await expect(page.locator('.expense-groups')).toHaveCount(0);
     await page.getByText('Composição por conta', { exact: false }).click();
     await expect(page.locator('.balance-composition .account-line')).toHaveCount(3);
     await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
@@ -2404,7 +2404,7 @@ test('overview preserves balances when historical analysis fails and supports re
   await expect(page.getByRole('alert')).toContainText('Não foi possível carregar');
   failing = false;
   await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
-  await expect(page.locator('.expense-groups')).toContainText('Nenhuma despesa registrada');
+  await expect(page.locator('.month-metric.expense > strong')).toHaveText('R$ 0,00');
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
@@ -2466,15 +2466,10 @@ for (const width of [360, 768, 1440])
     await expect(history.locator('svg g[role="button"]')).toHaveCount(12);
     await history.getByText('Ver valores mês a mês', { exact: true }).click();
     await expect(history.locator('tbody tr')).toHaveCount(12);
-    await page
-      .getByRole('group', { name: 'Organização das despesas' })
-      .getByRole('button', { name: 'Categorias', exact: true })
-      .click();
-    await expect(page.locator('.expense-group-list')).toContainText('Luz');
     await page.getByRole('button', { name: 'Ocultar valores', exact: true }).click();
     await expect(history.locator('svg.history-chart')).toHaveCount(0);
     await expect(history).not.toContainText('R$');
-    await expect(page.locator('.expense-group-track')).toHaveCount(0);
+    await expect(history.locator('tbody')).toHaveCount(0);
     await page.getByRole('button', { name: 'Mostrar valores', exact: true }).click();
     await expect(history.locator('svg.history-chart')).toBeVisible();
     await history.locator('svg g[role="button"]').first().focus();
@@ -3578,7 +3573,7 @@ for (const width of [390, 1440])
           exact: title !== 'Seus espaços',
         });
         await expect(heading).toBeVisible();
-        await expect(page.locator('.page-header')).toHaveCount(1);
+        await expect(page.locator('h1')).toHaveCount(1);
         expect(
           await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
           path,
@@ -3660,28 +3655,20 @@ test('account filters explain empty results and keep account and card workspaces
 }) => {
   await signedIn(page);
   await page.goto('/accounts');
-  await page
-    .getByRole('group', { name: 'Tipos de contas' })
-    .getByRole('button', { name: 'Benefícios', exact: true })
-    .click();
+  await chooseSelect(page.getByLabel('Tipo de conta', { exact: true }), 'benefits');
   await expect(
     page.getByRole('heading', { name: 'Nenhuma conta neste filtro', exact: true }),
   ).toBeVisible();
   await expect(page.locator('.account-record')).toHaveCount(0);
-  await page
-    .getByRole('group', { name: 'Tipos de contas' })
-    .getByRole('button', { name: 'Todas', exact: true })
-    .click();
+  await chooseSelect(page.getByLabel('Tipo de conta', { exact: true }), 'all');
   await expect(page.locator('.account-record')).toHaveCount(1);
+  await openAppMenu(page);
   await page
-    .getByRole('navigation', { name: 'Contas e cartões' })
+    .getByRole('dialog', { name: 'Menu do espaço' })
     .getByRole('link', { name: 'Cartões e faturas', exact: true })
     .click();
   await expect(page.getByRole('heading', { level: 1, name: 'Cartões e faturas' })).toBeVisible();
-  await page
-    .getByRole('navigation', { name: 'Contas e cartões' })
-    .getByRole('link', { name: 'Contas e saldos', exact: true })
-    .click();
+  await page.goto('/accounts');
   await expect(page.locator('.account-record')).toHaveCount(1);
 });
 test('directory creation is isolated from browsing, retains failed input and refreshes automation filters', async ({
@@ -3803,7 +3790,7 @@ test('notification timeout pauses while reading and dismissed feedback remains i
   await toast.hover();
   await page.clock.fastForward(12000);
   await expect(toast).toBeVisible();
-  await page.getByRole('heading', { name: 'Minhas contas', exact: true }).hover();
+  await page.getByLabel('Tipo de conta', { exact: true }).hover();
   await page.clock.fastForward(8000);
   await expect(toast).toHaveCount(0);
   await page.getByRole('button', { name: 'Abrir notificações', exact: true }).click();
@@ -3860,7 +3847,7 @@ test.describe('help on touch screens', () => {
     const box = await tooltip.boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(320);
-    await page.getByRole('heading', { name: 'Planejamento mensal', exact: true }).tap();
+    await page.getByLabel('Mês do planejamento', { exact: true }).tap();
     await expect(tooltip).toHaveCount(0);
     await page.goto('/?month=2026-10');
     await page.getByRole('button', { name: 'Mês anterior', exact: true }).tap();
@@ -3999,7 +3986,9 @@ test('invalid date ranges are explained beside the visible controls without issu
   await page.goto('/transactions?type=income&from=2026-10-01&to=2026-10-31');
   await expect(page.getByRole('table')).toBeVisible();
   await fillControl(await movementFilterControl(page, 'De'), '2026-11-01');
-  await expect(page.getByRole('alert')).toContainText('A data inicial deve ser anterior ou igual');
+  await expect(
+    page.getByRole('dialog', { name: 'Filtros avançados', exact: true }).getByRole('alert'),
+  ).toContainText('A data inicial deve ser anterior ou igual');
   await expect(await movementFilterControl(page, 'De')).toHaveAttribute('aria-invalid', 'true');
   expect(queries.some((q) => q.get('from') === '2026-11-01' && q.get('to') === '2026-11-01')).toBe(
     false,

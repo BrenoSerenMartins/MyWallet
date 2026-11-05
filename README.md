@@ -4,7 +4,7 @@
 
 Aplicação de finanças pessoais com visual inspirado em fintechs, espaços independentes e importação manual de extratos. Uma PWA responsiva para acessar pelo navegador ou instalar em dispositivos compatíveis, com temas claro, escuro e automático.
 
-O projeto está em fase de **piloto**. O dashboard mostra os saldos das contas cadastradas e as movimentações do período; a visão completa de patrimônio e investimentos faz parte da evolução do produto.
+O projeto está em fase de **piloto**. Já inclui saldos, movimentações, planejamento mensal, compromissos, cartões/faturas e investimentos/patrimônio com avaliações manuais. O próximo ciclo começa pela estabilização e validação integrada; consulte o [plano de ação](knowledge/architecture/action-plan-next-cycle.md).
 
 ## Renomeação para PlannedWallet
 
@@ -16,15 +16,18 @@ Os manifests locais e o repositório no GitHub usam PlannedWallet. Se existir um
 
 ## Funcionalidades
 
-- **Espaços financeiros:** seleção em cards, criação com nome, descrição e cor, e dados separados por espaço.
+- **Espaços financeiros:** seleção em lista, criação com nome, descrição e cor, e dados separados por espaço.
 - **Contas:** cadastro simples por instituição e tipo, importação de histórico e acompanhamento do saldo registrado.
-- **Planejamento mensal:** receitas/despesas previstas por categoria, cards com previsto, realizado e diferença; lançamentos sem categoria incluídos em Outros, intenção de aporte, notas e cópia revisada do mês anterior.
+- **Planejamento mensal:** receitas/despesas previstas por categoria, comparação de previsto, realizado e diferença; lançamentos sem categoria incluídos em Outros, intenção de aporte, notas e cópia revisada do mês anterior.
 - **Grupos e categorias:** organize Casa → Luz/Água e Alimentação → Mercado/Comer fora; abas de grupos com Geral primeiro, lista compacta de categorias, busca, edição e exclusão revisada. O grupo padrão Geral recebe categorias ainda não organizadas.
 - **Agentes e regras:** pessoas e estabelecimentos com nomes/descrições e IDs de loja por origem; categorias automáticas para histórico e próximos movimentos, preservando escolhas manuais.
 - **Movimentações:** receitas, despesas, categorias agrupadas, filtros recolhíveis, abas por tipo, correções e estornos.
 - **Transferências:** lançamento das duas movimentações entre contas na mesma transação.
 - **Extratos:** importação de extratos de conta do Mercado Pago em PDF, CSV e XLSX, classificação automática de entradas/saídas, conferência de saldos, revisão, exclusão automática e bloqueio de duplicatas identificadas, revisão em abas e confirmação com proteção contra repetição.
 - **Histórico de extratos:** salve movimentos antigos apenas para consulta e busque dentro do extrato sem alterar saldos ou gastos. Integração financeira posterior exige revisão e conciliação.
+- **Compromissos:** contas a pagar e receber, recorrência, vínculo com movimentos e previsão de saldo incluindo faturas.
+- **Cartões:** compras, parcelas, faturas, pagamentos vinculados ou registrados e revisão de estornos.
+- **Patrimônio:** investimentos com avaliações manuais, aportes/resgates, bens, dívidas e posições históricas.
 - **Dados:** exportação em CSV, backup financeiro em JSON com planejamentos e restauração com prévia de impacto.
 - **Acesso:** cadastro, login e recuperação de senha pelo Supabase Auth.
 - **Comparativos:** evolução de receitas e despesas em 2, 4, 7 ou 12 meses, barras/linhas, comparação com o mês anterior e tabela de valores; despesas por grupos ou categorias, incluindo Outros.

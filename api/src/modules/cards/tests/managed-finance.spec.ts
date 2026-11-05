@@ -646,14 +646,58 @@ it('consolidates assets and debt once, excludes benefits, and saves reproducible
 it('round-trips cards, positions, liabilities, claims and historical undo pointers in v9 without duplicating money', async () => {
   const source = await run(() => backup.backup());
   expect(source.version).toBe(10);
-  const expectedWorth = (await run(() => wealth.summary())).netWorth;
+  const financialState = async () => {
+    const worth = await wealth.summary();
+    const cardsState = await cards.summary('2026-11');
+    const pending = await commitments.summary('2026-11');
+    const plan = await new PlanningService(
+      new PlanningRepository(db.service),
+      categories,
+      ledger,
+      accounts,
+    ).summary('2026-11');
+    return {
+      accounts: (await accounts.list())
+        .map((a) => ({ name: a.name, balance: a.balance }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      cards: cardsState.cards
+        .map((c) => ({
+          name: c.name,
+          debt: c.debt,
+          credit: c.credit,
+          availableLimit: c.availableLimit,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      worth: { assets: worth.assets, liabilities: worth.liabilities, netWorth: worth.netWorth },
+      forecast: pending.projection
+        .map((a) => ({
+          name: a.name,
+          balance: a.balance,
+          income: a.income,
+          expense: a.expense,
+          projected: a.projected,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      planning: plan.totals,
+    };
+  };
+  const expected = await run(financialState);
   await db.forUser(db.other, async () => {
     const draft = await backup.preview(source);
     await backup.confirm(draft.id);
     const restored = await backup.backup();
     expect(restored.cards!.cards.length).toBe(source.cards!.cards.length);
     expect(restored.wealth!.holdings.length).toBe(source.wealth!.holdings.length);
-    expect((await wealth.summary()).netWorth).toBe(expectedWorth);
+    expect(await financialState()).toEqual(expected);
+    const repeated = await backup.preview(source);
+    await backup.confirm(repeated.id);
+    expect(await financialState()).toEqual(expected);
+    expect((await backup.backup()).transactions).toHaveLength(source.transactions.length);
+    expect(
+      restored.accounts.every(
+        (account) => !source.accounts.some((original) => original.id === account.id),
+      ),
+    ).toBe(true);
   });
 });
 

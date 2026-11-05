@@ -13,8 +13,32 @@ jobs:
       - run: npm run verify
       - run: npm run contracts:check
       - run: npm audit --omit=dev
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/3
         env:
           SUPABASE_URL: https://hlcrjoqmyohfbajvafhh.supabase.co
           SUPABASE_PUBLISHABLE_KEY: synthetic-public-key-for-ui-tests
+      - name: Preserve browser evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-evidence-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

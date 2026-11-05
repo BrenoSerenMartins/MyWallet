@@ -7,13 +7,18 @@ The pilot implements the routes below, published in `api/openapi.json`. Generate
 | --- | --- |
 | `/sign-in`, `/sign-up` | Authentication |
 | `/auth/callback`, `/forgot-password`, `/reset-password` | Verification and account recovery |
-| `/workspaces` | Workspace card selection and creation |
+| `/workspaces` | Workspace directory, creation and seven-day trash |
 | `/` | Home/dashboard |
 | `/accounts`, `/accounts/:accountId` | Owned accounts and history |
-| `/planning` | Monthly budgets, actual comparison, notes and prior-month copy preview |
+| `/planning`, `/planning?view=commitments` | Monthly budgets, actual comparison, saved prior-month copy, commitments and forecast |
 | `/transactions` | Filtered history and transaction detail |
 | `/imports`, `/imports/:importId` | Upload, review, confirmation and history |
-| `/settings`, `/settings/categories`, `/settings/data` | Theme, categories and export/restore |
+| `/cards` | Cards, purchases, bills and payments |
+| `/wealth` | Investments, assets/debts and position history |
+| `/categories` | Groups and categories |
+| `/counterparties` | Agents, confirmed aliases and rules |
+| `/settings?view=appearance`, `/settings?view=data`, `/settings?view=account` | Theme, export/restore and account settings |
+| `/settings/categories` | Compatibility redirect to categories |
 
 Authenticated routes handle session loading and expiration explicitly; client routing is not an authorization boundary.
 
