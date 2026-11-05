@@ -3908,6 +3908,9 @@ for (const width of [390, 1440])
     page,
   }) => {
     await signedIn(page);
+    await page.route('**/v1/planning/2026-10', (route) =>
+      route.fulfill({ json: monthlyPlan('2026-10', 1) }),
+    );
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/planning?month=2026-11');
     await expect(page.locator('.app-header .header-create')).toHaveCount(0);
@@ -4350,5 +4353,30 @@ for (const width of [320, 390, 768]) {
     expect(bounds!.x).toBeGreaterThanOrEqual(0);
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width + 1);
     await expect(dialog.getByRole('button', { name: 'Fechar', exact: true })).toBeInViewport();
+  });
+}
+
+for (const saved of [false, true]) {
+  test(`planning offers previous-month copy only for a saved source: ${saved}`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.route('**/v1/planning/2026-10', (route) =>
+      route.fulfill({ json: monthlyPlan('2026-10', saved ? 1 : 0) }),
+    );
+    const previous = page.waitForResponse((response) =>
+      response.url().endsWith('/v1/planning/2026-10'),
+    );
+    await page.goto('/planning?month=2026-11');
+    await previous;
+    await page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }).click();
+    const copy = page.getByRole('button', { name: 'Copiar mês anterior', exact: true });
+    if (saved) {
+      await expect(copy).toBeVisible();
+      await copy.click();
+      await expect(
+        page.getByRole('dialog', { name: 'Revisar cópia do mês anterior' }),
+      ).toBeVisible();
+    } else await expect(copy).toHaveCount(0);
   });
 }

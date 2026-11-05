@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import type { MonthlyPlan } from '../../../shared/api/resources';
-import { request } from '../../../shared/api/client';
+import { usePreviousMonthlyPlan } from '../hooks/use-monthly-plan';
 import { money } from '../../../shared/formatting/money';
 import { Button, ErrorState, Loading } from '../../../shared/ui/primitives';
 export function CopyPlanDialog({
@@ -13,12 +12,7 @@ export function CopyPlanDialog({
   onCopy: (version: number, sourceVersion: number) => Promise<void>;
   onCopied: () => void;
 }) {
-  const [year, month] = plan.month.split('-').map(Number);
-  const previous = new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7);
-  const source = useQuery({
-    queryKey: ['planning', previous],
-    queryFn: () => request<MonthlyPlan>(`/planning/${previous}`),
-  });
+  const { previous, query: source } = usePreviousMonthlyPlan(plan.month);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   if (source.isPending) return <Loading />;

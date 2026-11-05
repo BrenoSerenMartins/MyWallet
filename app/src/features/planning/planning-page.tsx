@@ -11,7 +11,7 @@ import { validMonth } from '../../shared/formatting/month';
 import { Copy, Pencil, ArrowRight } from 'lucide-react';
 import { dateToday, money } from '../../shared/formatting/money';
 import { ErrorState, Loading, Modal } from '../../shared/ui/primitives';
-import { useMonthlyPlan } from './hooks/use-monthly-plan';
+import { useMonthlyPlan, usePreviousMonthlyPlan } from './hooks/use-monthly-plan';
 import { PlanningSummary } from './components/planning-summary';
 import { BudgetSection } from './components/budget-section';
 import { PlanForm } from './components/plan-form';
@@ -57,6 +57,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
   const [dialog, setDialog] = useState<'edit' | 'copy' | null>(null);
   const { success: setMessage } = useNotifications();
   const { query, save, copy } = useMonthlyPlan(month);
+  const { available: canCopyPrevious } = usePreviousMonthlyPlan(month);
   const plan = query.data;
   function saved() {
     setDialog(null);
@@ -102,14 +103,16 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
                       <Pencil size={16} />
                       {plan.version ? 'Editar planejamento' : 'Preparar meu mês'}
                     </button>
-                    <button
-                      type="button"
-                      disabled={!plan || !navigator.onLine || month === '1900-01'}
-                      onClick={() => setDialog('copy')}
-                    >
-                      <Copy size={16} />
-                      Copiar mês anterior
-                    </button>
+                    {canCopyPrevious && (
+                      <button
+                        type="button"
+                        disabled={!navigator.onLine}
+                        onClick={() => setDialog('copy')}
+                      >
+                        <Copy size={16} />
+                        Copiar mês anterior
+                      </button>
+                    )}
                   </ActionMenu>
                 </>
               }
