@@ -13,11 +13,12 @@ import { useTheme } from '../../app/providers/theme-provider';
 export function Logo() {
   return (
     <span className="logo">
-      <span className="logo-mark">
-        <Wallet size={23} />
+      <span className="logo-mark" aria-hidden="true">
+        <img src="/brand-mark.svg" alt="" width={44} height={44} />
       </span>
-      <span>
-        mywallet<span className="logo-dot">.</span>
+      <span className="logo-wordmark">
+        my<span>wallet</span>
+        <span className="logo-dot">.</span>
       </span>
     </span>
   );

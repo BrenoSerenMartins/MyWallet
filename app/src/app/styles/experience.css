@@ -669,8 +669,7 @@ body .auth-story {
   padding: clamp(28px, 4vw, 64px);
 }
 body .auth-story .logo-mark {
-  background: var(--brand);
-  color: var(--bg);
+  background: transparent;
 }
 body .auth-story .logo-dot {
   color: var(--brand);

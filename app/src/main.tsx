@@ -17,6 +17,7 @@ import './app/styles/experience.css';
 import './app/styles/task-layouts.css';
 import './shared/feedback/feedback.css';
 import './app/styles/motion.css';
+import './app/styles/topbar.css';
 import './shared/ui/controls/controls.css';
 const client = new QueryClient({
   defaultOptions: {

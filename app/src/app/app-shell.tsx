@@ -1,3 +1,4 @@
+import { Tooltip } from '../shared/ui/tooltip';
 import { NotificationCenter } from '../shared/feedback/notification-center';
 import { useNotifications } from '../shared/feedback/notification-provider';
 import { useWorkspace } from '../features/workspaces/workspace-provider';
@@ -139,11 +140,17 @@ export function AppShell() {
           <nav className="desktop-navigation" aria-label="Navegação principal">
             {navigation
               .filter((n) => primaryPaths.includes(n.to))
-              .map(({ to, label }) => (
-                <NavLink key={to} to={to} end={to === '/'}>
-                  {to === '/wealth' ? 'Patrimônio' : label}
-                </NavLink>
-              ))}
+              .map(({ to, label, Icon }) => {
+                const title = to === '/wealth' ? 'Patrimônio' : label;
+                return (
+                  <Tooltip key={to} text={title}>
+                    <NavLink to={to} end={to === '/'} aria-label={title}>
+                      <Icon size={17} strokeWidth={1.65} aria-hidden="true" />
+                      <span>{title}</span>
+                    </NavLink>
+                  </Tooltip>
+                );
+              })}
           </nav>
           <div className="header-actions">
             <NotificationCenter />

@@ -1,0 +1,158 @@
+/* A compact brand lockup and an icon-led navigation rail. */
+body .logo {
+  gap: 10px;
+  letter-spacing: -0.9px;
+  line-height: 1;
+}
+body .logo-mark {
+  width: 42px;
+  height: 42px;
+  background: transparent;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+.logo-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.logo-wordmark {
+  font-size: 23px;
+  font-weight: 400;
+}
+.logo-wordmark > span:first-child {
+  font-weight: 600;
+}
+body .logo-wordmark .logo-dot {
+  color: var(--brand);
+  margin-left: 1px;
+}
+body .app-header {
+  min-height: 76px;
+  gap: 28px;
+  background: var(--bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+}
+body .header-brand {
+  align-items: center;
+  min-height: 44px;
+  border-radius: 12px;
+}
+body .desktop-navigation {
+  gap: 4px;
+  padding-left: 24px;
+  border-left: 1px solid var(--border);
+}
+body .desktop-navigation a {
+  gap: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 11px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+body .desktop-navigation a svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+body .desktop-navigation a.active {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+body .desktop-navigation a.active svg {
+  color: var(--accent);
+  opacity: 1;
+}
+body .desktop-navigation a.active::after {
+  content: none;
+}
+body .desktop-navigation a:hover {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+body .app-header a:focus-visible,
+body .app-header button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+body .header-actions {
+  gap: 12px;
+}
+body .header-space-menu {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px 10px 6px 6px;
+  gap: 8px;
+  min-height: 44px;
+}
+body .header-space-menu:hover {
+  background: var(--surface-soft);
+}
+body .space-menu-avatar {
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--accent);
+  font-weight: 500;
+}
+@supports (backdrop-filter: blur(16px)) {
+  body .app-header {
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+}
+@media (min-width: 1051px) and (max-width: 1199px) {
+  body .desktop-navigation a > span {
+    display: none;
+  }
+  body .desktop-navigation a {
+    width: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+  body .desktop-navigation {
+    padding-left: 18px;
+  }
+}
+@media (max-width: 1050px) {
+  body .app-header {
+    min-height: 68px;
+    gap: 12px;
+  }
+}
+@media (max-width: 700px) {
+  body .app-header {
+    padding-inline: 16px;
+  }
+  body .app-header .logo-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+  }
+  body .app-header .logo {
+    gap: 8px;
+  }
+  body .app-header .logo-wordmark {
+    font-size: 21px;
+  }
+  body .header-actions {
+    gap: 4px;
+  }
+  body .header-space-menu {
+    max-width: 120px;
+    padding-inline: 5px 7px;
+    gap: 6px;
+  }
+  body .header-space-menu > span:nth-child(2) {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  body .desktop-navigation a,
+  body .header-space-menu {
+    transition:
+      color 150ms ease,
+      background-color 150ms ease;
+  }
+}
