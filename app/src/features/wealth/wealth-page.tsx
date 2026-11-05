@@ -1,6 +1,5 @@
 import { HelpTip, Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -82,47 +81,7 @@ export function WealthPage() {
   }
   return (
     <div className="page-enter wealth-page">
-      <PageHeader
-        compact
-        title={<>Investimentos e patrimônio</>}
-        description={<>O que você tem, o que deve e como isso evolui.</>}
-      >
-        <div className="inline-actions">
-          <Tooltip
-            text={visible ? 'Ocultar valores do patrimônio' : 'Mostrar valores do patrimônio'}
-          >
-            <button
-              className="icon-button"
-              aria-label={
-                visible ? 'Ocultar valores do patrimônio' : 'Mostrar valores do patrimônio'
-              }
-              onClick={() => setVisible(!visible)}
-            >
-              {visible ? <Eye size={18} /> : <EyeOff size={18} />}
-            </button>
-          </Tooltip>
-          {view === 'history' ? (
-            <Button
-              className="secondary compact"
-              disabled={captureBusy || !data || !navigator.onLine}
-              onClick={() => void capture()}
-            >
-              <Camera size={17} />
-              {captureBusy ? 'Salvando…' : 'Guardar posição atual'}
-            </Button>
-          ) : (
-            <Button
-              disabled={!navigator.onLine}
-              onClick={() =>
-                setDialog(view === 'investments' ? { kind: 'newHolding' } : { kind: 'item' })
-              }
-            >
-              <Plus size={17} />
-              {view === 'investments' ? 'Novo investimento' : 'Adicionar posição'}
-            </Button>
-          )}
-        </div>
-      </PageHeader>
+      <h1 className="sr-only">Investimentos e patrimônio</h1>
 
       {query.isPending ? (
         <Loading />
@@ -132,6 +91,48 @@ export function WealthPage() {
         data && (
           <>
             <section className="wealth-summary">
+              <div className="wealth-summary-toolbar">
+                <span>Sua posição patrimonial</span>
+                <div className="inline-actions">
+                  <Tooltip
+                    text={
+                      visible ? 'Ocultar valores do patrimônio' : 'Mostrar valores do patrimônio'
+                    }
+                  >
+                    <button
+                      className="icon-button"
+                      aria-label={
+                        visible ? 'Ocultar valores do patrimônio' : 'Mostrar valores do patrimônio'
+                      }
+                      onClick={() => setVisible(!visible)}
+                    >
+                      {visible ? <Eye size={18} /> : <EyeOff size={18} />}
+                    </button>
+                  </Tooltip>
+                  {view === 'history' ? (
+                    <Button
+                      className="secondary compact"
+                      disabled={captureBusy || !data || !navigator.onLine}
+                      onClick={() => void capture()}
+                    >
+                      <Camera size={17} />
+                      {captureBusy ? 'Salvando…' : 'Guardar posição atual'}
+                    </Button>
+                  ) : (
+                    <Button
+                      disabled={!navigator.onLine}
+                      onClick={() =>
+                        setDialog(
+                          view === 'investments' ? { kind: 'newHolding' } : { kind: 'item' },
+                        )
+                      }
+                    >
+                      <Plus size={17} />
+                      {view === 'investments' ? 'Novo investimento' : 'Adicionar posição'}
+                    </Button>
+                  )}
+                </div>
+              </div>
               <div className="wealth-overview">
                 <div className="panel wealth-net-worth">
                   <span>

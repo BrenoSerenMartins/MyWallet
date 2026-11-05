@@ -635,3 +635,39 @@ body .wealth-summary .wealth-overview > .panel + .panel {
     padding-inline: 16px;
   }
 }
+
+.wealth-summary-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.wealth-summary-toolbar > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.wealth-summary-toolbar .inline-actions {
+  margin-left: auto;
+  gap: 10px;
+}
+.wealth-summary-toolbar .button {
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .wealth-summary-toolbar {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .wealth-summary-toolbar > span {
+    flex: 1 1 100%;
+  }
+  .wealth-summary-toolbar .inline-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
