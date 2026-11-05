@@ -2372,9 +2372,9 @@ for (const width of [360, 390, 768, 1440]) {
     await expect(page.getByRole('region', { name: 'Saldos atuais' })).toContainText('R$ 230,00');
     await expect(page.getByRole('region', { name: 'Saldos atuais' })).toContainText('R$ 0,20');
     await expect(page.getByRole('link', { name: 'Ver movimentos do período' })).toContainText(
-      '-R$ 20,00',
+      'R$ 2.250,00',
     );
-    await expect(page.locator('.month-metric.result')).toContainText('-R$ 20,00');
+    await expect(page.locator('.month-metric.result')).toContainText('R$ 2.250,00');
     await expect(page.locator('.month-metric.expense')).toContainText('R$ 500,00');
     await expect(page.locator('.expense-groups')).toHaveCount(0);
     await page.getByText('Composição por conta', { exact: false }).click();
@@ -2443,7 +2443,7 @@ test('overview preserves balances when historical analysis fails and supports re
   await expect(page.getByRole('alert')).toContainText('Não foi possível carregar');
   failing = false;
   await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
-  await expect(page.locator('.month-metric.expense > strong')).toHaveText('R$ 0,00');
+  await expect(page.locator('.month-metric.expense > strong')).toHaveText('R$ 550,00');
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 

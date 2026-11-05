@@ -1,25 +1,24 @@
 import { Link } from 'react-router-dom';
 import { ArrowDownLeft, ArrowUpRight, Scale } from 'lucide-react';
-import type { Dashboard, MonthlyPlan } from '../../../shared/api/resources';
+import type { MonthlyPlan } from '../../../shared/api/resources';
 import { money } from '../../../shared/formatting/money';
 export function MonthOverview({
-  summary,
   plan,
   planState,
   visible,
   link,
 }: {
-  summary: Dashboard;
   plan?: MonthlyPlan;
   planState: 'pending' | 'error' | 'ready';
   visible: boolean;
   link: (type?: string) => string;
 }) {
-  const result = summary.income - summary.expense;
+  const totals = planState === 'ready' ? plan?.totals : undefined;
+  const result = totals?.actualResult;
   const metrics = [
     {
       title: 'Receitas',
-      actual: summary.income,
+      actual: totals?.actualIncome,
       planned: plan?.totals.plannedIncome,
       Icon: ArrowDownLeft,
       type: 'income',
@@ -27,7 +26,7 @@ export function MonthOverview({
     },
     {
       title: 'Despesas',
-      actual: summary.expense,
+      actual: totals?.actualExpense,
       planned: plan?.totals.plannedExpense,
       Icon: ArrowUpRight,
       type: 'expense',
@@ -39,7 +38,7 @@ export function MonthOverview({
       planned: plan?.totals.plannedResult,
       Icon: Scale,
       type: '',
-      tone: result < 0 ? 'negative-text' : 'positive-text',
+      tone: (result ?? 0) < 0 ? 'negative-text' : 'positive-text',
     },
   ];
   const display = (value: number) => (visible ? money(value) : '••••••');
@@ -48,7 +47,11 @@ export function MonthOverview({
       <div className="monthly-metrics">
         {metrics.map(({ title, actual, planned, Icon, type, tone }) => {
           const difference =
-            planned == null ? null : type === 'expense' ? planned - actual : actual - planned;
+            planned == null || actual == null
+              ? null
+              : type === 'expense'
+                ? planned - actual
+                : actual - planned;
           return (
             <Link
               className={`panel month-metric ${type || 'result'}`}
@@ -63,7 +66,13 @@ export function MonthOverview({
                 {title}
                 <ArrowUpRight size={15} />
               </span>
-              <strong className={tone}>{display(actual)}</strong>
+              <strong className={tone}>
+                {planState === 'pending'
+                  ? 'Carregando…'
+                  : actual == null
+                    ? 'Indisponível'
+                    : display(actual)}
+              </strong>
               <dl>
                 <div>
                   <dt>Previsto</dt>

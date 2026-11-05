@@ -100,7 +100,6 @@ export function DashboardPage() {
         ) : (
           <>
             <MonthOverview
-              summary={summary.data}
               plan={plan.data}
               planState={plan.isPending ? 'pending' : plan.isError ? 'error' : 'ready'}
               visible={visible}
