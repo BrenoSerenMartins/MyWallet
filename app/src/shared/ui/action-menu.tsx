@@ -50,7 +50,9 @@ export function ActionMenu({
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <Tooltip text={label}>
-        <summary aria-label={label}>{trigger ?? <Ellipsis size={19} />}</summary>
+        <summary role="button" aria-label={label} aria-expanded={open}>
+          {trigger ?? <Ellipsis size={19} />}
+        </summary>
       </Tooltip>
       <div
         className="action-menu-panel"

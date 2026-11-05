@@ -7,18 +7,25 @@ async function accountAction(page: Page, label: string) {
   await page.getByRole('button', { name: label, exact: true }).click();
 }
 async function movementFilterControl(page: Page, name: string) {
-  const control = page.getByLabel(name, { exact: true });
+  const control = inputControl(page.getByLabel(name, { exact: true }));
   if (!(await control.count()))
     await page.getByRole('button', { name: 'Filtros avançados', exact: true }).click();
   return control;
 }
 async function chooseSelect(control: Locator, value: string) {
+  control = control.and(control.page().getByRole('combobox'));
   if ((await control.getAttribute('aria-expanded')) !== 'true') await control.click();
   const options = control.page().getByRole('listbox');
   await options.locator('[data-value=' + JSON.stringify(value) + ']').click();
   await expect(options).toBeHidden();
 }
+function inputControl(control: Locator) {
+  return control.and(
+    control.page().locator('input:not([data-native-control]), textarea, [data-control-trigger]'),
+  );
+}
 async function fillControl(control: Locator, value: string) {
+  control = inputControl(control);
   if ((await control.getAttribute('data-control')) === 'month') {
     await control.click();
     const popup = control
@@ -33,6 +40,7 @@ async function fillControl(control: Locator, value: string) {
   } else await control.fill(value);
 }
 async function expectControlValue(control: Locator, value: string) {
+  control = inputControl(control);
   if ((await control.getAttribute('data-value')) !== null)
     await expect(control).toHaveAttribute('data-value', value);
   else await expect(control).toHaveValue(value);
@@ -3581,7 +3589,10 @@ for (const width of [390, 1440])
         const action = page.locator('.page-header-actions button').first();
         if (await action.count()) {
           const target = await action.boundingBox();
-          expect(target!.height, `${path}: primary action target`).toBeGreaterThanOrEqual(44);
+          expect(
+            Math.round(target!.height * 100) / 100,
+            `${path}: primary action target`,
+          ).toBeGreaterThanOrEqual(44);
         }
         await page.screenshot({
           path: info.outputPath(`${path.replace(/[^a-z0-9]/gi, '_') || 'overview'}.png`),
@@ -3716,6 +3727,7 @@ test('visible date controls remove one bound without losing movement type or the
   expect(url.searchParams.get('to')).toBe('2026-10-31');
   expect(url.searchParams.get('type')).toBe('income');
   await expectControlValue(await movementFilterControl(page, 'Até'), '2026-10-31');
+  await page.getByRole('button', { name: 'Ver movimentos', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: '1 movimento carregado' })).toBeVisible();
 });
 test('settings retain the chosen section on reload and offer labelled theme previews', async ({
@@ -4078,9 +4090,8 @@ test('filter changes preserve the visible ledger while preventing reuse of the o
     .click();
   await expect(page.locator('.ledger-table-area')).toHaveAttribute('inert', '');
   await expect(page.locator('.movement-table')).toContainText(transaction.description);
-  await expect(
-    page.getByRole('button', { name: 'Carregar mais movimentos', exact: true }),
-  ).toBeDisabled();
+  const more = page.getByRole('button', { name: 'Carregar mais movimentos', exact: true });
+  await expect.poll(async () => !(await more.count()) || (await more.isDisabled())).toBe(true);
   release();
   await expect(page.locator('.movement-table')).toContainText(income.description);
   await expect(page.locator('.ledger-table-area')).not.toHaveAttribute('inert', '');

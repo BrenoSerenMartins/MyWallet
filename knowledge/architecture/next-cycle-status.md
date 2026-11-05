@@ -31,3 +31,19 @@ Do not report the full plan complete. No new financial schema or migrations have
 2. Run the recovery/isolation/browser matrix in a real allowed environment and record evidence.
 3. Consolidate the CSS cascade component by component against that baseline.
 4. Implement goals/reserve allocation with tested migrations, atomic allocations and backup support, then proceed in the published plan order.
+
+## CI failure triage — 2026-11-05
+
+User supplied the complete browser shard 3 log for run 42043543242 (commit aeace7e). It ran 44 tests: 27 passed, 17 failed. The 320/390/768px all-destination layout audits, viewport-pinned mobile navigation, quiet task actions and movement-filter panel checks passed. These are CI results, not a physical-device review. Logs for shards 1/2 and the verify job have not yet been supplied.
+
+Confirmed causes addressed:
+
+- Native summary controls were not found as buttons in the CI browser. ActionMenu now explicitly exposes button role and expanded state while retaining native details activation.
+- Label-only test selectors matched both the combobox and its still-mounted closing popup. Shared test control helpers now restrict their target to the actual input/combobox.
+- A nominal 44px hit target measured 43.999992px during rendering. The geometry assertion rounds to hundredths before applying the unchanged 44px threshold.
+- A date-filter test asserted page content while the modal was still open. It now closes through Ver movimentos before checking the list.
+- During placeholder pagination, the action can be absent instead of disabled. The test still requires it to be unavailable, preserves the old inert ledger assertion and checks that no old cursor is reused.
+
+A fresh local production dependency audit separately reproduced two high-severity findings through multer 2.4.0 and Nest's Express adapter. The lockfile now resolves @nestjs/platform-express 12.3.3 with multer 2.5.0 (and required tslib 2.9.1), within the existing package constraints. Installed versions verified; `npm audit --omit=dev` reports zero vulnerabilities. Advisory: https://github.com/advisories/GHSA-q7qp-rjg7-q26m. No forced unrelated dev-tool upgrades were applied.
+
+Browser rerun remains required. Local Playwright still fails at server startup under host restrictions; no tests have been disabled to obtain a pass.
