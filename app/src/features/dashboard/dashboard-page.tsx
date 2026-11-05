@@ -15,7 +15,6 @@ import { BalanceOverview } from './components/balance-overview';
 import { RecentMovements } from './components/recent-movements';
 import { MonthOverview } from './components/month-overview';
 import { HistoryOverview } from './components/history-overview';
-import { ExpenseGroups } from './components/expense-groups';
 import './dashboard.css';
 export function DashboardPage() {
   const [params, setParams] = useSearchParams();
@@ -136,19 +135,7 @@ export function DashboardPage() {
             </div>
           )}
         </div>
-        <div className="overview-insights">
-          {!summary.isPending && !summary.isError && (
-            <ExpenseGroups
-              groups={summary.data.expenseGroups ?? []}
-              categories={summary.data.expenseCategories ?? []}
-              visible={visible}
-              link={transactionsLink('expense')}
-            />
-          )}
-          <HistoryOverview month={month} visible={visible} onMonthChange={setMonth} />
-        </div>
       </section>
-      <CashflowForecast visible={visible} compact />
       <RecentMovements
         items={movements.data?.items}
         pending={movements.isPending}
@@ -157,12 +144,14 @@ export function DashboardPage() {
         visible={visible}
         link={transactionsLink()}
       />
+      <HistoryOverview month={month} visible={visible} onMonthChange={setMonth} />
       <details className="overview-finance-details">
         <summary>Cartões, investimentos e patrimônio</summary>
         <div className="dashboard-overview">
           <FinanceOverview visible={visible} />
         </div>
       </details>
+      <CashflowForecast visible={visible} compact />
     </div>
   );
 }

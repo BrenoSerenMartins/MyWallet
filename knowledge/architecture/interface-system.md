@@ -38,3 +38,6 @@ An empty filtered result explains how to adjust filters; an empty first-use area
 ## Unified overview
 
 Overview no longer gates complementary information behind Summary/Analysis. Current balances lead the page; the monthly totals, expense distribution and evolution are visible together, followed by upcoming cash flow and recent movements. Cards/investments/net-worth links are grouped in a secondary disclosure. The monthly chart uses a Select for interval and retains Bars/Lines for representation. Existing `view=analysis` links still render the unified page; changing the selected month removes the obsolete parameter. Balance privacy applies to all sections. Browser regressions follow the unified flow and interval selector, but discovery/compilation are not a visual execution pass.
+
+
+Overview reading order was refined after user review: current balances, monthly numbers, recent movements, monthly evolution, secondary portfolio disclosure, and upcoming commitments last. Expense distribution is no longer rendered on Overview. The standalone component remains available for a future dedicated report; monthly totals and API calculations are unchanged.
