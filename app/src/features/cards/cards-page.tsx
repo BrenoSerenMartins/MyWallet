@@ -70,339 +70,371 @@ export function CardsPage() {
   return (
     <div className="page-enter cards-page">
       <h1 className="sr-only">Cartões e faturas</h1>
-      <div className="card-workspace-toolbar">
-        <span>Cartões e faturas</span>
-        <div className="inline-actions">
-          <Tooltip text={visible ? 'Ocultar valores dos cartões' : 'Mostrar valores dos cartões'}>
-            <button
-              className="icon-button"
-              aria-label={visible ? 'Ocultar valores dos cartões' : 'Mostrar valores dos cartões'}
-              onClick={() => setVisible(!visible)}
-            >
-              {visible ? <Eye size={18} /> : <EyeOff size={18} />}
-            </button>
-          </Tooltip>
-          <Button onClick={() => setDialog({ kind: 'new' })} disabled={!navigator.onLine}>
-            <Plus size={18} />
-            Novo cartão
-          </Button>
+      <section className="card-directory-surface" aria-label="Cartões cadastrados">
+        <div className="card-workspace-toolbar">
+          <span>Cartões e faturas</span>
+          <div className="inline-actions">
+            {cards.length > 0 && (
+              <Tooltip
+                text={visible ? 'Ocultar valores dos cartões' : 'Mostrar valores dos cartões'}
+              >
+                <button
+                  className="icon-button"
+                  aria-label={
+                    visible ? 'Ocultar valores dos cartões' : 'Mostrar valores dos cartões'
+                  }
+                  onClick={() => setVisible(!visible)}
+                >
+                  {visible ? <Eye size={18} /> : <EyeOff size={18} />}
+                </button>
+              </Tooltip>
+            )}
+            <Button onClick={() => setDialog({ kind: 'new' })} disabled={!navigator.onLine}>
+              <Plus size={18} />
+              Novo cartão
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {query.isPending ? (
-        <Loading />
-      ) : query.isError ? (
-        <ErrorState error={query.error} retry={() => void query.refetch()} />
-      ) : (
-        <>
-          <label className="finance-checkbox">
-            <input
-              type="checkbox"
-              checked={showArchived}
-              onChange={(e) => setShowArchived(e.target.checked)}
-            />
-            Mostrar cartões arquivados
-          </label>
-          {!cards.length ? (
-            <EmptyState title="Seu crédito, com clareza">
-              Cadastre o fechamento e o vencimento para organizar compras e parcelas.
-            </EmptyState>
-          ) : (
-            <div className="cards-workspace">
-              <div className="credit-selector" role="group" aria-label="Escolher cartão">
-                {cards.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    className={`panel credit-selector-item ${c.id === card?.id ? 'selected' : ''}`}
-                    aria-pressed={c.id === card?.id}
-                    onClick={() => update({ card: c.id })}
-                  >
-                    <span>
-                      <CreditIcon size={20} />
-                      <strong>{c.name}</strong>
-                      {c.archived && <small>Arquivado</small>}
-                    </span>
-                    <span>
-                      Dívida total<strong>{value(c.debt)}</strong>
-                    </span>
-                    {c.limit > 0 ? (
-                      <>
-                        <span className="credit-limit">
-                          <span
-                            style={{
-                              width: visible ? `${Math.min(100, (c.debt / c.limit) * 100)}%` : '0%',
-                            }}
-                          />
-                        </span>
-                        <small>
-                          Disponível {value(c.availableLimit)} de {value(c.limit)}
-                        </small>
-                      </>
-                    ) : (
-                      <small>Limite não informado</small>
-                    )}
-                    {c.credit > 0 && <small>Crédito no cartão {value(c.credit)}</small>}
-                  </button>
-                ))}
+        {query.isPending ? (
+          <Loading />
+        ) : query.isError ? (
+          <ErrorState error={query.error} retry={() => void query.refetch()} />
+        ) : (
+          <>
+            {all.some((card) => card.archived) && (
+              <div className="card-directory-filters">
+                {' '}
+                <label className="finance-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={showArchived}
+                    onChange={(e) => setShowArchived(e.target.checked)}
+                  />
+                  Mostrar cartões arquivados
+                </label>
               </div>
-              {card && (
-                <section className="panel card-detail">
-                  <div className="section-heading">
-                    <div>
-                      <h2>{card.name}</h2>
-                      <p>
-                        Fecha dia {card.closingDay} · vence dia {card.dueDay}
-                      </p>
-                    </div>
-                    <Tooltip text="Editar cartão">
-                      <button
-                        className="icon-button"
-                        aria-label="Editar cartão"
-                        onClick={() => setDialog({ kind: 'edit' })}
-                      >
-                        <Pencil size={18} />
-                      </button>
-                    </Tooltip>
-                  </div>
-                  <div className="card-bill-toolbar">
-                    <div className="finance-month-navigation">
-                      <Tooltip text="Fatura anterior">
-                        <button
-                          className="icon-button"
-                          aria-label="Fatura anterior"
-                          disabled={month === '1900-01'}
-                          onClick={() => update({ month: shiftMonth(month, -1) })}
-                        >
-                          <ChevronLeft size={18} />
-                        </button>
-                      </Tooltip>
-                      <label className="period-picker">
-                        <span>Mês de vencimento</span>
-                        <MonthPicker
-                          clearable={false}
-                          aria-label="Mês da fatura"
-                          min="1900-01"
-                          max="9998-12"
-                          value={month}
-                          onChange={(e) => e.target.value && update({ month: e.target.value })}
-                        />
-                      </label>
-                      <Tooltip text="Próxima fatura">
-                        <button
-                          className="icon-button"
-                          aria-label="Próxima fatura"
-                          disabled={month === '9998-12'}
-                          onClick={() => update({ month: shiftMonth(month, 1) })}
-                        >
-                          <ChevronRight size={18} />
-                        </button>
-                      </Tooltip>
-                    </div>
-                    <div className="inline-actions">
-                      <Button
-                        className="secondary compact"
-                        disabled={card.archived || !navigator.onLine}
-                        onClick={() => setDialog({ kind: 'purchase' })}
-                      >
-                        Registrar compra
-                      </Button>
-                      {!card.bills.some((b) =>
-                        b.entries.some((e) => e.kind === 'opening' && e.active),
-                      ) && (
-                        <button
-                          className="text-button"
-                          disabled={card.archived || !navigator.onLine}
-                          onClick={() => setDialog({ kind: 'opening' })}
-                        >
-                          Dívida anterior
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  {bill ? (
-                    <>
-                      <div className="card-bill-stats">
-                        <div>
-                          <span>Total da fatura</span>
-                          <strong>{value(bill.total)}</strong>
-                        </div>
-                        <div>
-                          <span>Pagamentos</span>
-                          <strong>{value(bill.paid)}</strong>
-                        </div>
-                        <div>
-                          <span>
-                            Créditos aplicados
-                            <HelpTip
-                              label="Créditos aplicados na fatura"
-                              text="Créditos de devoluções ou de outras faturas podem abater esta cobrança. O valor aplicado já está considerado no saldo a pagar."
+            )}
+            {!cards.length ? (
+              <div className="card-directory-empty">
+                <span className="card-empty-symbol" aria-hidden="true">
+                  <CreditIcon size={30} strokeWidth={1.5} />
+                </span>
+                <h2>{all.length ? 'Nenhum cartão ativo' : 'Seu primeiro cartão começa aqui'}</h2>
+                <p>
+                  {all.length
+                    ? 'Ative Mostrar cartões arquivados para consultar seu histórico.'
+                    : 'Cadastre seu cartão para acompanhar faturas, parcelas e limite disponível.'}
+                </p>
+                {!all.length && (
+                  <span className="card-empty-hint">Use Novo cartão para começar.</span>
+                )}
+              </div>
+            ) : (
+              <div className="cards-workspace">
+                <div className="credit-selector" role="group" aria-label="Escolher cartão">
+                  {cards.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={`panel credit-selector-item ${c.id === card?.id ? 'selected' : ''}`}
+                      aria-pressed={c.id === card?.id}
+                      onClick={() => update({ card: c.id })}
+                    >
+                      <span>
+                        <CreditIcon size={20} />
+                        <strong>{c.name}</strong>
+                        {c.archived && <small>Arquivado</small>}
+                      </span>
+                      <span>
+                        Dívida total<strong>{value(c.debt)}</strong>
+                      </span>
+                      {c.limit > 0 ? (
+                        <>
+                          <span className="credit-limit">
+                            <span
+                              style={{
+                                width: visible
+                                  ? `${Math.min(100, (c.debt / c.limit) * 100)}%`
+                                  : '0%',
+                              }}
                             />
                           </span>
-                          <strong>{value(bill.creditApplied)}</strong>
-                        </div>
-                        <div>
-                          <span>A pagar</span>
-                          <strong className={bill.remaining > 0 ? 'negative' : ''}>
-                            {value(bill.remaining)}
-                          </strong>
-                        </div>
+                          <small>
+                            Disponível {value(c.availableLimit)} de {value(c.limit)}
+                          </small>
+                        </>
+                      ) : (
+                        <small>Limite não informado</small>
+                      )}
+                      {c.credit > 0 && <small>Crédito no cartão {value(c.credit)}</small>}
+                    </button>
+                  ))}
+                </div>
+                {card && (
+                  <section className="panel card-detail">
+                    <div className="section-heading">
+                      <div>
+                        <h2>{card.name}</h2>
+                        <p>
+                          Fecha dia {card.closingDay} · vence dia {card.dueDay}
+                        </p>
                       </div>
-                      <div className="card-bill-status">
-                        <span className={`bill-state state-${bill.state}`}>
-                          {states[bill.state]}
-                        </span>
-                        <span>
-                          Fechamento {shortDate(bill.closingDate)} · vencimento{' '}
-                          {shortDate(bill.dueDate)}
-                        </span>
-                        {bill.remaining > 0 && (
-                          <Button
-                            className="compact"
-                            disabled={!navigator.onLine}
-                            onClick={() => setDialog({ kind: 'pay' })}
+                      <Tooltip text="Editar cartão">
+                        <button
+                          className="icon-button"
+                          aria-label="Editar cartão"
+                          onClick={() => setDialog({ kind: 'edit' })}
+                        >
+                          <Pencil size={18} />
+                        </button>
+                      </Tooltip>
+                    </div>
+                    <div className="card-bill-toolbar">
+                      <div className="finance-month-navigation">
+                        <Tooltip text="Fatura anterior">
+                          <button
+                            className="icon-button"
+                            aria-label="Fatura anterior"
+                            disabled={month === '1900-01'}
+                            onClick={() => update({ month: shiftMonth(month, -1) })}
                           >
-                            Pagar ou vincular
-                          </Button>
+                            <ChevronLeft size={18} />
+                          </button>
+                        </Tooltip>
+                        <label className="period-picker">
+                          <span>Mês de vencimento</span>
+                          <MonthPicker
+                            clearable={false}
+                            aria-label="Mês da fatura"
+                            min="1900-01"
+                            max="9998-12"
+                            value={month}
+                            onChange={(e) => e.target.value && update({ month: e.target.value })}
+                          />
+                        </label>
+                        <Tooltip text="Próxima fatura">
+                          <button
+                            className="icon-button"
+                            aria-label="Próxima fatura"
+                            disabled={month === '9998-12'}
+                            onClick={() => update({ month: shiftMonth(month, 1) })}
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        </Tooltip>
+                      </div>
+                      <div className="inline-actions">
+                        <Button
+                          className="secondary compact"
+                          disabled={card.archived || !navigator.onLine}
+                          onClick={() => setDialog({ kind: 'purchase' })}
+                        >
+                          Registrar compra
+                        </Button>
+                        {!card.bills.some((b) =>
+                          b.entries.some((e) => e.kind === 'opening' && e.active),
+                        ) && (
+                          <button
+                            className="text-button"
+                            disabled={card.archived || !navigator.onLine}
+                            onClick={() => setDialog({ kind: 'opening' })}
+                          >
+                            Dívida anterior
+                          </button>
                         )}
                       </div>
-                      <ul className="card-entry-list">
-                        {bill.entries.map((entry) => (
-                          <li key={entry.id} className={!entry.active ? 'inactive' : ''}>
-                            <div>
-                              <strong>{entry.description}</strong>
-                              <span>
-                                {!entry.active
-                                  ? 'Desfeito'
-                                  : entry.kind === 'opening'
-                                    ? 'Dívida anterior'
-                                    : entry.kind === 'refund'
-                                      ? 'Estorno'
-                                      : 'Despesa da fatura'}
-                              </span>
-                            </div>
-                            <strong className={entry.amount > 0 ? 'positive' : ''}>
-                              {value(Math.abs(entry.amount))}
-                              {entry.amount > 0 ? ' de crédito' : ''}
+                    </div>
+                    {bill ? (
+                      <>
+                        <div className="card-bill-stats">
+                          <div>
+                            <span>Total da fatura</span>
+                            <strong>{value(bill.total)}</strong>
+                          </div>
+                          <div>
+                            <span>Pagamentos</span>
+                            <strong>{value(bill.paid)}</strong>
+                          </div>
+                          <div>
+                            <span>
+                              Créditos aplicados
+                              <HelpTip
+                                label="Créditos aplicados na fatura"
+                                text="Créditos de devoluções ou de outras faturas podem abater esta cobrança. O valor aplicado já está considerado no saldo a pagar."
+                              />
+                            </span>
+                            <strong>{value(bill.creditApplied)}</strong>
+                          </div>
+                          <div>
+                            <span>A pagar</span>
+                            <strong className={bill.remaining > 0 ? 'negative' : ''}>
+                              {value(bill.remaining)}
                             </strong>
-                            {entry.active && entry.kind === 'purchase' && (
-                              <button
-                                className="text-button"
-                                onClick={() => setDialog({ kind: 'refund', entry })}
-                              >
-                                Estornar
-                              </button>
-                            )}
-                            {entry.active && entry.kind === 'refund' && (
-                              <button
-                                className="text-button"
-                                onClick={() => setDialog({ kind: 'undoRefund', entry })}
-                              >
-                                Desfazer estorno
-                              </button>
-                            )}
-                            {entry.active && entry.kind === 'opening' && (
-                              <button
-                                className="text-button"
-                                onClick={() => setDialog({ kind: 'undoOpening', entry })}
-                              >
-                                Corrigir dívida anterior
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                      {!!bill.payments.length && (
-                        <details className="finance-disclosure">
-                          <summary>Pagamentos e vínculos · {bill.payments.length}</summary>
-                          <ul className="card-entry-list">
-                            {bill.payments.map((p) => (
-                              <li key={p.id}>
-                                <div>
-                                  <strong>
-                                    {p.mode === 'link'
-                                      ? 'Vinculado ao extrato'
-                                      : 'Pagamento registrado'}
-                                  </strong>
-                                  <span>
-                                    {shortDate(p.paymentDate)} ·{' '}
-                                    {p.voided
-                                      ? 'Desfeito'
-                                      : p.active
-                                        ? 'Ativo'
-                                        : 'Revisão necessária'}
-                                  </span>
-                                </div>
-                                <strong>{value(p.amount)}</strong>
-                                {!p.voided && (
+                          </div>
+                        </div>
+                        <div className="card-bill-status">
+                          <span className={`bill-state state-${bill.state}`}>
+                            {states[bill.state]}
+                          </span>
+                          <span>
+                            Fechamento {shortDate(bill.closingDate)} · vencimento{' '}
+                            {shortDate(bill.dueDate)}
+                          </span>
+                          {bill.remaining > 0 && (
+                            <Button
+                              className="compact"
+                              disabled={!navigator.onLine}
+                              onClick={() => setDialog({ kind: 'pay' })}
+                            >
+                              Pagar ou vincular
+                            </Button>
+                          )}
+                        </div>
+                        <ul className="card-entry-list">
+                          {bill.entries.map((entry) => (
+                            <li key={entry.id} className={!entry.active ? 'inactive' : ''}>
+                              <div>
+                                <strong>{entry.description}</strong>
+                                <span>
+                                  {!entry.active
+                                    ? 'Desfeito'
+                                    : entry.kind === 'opening'
+                                      ? 'Dívida anterior'
+                                      : entry.kind === 'refund'
+                                        ? 'Estorno'
+                                        : 'Despesa da fatura'}
+                                </span>
+                              </div>
+                              <strong className={entry.amount > 0 ? 'positive' : ''}>
+                                {value(Math.abs(entry.amount))}
+                                {entry.amount > 0 ? ' de crédito' : ''}
+                              </strong>
+                              {entry.active && entry.kind === 'purchase' && (
+                                <button
+                                  className="text-button"
+                                  onClick={() => setDialog({ kind: 'refund', entry })}
+                                >
+                                  Estornar
+                                </button>
+                              )}
+                              {entry.active && entry.kind === 'refund' && (
+                                <button
+                                  className="text-button"
+                                  onClick={() => setDialog({ kind: 'undoRefund', entry })}
+                                >
+                                  Desfazer estorno
+                                </button>
+                              )}
+                              {entry.active && entry.kind === 'opening' && (
+                                <button
+                                  className="text-button"
+                                  onClick={() => setDialog({ kind: 'undoOpening', entry })}
+                                >
+                                  Corrigir dívida anterior
+                                </button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                        {!!bill.payments.length && (
+                          <details className="finance-disclosure">
+                            <summary>Pagamentos e vínculos · {bill.payments.length}</summary>
+                            <ul className="card-entry-list">
+                              {bill.payments.map((p) => (
+                                <li key={p.id}>
+                                  <div>
+                                    <strong>
+                                      {p.mode === 'link'
+                                        ? 'Vinculado ao extrato'
+                                        : 'Pagamento registrado'}
+                                    </strong>
+                                    <span>
+                                      {shortDate(p.paymentDate)} ·{' '}
+                                      {p.voided
+                                        ? 'Desfeito'
+                                        : p.active
+                                          ? 'Ativo'
+                                          : 'Revisão necessária'}
+                                    </span>
+                                  </div>
+                                  <strong>{value(p.amount)}</strong>
+                                  {!p.voided && (
+                                    <button
+                                      className="text-button"
+                                      onClick={() => setDialog({ kind: 'undoPayment', payment: p })}
+                                    >
+                                      {p.mode === 'link' ? 'Desvincular' : 'Desfazer registro'}
+                                    </button>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                      </>
+                    ) : (
+                      <EmptyState title="Nenhuma compra nesta fatura">
+                        As parcelas aparecerão aqui conforme o mês de vencimento.
+                      </EmptyState>
+                    )}
+                    <p className="field-help">
+                      Os pagamentos entram na previsão de saldo automaticamente. Não cadastre um
+                      compromisso recorrente para a mesma fatura. Créditos excedentes abatem as
+                      faturas mais antigas; confira o valor informado pelo emissor. Encargos devem
+                      ser registrados conforme o banco.
+                    </p>
+                    {!!card.purchases.length && (
+                      <details className="finance-disclosure">
+                        <summary>Compras e parcelamentos · {card.purchases.length}</summary>
+                        <ul className="card-entry-list">
+                          {card.purchases.map((p) => (
+                            <li key={p.id}>
+                              <div>
+                                <strong>{p.description}</strong>
+                                <span>
+                                  {shortDate(p.purchaseDate)} · {p.installments} parcela(s)
+                                  {p.canceled ? ' · Cancelada' : ''}
+                                </span>
+                              </div>
+                              <strong>{value(p.amount)}</strong>
+                              {!p.canceled && (
+                                <div className="inline-actions">
                                   <button
                                     className="text-button"
-                                    onClick={() => setDialog({ kind: 'undoPayment', payment: p })}
+                                    onClick={() => setDialog({ kind: 'category', purchase: p })}
                                   >
-                                    {p.mode === 'link' ? 'Desvincular' : 'Desfazer registro'}
+                                    Categoria
                                   </button>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      )}
-                    </>
-                  ) : (
-                    <EmptyState title="Nenhuma compra nesta fatura">
-                      As parcelas aparecerão aqui conforme o mês de vencimento.
-                    </EmptyState>
-                  )}
-                  <p className="field-help">
-                    Os pagamentos entram na previsão de saldo automaticamente. Não cadastre um
-                    compromisso recorrente para a mesma fatura. Créditos excedentes abatem as
-                    faturas mais antigas; confira o valor informado pelo emissor. Encargos devem ser
-                    registrados conforme o banco.
-                  </p>
-                  {!!card.purchases.length && (
-                    <details className="finance-disclosure">
-                      <summary>Compras e parcelamentos · {card.purchases.length}</summary>
-                      <ul className="card-entry-list">
-                        {card.purchases.map((p) => (
-                          <li key={p.id}>
-                            <div>
-                              <strong>{p.description}</strong>
-                              <span>
-                                {shortDate(p.purchaseDate)} · {p.installments} parcela(s)
-                                {p.canceled ? ' · Cancelada' : ''}
-                              </span>
-                            </div>
-                            <strong>{value(p.amount)}</strong>
-                            {!p.canceled && (
-                              <div className="inline-actions">
-                                <button
-                                  className="text-button"
-                                  onClick={() => setDialog({ kind: 'category', purchase: p })}
-                                >
-                                  Categoria
-                                </button>
-                                <button
-                                  className="text-button"
-                                  onClick={() => setDialog({ kind: 'cancelPurchase', purchase: p })}
-                                >
-                                  Cancelar compra
-                                </button>
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                </section>
-              )}
-            </div>
-          )}
-          <Link className="text-button" to="/wealth">
-            Ver impacto no patrimônio
-          </Link>
-        </>
-      )}
+                                  <button
+                                    className="text-button"
+                                    onClick={() =>
+                                      setDialog({ kind: 'cancelPurchase', purchase: p })
+                                    }
+                                  >
+                                    Cancelar compra
+                                  </button>
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                  </section>
+                )}
+              </div>
+            )}
+            {cards.length > 0 && (
+              <div className="card-directory-footer">
+                <Link className="text-button" to="/wealth">
+                  Ver impacto no patrimônio
+                </Link>
+              </div>
+            )}
+          </>
+        )}
+      </section>
       <Modal
         open={!!dialog}
         onOpenChange={(open) => !open && setDialog(null)}

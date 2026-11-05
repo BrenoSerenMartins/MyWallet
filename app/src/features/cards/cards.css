@@ -342,3 +342,74 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+body .cards-page .card-directory-surface {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  overflow: hidden;
+  min-width: 0;
+}
+body .card-directory-surface .card-workspace-toolbar {
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+}
+.card-directory-filters {
+  padding: 12px 24px;
+}
+body .card-directory-filters .finance-checkbox {
+  flex-direction: row;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.card-directory-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(40px, 6vw, 76px) 24px;
+  gap: 14px;
+}
+.card-empty-symbol {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  background: var(--surface-soft);
+  color: var(--accent);
+  border-radius: 20px;
+  margin-bottom: 6px;
+}
+.card-directory-empty h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+}
+.card-directory-empty p {
+  margin: 0;
+  max-width: 380px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.card-empty-hint {
+  color: var(--faint);
+  font-size: 12px;
+}
+.card-directory-footer {
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+}
+body .card-directory-surface .cards-workspace {
+  padding: 20px;
+}
+@media (max-width: 600px) {
+  body .card-directory-surface .cards-workspace {
+    padding: 12px;
+  }
+  .card-directory-filters {
+    padding-inline: 16px;
+  }
+}
