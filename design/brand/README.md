@@ -12,7 +12,7 @@ An abstract pair of offset folded planes suggests a deliberate path and the accu
 
 The SVG assets are an editable geometric reconstruction of the generated direction, with Inter SemiBold lettering converted to paths. They contain no embedded raster image and require no installed fonts. Inter is already used by the application via `@fontsource/inter`. Transparent PNGs are raster exports of these clean SVGs. Generated transparent image variations had contour artifacts and were discarded; they are not production deliverables.
 
-These are versioned design assets. They do not replace the current application wordmark or installation icons.
+These are versioned design sources. The shared application Logo now uses the standalone symbol through `app/src/shared/ui/brand-symbol.tsx`, with a live Inter wordmark. The favicon and PWA icons use the same paths on a charcoal background. Runtime icon URLs are versioned to refresh browser caches.
 
 ## Final presentation prompt — built-in image generation
 

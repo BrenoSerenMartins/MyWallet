@@ -1,4 +1,5 @@
 import { Tooltip } from './tooltip';
+import { BrandSymbol } from './brand-symbol';
 import {
   useEffect,
   useRef,
@@ -13,6 +14,7 @@ import { useTheme } from '../../app/providers/theme-provider';
 export function Logo() {
   return (
     <span className="logo">
+      <BrandSymbol />
       <span className="logo-wordmark">
         Planned<span>Wallet</span>
       </span>
