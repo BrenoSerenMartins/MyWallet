@@ -7,3 +7,9 @@ export function shiftMonth(month: string, offset: number) {
   const [year, value] = month.split('-').map(Number);
   return new Date(Date.UTC(year, value - 1 + offset, 1)).toISOString().slice(0, 7);
 }
+
+/** Inclusive dates for calendar-month filters; the API converts the end to exclusive. */
+export function monthDates(month: string) {
+  const [year, value] = month.split('-').map(Number);
+  return { from: `${month}-01`, to: new Date(Date.UTC(year, value, 0)).toISOString().slice(0, 10) };
+}

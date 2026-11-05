@@ -173,6 +173,8 @@ export function Tooltip({
             id={id}
             className="app-tooltip"
             role="tooltip"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
             style={position}
             onPointerEnter={cancelTimer}
             onPointerLeave={() => {

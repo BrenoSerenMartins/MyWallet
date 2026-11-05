@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Tooltip } from '../../shared/ui/tooltip';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -23,7 +24,7 @@ const statusLabel = {
   settled: 'Concluído',
   skipped: 'Dispensado',
 };
-export function CommitmentsPage() {
+export function CommitmentsPage({ navigation }: { navigation?: ReactNode }) {
   const [params, setParams] = useSearchParams();
   const current = dateToday().slice(0, 7);
   const month = validMonth(params.get('month')) ? params.get('month')! : current;
@@ -73,17 +74,8 @@ export function CommitmentsPage() {
     }
   }
   return (
-    <div className="commitments-page">
-      <PageHeader
-        title={<>Contas e recebimentos</>}
-        description={<>Organize vencimentos e acompanhe o que ainda vai acontecer.</>}
-      >
-        <Button onClick={() => setDialog('new')} disabled={!navigator.onLine}>
-          <Plus size={18} />
-          Novo compromisso
-        </Button>
-      </PageHeader>
-      <div className="commitment-period">
+    <div className="commitments-page page-enter">
+      <PageHeader title={<>Contas e recebimentos</>} navigation={navigation}>
         <div className="month-navigation">
           <Tooltip text="Mês anterior dos compromissos">
             <button
@@ -96,7 +88,7 @@ export function CommitmentsPage() {
             </button>
           </Tooltip>
           <label className="period-picker">
-            <span>Mês dos vencimentos</span>
+            <span className="sr-only">Mês dos vencimentos</span>
             <input
               aria-label="Mês dos compromissos"
               type="month"
@@ -117,10 +109,11 @@ export function CommitmentsPage() {
             </button>
           </Tooltip>
         </div>
-        <p className="field-help">
-          Pendências vencidas também aparecem, mesmo que sejam de outro mês.
-        </p>
-      </div>
+        <Button onClick={() => setDialog('new')} disabled={!navigator.onLine}>
+          <Plus size={18} />
+          Novo compromisso
+        </Button>
+      </PageHeader>
 
       {query.isPending ? (
         <Loading />

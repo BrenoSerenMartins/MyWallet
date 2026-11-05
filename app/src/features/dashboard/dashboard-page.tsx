@@ -1,3 +1,4 @@
+import { ActionMenu } from '../../shared/ui/action-menu';
 import { HelpTip } from '../../shared/ui/tooltip';
 import { Tooltip } from '../../shared/ui/tooltip';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
@@ -7,7 +8,7 @@ import { CashflowForecast } from '../planning/components/cashflow-forecast';
 import '../planning/commitments.css';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, ArrowRight, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ChevronLeft, ChevronRight, Upload, Plus } from 'lucide-react';
 import { ErrorState, Loading } from '../../shared/ui/primitives';
 import { dateToday } from '../../shared/formatting/money';
 import { validMonth, shiftMonth } from '../../shared/formatting/month';
@@ -36,10 +37,22 @@ export function DashboardPage() {
     <div className="page-enter dashboard-page">
       <PageHeader
         title="Visão geral"
-        description={
-          view === 'analysis'
-            ? 'Entenda o que mudou e para onde foi seu dinheiro.'
-            : 'Seu dinheiro agora e os próximos movimentos.'
+        navigation={
+          <ViewSwitcher
+            variant="tabs"
+            label="Conteúdo da visão geral"
+            value={view}
+            onChange={(value) => {
+              const next = new URLSearchParams(params);
+              if (value === 'summary') next.delete('view');
+              else next.set('view', value);
+              setParams(next);
+            }}
+            options={[
+              { value: 'summary', label: 'Resumo' },
+              { value: 'analysis', label: 'Análise' },
+            ]}
+          />
         }
       >
         {view === 'analysis' && (
@@ -53,26 +66,19 @@ export function DashboardPage() {
             </button>
           </Tooltip>
         )}
-        <Link className="button secondary compact" to="/imports">
+        <Link className="button compact" to="/imports">
           <Upload size={16} />
           Importar extrato
         </Link>
+        <ActionMenu label="Mais ações da visão geral">
+          <Link to="/transactions?new=1">
+            <Plus size={16} />
+            Novo lançamento
+          </Link>
+          <Link to={`/planning?month=${month}`}>Planejar este mês</Link>
+        </ActionMenu>
       </PageHeader>
-      <ViewSwitcher
-        label="Conteúdo da visão geral"
-        value={view}
-        onChange={(value) => {
-          const next = new URLSearchParams(params);
-          if (value === 'summary') next.delete('view');
-          else next.set('view', value);
-          setParams(next);
-        }}
-        options={[
-          { value: 'summary', label: 'Resumo' },
-          { value: 'analysis', label: 'Análise' },
-        ]}
-      />
-      <div className="dashboard-overview" hidden={view !== 'summary'}>
+      <div className="dashboard-overview motion-reveal" hidden={view !== 'summary'}>
         {snapshot.isPending ? (
           <Loading />
         ) : snapshot.isError ? (
@@ -183,7 +189,7 @@ export function DashboardPage() {
         {view === 'analysis' && (
           <HistoryOverview month={month} visible={visible} onMonthChange={setMonth} />
         )}
-        <div className="dashboard-detail-area">
+        <div key={view} className="dashboard-detail-area motion-reveal">
           {view === 'summary' && (
             <RecentMovements
               items={movements.data?.items}

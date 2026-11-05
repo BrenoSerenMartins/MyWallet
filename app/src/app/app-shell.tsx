@@ -2,7 +2,7 @@ import { NotificationCenter } from '../shared/feedback/notification-center';
 import { useNotifications } from '../shared/feedback/notification-provider';
 import { useWorkspace } from '../features/workspaces/workspace-provider';
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   CreditCard,
   ChartNoAxesCombined,
@@ -12,17 +12,17 @@ import {
   Menu,
   ArrowDownUp,
   ChevronRight,
+  ChevronDown,
   House,
   Landmark,
   LogOut,
-  Plus,
   Settings2,
   Upload,
   WifiOff,
 } from 'lucide-react';
 import { useAuth } from '../features/auth/auth-provider';
 import { authClient } from '../shared/api/auth-client';
-import { Logo, ThemeSwitcher, Button, Modal } from '../shared/ui/primitives';
+import { Logo, ThemeSwitcher, Modal } from '../shared/ui/primitives';
 const navigation = [
   { to: '/', label: 'Visão geral', mobile: 'Início', Icon: House },
   { to: '/transactions', label: 'Movimentações', mobile: 'Movimentos', Icon: ArrowDownUp },
@@ -52,7 +52,6 @@ export function AppShell() {
   const wasOnline = useRef(navigator.onLine);
   const { active } = useWorkspace();
   const location = useLocation();
-  const navigate = useNavigate();
   const [more, setMore] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
@@ -135,37 +134,21 @@ export function AppShell() {
                 <WifiOff size={16} />
               </span>
             )}
-            <NavLink
-              to="/workspaces"
-              className="workspace-pill"
-              aria-label="Trocar de espaço"
-              title={active?.name}
-            >
-              <span>{active?.name}</span>
-              <ChevronRight size={14} />
-            </NavLink>
-            {location.pathname === '/' && (
-              <Button
-                className="compact header-create"
-                aria-label="Novo lançamento"
-                onClick={() => navigate('/transactions?new=1')}
-                disabled={!online}
-              >
-                <Plus size={18} />
-                <span>Novo lançamento</span>
-              </Button>
-            )}
             <button
               type="button"
-              className={`header-more ${navigation.filter((n) => !primaryPaths.includes(n.to)).some((n) => location.pathname.startsWith(n.to)) ? 'active' : ''}`}
+              className={`header-more header-space-menu ${navigation.filter((n) => !primaryPaths.includes(n.to)).some((n) => location.pathname.startsWith(n.to)) ? 'active' : ''}`}
               onClick={(event) => {
                 menuTrigger.current = event.currentTarget;
                 setMore(true);
               }}
               aria-haspopup="dialog"
+              aria-label={`Menu do espaço: ${active?.name ?? 'Seu espaço'}`}
             >
-              <Menu size={18} />
-              <span>Mais</span>
+              <span className="space-menu-avatar" aria-hidden="true">
+                {active?.name.slice(0, 1).toLocaleUpperCase() ?? '·'}
+              </span>
+              <span>{active?.name ?? 'Seu espaço'}</span>
+              <ChevronDown size={14} />
             </button>
           </div>
         </header>

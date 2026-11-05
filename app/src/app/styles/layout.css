@@ -391,3 +391,171 @@
     flex-wrap: wrap;
   }
 }
+
+.page-header-headingline {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+body .page-header-headingline h1 {
+  font-size: clamp(26px, 2.3vw, 32px);
+  letter-spacing: -0.9px;
+}
+body .view-switcher.view-switcher-tabs {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  gap: 20px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+body .view-switcher.view-switcher-tabs > button,
+body .view-switcher.view-switcher-tabs > button[aria-pressed='true'] {
+  border: 0;
+  border-radius: 0;
+  padding: 12px 0;
+  min-height: 44px;
+  background: transparent;
+  box-shadow: none;
+}
+.view-switcher .view-switcher-indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+  pointer-events: none;
+  padding: 0;
+  min-width: 0;
+}
+body .header-space-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 170px;
+  min-width: 44px;
+  padding: 6px 8px;
+  background: transparent;
+  color: var(--text);
+}
+.header-space-menu > span:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.space-menu-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--surface-raised);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.action-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+.action-menu > summary {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  border-radius: 9px;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+.action-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.action-menu > summary:hover,
+.action-menu[open] > summary {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+.action-menu-panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  gap: 4px;
+  width: min(260px, calc(100vw - 36px));
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 12px 40px #00000024;
+}
+.action-menu-panel > button,
+.action-menu-panel > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+}
+.action-menu-panel > label {
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.action-menu-panel > button:hover,
+.action-menu-panel > a:hover {
+  background: var(--surface-soft);
+}
+.scope-indicator {
+  font-size: 11px;
+  color: var(--muted);
+}
+body .planning-page .page-header .period-picker,
+body .commitments-page .page-header .period-picker {
+  padding: 4px 8px;
+  border-color: transparent;
+  background: transparent;
+}
+body .planning-page .page-header .period-picker input,
+body .commitments-page .page-header .period-picker input {
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  .page-header-headingline {
+    gap: 12px 24px;
+  }
+  body .header-space-menu {
+    display: flex;
+    max-width: 130px;
+  }
+  body .page-header-actions {
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  body .page-header-actions > .action-menu {
+    margin-left: auto;
+  }
+  body .planning-page .page-header-actions > .button {
+    flex: 0 0 auto;
+    padding-inline: 10px;
+  }
+  body .planning-page .page-header .period-picker input {
+    width: 124px;
+  }
+  .action-menu > summary {
+    min-height: 48px;
+    width: 48px;
+  }
+}

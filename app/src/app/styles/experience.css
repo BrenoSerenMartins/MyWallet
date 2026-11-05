@@ -17,10 +17,10 @@ body .logo-dot {
   color: var(--brand);
 }
 body .app-header {
-  min-height: 80px;
-  gap: 28px;
+  min-height: 68px;
+  gap: 24px;
   background: var(--bg);
-  padding-inline: max(24px, calc((100vw - 1360px) / 2));
+  padding-inline: max(var(--space-page), calc((100vw - 1360px) / 2 + var(--space-page)));
   border-bottom-color: var(--border);
 }
 body .desktop-navigation {
@@ -34,7 +34,7 @@ body .desktop-navigation a {
 body .desktop-navigation a.active,
 body .header-more.active {
   color: var(--text);
-  background: var(--surface-raised);
+  background: transparent;
 }
 body .desktop-navigation a.active::after {
   content: '';
@@ -734,7 +734,7 @@ body .spaces-explanation {
 @media (max-width: 1100px) {
   body .app-header {
     gap: 12px;
-    padding-inline: 20px;
+    padding-inline: var(--space-page);
   }
   body .desktop-navigation a {
     padding-inline: 9px;

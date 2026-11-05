@@ -1,0 +1,416 @@
+/* One filter bar, one column hierarchy, no repeated provenance sentence per row. */
+body .movement-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px 10px;
+  min-width: 0;
+}
+.movement-toolbar > .search-field {
+  flex: 1;
+  min-width: 180px;
+}
+.movement-period {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.movement-preset select {
+  width: 155px;
+  background: transparent;
+}
+.movement-date {
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 11px;
+}
+body .movement-date input {
+  width: 145px;
+  font-size: 12px;
+  padding: 10px;
+  min-height: 44px;
+  background: transparent;
+}
+.movement-filter-trigger {
+  position: relative;
+  border: 1px solid var(--border);
+}
+.filter-active-dot {
+  width: 6px;
+  height: 6px;
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.movement-typebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+body .movement-typebar .view-switcher {
+  margin: 0;
+  padding: 0;
+  gap: 20px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+body .movement-typebar .view-switcher button {
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  padding: 12px 0;
+  background: transparent;
+  box-shadow: none;
+  min-height: 48px;
+}
+body .movement-typebar .view-switcher button[aria-pressed='true'] {
+  color: var(--text);
+  border-bottom-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+body .movement-typebar .movement-results {
+  border: 0;
+  padding: 0;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+.movement-date-error {
+  margin: 16px 20px;
+}
+.ledger-table-area {
+  min-width: 0;
+}
+.movement-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
+}
+.movement-table caption {
+  text-align: left;
+}
+.movement-table th {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  text-align: left;
+  background: transparent;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.movement-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+.movement-table tbody tr {
+  cursor: pointer;
+}
+.movement-table tbody tr:hover {
+  background: var(--surface-soft);
+}
+.movement-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.movement-table .cell-date {
+  width: 115px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.movement-table .cell-description {
+  width: auto;
+}
+.movement-table .cell-category {
+  width: 165px;
+}
+.movement-table .cell-account {
+  width: 150px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.movement-table .cell-amount {
+  width: 140px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.movement-table .cell-status {
+  width: 70px;
+  text-align: center;
+}
+.movement-table .cell-category small,
+.movement-identity small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 3px;
+}
+.movement-table .cell-amount strong {
+  font-weight: 500;
+}
+.movement-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.movement-identity > div {
+  min-width: 0;
+  flex: 1;
+}
+.movement-direction {
+  width: 26px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.direction-expense {
+  color: var(--negative);
+}
+.direction-income {
+  color: var(--positive);
+}
+.movement-description-button {
+  width: 100%;
+  min-height: 44px;
+  display: block;
+  text-align: left;
+  padding: 6px 0;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.movement-description-button:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.movement-status {
+  width: 44px;
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+}
+.movement-status.is-reconciled {
+  color: var(--positive);
+}
+.movement-status:hover,
+.movement-status[aria-expanded='true'] {
+  background: var(--surface-raised);
+}
+.ledger-table-area[data-updating='true'] tbody {
+  opacity: 0.45;
+}
+@media (max-width: 1150px) {
+  body .movement-toolbar {
+    flex-wrap: wrap;
+  }
+  .movement-toolbar > .search-field {
+    flex: 1 1 40%;
+  }
+  .movement-period {
+    order: 2;
+    width: 100%;
+  }
+  .movement-period .movement-preset {
+    flex: 1;
+  }
+  .movement-preset select {
+    width: 100%;
+  }
+  .movement-table .cell-category {
+    width: 135px;
+  }
+  .movement-table .cell-account {
+    width: 110px;
+  }
+  .movement-table .cell-date {
+    width: 100px;
+  }
+  .movement-table .cell-amount {
+    width: 120px;
+  }
+  .movement-table .cell-status {
+    width: 58px;
+  }
+  .movement-table td,
+  .movement-table th {
+    padding-inline: 12px;
+  }
+}
+@media (max-width: 760px) {
+  body .movement-toolbar {
+    padding: 14px 14px 4px;
+    gap: 10px;
+  }
+  .movement-toolbar > .search-field {
+    min-width: 0;
+  }
+  .movement-period {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .movement-period .movement-preset {
+    grid-column: 1 / -1;
+  }
+  .movement-date {
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  body .movement-date input {
+    width: 100%;
+    min-width: 0;
+  }
+  .movement-typebar {
+    flex-wrap: wrap;
+    padding-inline: 14px;
+    gap: 0;
+  }
+  .movement-typebar > .view-switcher {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    scrollbar-width: thin;
+  }
+  body .movement-typebar .view-switcher button {
+    flex-shrink: 0;
+    font-size: 12px;
+  }
+  body .movement-typebar .movement-results {
+    padding: 6px 0 12px;
+    font-size: 11px;
+    text-align: left;
+  }
+  .movement-table,
+  .movement-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .movement-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .movement-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 44px;
+    gap: 4px 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .movement-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+  .movement-table tbody td[class] {
+    border: 0;
+    width: auto;
+    padding: 0;
+    min-width: 0;
+  }
+  .movement-table .cell-description {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .movement-table .cell-amount {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 15px;
+    align-self: center;
+  }
+  .movement-table .cell-category {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    font-size: 12px;
+    align-self: center;
+  }
+  .movement-table .cell-status {
+    grid-column: 3;
+    grid-row: 1 / 4;
+    align-self: center;
+    text-align: right;
+  }
+  .movement-table .cell-date {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .movement-table .cell-account {
+    grid-column: 2;
+    grid-row: 3;
+    text-align: right;
+    max-width: 140px;
+    font-size: 11px;
+  }
+  .movement-table .cell-category small {
+    display: inline;
+    margin-left: 6px;
+  }
+  .movement-direction {
+    display: none;
+  }
+  .movement-description-button {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+  }
+}
+
+/* The ledger sits on the canvas, with separators rather than a surrounding card. */
+body .transactions-page .movements-workbench {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+body .transactions-page .movement-toolbar {
+  padding-inline: 0;
+}
+.transactions-page .movement-typebar {
+  padding-inline: 0;
+}
+.transactions-page .active-filters {
+  padding-inline: 0;
+  border: 0;
+}
+.movement-table tr > :first-child {
+  padding-left: 0;
+}
+.movement-table tr > :last-child {
+  padding-right: 0;
+}
+@media (max-width: 760px) {
+  .movement-table tbody tr {
+    padding-inline: 0;
+  }
+}

@@ -107,13 +107,30 @@ function historyFixture(month: string, count: number) {
     })),
   };
 }
+async function appMenuTrigger(page: Page) {
+  const mobile = page.getByRole('navigation', { name: 'Navegação móvel' });
+  return (await mobile.isVisible())
+    ? mobile.getByRole('button', { name: 'Mais', exact: true })
+    : page.getByRole('button', { name: /^Menu do espaço:/ });
+}
+async function openAppMenu(page: Page) {
+  const menu = page.getByRole('dialog', { name: 'Menu e preferências' });
+  if (!(await menu.isVisible())) await (await appMenuTrigger(page)).click();
+}
+async function openWorkspaceSwitcher(page: Page) {
+  await openAppMenu(page);
+  await page
+    .getByRole('dialog', { name: 'Menu e preferências' })
+    .getByRole('link', { name: 'Trocar de espaço', exact: true })
+    .click();
+}
 async function chooseTheme(page: Page, theme: string) {
   const control = page.getByRole('button', { name: `Tema ${theme}`, exact: true }).first();
   if (await control.isVisible()) {
     await control.click();
     return;
   }
-  await page.getByRole('button', { name: 'Mais', exact: true }).filter({ visible: true }).click();
+  await openAppMenu(page);
   await page
     .getByRole('dialog', { name: 'Menu e preferências' })
     .getByRole('button', { name: `Tema ${theme}`, exact: true })
@@ -198,7 +215,7 @@ test('workspace cards open a space and creation uses its scope', async ({ page }
   await expect(page.getByRole('heading', { name: 'Seus espaços.' })).toBeVisible();
   await page.getByRole('link', { name: 'Abrir espaço Pessoal' }).click();
   await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Trocar de espaço', exact: true }).first().click();
+  await openWorkspaceSwitcher(page);
   await page.getByRole('button', { name: 'Criar espaço', exact: true }).click();
   await page.getByLabel('Nome do espaço').fill('Meu negócio');
   await page.getByRole('button', { name: 'Azul', exact: true }).click();
@@ -323,6 +340,7 @@ for (const width of [360, 1440])
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(saved).toBe(true);
     await expect(page.getByText('Notas preservadas', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }).click();
     await page.getByRole('button', { name: 'Copiar mês anterior', exact: true }).click();
     await expect(page.getByRole('dialog')).toContainText('substituídos');
     await page.getByRole('button', { name: 'Confirmar cópia do planejamento' }).click();
@@ -2358,9 +2376,7 @@ for (const width of [390, 1440]) {
     await signedIn(page);
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/');
-    const trigger = page
-      .getByRole('button', { name: 'Mais', exact: true })
-      .filter({ visible: true });
+    const trigger = await appMenuTrigger(page);
     await trigger.focus();
     await page.keyboard.press('Enter');
     const menu = page.getByRole('dialog', { name: 'Menu e preferências' });
@@ -2434,7 +2450,7 @@ test('a sole active space opens automatically without a saved selection; multipl
   await signedIn(page, false);
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Trocar de espaço', exact: true }).click();
+  await openWorkspaceSwitcher(page);
   await expect(page.getByRole('heading', { name: 'Seus espaços.' })).toBeVisible();
   await page.route('**/v1/workspaces', (route) =>
     route.fulfill({
@@ -3650,19 +3666,17 @@ test('directory creation is isolated from browsing, retains failed input and ref
   await page.getByLabel('Filtrar automação', { exact: true }).selectOption('manual');
   await expect(page.locator('.counterparty-panel')).toHaveCount(1);
 });
-test('visible filter chips remove one constraint without losing movement type or the other date', async ({
+test('visible date controls remove one bound without losing movement type or the other date', async ({
   page,
 }) => {
   await signedIn(page);
   await page.goto('/transactions?type=income&from=2026-10-01&to=2026-10-31');
-  await page.getByRole('button', { name: 'Remover filtro: Desde 01/10/2026', exact: true }).click();
+  await page.getByLabel('De', { exact: true }).fill('');
   const url = new URL(page.url());
   expect(url.searchParams.has('from')).toBe(false);
   expect(url.searchParams.get('to')).toBe('2026-10-31');
   expect(url.searchParams.get('type')).toBe('income');
-  await expect(
-    page.getByRole('button', { name: 'Remover filtro: Até 31/10/2026', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByLabel('Até', { exact: true })).toHaveValue('2026-10-31');
   await expect(page.getByRole('status').filter({ hasText: '1 movimento carregado' })).toBeVisible();
 });
 test('settings retain the chosen section on reload and offer labelled theme previews', async ({
@@ -3760,7 +3774,7 @@ test('notification history is cleared when switching financial spaces', async ({
     isDefault: false,
   };
   await saveAccountForFeedback(page, false, [workspace, other]);
-  await page.getByRole('link', { name: 'Trocar de espaço', exact: true }).click();
+  await openWorkspaceSwitcher(page);
   await page.getByRole('link', { name: 'Abrir espaço Outro', exact: true }).click();
   await page.getByRole('button', { name: 'Abrir notificações', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Notificações' })).not.toContainText(
@@ -3837,7 +3851,7 @@ test('an operation completing after a space switch cannot add feedback to the ne
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
   await expect.poll(() => started).toBe(true);
   await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
-  await page.getByRole('link', { name: 'Trocar de espaço', exact: true }).click();
+  await openWorkspaceSwitcher(page);
   await page.getByRole('link', { name: 'Abrir espaço Outro', exact: true }).click();
   const response = page.waitForResponse(
     (r) => r.request().method() === 'PATCH' && r.url().endsWith(`/accounts/${account.id}`),
@@ -3848,4 +3862,187 @@ test('an operation completing after a space switch cannot add feedback to the ne
   await expect(page.getByRole('dialog', { name: 'Notificações' })).not.toContainText(
     'Conta salva.',
   );
+});
+
+for (const width of [390, 1440])
+  test(`compact headers keep planning actions reachable without a saved-state toolbar at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/planning?month=2026-11');
+    await expect(page.locator('.app-header .header-create')).toHaveCount(0);
+    await expect(page.locator('.app-header .workspace-pill')).toHaveCount(0);
+    await expect(page.getByText('Planejamento salvo', { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: 'Copiar mês anterior', exact: true }),
+    ).not.toBeVisible();
+    await page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }).click();
+    await page.getByLabel('Contas no realizado', { exact: true }).selectOption('cash');
+    await expect(page.locator('.scope-indicator')).toHaveText('Sem benefícios');
+    await page.keyboard.press('Escape');
+    await expect(
+      page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }),
+    ).toBeFocused();
+    await page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }).click();
+    await page.getByRole('button', { name: 'Copiar mês anterior', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Revisar cópia do mês anterior' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await expect(
+      page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }),
+    ).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+for (const example of [
+  {
+    now: '2024-03-15',
+    previousFrom: '2024-02-01',
+    previousTo: '2024-02-29',
+    exclusive: '2024-03-01',
+  },
+  {
+    now: '2026-01-15',
+    previousFrom: '2025-12-01',
+    previousTo: '2025-12-31',
+    exclusive: '2026-01-01',
+  },
+])
+  test(`visible period presets include the final day and retain other filters from ${example.now}`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.clock.install({ time: new Date(`${example.now}T12:00:00Z`) });
+    const queries: URLSearchParams[] = [];
+    await page.route('**/v1/transactions?*', (route) => {
+      queries.push(new URL(route.request().url()).searchParams);
+      return route.fulfill({ json: { items: [transaction], nextCursor: null } });
+    });
+    await page.goto('/transactions?type=expense');
+    await page.getByLabel('Período dos movimentos', { exact: true }).selectOption('previous');
+    await expect(page.getByLabel('De', { exact: true })).toHaveValue(example.previousFrom);
+    await expect(page.getByLabel('Até', { exact: true })).toHaveValue(example.previousTo);
+    await expect
+      .poll(() =>
+        queries.some(
+          (q) =>
+            q.get('from') === example.previousFrom &&
+            q.get('to') === example.exclusive &&
+            q.get('type') === 'expense',
+        ),
+      )
+      .toBe(true);
+    await page.getByLabel('Período dos movimentos', { exact: true }).selectOption('all');
+    await expect(page.getByLabel('De', { exact: true })).toHaveValue('');
+    await expect(page.getByLabel('Até', { exact: true })).toHaveValue('');
+    expect(new URL(page.url()).searchParams.get('type')).toBe('expense');
+  });
+test('invalid date ranges are explained beside the visible controls without issuing an invalid query', async ({
+  page,
+}) => {
+  await signedIn(page);
+  const queries: URLSearchParams[] = [];
+  await page.route('**/v1/transactions?*', (route) => {
+    queries.push(new URL(route.request().url()).searchParams);
+    return route.fulfill({ json: { items: [transaction], nextCursor: null } });
+  });
+  await page.goto('/transactions?type=income&from=2026-10-01&to=2026-10-31');
+  await expect(page.getByRole('table')).toBeVisible();
+  await page.getByLabel('De', { exact: true }).fill('2026-11-01');
+  await expect(page.getByRole('alert')).toContainText('A data inicial deve ser anterior ou igual');
+  await expect(page.getByLabel('De', { exact: true })).toHaveAttribute('aria-invalid', 'true');
+  expect(queries.some((q) => q.get('from') === '2026-11-01' && q.get('to') === '2026-11-01')).toBe(
+    false,
+  );
+  await page.getByLabel('De', { exact: true }).fill('2026-10-30');
+  await expect(page.getByRole('table')).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+for (const width of [390, 1440])
+  test(`movement columns and detail navigation remain readable at ${width}px`, async ({ page }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 1000 });
+    await page.route(`**/v1/transactions/${transaction.id}`, (route) =>
+      route.fulfill({ json: transaction }),
+    );
+    await page.goto('/transactions?from=2026-10-01&to=2026-10-31');
+    const table = page.getByRole('table', { name: /Movimentos registrados/ });
+    await expect(page.locator('.movements-workbench')).toHaveCSS(
+      'background-color',
+      'rgba(0, 0, 0, 0)',
+    );
+    await expect(table).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(table.getByRole('columnheader')).toHaveCount(6);
+    await expect(table.getByRole('row')).toHaveCount(2);
+    await expect(page.getByLabel('De', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Até', { exact: true })).toBeVisible();
+    await table.getByRole('button', { name: /Situação:/ }).click();
+    await expect(page.getByRole('tooltip')).toContainText('Pendente de conciliação');
+    await page.getByRole('tooltip').click();
+    expect(new URL(page.url()).searchParams.has('transaction')).toBe(false);
+    await table.getByRole('button', { name: /Compra de supermercado/ }).click();
+    await expect(page.getByRole('dialog', { name: 'Detalhes do movimento' })).toBeVisible();
+    await expect(page.getByLabel('Descrição', { exact: true })).toHaveValue(
+      transaction.description,
+    );
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+test('reduced motion keeps drawers, menus and tab indicators static', async ({ page }) => {
+  await signedIn(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/accounts');
+  await page.getByRole('button', { name: 'Adicionar conta', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Adicionar conta', exact: true });
+  await expect(dialog).toBeVisible();
+  expect(await dialog.evaluate((node) => getComputedStyle(node).animationName)).toBe('none');
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+  await page.goto('/planning');
+  const indicator = page.locator('.view-switcher-indicator').first();
+  expect(await indicator.evaluate((node) => getComputedStyle(node).transitionDuration)).toBe('0s');
+});
+
+test('filter changes preserve the visible ledger while preventing reuse of the old pagination cursor', async ({
+  page,
+}) => {
+  await signedIn(page);
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const queries: URLSearchParams[] = [];
+  const income = {
+    ...transaction,
+    id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    description: 'Receita do mês',
+    amount: 10000,
+    transactionType: 'income',
+  };
+  await page.route('**/v1/transactions?*', async (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    queries.push(params);
+    if (params.get('type') === 'income') {
+      await pending;
+      return route.fulfill({ json: { items: [income], nextCursor: null } });
+    }
+    return route.fulfill({ json: { items: [transaction], nextCursor: 'old-filter-cursor' } });
+  });
+  await page.goto('/transactions');
+  await expect(page.locator('.movement-table')).toContainText(transaction.description);
+  await page
+    .getByRole('group', { name: 'Tipos de movimentos' })
+    .getByRole('button', { name: 'Receitas', exact: true })
+    .click();
+  await expect(page.locator('.ledger-table-area')).toHaveAttribute('inert', '');
+  await expect(page.locator('.movement-table')).toContainText(transaction.description);
+  await expect(
+    page.getByRole('button', { name: 'Carregar mais movimentos', exact: true }),
+  ).toBeDisabled();
+  release();
+  await expect(page.locator('.movement-table')).toContainText(income.description);
+  await expect(page.locator('.ledger-table-area')).not.toHaveAttribute('inert', '');
+  expect(queries.some((q) => q.get('type') === 'income' && q.has('cursor'))).toBe(false);
 });

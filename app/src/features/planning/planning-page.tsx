@@ -1,3 +1,5 @@
+import { ActionMenu } from '../../shared/ui/action-menu';
+import type { ReactNode } from 'react';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { BenefitPlanningNotice } from './components/benefit-planning-notice';
@@ -6,7 +8,7 @@ import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { validMonth } from '../../shared/formatting/month';
-import { CalendarDays, Copy, Pencil, ArrowRight } from 'lucide-react';
+import { Copy, Pencil, ArrowRight } from 'lucide-react';
 import { dateToday, money } from '../../shared/formatting/money';
 import { Button, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
 import { useMonthlyPlan } from './hooks/use-monthly-plan';
@@ -18,29 +20,34 @@ import './planning.css';
 export function PlanningPage() {
   const [params, setParams] = useSearchParams();
   const view = params.get('view') === 'commitments' ? 'commitments' : 'budget';
+  const navigation = (
+    <ViewSwitcher
+      variant="tabs"
+      label="Área do planejamento"
+      value={view}
+      onChange={(value) => {
+        const next = new URLSearchParams(params);
+        if (value === 'budget') next.delete('view');
+        else next.set('view', value);
+        setParams(next);
+      }}
+      options={[
+        { value: 'budget', label: 'Orçamento' },
+        { value: 'commitments', label: 'Vencimentos' },
+      ]}
+    />
+  );
   return (
     <div className="planning-workspace">
-      <div className="planning-navigation">
-        <ViewSwitcher
-          label="Área do planejamento"
-          value={view}
-          onChange={(value) => {
-            const next = new URLSearchParams(params);
-            if (value === 'budget') next.delete('view');
-            else next.set('view', value);
-            setParams(next);
-          }}
-          options={[
-            { value: 'budget', label: 'Orçamento mensal' },
-            { value: 'commitments', label: 'Contas e previsão' },
-          ]}
-        />
-      </div>
-      {view === 'commitments' ? <CommitmentsPage /> : <MonthlyBudgetPage />}
+      {view === 'commitments' ? (
+        <CommitmentsPage navigation={navigation} />
+      ) : (
+        <MonthlyBudgetPage navigation={navigation} />
+      )}
     </div>
   );
 }
-function MonthlyBudgetPage() {
+function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
   const [params, setParams] = useSearchParams();
   const requestedMonth = params.get('month');
   const month = validMonth(requestedMonth) ? requestedMonth : dateToday().slice(0, 7);
@@ -58,12 +65,9 @@ function MonthlyBudgetPage() {
   }
   return (
     <div className="page-enter planning-page">
-      <PageHeader
-        title={<>Planejamento mensal</>}
-        description="Defina limites e compare com o que aconteceu."
-      >
+      <PageHeader title={<>Planejamento mensal</>} navigation={navigation}>
         <label className="period-picker">
-          <span>Mês do plano</span>
+          <span className="sr-only">Mês do plano</span>
           <input
             aria-label="Mês do planejamento"
             type="month"
@@ -80,12 +84,40 @@ function MonthlyBudgetPage() {
         </label>
         <Button
           className="compact"
+          aria-label={plan?.version ? 'Editar planejamento' : 'Preparar meu mês'}
           disabled={!plan || !navigator.onLine}
           onClick={() => setDialog('edit')}
         >
           <Pencil size={15} />
-          {plan?.version ? 'Editar planejamento' : 'Preparar meu mês'}
+          <span>{plan?.version ? 'Editar' : 'Preparar mês'}</span>
         </Button>
+        {scope !== 'all' && (
+          <span className="scope-indicator">
+            {scope === 'cash' ? 'Sem benefícios' : 'Só benefícios'}
+          </span>
+        )}
+        <ActionMenu label="Mais ações do planejamento">
+          <label>
+            Realizado de
+            <select
+              aria-label="Contas no realizado"
+              value={scope}
+              onChange={(e) => setScope(e.target.value)}
+            >
+              <option value="all">Todas as contas</option>
+              <option value="cash">Sem benefícios</option>
+              <option value="benefits">Só benefícios</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            disabled={!plan || !navigator.onLine || month === '1900-01'}
+            onClick={() => setDialog('copy')}
+          >
+            <Copy size={16} />
+            Copiar mês anterior
+          </button>
+        </ActionMenu>
       </PageHeader>
       {query.isPending ? (
         <Loading />
@@ -94,39 +126,8 @@ function MonthlyBudgetPage() {
       ) : (
         plan && (
           <>
-            <div className="planning-toolbar">
-              <label className="planning-scope-control">
-                Realizado de
-                <select
-                  aria-label="Contas no realizado"
-                  value={scope}
-                  onChange={(e) => setScope(e.target.value)}
-                >
-                  <option value="all">Todas as contas</option>
-                  <option value="cash">Sem benefícios</option>
-                  <option value="benefits">Só benefícios</option>
-                </select>
-              </label>
-              <span className="planning-status">
-                <CalendarDays size={16} />
-                {plan.version ? 'Planejamento salvo' : 'Comece seu planejamento'}
-              </span>
-              <div>
-                <Button
-                  className="secondary compact"
-                  disabled={!navigator.onLine || month === '1900-01'}
-                  onClick={() => setDialog('copy')}
-                >
-                  <Copy size={15} />
-                  Copiar mês anterior
-                </Button>
-              </div>
-            </div>
-
             <PlanningSummary plan={plan} />
-            <p className="planning-explanation">
-              Previsto e realizado, lado a lado. O resultado do mês é diferente do saldo disponível.
-            </p>
+
             {plan.totals.missingCategoryCount > 0 && (
               <div className="review-banner planning-included">
                 <div>

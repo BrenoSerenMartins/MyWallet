@@ -1,4 +1,12 @@
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Tag } from 'lucide-react';
+import { Tooltip } from './tooltip';
+import {
+  ArrowDownLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  CheckCircle2,
+  CircleDashed,
+  Tag,
+} from 'lucide-react';
 import type { Transaction } from '../api/resources';
 import { money, shortDate } from '../formatting/money';
 export function TransactionRow({
@@ -40,11 +48,6 @@ export function TransactionRow({
               ? 'Devolução vinculada'
               : labels[t.transactionType]}{' '}
           · {shortDate(t.transactionDate)}
-          {t.importBatchId ? ' · Importado' : ''}
-          {t.classificationRuleId ? ' · Categoria automática' : ''}
-          {t.reconciliationStatus === 'reconciled'
-            ? ' · Conferida por arquivo'
-            : ' · Pendente de conciliação'}
         </span>
         {categoryLabel && <span className="transaction-category">{categoryLabel}</span>}
       </div>
@@ -53,13 +56,22 @@ export function TransactionRow({
       >
         {hidden ? '••••' : `${t.amount > 0 ? '+ ' : ''}${money(t.amount)}`}
       </strong>
-      {onClick && <ArrowUpRight size={15} className="muted" />}
+      {onClick &&
+        (t.reconciliationStatus === 'reconciled' ? (
+          <CheckCircle2 size={15} className="muted" aria-hidden="true" />
+        ) : (
+          <CircleDashed size={15} className="muted" aria-hidden="true" />
+        ))}
     </>
   );
   return onClick ? (
-    <button className="transaction-row" onClick={onClick}>
-      {content}
-    </button>
+    <Tooltip
+      text={`${t.reconciliationStatus === 'reconciled' ? 'Conferida por arquivo.' : 'Pendente de conciliação.'} ${t.importBatchId ? 'Importado do extrato.' : 'Lançamento manual.'}${t.classificationRuleId ? ' Categoria automática.' : ''}`}
+    >
+      <button className="transaction-row" onClick={onClick}>
+        {content}
+      </button>
+    </Tooltip>
   ) : (
     <div className="transaction-row">{content}</div>
   );

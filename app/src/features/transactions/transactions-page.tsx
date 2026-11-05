@@ -1,18 +1,26 @@
+import './transactions.css';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
-import { money } from '../../shared/formatting/money';
+import { dateToday, money } from '../../shared/formatting/money';
 import { TransactionSources } from './components/transaction-sources';
 import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { CategorySelect } from '../../shared/ui/category-select';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useAuth } from '../auth/auth-provider';
 import { request } from '../../shared/api/client';
 import type { Account, Category, Collection, Transaction } from '../../shared/api/resources';
 import { Button, EmptyState, ErrorState, Loading, Modal } from '../../shared/ui/primitives';
-import { TransactionRow } from '../../shared/ui/transaction-row';
+import { MovementTable } from './components/movement-table';
+import { monthDates, shiftMonth } from '../../shared/formatting/month';
+import { Tooltip } from '../../shared/ui/tooltip';
 import { TransactionForm } from './components/transaction-form';
 function dateFilter(value: string | null) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
@@ -29,6 +37,10 @@ export function TransactionsPage() {
   const client = useQueryClient();
   const [open, setOpen] = useState(params.has('new'));
   const [selected, setSelected] = useState<Transaction>();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [customPeriod, setCustomPeriod] = useState(false);
+  const fromInput = useRef<HTMLInputElement>(null);
+  const rangeErrorId = useId();
   const search = params.get('search') ?? '';
   const account = params.get('accountId') ?? accountId ?? '';
   const kind = params.get('type') ?? '';
@@ -53,8 +65,44 @@ export function TransactionsPage() {
   };
   const setCategory = (value: string) => changeFilter('categoryId', value);
   const setReconciliation = (value: string) => changeFilter('reconciliation', value);
-  const setFrom = (value: string) => changeFilter('from', value);
-  const setTo = (value: string) => changeFilter('to', value);
+  const setFrom = (value: string) => {
+    setCustomPeriod(true);
+    changeFilter('from', value);
+  };
+  const setTo = (value: string) => {
+    setCustomPeriod(true);
+    changeFilter('to', value);
+  };
+  const thisMonth = dateToday().slice(0, 7);
+  const currentDates = monthDates(thisMonth),
+    previousDates = monthDates(shiftMonth(thisMonth, -1));
+  const rangeInvalid = !!(from && to && from > to);
+  const period = customPeriod
+    ? 'custom'
+    : !from && !to
+      ? 'all'
+      : from === currentDates.from && to === currentDates.to
+        ? 'current'
+        : from === previousDates.from && to === previousDates.to
+          ? 'previous'
+          : 'custom';
+  function changePeriod(value: string) {
+    setCustomPeriod(value === 'custom');
+    if (value === 'custom') {
+      fromInput.current?.focus();
+      return;
+    }
+    const next = new URLSearchParams(params);
+    const dates = value === 'current' ? currentDates : value === 'previous' ? previousDates : null;
+    if (dates) {
+      next.set('from', dates.from);
+      next.set('to', dates.to);
+    } else {
+      next.delete('from');
+      next.delete('to');
+    }
+    setParams(next, { replace: true, preventScrollReset: true });
+  }
   useEffect(() => {
     if (params.has('new')) {
       setSelected(undefined);
@@ -100,6 +148,8 @@ export function TransactionsPage() {
       : {}),
   });
   const entries = useInfiniteQuery({
+    enabled: !rangeInvalid,
+    placeholderData: keepPreviousData,
     queryKey: [session?.user.id, 'transactions', query.toString()],
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }) =>
@@ -146,10 +196,7 @@ export function TransactionsPage() {
   };
   return (
     <div className="page-enter transactions-page">
-      <PageHeader
-        title={accountName ?? 'Movimentações'}
-        description={<>Consulte, filtre e organize os movimentos registrados.</>}
-      >
+      <PageHeader title={accountName ?? 'Movimentações'}>
         <Button
           onClick={() => {
             const next = new URLSearchParams(params);
@@ -162,40 +209,99 @@ export function TransactionsPage() {
         </Button>
       </PageHeader>
       {requestedTransaction.isError && <ErrorState error={requestedTransaction.error} />}
-      <section className="panel movements-workbench" aria-label="Lista de movimentações">
-        <div className="filters">
+      <section className="movements-workbench" aria-label="Lista de movimentações">
+        <div className="movement-toolbar">
           <label className="search-field">
-            <Search size={18} />
+            <Search size={17} />
             <input
               aria-label="Buscar movimentos"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por descrição…"
+              placeholder="Buscar movimentos…"
             />
           </label>
+          <div className="movement-period">
+            <label className="movement-preset">
+              <span className="sr-only">Período</span>
+              <select
+                aria-label="Período dos movimentos"
+                value={period}
+                onChange={(e) => changePeriod(e.target.value)}
+              >
+                <option value="all">Todo o período</option>
+                <option value="current">Mês atual</option>
+                <option value="previous">Mês anterior</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </label>
+            <label className="movement-date">
+              <span>De</span>
+              <input
+                ref={fromInput}
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                aria-invalid={rangeInvalid}
+                aria-describedby={rangeInvalid ? rangeErrorId : undefined}
+              />
+            </label>
+            <label className="movement-date">
+              <span>Até</span>
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                aria-invalid={rangeInvalid}
+                aria-describedby={rangeInvalid ? rangeErrorId : undefined}
+              />
+            </label>
+          </div>
+          <Tooltip text="Filtrar conta, categoria e conciliação">
+            <button
+              type="button"
+              className="icon-button movement-filter-trigger"
+              aria-label="Filtros avançados"
+              aria-haspopup="dialog"
+              onClick={() => setFiltersOpen(true)}
+            >
+              <SlidersHorizontal size={18} />
+              {activeFilters.some((f) => !['from', 'to'].includes(f.key)) && (
+                <span className="filter-active-dot" />
+              )}
+            </button>
+          </Tooltip>
         </div>
-        <ViewSwitcher
-          label="Tipos de movimentos"
-          value={kind}
-          onChange={(value) => {
-            setKind(value);
-          }}
-          options={[
-            { value: '', label: 'Todos' },
-            { value: 'expense', label: 'Despesas' },
-            { value: 'income', label: 'Receitas' },
-            { value: 'transfer', label: 'Transferências' },
-            { value: 'unclassified', label: 'A revisar' },
-          ]}
-        />
-        <details className="filter-disclosure" open={from || to ? true : undefined}>
-          <summary>
-            <SlidersHorizontal size={17} />
-            Filtros de conta, categoria e período
-            {(account || category || from || to || reconciliation) && (
-              <span className="badge">Ativos</span>
-            )}
-          </summary>
+        <div className="movement-typebar">
+          <ViewSwitcher
+            variant="tabs"
+            label="Tipos de movimentos"
+            value={kind}
+            onChange={(value) => {
+              setKind(value);
+            }}
+            options={[
+              { value: '', label: 'Todos' },
+              { value: 'expense', label: 'Despesas' },
+              { value: 'income', label: 'Receitas' },
+              { value: 'transfer', label: 'Transferências' },
+              { value: 'unclassified', label: 'A revisar' },
+            ]}
+          />
+          {!entries.isPending && !entries.isError && !rangeInvalid && (
+            <span className="movement-results" role="status">
+              {entries.isPlaceholderData
+                ? 'Atualizando movimentos…'
+                : `${items.length} ${items.length === 1 ? 'movimento carregado' : 'movimentos carregados'}`}
+              {entries.hasNextPage && !entries.isPlaceholderData ? ' · há mais resultados' : ''}
+            </span>
+          )}
+        </div>
+        <Modal
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          title="Filtros avançados"
+          description="Selecione conta, categoria e situação. O período fica na busca principal."
+        >
           <div className="expanded-filters">
             <label>
               Conciliação
@@ -235,37 +341,34 @@ export function TransactionsPage() {
                 onChange={(e) => setCategory(e.target.value)}
               />
             </label>
-            <label>
-              De
-              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-            </label>
-            <label>
-              Até
-              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-            </label>
+
             <button
               className="text-button"
               onClick={() => {
-                setParams(new URLSearchParams(), { replace: true, preventScrollReset: true });
+                const next = new URLSearchParams(params);
+                for (const key of ['accountId', 'categoryId', 'reconciliation']) next.delete(key);
+                setParams(next, { replace: true, preventScrollReset: true });
               }}
             >
-              Redefinir filtros
+              Limpar filtros avançados
             </button>
           </div>
-        </details>
-        {(activeFilters.length > 0 || search) && (
+        </Modal>
+        {(activeFilters.some((f) => !['from', 'to'].includes(f.key)) || search) && (
           <div className="active-filters" aria-label="Filtros aplicados">
-            {activeFilters.map((filter) => (
-              <button
-                className="filter-chip"
-                key={filter.key}
-                onClick={() => changeFilter(filter.key, '')}
-                aria-label={`Remover filtro: ${filter.label}`}
-              >
-                {filter.label}
-                <span aria-hidden="true">×</span>
-              </button>
-            ))}
+            {activeFilters
+              .filter((f) => !['from', 'to'].includes(f.key))
+              .map((filter) => (
+                <button
+                  className="filter-chip"
+                  key={filter.key}
+                  onClick={() => changeFilter(filter.key, '')}
+                  aria-label={`Remover filtro: ${filter.label}`}
+                >
+                  {filter.label}
+                  <span aria-hidden="true">×</span>
+                </button>
+              ))}
             <button
               className="text-button"
               onClick={() =>
@@ -276,43 +379,40 @@ export function TransactionsPage() {
             </button>
           </div>
         )}
-        {!entries.isPending && !entries.isError && (
-          <div className="movement-results" role="status">
-            {items.length} {items.length === 1 ? 'movimento carregado' : 'movimentos carregados'}
-            {entries.hasNextPage ? ' · há mais resultados' : ''}
-          </div>
-        )}
-        {entries.isPending ? (
+        {rangeInvalid ? (
+          <p id={rangeErrorId} className="form-error movement-date-error" role="alert">
+            A data inicial deve ser anterior ou igual à data final.
+          </p>
+        ) : entries.isPending ? (
           <Loading />
         ) : entries.isError ? (
           <ErrorState error={entries.error} retry={() => void entries.refetch()} />
         ) : items.length ? (
           <>
-            <div className="transaction-list full-list">
-              {items.map((t) => (
-                <TransactionRow
-                  key={t.id}
-                  transaction={t}
-                  categoryLabel={
-                    categories.data
-                      ?.filter((c) => c.id === t.categoryId)
-                      .map((c) => (c.groupName ? `${c.groupName} → ${c.name}` : c.name))[0]
-                  }
-                  onClick={() => {
-                    setSelected(undefined);
-                    const next = new URLSearchParams(params);
-                    next.set('transaction', t.id);
-                    next.delete('new');
-                    setParams(next, { preventScrollReset: true });
-                  }}
-                />
-              ))}
+            <div
+              className="ledger-table-area motion-reveal"
+              aria-busy={entries.isFetching}
+              data-updating={entries.isPlaceholderData}
+              inert={entries.isPlaceholderData}
+            >
+              <MovementTable
+                items={items}
+                accounts={accounts.data ?? []}
+                categories={categories.data ?? []}
+                onOpen={(item) => {
+                  setSelected(undefined);
+                  const next = new URLSearchParams(params);
+                  next.set('transaction', item.id);
+                  next.delete('new');
+                  setParams(next, { preventScrollReset: true });
+                }}
+              />
             </div>
             {entries.hasNextPage && (
               <div className="load-more">
                 <Button
                   className="secondary"
-                  disabled={entries.isFetchingNextPage}
+                  disabled={entries.isFetchingNextPage || entries.isPlaceholderData}
                   onClick={() => void entries.fetchNextPage()}
                 >
                   Carregar mais movimentos
