@@ -183,10 +183,6 @@ body .notification-toast .icon-button {
   font-size: 12px;
   color: var(--muted);
 }
-.auth-top {
-  flex-wrap: wrap;
-  gap: 12px;
-}
 @media (max-width: 760px) {
   .notification-viewport {
     top: calc(72px + env(safe-area-inset-top));

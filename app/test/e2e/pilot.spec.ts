@@ -4614,3 +4614,49 @@ test('filtered CSV exports every page with original and reporting dates', async 
   expect(csv).toContain('"2026-10-31";"2026-11-01"');
   expect(csv).toContain('Second export page');
 });
+
+for (const width of [320, 390, 768, 1440]) {
+  test(`auth redesign keeps entry, signup and recovery usable at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const email = page.getByRole('textbox', { name: 'E-mail', exact: true });
+    await expect(email).toHaveAttribute('autocomplete', 'email');
+    await email.fill('preview@example.test');
+    const password = page.locator('.entry-password input');
+    await password.fill('example-password');
+    await page.getByRole('button', { name: 'Mostrar senha', exact: true }).click();
+    await expect(password).toHaveAttribute('type', 'text');
+    await page.getByRole('button', { name: 'Ocultar senha', exact: true }).click();
+    await expect(password).toHaveAttribute('type', 'password');
+    for (const theme of ['claro', 'escuro']) {
+      await page.getByRole('button', { name: `Tema ${theme}`, exact: true }).click();
+      await expectNoHorizontalOverflow(page);
+      await page.screenshot({
+        path: info.outputPath(`auth-${width}-${theme}.png`),
+        fullPage: true,
+      });
+    }
+    await page.getByRole('button', { name: 'Começar agora', exact: true }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Seu próximo passo começa aqui.', exact: true }),
+    ).toBeVisible();
+    await expect(password).toHaveAttribute('autocomplete', 'new-password');
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await page.getByRole('button', { name: 'Esqueci minha senha', exact: true }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Vamos recuperar seu acesso.', exact: true }),
+    ).toBeVisible();
+    await expect(password).toHaveCount(0);
+    await expect(email).toHaveValue('preview@example.test');
+    await expectNoHorizontalOverflow(page);
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await page.setViewportSize({ width, height: 480 });
+    await password.focus();
+    const submit = page.getByRole('button', { name: 'Entrar na minha conta', exact: true });
+    await submit.scrollIntoViewIfNeeded();
+    await expect(submit).toBeInViewport();
+    await expectNoHorizontalOverflow(page);
+  });
+}

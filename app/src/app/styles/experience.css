@@ -662,36 +662,6 @@ body .settings-info p {
   line-height: 1.7;
 }
 /* Entry and workspace selection are part of the same interface. */
-body .auth-story {
-  background: linear-gradient(140deg, var(--hero-start), var(--surface));
-  color: var(--text);
-  border-right: 1px solid var(--border);
-  padding: clamp(28px, 4vw, 64px);
-}
-body .auth-story .logo-mark {
-  background: transparent;
-}
-body .auth-story .logo-dot {
-  color: var(--brand);
-}
-body .story-content h1 {
-  font-size: clamp(38px, 4vw, 62px);
-  letter-spacing: -2.5px;
-  font-weight: 500;
-}
-body .story-content h1 > span {
-  color: var(--accent);
-}
-body .story-content > p,
-body .story-content > .eyebrow,
-body .story-footer {
-  color: var(--muted);
-}
-body .auth-form-wrap h2 {
-  font-size: 30px;
-  font-weight: 500;
-  letter-spacing: -1px;
-}
 body .spaces-main {
   max-width: 1240px;
   padding-top: 48px;
@@ -915,34 +885,6 @@ body .space-current {
   color: var(--text);
   background: var(--surface);
   border-color: var(--border);
-}
-body .auth-feature-list {
-  list-style: none;
-  margin: 40px 0 0;
-  padding: 0;
-}
-body .auth-feature-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 18px 0;
-  border-top: 1px solid var(--border);
-}
-body .auth-feature-list li > span {
-  font-size: 12px;
-  color: var(--accent);
-  line-height: 24px;
-  font-variant-numeric: tabular-nums;
-}
-body .auth-feature-list strong {
-  font-size: 14px;
-  font-weight: 500;
-}
-body .auth-feature-list p {
-  color: var(--muted);
-  font-size: 12px;
-  margin-top: 5px;
-  line-height: 1.6;
 }
 body .planning-workspace .view-switcher {
   margin-bottom: 0;
