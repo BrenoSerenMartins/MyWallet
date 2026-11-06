@@ -44,6 +44,22 @@ export function PlanForm({
       setBusy(false);
     }
   }
+  const archivedPlans = plan.lines.filter(
+    (line) => line.categoryId && line.archived && line.planned !== null && line.planned !== 0,
+  );
+  const categoryField = (line: MonthlyPlan['lines'][number]) => (
+    <label key={line.categoryId}>
+      {line.groupName ? `${line.groupName} → ${line.name}` : line.name}
+      <input
+        aria-label={`Previsto · ${line.name}`}
+        inputMode="decimal"
+        maxLength={20}
+        placeholder="Não definido"
+        value={amounts[line.categoryId!] ?? ''}
+        onChange={(e) => setAmounts({ ...amounts, [line.categoryId!]: e.target.value })}
+      />
+    </label>
+  );
   return (
     <form className="form-stack" onSubmit={submit}>
       <p className="field-help">
@@ -54,23 +70,20 @@ export function PlanForm({
         <fieldset className="plan-fields" key={type}>
           <legend>{type === 'income' ? 'Receitas previstas' : 'Despesas previstas'}</legend>
           {plan.lines
-            .filter((l) => l.categoryId && l.type === type)
-            .map((line) => (
-              <label key={line.categoryId}>
-                {line.groupName ? `${line.groupName} → ${line.name}` : line.name}
-                {line.archived ? ' (arquivada)' : ''}
-                <input
-                  aria-label={`Previsto · ${line.name}`}
-                  inputMode="decimal"
-                  maxLength={20}
-                  placeholder="Não definido"
-                  value={amounts[line.categoryId!] ?? ''}
-                  onChange={(e) => setAmounts({ ...amounts, [line.categoryId!]: e.target.value })}
-                />
-              </label>
-            ))}
+            .filter((line) => line.categoryId && !line.archived && line.type === type)
+            .map(categoryField)}
         </fieldset>
       ))}
+      {archivedPlans.length > 0 && (
+        <details className="finance-disclosure">
+          <summary>Valores anteriores em categorias arquivadas ({archivedPlans.length})</summary>
+          <p className="field-help">
+            Estes valores já estavam salvos neste mês e continuam nos totais. Deixe um campo em
+            branco para retirar apenas sua previsão, sem alterar os lançamentos do histórico.
+          </p>
+          <div className="form-stack">{archivedPlans.map(categoryField)}</div>
+        </details>
+      )}
       <label>
         Aporte planejado (R$)
         <input

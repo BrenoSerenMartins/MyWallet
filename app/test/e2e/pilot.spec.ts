@@ -4783,3 +4783,71 @@ test('reset page without a verified session requests a fresh link instead of acc
   await expect(page.getByRole('button', { name: 'Enviar instruções', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Salvar nova senha', exact: true })).toHaveCount(0);
 });
+
+test('planning hides unused archived categories and preserves older planned amounts until explicitly cleared', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.setViewportSize({ width: 390, height: 900 });
+  const archivedZeroId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1';
+  const archivedPlanId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2';
+  let plan = monthlyPlan('2026-11');
+  plan.lines.push(
+    {
+      ...plan.lines[1],
+      categoryId: archivedZeroId,
+      name: 'Celular antigo',
+      archived: true,
+      planned: 0,
+      actual: 0,
+      transactionCount: 0,
+    },
+    {
+      ...plan.lines[1],
+      categoryId: archivedPlanId,
+      name: 'Plano anterior',
+      archived: true,
+      planned: 12345,
+      actual: 5000,
+      transactionCount: 1,
+    },
+  );
+  const saved: { lines: { categoryId: string; amount: number }[] }[] = [];
+  await page.route('**/v1/planning/**', (route) => {
+    if (route.request().method() === 'PUT') {
+      const body = route.request().postDataJSON();
+      saved.push(body);
+      plan = {
+        ...plan,
+        version: plan.version + 1,
+        lines: plan.lines.map((line) => ({
+          ...line,
+          planned:
+            body.lines.find((item: { categoryId: string }) => item.categoryId === line.categoryId)
+              ?.amount ?? null,
+        })),
+      };
+    }
+    return route.fulfill({ json: plan });
+  });
+  await page.goto('/planning?month=2026-11');
+  for (const clear of [false, true]) {
+    await page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }).click();
+    await page.getByRole('button', { name: 'Editar planejamento', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByLabel('Previsto · Celular antigo', { exact: true })).toHaveCount(0);
+    await expect(dialog.getByLabel('Previsto · Plano anterior', { exact: true })).not.toBeVisible();
+    if (clear) {
+      await dialog
+        .locator('summary')
+        .filter({ hasText: 'Valores anteriores em categorias arquivadas' })
+        .click();
+      await dialog.getByLabel('Previsto · Plano anterior', { exact: true }).fill('');
+    }
+    await dialog.getByRole('button', { name: 'Salvar planejamento', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+  }
+  expect(saved[0].lines).toContainEqual({ categoryId: archivedPlanId, amount: 12345 });
+  expect(saved[1].lines.some((line) => line.categoryId === archivedPlanId)).toBe(false);
+  expect(saved[1].lines).toContainEqual({ categoryId: archivedZeroId, amount: 0 });
+});

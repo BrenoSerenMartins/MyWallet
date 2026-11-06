@@ -11,6 +11,13 @@ export function BudgetSection({
   type: 'income' | 'expense';
   lines: PlanningLine[];
 }) {
+  const visibleLines = lines.filter(
+    (line) =>
+      !line.archived ||
+      line.actual !== 0 ||
+      line.transactionCount > 0 ||
+      (line.planned !== null && line.planned !== 0),
+  );
   return (
     <section className={`panel budget-section budget-${type}`}>
       <div className="section-heading">
@@ -23,15 +30,15 @@ export function BudgetSection({
           </p>
         </div>
       </div>
-      {!lines.length ? (
+      {!visibleLines.length ? (
         <div className="planning-empty">
           Crie categorias de {type === 'income' ? 'receita' : 'despesa'} para organizar seu plano.{' '}
           <Link to="/categories">Gerenciar categorias</Link>
         </div>
       ) : (
         <div className="budget-lines" role="list">
-          {[...new Set(lines.map(groupKey))].map((id) => {
-            const children = lines.filter((line) => groupKey(line) === id);
+          {[...new Set(visibleLines.map(groupKey))].map((id) => {
+            const children = visibleLines.filter((line) => groupKey(line) === id);
             return (
               <details
                 className="budget-group"
