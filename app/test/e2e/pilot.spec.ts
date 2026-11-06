@@ -4713,3 +4713,39 @@ for (const width of [320, 390, 768, 1440])
     await page.getByRole('link', { name: '← Voltar ao início', exact: true }).click();
     await expect(page).toHaveURL('/');
   });
+
+for (const width of [390, 1440])
+  test(`SaaS landing connects plans and FAQ to account creation at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await page
+      .getByRole('navigation', { name: 'Navegação da apresentação' })
+      .getByRole('link', { name: 'Planos', exact: true })
+      .click();
+    await expect(page).toHaveURL('/#planos');
+    const plans = page.locator('#planos');
+    await expect(plans.getByRole('heading', { name: 'Acesso inicial', exact: true })).toBeVisible();
+    await expect(plans).toContainText('Em breve');
+    await plans.getByRole('link', { name: 'Tirar minhas dúvidas' }).click();
+    const question = page
+      .locator('#duvidas details')
+      .filter({ hasText: 'Já posso contratar um plano pago?' });
+    await question.locator('summary').click();
+    await expect(question.locator('p')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await plans.getByRole('link', { name: 'Começar agora', exact: true }).click();
+    await expect(page).toHaveURL('/painel?cadastro=1');
+    await expect(
+      page.getByRole('button', { name: 'Criar minha conta', exact: true }),
+    ).toBeVisible();
+    await expect(page.locator('.entry-password input')).toHaveAttribute(
+      'autocomplete',
+      'new-password',
+    );
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await expect(
+      page.getByRole('button', { name: 'Entrar na minha conta', exact: true }),
+    ).toBeVisible();
+  });

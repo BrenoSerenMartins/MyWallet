@@ -11,7 +11,11 @@ export function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mode, setMode] = useState<'sign-in' | 'sign-up' | 'recover' | 'reset'>(
-    location.pathname === '/reset-password' ? 'reset' : 'sign-in',
+    location.pathname === '/reset-password'
+      ? 'reset'
+      : new URLSearchParams(location.search).get('cadastro') === '1'
+        ? 'sign-up'
+        : 'sign-in',
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
