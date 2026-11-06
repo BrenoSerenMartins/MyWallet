@@ -694,11 +694,6 @@
   .planning-page .budget-group > summary {
     padding: 18px;
   }
-  .planning-page .budget-group > summary .budget-group-totals {
-    gap: 8px;
-    flex-direction: column;
-    align-items: flex-end;
-  }
 }
 
 /* Space belongs to the layout, independently of optional notices. */
@@ -759,4 +754,77 @@ body .planning-page .planning-metrics {
   display: block;
   color: var(--muted);
   margin-top: 4px;
+}
+
+/* Group totals remain in the disclosure header in either state. */
+body .planning-page .budget-group > summary {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 2fr) 16px;
+  gap: 16px;
+  align-items: center;
+}
+body .planning-page .budget-group-identity {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+body .planning-page .budget-group-identity strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+body .planning-page .budget-group-identity small {
+  color: var(--muted);
+  font-size: 12px;
+}
+body .planning-page .budget-group > summary .budget-group-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  min-width: 0;
+  width: 100%;
+}
+body .planning-page .budget-group-metric {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  text-align: right;
+}
+body .planning-page .budget-group-metric > span {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+body .planning-page .budget-group-metric strong {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+body .planning-page .budget-group-metric strong.negative-text {
+  color: var(--negative);
+}
+@media (max-width: 760px) {
+  body .planning-page .budget-group > summary {
+    grid-template-columns: minmax(0, 1fr) 16px;
+    gap: 14px 8px;
+  }
+  body .planning-page .budget-group > summary::after {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  body .planning-page .budget-group > summary .budget-group-totals {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    gap: 8px;
+  }
+  body .planning-page .budget-group-metric {
+    text-align: center;
+  }
+  body .planning-page .budget-group-metric strong {
+    font-size: 14px;
+  }
 }

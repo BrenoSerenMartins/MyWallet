@@ -1,6 +1,7 @@
 import { money } from '../../../shared/formatting/money';
 import { Link } from 'react-router-dom';
 import type { PlanningLine } from '../../../shared/api/resources';
+import { planningGroupTotals } from '../group-totals';
 import { BudgetLine } from './budget-line';
 const groupKey = (line: PlanningLine) =>
   line.categoryId === null ? 'uncategorized' : (line.groupId ?? 'ungrouped');
@@ -39,6 +40,7 @@ export function BudgetSection({
         <div className="budget-lines" role="list">
           {[...new Set(visibleLines.map(groupKey))].map((id) => {
             const children = visibleLines.filter((line) => groupKey(line) === id);
+            const totals = planningGroupTotals(children, type);
             return (
               <details
                 className="budget-group"
@@ -46,12 +48,40 @@ export function BudgetSection({
                 open={['uncategorized', 'ungrouped'].includes(id) || undefined}
               >
                 <summary>
-                  {children[0].groupName ?? 'Sem grupo'}
-                  <span className="budget-group-totals">
-                    <span>{children.length} categorias</span>
-                    <strong>
-                      {money(children.reduce((total, line) => total + line.actual, 0))}
-                    </strong>
+                  <span className="budget-group-identity">
+                    <strong>{children[0].groupName ?? 'Sem grupo'}</strong>
+                    <small>
+                      {children.length} {children.length === 1 ? 'categoria' : 'categorias'}
+                      {totals.missing > 0 ? ` · ${totals.missing} sem previsão` : ''}
+                    </small>
+                  </span>
+                  <span className="budget-group-totals" role="group" aria-label="Totais do grupo">
+                    <span className="budget-group-metric">
+                      <span>
+                        {totals.missing > 0 && totals.planned !== null
+                          ? 'Previsto (parcial)'
+                          : 'Previsto'}
+                      </span>
+                      <strong>
+                        {totals.planned === null ? 'Não definido' : money(totals.planned)}
+                      </strong>
+                    </span>
+                    <span className="budget-group-metric">
+                      <span>Realizado</span>
+                      <strong>{money(totals.actual)}</strong>
+                    </span>
+                    <span className="budget-group-metric">
+                      <span>{type === 'income' ? 'Acima / abaixo' : 'Disponível / excedido'}</span>
+                      <strong
+                        className={
+                          totals.difference !== null && totals.difference < 0
+                            ? 'negative-text'
+                            : undefined
+                        }
+                      >
+                        {totals.difference === null ? '—' : money(totals.difference)}
+                      </strong>
+                    </span>
                   </span>
                 </summary>
                 <div className="budget-group-content">

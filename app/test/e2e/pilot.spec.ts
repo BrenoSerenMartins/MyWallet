@@ -4851,3 +4851,60 @@ test('planning hides unused archived categories and preserves older planned amou
   expect(saved[1].lines.some((line) => line.categoryId === archivedPlanId)).toBe(false);
   expect(saved[1].lines).toContainEqual({ categoryId: archivedZeroId, amount: 0 });
 });
+
+for (const width of [390, 1440])
+  test(`planning group keeps expected actual and remaining totals visible when collapsed and expanded at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await page.setViewportSize({ width, height: 900 });
+    const plan = monthlyPlan('2026-11');
+    const amounts = [999, 9990, 0, 7480, 5400];
+    const groupId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa0';
+    const lines = amounts.map((planned, index) => ({
+      ...plan.lines[1],
+      categoryId: `aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa${index + 1}`,
+      groupId,
+      groupName: 'Assinaturas',
+      name: ['Google', 'GPT', 'Ifood', 'Prime Video', 'Youtube'][index],
+      planned,
+      actual: 0,
+      transactionCount: 0,
+    }));
+    await page.route('**/v1/planning/**', (route) =>
+      route.fulfill({
+        json: {
+          ...plan,
+          lines: [plan.lines[0], ...lines],
+          totals: {
+            ...plan.totals,
+            plannedExpense: 23869,
+            actualExpense: 0,
+            plannedResult: 276131,
+            actualResult: 280000,
+            expenseDifference: 23869,
+            resultDifference: 3869,
+            afterContribution: 266131,
+          },
+        },
+      }),
+    );
+    await page.goto('/planning?month=2026-11');
+    const group = page
+      .locator('.budget-group')
+      .filter({ has: page.getByText('Assinaturas', { exact: true }) });
+    const header = group.locator(':scope > summary');
+    const metrics = header.locator('.budget-group-metric');
+    for (const open of [false, true, false]) {
+      await expect(group).toHaveJSProperty('open', open);
+      await expect(metrics.nth(0)).toBeVisible();
+      await expect(metrics.nth(0)).toContainText('Previsto');
+      await expect(metrics.nth(0)).toContainText('238,69');
+      await expect(metrics.nth(1)).toContainText('Realizado');
+      await expect(metrics.nth(1)).toContainText('0,00');
+      await expect(metrics.nth(2)).toContainText('Disponível / excedido');
+      await expect(metrics.nth(2)).toContainText('238,69');
+      await expectNoHorizontalOverflow(page);
+      await header.click();
+    }
+  });
