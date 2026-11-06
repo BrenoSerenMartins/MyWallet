@@ -26,3 +26,19 @@ it('distinguishes a missing verifier, an expired flow and a connectivity error w
   expect(authInitializationError({ name: 'AuthRetryableFetchError' })).toContain('conexão');
   expect(authInitializationError({ code: 'unknown' })).toContain('confirmação do e-mail');
 });
+
+it('explains email quotas without treating other authentication failures as rate limits', async () => {
+  const { authEmailLimitMessage } = await import('../auth-return');
+  expect(authEmailLimitMessage({ code: 'over_email_send_rate_limit' })).toContain(
+    'Nenhum novo e-mail foi enviado',
+  );
+  expect(authEmailLimitMessage({ message: 'email rate limit exceeded' })).toContain(
+    'limite de envio',
+  );
+  expect(authEmailLimitMessage({ code: 'over_request_rate_limit' })).toContain(
+    'muitas solicitações',
+  );
+  expect(
+    authEmailLimitMessage({ code: 'invalid_credentials', message: 'Invalid login credentials' }),
+  ).toBeNull();
+});

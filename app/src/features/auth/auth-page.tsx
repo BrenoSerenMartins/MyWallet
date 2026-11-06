@@ -2,7 +2,7 @@ import { useNotifications } from '../../shared/feedback/notification-provider';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { authReturnError, authInitializationError } from './auth-return';
+import { authReturnError, authInitializationError, authEmailLimitMessage } from './auth-return';
 import { authClient, authStartup } from '../../shared/api/auth-client';
 import { Button, Logo, ThemeSwitcher } from '../../shared/ui/primitives';
 import { productName } from '../../shared/brand';
@@ -25,6 +25,40 @@ export function AuthPage() {
   const [password, setPassword] = useState('');
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [retryAt, setRetryAt] = useState(() => {
+    try {
+      const stored = Number(sessionStorage.getItem('plannedwallet-auth-email-retry-at'));
+      return Number.isFinite(stored) && stored > Date.now()
+        ? Math.min(stored, Date.now() + 60000)
+        : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [now, setNow] = useState(Date.now);
+  const retrySeconds = Math.max(0, Math.ceil((retryAt - now) / 1000));
+  const emailMode = mode === 'recover' || mode === 'sign-up';
+  useEffect(() => {
+    if (!retryAt) return;
+    const timer = window.setInterval(() => {
+      const current = Date.now();
+      setNow(current);
+      if (current >= retryAt) {
+        setRetryAt(0);
+        window.clearInterval(timer);
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [retryAt]);
+  function pauseEmailRequests() {
+    const current = Date.now();
+    const next = current + 60000;
+    setNow(current);
+    setRetryAt(next);
+    try {
+      sessionStorage.setItem('plannedwallet-auth-email-retry-at', String(next));
+    } catch {}
+  }
   const notices = useNotifications('session');
   const setMessage = (message: string) => {
     if (message) notices.info(message, { id: 'auth-feedback', duration: 0 });
@@ -68,6 +102,7 @@ export function AuthPage() {
   }, [location.pathname, navigate]);
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (busy || (emailMode && retrySeconds > 0)) return;
     setBusy(true);
     setError('');
     setMessage('');
@@ -93,7 +128,15 @@ export function AuthPage() {
         }
         result = await authClient.auth.updateUser({ password });
       }
-      if (result.error) throw new Error(result.error.message);
+      if (result.error) {
+        const limitMessage = emailMode ? authEmailLimitMessage(result.error) : null;
+        if (limitMessage) {
+          pauseEmailRequests();
+          throw new Error(limitMessage);
+        }
+        throw result.error;
+      }
+      if (emailMode) pauseEmailRequests();
       if (mode === 'recover')
         setMessage(
           'Se houver uma conta com este e-mail, você receberá as instruções. Abra o e-mail mais recente no mesmo navegador em que fez o pedido.',
@@ -204,18 +247,30 @@ export function AuthPage() {
                 </p>
               )}
 
-              <Button disabled={busy || (mode === 'reset' && !resetReady)}>
+              <Button
+                disabled={
+                  busy || (emailMode && retrySeconds > 0) || (mode === 'reset' && !resetReady)
+                }
+              >
                 {busy
                   ? 'Aguarde…'
-                  : mode === 'sign-in'
-                    ? 'Entrar na minha conta'
-                    : mode === 'sign-up'
-                      ? 'Criar minha conta'
-                      : mode === 'recover'
-                        ? 'Enviar instruções'
-                        : 'Salvar nova senha'}
+                  : emailMode && retrySeconds > 0
+                    ? `Aguarde ${retrySeconds}s`
+                    : mode === 'sign-in'
+                      ? 'Entrar na minha conta'
+                      : mode === 'sign-up'
+                        ? 'Criar minha conta'
+                        : mode === 'recover'
+                          ? 'Enviar instruções'
+                          : 'Salvar nova senha'}
                 <ArrowRight size={18} />
               </Button>
+              {emailMode && retrySeconds > 0 && (
+                <p className="field-help">
+                  Pausa entre tentativas. O limite do serviço pode levar mais tempo para ser
+                  liberado.
+                </p>
+              )}
             </form>
             <p className="entry-switch">
               {mode === 'sign-in' ? 'Ainda não tem uma conta?' : 'Já tem uma conta?'}{' '}

@@ -20,3 +20,11 @@ export function authInitializationError(error: { code?: string; name?: string })
     return 'Não foi possível conectar ao serviço de autenticação. Confira sua conexão e tente abrir o link novamente.';
   return 'A confirmação do e-mail não pôde ser concluída. Solicite um novo link de recuperação.';
 }
+
+export function authEmailLimitMessage(error: { code?: string; message?: string }): string | null {
+  if (error.code === 'over_email_send_rate_limit' || error.message === 'email rate limit exceeded')
+    return 'O limite de envio de e-mails foi atingido. Aguarde a liberação do serviço antes de pedir outro link. Nenhum novo e-mail foi enviado nesta tentativa.';
+  if (error.code === 'over_request_rate_limit')
+    return 'Foram feitas muitas solicitações. Aguarde um pouco antes de tentar novamente.';
+  return null;
+}
