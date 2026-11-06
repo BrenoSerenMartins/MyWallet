@@ -66,7 +66,7 @@ export function AuthPage() {
     }
   }
   const title = {
-    'sign-in': 'Bom ter você por aqui.',
+    'sign-in': 'Entrar na sua conta',
     'sign-up': 'Seu próximo passo começa aqui.',
     recover: 'Vamos recuperar seu acesso.',
     reset: 'Uma nova senha para você.',
