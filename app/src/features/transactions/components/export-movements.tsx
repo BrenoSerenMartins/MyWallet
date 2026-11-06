@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { request } from '../../../shared/api/client';
-import { getRequestWorkspace } from '../../../shared/api/workspace-selection';
+import {
+  getRequestWorkspace,
+  getRequestWorkspaceRole,
+} from '../../../shared/api/workspace-selection';
 import type { Account, Category, Collection, Transaction } from '../../../shared/api/resources';
 import { movementCsv } from '../movement-csv';
 export function ExportMovements({
@@ -76,6 +79,13 @@ export function ExportMovements({
       }
     }
   }
+  if (getRequestWorkspaceRole() === 'reader')
+    return (
+      <p className="field-help">
+        Seu acesso de leitor permite consultar os lançamentos. A exportação está disponível para
+        editores e proprietário.
+      </p>
+    );
   return (
     <div>
       <a ref={downloadLink} hidden download="plannedwallet-movimentacoes.csv" aria-hidden="true" />

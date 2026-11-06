@@ -1,6 +1,7 @@
 import { isoDate } from '../../../core/rest/index.js';
 export function transactionResource(row: Record<string, any>) {
   return {
+    categoryChoiceExplicit: !!row.category_choice_explicit,
     cardPayment: row.card_payment ?? null,
     managedKind: row.managed_kind ?? null,
     counterpartyId: row.counterparty_id ?? null,

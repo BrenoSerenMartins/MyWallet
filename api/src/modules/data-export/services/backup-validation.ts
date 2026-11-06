@@ -1,3 +1,4 @@
+import { validateGoalsBackup } from './validate-goals-backup.js';
 import { validateManagedBackup } from './validate-managed-backup.js';
 import { validateCommitmentsBackup } from './validate-commitments-backup.js';
 import { validateBalanceBackup } from './validate-balance-backup.js';
@@ -22,7 +23,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   ) as BackupPayload;
   if (
     b.format !== 'plannedwallet' ||
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(b.version) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||
@@ -113,6 +114,8 @@ export function validateBackup(raw: unknown): BackupPayload {
   for (const t of b.transactions) {
     if (!t || typeof t !== 'object') fail();
     unique(t.id);
+    if (t.categoryChoiceExplicit !== undefined && typeof t.categoryChoiceExplicit !== 'boolean')
+      fail();
     if (t.managedKind != null && (b.version < 9 || !['card', 'investment'].includes(t.managedKind)))
       fail();
     dateOnly(t.transactionDate);
@@ -243,6 +246,14 @@ export function validateBackup(raw: unknown): BackupPayload {
       pair[0].transactionDate !== pair[1].transactionDate
     )
       fail();
+  for (const a of b.accounts)
+    for (const type of ['income', 'expense'] as const) {
+      const id = type === 'income' ? a.defaultIncomeCategoryId : a.defaultExpenseCategoryId;
+      if (id != null) {
+        if (b.version < 13 || !b.categories.some((c) => c.id === id && c.type === type)) fail();
+      }
+    }
+  validateGoalsBackup(b, unique);
   validateBalanceBackup(b, unique);
   const commitments = validateCommitmentsBackup(b, unique);
   validateManagedBackup({ ...b, commitments: b.version >= 8 ? commitments : undefined }, unique);

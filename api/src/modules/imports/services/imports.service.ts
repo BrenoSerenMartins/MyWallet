@@ -117,17 +117,51 @@ export class ImportsService {
           : item.transactionType,
     }));
     const planned = await this.reconciliation.plan(accountId, reportType, normalized);
+    const account = await this.accounts.find(accountId);
+    const activeCategories = await this.categories.list();
     const suggestions = await this.counterparties.suggest(
       accountId,
       reportType,
       planned.map((item) => ({ ...item, sourceStoreId: item.metadata?.storeId })),
     );
-    return planned.map((item, index) => ({
-      counterpartyId: null,
-      classificationRuleId: null,
-      ...item,
-      ...(item.refundOfId || item.cardId ? {} : suggestions[index]),
-    }));
+    return planned.map((item, index) => {
+      const recognized: { categoryId?: string | null } =
+        item.refundOfId || item.cardId
+          ? {}
+          : {
+              ...suggestions[index],
+              ...(item.categoryChoiceExplicit && !item.categoryId
+                ? { categoryId: null, classificationRuleId: null }
+                : {}),
+            };
+      const candidate =
+        item.transactionType === 'income'
+          ? account.defaultIncomeCategoryId
+          : item.transactionType === 'expense'
+            ? account.defaultExpenseCategoryId
+            : null;
+      const fallback =
+        !item.categoryChoiceExplicit &&
+        !item.categoryId &&
+        !recognized.categoryId &&
+        !item.cardId &&
+        !item.refundOfId &&
+        candidate &&
+        activeCategories.some(
+          (c) => c.id === candidate && !c.archived && c.type === item.transactionType,
+        )
+          ? candidate
+          : null;
+      return {
+        counterpartyId: null,
+        classificationRuleId: null,
+        ...item,
+        ...recognized,
+        ...(fallback
+          ? { categoryId: fallback, categoryExplanation: 'Categoria padrão da conta' }
+          : {}),
+      };
+    });
   }
 
   async preview(id: string) {
@@ -277,7 +311,10 @@ export class ImportsService {
       input.rememberCategory = false;
     } else if (input.cardBillMonth)
       throw new UnprocessableEntityException('Escolha o cartão da fatura.');
-    await this.repository.updateItem(id, itemId, input);
+    await this.repository.updateItem(id, itemId, {
+      ...input,
+      categoryChoiceExplicit: input.categoryId !== undefined,
+    });
     return this.preview(id);
   }
   async classify(id: string, version: number) {
@@ -401,6 +438,7 @@ export class ImportsService {
             rememberCounterparty: item.rememberCounterparty,
             counterpartyId: item.counterpartyId ?? undefined,
             classificationRuleId: item.classificationRuleId,
+            categoryChoiceExplicit: item.categoryChoiceExplicit,
             categoryId: item.cardId ? null : item.categoryId,
             refundOfId: item.refundOfId,
             transactionDate: item.transactionDate,

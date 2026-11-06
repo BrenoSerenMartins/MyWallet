@@ -1,6 +1,5 @@
 import { MonthPicker } from '../../../shared/ui/controls/month-picker';
 import { DatePicker } from '../../../shared/ui/controls/date-picker';
-import { Select } from '../../../shared/ui/controls/select';
 import { useState } from 'react';
 import type { CreditCard, CardPurchase } from '../../../shared/api/resources';
 import {

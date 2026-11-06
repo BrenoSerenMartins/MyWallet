@@ -34,6 +34,7 @@ import { dateToday, money, parseMoney, shortDate } from '../../shared/formatting
 import { validMonth, shiftMonth } from '../../shared/formatting/month';
 import { CardForm, CardPurchaseForm, CardOpeningForm } from './components/card-forms';
 import { CardPaymentForm } from './components/card-payment-form';
+import { CardRecurring } from './components/card-recurring';
 import './cards.css';
 type Dialog =
   | { kind: 'new' | 'edit' | 'purchase' | 'opening' | 'pay' }
@@ -446,6 +447,7 @@ export function CardsPage() {
           </>
         )}
       </section>
+      {card && !card.archived && <CardRecurring key={card.id} card={card} month={month} />}
       <Modal
         open={!!dialog}
         onOpenChange={(open) => !open && setDialog(null)}

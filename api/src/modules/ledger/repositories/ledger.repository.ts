@@ -172,7 +172,7 @@ export class LedgerRepository {
     WHERE t.user_id=$1 AND t.account_id=$2 AND t.transaction_type=$6 AND t.reversed_at IS NULL
       AND t.refund_of_id IS NULL AND t.balance_adjustment IS NULL AND t.transfer_group_id IS NULL
       AND NOT EXISTS(SELECT 1 FROM wallet.transactions r WHERE r.refund_of_id=t.id AND r.reversed_at IS NULL)
-      AND (t.category_id IS NULL OR t.classification_rule_id IS NOT NULL)
+      AND NOT t.category_choice_explicit AND (t.category_id IS NULL OR t.classification_rule_id IS NOT NULL)
       AND (t.counterparty_id=$3 OR (t.counterparty_id IS NULL AND EXISTS(SELECT 1 FROM recognized x WHERE x.id=t.id AND x.counterparty_id=$3)))
       AND (t.category_id IS DISTINCT FROM $4 OR t.counterparty_id IS DISTINCT FROM $3 OR t.classification_rule_id IS DISTINCT FROM $5)
     RETURNING t.id`,
@@ -240,7 +240,7 @@ export class LedgerRepository {
   }
   async insert(input: TransactionInput) {
     const rows = await this.db.query(
-      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment,refund_of_id,counterparty_id,classification_rule_id,source_kind,balance_basis_included,managed_kind) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
+      `INSERT INTO wallet.transactions(id,user_id,account_id,category_id,transaction_date,description,amount_minor,transaction_type,source_operation_id,import_batch_id,source_row,transfer_group_id,balance_adjustment,refund_of_id,counterparty_id,classification_rule_id,source_kind,balance_basis_included,managed_kind,category_choice_explicit) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING *`,
       [
         randomUUID(),
         this.db.userId,
@@ -261,6 +261,7 @@ export class LedgerRepository {
         input.sourceKind ?? 'manual',
         input.balanceBasisIncluded ?? false,
         input.managedKind ?? null,
+        input.categoryChoiceExplicit ?? false,
       ],
     );
     return transactionResource(rows[0]);
@@ -308,7 +309,7 @@ export class LedgerRepository {
   }
   async update(id: string, input: TransactionInput) {
     await this.db.query(
-      'UPDATE wallet.transactions SET category_id=$3,transaction_date=$4,description=$5,amount_minor=$6,transaction_type=$7,counterparty_id=$8,classification_rule_id=$9,version=version+1,updated_at=now() WHERE user_id=$1 AND id=$2',
+      'UPDATE wallet.transactions SET category_id=$3,transaction_date=$4,description=$5,amount_minor=$6,transaction_type=$7,counterparty_id=$8,classification_rule_id=$9,category_choice_explicit=$10,version=version+1,updated_at=now() WHERE user_id=$1 AND id=$2',
       [
         this.db.userId,
         id,
@@ -319,6 +320,7 @@ export class LedgerRepository {
         input.transactionType,
         input.counterpartyId ?? null,
         input.classificationRuleId ?? null,
+        input.categoryChoiceExplicit ?? true,
       ],
     );
     return this.find(id);

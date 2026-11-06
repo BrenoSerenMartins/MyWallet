@@ -1,3 +1,4 @@
+import { GoalsModule, GoalsService } from '../modules/goals/index.js';
 import { CardsModule, CardsService } from '../modules/cards/index.js';
 import { WealthModule, WealthService } from '../modules/wealth/index.js';
 import { CounterpartiesModule, CounterpartiesService } from '../modules/counterparties/index.js';
@@ -5,6 +6,10 @@ import { Global, Module } from '@nestjs/common';
 import {
   MANAGED_ACCOUNTS,
   MANAGED_LEDGER,
+  PLANNING_READS,
+  COMMITMENT_READS,
+  GOALS_READS,
+  GOALS_BACKUP,
   CARD_FORECAST,
   CARD_IMPORT_PAYMENTS,
   CARDS_BACKUP,
@@ -28,6 +33,10 @@ import { CategoriesModule, CategoriesService } from '../modules/categories/index
 import { LedgerModule, LedgerService, IdempotencyService } from '../modules/ledger/index.js';
 import { PlanningModule, PlanningService, CommitmentsService } from '../modules/planning/index.js';
 const bindings = [
+  { provide: PLANNING_READS, useExisting: PlanningService },
+  { provide: COMMITMENT_READS, useExisting: CommitmentsService },
+  { provide: GOALS_READS, useExisting: GoalsService },
+  { provide: GOALS_BACKUP, useExisting: GoalsService },
   { provide: MANAGED_ACCOUNTS, useExisting: AccountsService },
   { provide: MANAGED_LEDGER, useExisting: LedgerService },
   { provide: CARD_FORECAST, useExisting: CardsService },
@@ -51,6 +60,7 @@ const bindings = [
 @Global()
 @Module({
   imports: [
+    GoalsModule,
     CardsModule,
     WealthModule,
     CounterpartiesModule,

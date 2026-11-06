@@ -1,6 +1,8 @@
 import { GoneException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import {
+  GOALS_BACKUP,
+  type GoalsBackup,
   CARDS_BACKUP,
   WEALTH_BACKUP,
   type ManagedBackup,
@@ -40,11 +42,13 @@ export class DataExportService {
     @Optional() @Inject(COMMITMENTS_BACKUP) private readonly commitments?: CommitmentsBackup,
     @Optional() @Inject(CARDS_BACKUP) private readonly cards?: ManagedBackup<CardsSnapshot>,
     @Optional() @Inject(WEALTH_BACKUP) private readonly wealth?: ManagedBackup<WealthSnapshot>,
+    @Optional() @Inject(GOALS_BACKUP) private readonly goals?: GoalsBackup,
   ) {}
   async backup(): Promise<BackupPayload> {
     return {
       format: 'plannedwallet',
-      version: 12,
+      version: 13,
+      goals: (await this.goals?.exportManaged()) ?? { goals: [] },
       cards: (await this.cards?.exportManaged()) ?? {
         cards: [],
         bills: [],
@@ -157,6 +161,12 @@ export class DataExportService {
             groupId: c.groupId ? groups.get(c.groupId)! : null,
           }),
         );
+      for (const a of payload.accounts)
+        await this.accounts.restoreDefaults(
+          accounts.get(a.id)!,
+          a.defaultIncomeCategoryId ? categories.get(a.defaultIncomeCategoryId)! : null,
+          a.defaultExpenseCategoryId ? categories.get(a.defaultExpenseCategoryId)! : null,
+        );
       const identities = await this.counterparties.restore(
         payload.counterparties ?? { agents: [], identifiers: [], rules: [] },
         accounts,
@@ -194,6 +204,9 @@ export class DataExportService {
         await this.cards?.restoreManaged(payload.cards, accounts, categories, transactionIds);
       if (payload.wealth)
         await this.wealth?.restoreManaged(payload.wealth, accounts, categories, transactionIds);
+      if (payload.goals?.goals.length && !this.goals)
+        throw new Error('Goal restore is unavailable.');
+      if (payload.goals) await this.goals?.restoreManaged(payload.goals, accounts);
       await this.repository.confirm(id);
       return {
         id,

@@ -8,6 +8,7 @@ export class CreateWorkspaceDto {
   color!: string;
 }
 export class WorkspaceResourceDto {
+  @ApiProperty({ enum: ['owner', 'editor', 'reader'] }) role?: 'owner' | 'editor' | 'reader';
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) name!: string;
   @ApiProperty({ type: String }) description!: string;

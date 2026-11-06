@@ -88,3 +88,16 @@ export class FinanceActionDto {
   @ApiPropertyOptional({ type: String }) status?: string;
   @ApiPropertyOptional({ type: String }) mode?: string;
 }
+export class CardRecurringResourceDto {
+  @ApiProperty({ type: [String] }) confirmedMonths!: string[];
+  @ApiProperty({ type: String }) id!: string;
+  @ApiProperty({ type: String }) cardId!: string;
+  @ApiProperty({ type: String }) name!: string;
+  @ApiProperty({ type: Number }) amount!: number;
+  @ApiProperty({ type: Number }) chargeDay!: number;
+  @ApiProperty({ type: String, nullable: true }) categoryId!: string | null;
+  @ApiProperty({ type: String }) startMonth!: string;
+  @ApiProperty({ type: String, nullable: true }) endMonth!: string | null;
+  @ApiProperty({ type: Boolean }) archived!: boolean;
+  @ApiProperty({ type: Number }) version!: number;
+}

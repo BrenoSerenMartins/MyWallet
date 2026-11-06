@@ -34,17 +34,24 @@ export function WorkspaceCard({
               </span>
             )}
             {workspace.isDefault && <span>Padrão</span>}
+            {workspace.role && workspace.role !== 'owner' && (
+              <span>
+                {workspace.role === 'reader' ? 'Compartilhado · leitura' : 'Compartilhado · edição'}
+              </span>
+            )}
           </div>
           {workspace.description && <p>{workspace.description}</p>}
         </div>
       </Link>
-      <IconAction
-        label={`Excluir espaço ${workspace.name}`}
-        className="space-delete-action"
-        icon={<Trash2 size={17} />}
-        onClick={onDelete}
-        disabled={!navigator.onLine}
-      />
+      {(!workspace.role || workspace.role === 'owner') && (
+        <IconAction
+          label={`Excluir espaço ${workspace.name}`}
+          className="space-delete-action"
+          icon={<Trash2 size={17} />}
+          onClick={onDelete}
+          disabled={!navigator.onLine}
+        />
+      )}
     </article>
   );
 }

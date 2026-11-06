@@ -52,7 +52,27 @@ export interface CardPayment {
   voided: boolean;
   version: number;
 }
+export interface CardRecurringRule {
+  id: string;
+  cardId: string;
+  name: string;
+  amount: number;
+  categoryId: string | null;
+  chargeDay: number;
+  startMonth: string;
+  endMonth: string | null;
+  archived: boolean;
+  version: number;
+}
+export interface CardRecurringCharge {
+  id: string;
+  ruleId: string;
+  chargeMonth: string;
+  purchaseId: string;
+}
 export interface CardsSnapshot {
+  recurringRules?: CardRecurringRule[];
+  recurringCharges?: CardRecurringCharge[];
   cards: CreditCard[];
   bills: CreditCardBill[];
   purchases: CardPurchase[];

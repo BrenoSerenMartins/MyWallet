@@ -1,6 +1,24 @@
-import { IsIn, IsInt, IsISO8601, IsOptional, IsString, Length, Max, Min } from 'class-validator';
+import {
+  IsIn,
+  IsInt,
+  IsISO8601,
+  IsOptional,
+  IsUUID,
+  IsString,
+  Length,
+  Max,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class UpdateAccountDto {
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
+  @IsUUID()
+  defaultIncomeCategoryId?: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
+  @IsUUID()
+  defaultExpenseCategoryId?: string | null;
   @ApiPropertyOptional({ enum: ['received', 'following'] })
   @IsOptional()
   @IsIn(['received', 'following'])

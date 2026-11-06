@@ -25,6 +25,8 @@ import { validateInput } from '../../../core/http/index.js';
 import { requireUuid } from '../../../core/rest/index.js';
 import { CardsService } from '../services/cards.service.js';
 import {
+  CardRecurringDto,
+  ConfirmCardRecurringDto,
   SaveCardDto,
   CardPurchaseDto,
   CardPaymentDto,
@@ -34,6 +36,7 @@ import {
   CardCategoryDto,
 } from '../dto/cards.dto.js';
 import {
+  CardRecurringResourceDto,
   CreditCardDto,
   CardsSummaryDto,
   CardPurchaseResourceDto,
@@ -74,6 +77,62 @@ export class CardsController {
   ) {
     const dto = await validateInput(SaveCardDto, body);
     return this.db.forUser(r.identity.id, () => this.cards.update(requireUuid(id), dto, version));
+  }
+  @Get(':id/recurring') @ApiOkResponse({ type: [CardRecurringResourceDto] }) recurring(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.db.forUser(r.identity.id, () => this.cards.recurring(requireUuid(id)), true);
+  }
+  @Post(':id/recurring')
+  @ApiBody({ type: CardRecurringDto })
+  @ApiCreatedResponse({ type: CardRecurringResourceDto })
+  async createRecurring(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const input = await validateInput(CardRecurringDto, body);
+    return this.db.forUser(r.identity.id, () => this.cards.saveRecurring(requireUuid(id), input));
+  }
+  @Patch(':id/recurring/:rule')
+  @ApiBody({ type: CardRecurringDto })
+  @ApiOkResponse({ type: CardRecurringResourceDto })
+  async updateRecurring(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Param('rule') rule: string,
+    @Headers('if-match') version: string,
+    @Body() body: unknown,
+  ) {
+    const input = await validateInput(CardRecurringDto, body);
+    return this.db.forUser(r.identity.id, () =>
+      this.cards.saveRecurring(requireUuid(id), input, requireUuid(rule), version),
+    );
+  }
+  @Post(':id/recurring/:rule/months/:month/confirm')
+  @ApiBody({ type: ConfirmCardRecurringDto })
+  @ApiOkResponse({ type: FinanceActionDto })
+  async confirmRecurring(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Param('rule') rule: string,
+    @Param('month') month: string,
+    @Headers('if-match') version: string,
+    @Headers('idempotency-key') key: string,
+    @Body() body: unknown,
+  ) {
+    const input = await validateInput(ConfirmCardRecurringDto, body);
+    return this.db.forUser(r.identity.id, () =>
+      this.cards.confirmRecurring(
+        requireUuid(id),
+        requireUuid(rule),
+        month,
+        version,
+        key,
+        input.purchaseId,
+      ),
+    );
   }
   @Post(':id/bills/:month/transaction-payments')
   @ApiBody({ type: CardTransactionPaymentDto })

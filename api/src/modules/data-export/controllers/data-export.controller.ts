@@ -32,7 +32,10 @@ export class DataExportController {
   ) {
     const data = await this.db.forUser<unknown>(
       r.identity.id,
-      () => (format === 'csv' ? this.exports.csv() : this.exports.backup()),
+      () => {
+        this.db.requireExport();
+        return format === 'csv' ? this.exports.csv() : this.exports.backup();
+      },
       true,
     );
     res.setHeader(
@@ -43,15 +46,24 @@ export class DataExportController {
     else res.json(data);
   }
   @Post('restores') preview(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
-    return this.db.forUser(r.identity.id, () => this.exports.preview(body));
+    return this.db.forUser(r.identity.id, () => {
+      this.db.requireOwner();
+      return this.exports.preview(body);
+    });
   }
   @Get('restores/:id') review(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
-    return this.db.forUser(r.identity.id, () => this.exports.review(requireUuid(id)));
+    return this.db.forUser(r.identity.id, () => {
+      this.db.requireOwner();
+      return this.exports.review(requireUuid(id));
+    });
   }
   @Post('restores/:id/confirmations') confirm(
     @Req() r: AuthenticatedRequest,
     @Param('id') id: string,
   ) {
-    return this.db.forUser(r.identity.id, () => this.exports.confirm(requireUuid(id)));
+    return this.db.forUser(r.identity.id, () => {
+      this.db.requireOwner();
+      return this.exports.confirm(requireUuid(id));
+    });
   }
 }

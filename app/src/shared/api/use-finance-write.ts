@@ -1,3 +1,4 @@
+import { getRequestWorkspaceRole } from './workspace-selection';
 import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ApiError, jsonBody, request } from './client';
@@ -10,6 +11,8 @@ export function useFinanceWrite() {
     version?: number,
     method = 'POST',
   ): Promise<T> {
+    if (getRequestWorkspaceRole() === 'reader' && !path.startsWith('/alerts'))
+      throw new ApiError('Seu acesso permite apenas consultar este espaço.', 403);
     const signature = JSON.stringify({ path, body, version, method });
     const key = receipts.current.get(signature) ?? crypto.randomUUID();
     receipts.current.set(signature, key);

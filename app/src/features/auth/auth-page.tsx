@@ -11,6 +11,9 @@ import './auth.css';
 export function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const invitation = new URLSearchParams(window.location.search).get('invite');
+  if (invitation && /^[a-f0-9]{64}$/.test(invitation))
+    sessionStorage.setItem('plannedwallet-pending-invite', invitation);
   const returnError = authReturnError(location.search, location.hash);
   const [mode, setMode] = useState<'sign-in' | 'sign-up' | 'recover' | 'reset'>(
     returnError
@@ -96,7 +99,13 @@ export function AuthPage() {
   useEffect(() => {
     if (location.pathname === '/auth/callback') {
       void authClient.auth.getSession().then(({ data }) => {
-        if (data.session) navigate('/', { replace: true });
+        if (data.session)
+          navigate(
+            sessionStorage.getItem('plannedwallet-pending-invite')
+              ? `/workspaces?invite=${sessionStorage.getItem('plannedwallet-pending-invite')}`
+              : '/',
+            { replace: true },
+          );
       });
     }
   }, [location.pathname, navigate]);
@@ -147,7 +156,13 @@ export function AuthPage() {
         !('session' in (result.data ?? {}) && (result.data as { session?: unknown })?.session)
       )
         setMessage('Confira seu e-mail para confirmar o cadastro.');
-      else navigate('/', { replace: true });
+      else
+        navigate(
+          sessionStorage.getItem('plannedwallet-pending-invite')
+            ? `/workspaces?invite=${sessionStorage.getItem('plannedwallet-pending-invite')}`
+            : '/',
+          { replace: true },
+        );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível entrar.');
     } finally {

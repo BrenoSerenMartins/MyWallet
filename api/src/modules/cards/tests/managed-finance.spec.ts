@@ -656,7 +656,7 @@ it('consolidates assets and debt once, excludes benefits, and saves reproducible
 });
 it('round-trips cards, positions, liabilities, claims and historical undo pointers in v11 without duplicating money', async () => {
   const source = await run(() => backup.backup());
-  expect(source.version).toBe(12);
+  expect(source.version).toBe(13);
   const financialState = async () => {
     const worth = await wealth.summary();
     const cardsState = await cards.summary('2026-11');
@@ -1157,7 +1157,7 @@ it('plans invoices by default, accepts payments from different accounts and pres
   ).rejects.toThrow('pendente');
   expect((await run(() => accounts.find(bankA.id))).balance).toBe(beforeReject.balance);
   const exported = await run(() => backup.backup());
-  expect(exported.version).toBe(12);
+  expect(exported.version).toBe(13);
   await db.forUser(db.other, async () => {
     const preview = await backup.preview(exported);
     await backup.confirm(preview.id);
@@ -1306,4 +1306,526 @@ it('counts only payments made in the selected month and can explicitly include a
   } finally {
     vi.setSystemTime(new Date('2026-11-15T15:00:00Z'));
   }
+});
+
+import { GoalsService } from '../../goals/services/goals.service.js';
+import { SharingService } from '../../workspaces/services/sharing.service.js';
+import { AlertsService } from '../../alerts/services/alerts.service.js';
+import { RecognitionService } from '../../ledger/services/recognition.service.js';
+const goals = new GoalsService(db.service, accounts, receipts);
+const sharing = new SharingService(db.service);
+const planningCycle = new PlanningService(
+  new PlanningRepository(db.service),
+  categories,
+  ledger,
+  accounts,
+  cards,
+);
+const alerts = new AlertsService(db.service, cards, goals, planningCycle, commitments);
+const recognition = new RecognitionService(
+  db.service,
+  accounts,
+  categories,
+  parties,
+  cards,
+  cards,
+  receipts,
+);
+it('uses optional account defaults by direction while preserving explicit choices, recognized rules and archived categories', async () => {
+  const expense = await run(() =>
+    categories.save({ name: 'Default expense cycle', type: 'expense', color: '#f28a97' }),
+  );
+  const income = await run(() =>
+    categories.save({ name: 'Default income cycle', type: 'income', color: '#5ee9b5' }),
+  );
+  const a = await run(() =>
+    accounts.create({
+      name: 'Defaults cycle',
+      institution: 'mercado_pago',
+      type: 'checking',
+      openingBalance: 10000,
+      openingDate: '2026-01-01',
+      defaultIncomeCategoryId: income.id,
+      defaultExpenseCategoryId: expense.id,
+    }),
+  );
+  const base = {
+    accountId: a.id,
+    description: 'Defaults test',
+    transactionDate: '2026-11-01',
+    amount: -100,
+    transactionType: 'expense' as const,
+  };
+  expect((await run(() => ledger.create(base))).categoryId).toBe(expense.id);
+  expect(
+    (await run(() => ledger.create({ ...base, amount: 100, transactionType: 'income' })))
+      .categoryId,
+  ).toBe(income.id);
+  expect(
+    (await run(() => ledger.create({ ...base, categoryId: null, categoryChoiceExplicit: true })))
+      .categoryId,
+  ).toBeNull();
+  await expect(
+    run(() =>
+      accounts.create({
+        name: 'Wrong defaults',
+        institution: 'mercado_pago',
+        type: 'checking',
+        defaultExpenseCategoryId: income.id,
+      }),
+    ),
+  ).rejects.toThrow('tipo correspondente');
+  const manualNone = await run(() =>
+    ledger.create({
+      ...base,
+      description: 'Explicit uncategorized cycle',
+      categoryId: null,
+      categoryChoiceExplicit: true,
+    }),
+  );
+  expect(
+    (await run(() => recognition.queue())).items.some((i) => i.transactionId === manualNone.id),
+  ).toBe(false);
+  await run(() => categories.archive(expense.id));
+  expect((await run(() => ledger.create(base))).categoryId).toBeNull();
+});
+it('allocates existing money once, preserves account balances and supports guarded release/undo with visible deficits', async () => {
+  const a = await account('Goal cycle'),
+    before = a.balance;
+  const g = await run(() =>
+    goals.save({ name: 'Emergency cycle', target: 200000, priority: 1, deadline: '2027-01-01' }),
+  );
+  const allocated = await run(() =>
+    goals.allocate(
+      g.id,
+      { accountId: a.id, amount: 80000, action: 'allocate' },
+      String(g.version),
+      'goal-cycle-first',
+    ),
+  );
+  expect(allocated.allocated).toBe(80000);
+  expect((await run(() => accounts.find(a.id))).balance).toBe(before);
+  const g2 = await run(() => goals.save({ name: 'Travel cycle', target: 50000, priority: 2 }));
+  await expect(
+    run(() =>
+      goals.allocate(
+        g2.id,
+        { accountId: a.id, amount: 30000, action: 'allocate' },
+        String(g2.version),
+        'goal-cycle-over',
+      ),
+    ),
+  ).rejects.toThrow('insuficiente');
+  const released = await run(() =>
+    goals.allocate(
+      g.id,
+      { accountId: a.id, amount: 20000, action: 'release' },
+      String(allocated.version),
+      'goal-cycle-release',
+    ),
+  );
+  const undone = await run(() =>
+    goals.undo(
+      g.id,
+      released.allocations.find((e) => e.delta === -20000)!.id,
+      String(released.version),
+      'goal-cycle-undo',
+    ),
+  );
+  expect(undone.allocated).toBe(80000);
+  await run(() =>
+    ledger.create({
+      accountId: a.id,
+      description: 'External spend cycle',
+      amount: -50000,
+      transactionDate: '2026-11-01',
+      transactionType: 'expense',
+    }),
+  );
+  expect((await run(() => goals.summary())).goals.find((x) => x.id === g.id)?.underfunded).toBe(
+    true,
+  );
+  await expect(
+    db.forUser(db.other, () =>
+      goals.allocate(
+        g.id,
+        { accountId: a.id, amount: 1, action: 'allocate' },
+        String(undone.version),
+        'goal-foreign',
+      ),
+    ),
+  ).rejects.toThrow();
+});
+it('forecasts recurring card charges and replaces them with one confirmed or linked purchase, including cancellation and retry', async () => {
+  const { card } = await makeCard('Recurring cycle');
+  const rule = await run(() =>
+    cards.saveRecurring(card.id, {
+      name: 'Streaming cycle',
+      amount: 1900,
+      chargeDay: 5,
+      startMonth: '2026-11',
+    }),
+  );
+  expect(
+    (await run(() => cards.planningBills('2026-11'))).find((b) => b.cardId === card.id)?.amount,
+  ).toBe(1900);
+  const first = await run(() =>
+    cards.confirmRecurring(
+      card.id,
+      rule.id,
+      '2026-11',
+      String(card.version),
+      'recurring-cycle-first',
+    ),
+  );
+  const current = await currentCard(card.id);
+  expect(current.purchases.filter((p) => !p.canceled)).toHaveLength(1);
+  expect(
+    (await run(() => cards.planningBills('2026-11'))).find((b) => b.cardId === card.id)?.amount,
+  ).toBe(1900);
+  expect(
+    (
+      await run(() =>
+        cards.confirmRecurring(
+          card.id,
+          rule.id,
+          '2026-11',
+          String(current.version),
+          'recurring-cycle-again',
+        ),
+      )
+    ).id,
+  ).toBe(first.id);
+  await run(() =>
+    cards.cancelPurchase(card.id, first.id, String(current.version), 'recurring-cycle-cancel'),
+  );
+  const updated = await currentCard(card.id);
+  const recreated = await run(() =>
+    cards.confirmRecurring(
+      card.id,
+      rule.id,
+      '2026-11',
+      String(updated.version),
+      'recurring-cycle-replace',
+    ),
+  );
+  expect(recreated.id).not.toBe(first.id);
+  const beforeManual = await currentCard(card.id);
+  const existing = await run(() =>
+    cards.purchase(
+      card.id,
+      {
+        description: 'Manual recurring cycle',
+        amount: 2100,
+        installments: 1,
+        purchaseDate: '2026-11-06',
+      },
+      String(beforeManual.version),
+      'recurring-cycle-manual',
+    ),
+  );
+  const second = await run(() =>
+    cards.saveRecurring(card.id, {
+      name: 'Manual recurring cycle',
+      amount: 2100,
+      chargeDay: 6,
+      startMonth: '2026-11',
+    }),
+  );
+  const beforeLink = await currentCard(card.id);
+  await run(() =>
+    cards.confirmRecurring(
+      card.id,
+      second.id,
+      '2026-11',
+      String(beforeLink.version),
+      'recurring-cycle-link',
+      existing.id,
+    ),
+  );
+  expect((await currentCard(card.id)).purchases.filter((p) => !p.canceled)).toHaveLength(2);
+});
+it('round-trips goals, allocations, default categories and recurring card associations in backup v13', async () => {
+  const complete = new DataExportService(
+    accounts,
+    categories,
+    ledger,
+    receipts,
+    new RestoreRepository(db.service),
+    planningCycle,
+    parties,
+    basis,
+    commitments,
+    cards,
+    wealth,
+    goals,
+  );
+  const source = await run(() => complete.backup());
+  expect(source.version).toBe(13);
+  expect(source.goals!.goals.length).toBeGreaterThan(0);
+  expect(source.cards!.recurringCharges!.length).toBeGreaterThan(0);
+  const workspace = await db.forUser(
+    db.user,
+    async () => {
+      const [w] = await db.service.query(
+        "INSERT INTO wallet.workspaces(user_id,name,description,color) VALUES($1,'Cycle restored','','emerald') RETURNING id",
+        [db.user],
+      );
+      return w.id;
+    },
+    false,
+    null,
+  );
+  await db.forUser(
+    db.user,
+    async () => {
+      const draft = await complete.preview(source);
+      await complete.confirm(draft.id);
+      const restored = await complete.backup();
+      expect(
+        restored.goals!.goals.map((g) => ({
+          name: g.name,
+          total: g.allocations.reduce((n, e) => n + e.delta, 0),
+        })),
+      ).toEqual(
+        source.goals!.goals.map((g) => ({
+          name: g.name,
+          total: g.allocations.reduce((n, e) => n + e.delta, 0),
+        })),
+      );
+      expect(restored.cards!.recurringCharges).toHaveLength(source.cards!.recurringCharges!.length);
+      expect(
+        restored.accounts.find((a) => a.name === 'Defaults cycle')?.defaultIncomeCategoryId,
+      ).toBe(restored.categories.find((c) => c.name === 'Default income cycle')?.id);
+    },
+    false,
+    workspace,
+  );
+});
+it('previews recognition batches, rejects persistently, preserves money and prevents stale overwrites with undo', async () => {
+  const cat = await run(() =>
+    categories.save({ name: 'Recognition category cycle', type: 'expense', color: '#f28a97' }),
+  );
+  const a = await account('Recognition cycle');
+  const t = await run(() =>
+    ledger.create({
+      accountId: a.id,
+      description: 'Recognition cycle transaction',
+      amount: -150,
+      transactionDate: '2026-11-02',
+      transactionType: 'expense',
+    }),
+  );
+  await run(() =>
+    accounts.update(
+      a.id,
+      { name: a.name, institution: a.institution, type: a.type, defaultExpenseCategoryId: cat.id },
+      String(a.version),
+    ),
+  );
+  const candidate = (await run(() => recognition.queue())).items.find(
+    (i) => i.transactionId === t.id,
+  )!;
+  expect(candidate.categoryId).toBe(cat.id);
+  const draft = await run(() => recognition.preview([candidate.signature]));
+  const before = (await run(() => accounts.find(a.id))).balance;
+  await run(() => recognition.confirm(draft.id, 'recognition-cycle-confirm'));
+  expect((await run(() => ledger.find(t.id))).categoryId).toBe(cat.id);
+  expect((await run(() => accounts.find(a.id))).balance).toBe(before);
+  const change = (await run(() => recognition.changes())).find((c) => c.transactionId === t.id)!;
+  await run(() => recognition.undo(change.id, 'recognition-cycle-undo'));
+  expect((await run(() => ledger.find(t.id))).categoryId).toBeNull();
+  const next = (await run(() => recognition.queue())).items.find((i) => i.transactionId === t.id)!;
+  await run(() => recognition.reject([next.signature]));
+  expect(
+    (await run(() => recognition.queue())).items.some((i) => i.signature === next.signature),
+  ).toBe(false);
+  const latest = await run(() => accounts.find(a.id));
+  await run(() =>
+    accounts.update(
+      a.id,
+      { name: a.name, institution: a.institution, type: a.type, defaultExpenseCategoryId: null },
+      String(latest.version),
+    ),
+  );
+  const another = await run(() =>
+    ledger.create({
+      accountId: a.id,
+      description: 'Stale recognition',
+      amount: -100,
+      transactionDate: '2026-11-03',
+      transactionType: 'expense',
+    }),
+  );
+  const newest = await run(() => accounts.find(a.id));
+  await run(() =>
+    accounts.update(
+      a.id,
+      { name: a.name, institution: a.institution, type: a.type, defaultExpenseCategoryId: cat.id },
+      String(newest.version),
+    ),
+  );
+  const stale = (await run(() => recognition.queue())).items.find(
+    (i) => i.transactionId === another.id,
+  )!;
+  const preview = await run(() => recognition.preview([stale.signature]));
+  await run(() =>
+    ledger.update(
+      another.id,
+      {
+        accountId: a.id,
+        description: 'Now manual',
+        amount: -100,
+        transactionDate: '2026-11-03',
+        transactionType: 'expense',
+        categoryId: cat.id,
+      },
+      String(another.version),
+    ),
+  );
+  await expect(
+    run(() => recognition.confirm(preview.id, 'recognition-cycle-stale')),
+  ).rejects.toThrow('mudou');
+});
+it('shares through expiring invitations, enforces reader/editor/owner capabilities, records actor and revokes access', async () => {
+  const [{ id: workspace }] = await db.engine
+    .query<{ id: string }>('SELECT id FROM wallet.workspaces WHERE user_id=$1 AND is_default', [
+      db.user,
+    ])
+    .then((r) => r.rows);
+  const invite = await run(() => sharing.invite({ email: 'reader@example.com', role: 'reader' }));
+  await expect(
+    db.forUser(db.other, () => sharing.accept(invite.token, 'wrong@example.com'), false, null),
+  ).rejects.toThrow('outro e-mail');
+  await db.forUser(db.other, () => sharing.accept(invite.token, 'reader@example.com'), false, null);
+  expect(
+    (await db.forUser(db.other, () => accounts.list(), true, workspace)).length,
+  ).toBeGreaterThan(0);
+  await expect(
+    db.forUser(
+      db.other,
+      () =>
+        accounts.create({ name: 'Reader denied', type: 'checking', institution: 'mercado_pago' }),
+      false,
+      workspace,
+    ),
+  ).rejects.toThrow('apenas consultar');
+  await expect(
+    db.forUser(db.other, async () => db.service.requireExport(), true, workspace),
+  ).rejects.toThrow('apenas consultar');
+  await db.forUser(
+    db.other,
+    async () => {
+      await expect(
+        db.service.query("UPDATE wallet.financial_accounts SET name='Forbidden' WHERE user_id=$1", [
+          db.user,
+        ]),
+      ).rejects.toThrow();
+    },
+    true,
+    workspace,
+  );
+  const readerAlerts = await db.forUser(db.other, () => alerts.sync(), false, workspace, true);
+  expect(readerAlerts.preferences.bills).toBe(true);
+  const ownerAlerts = await run(() => alerts.list());
+  await db.forUser(
+    db.other,
+    () =>
+      alerts.save({
+        dueDays: 1,
+        budgetPercent: 80,
+        bills: false,
+        budgets: false,
+        negativeBalance: false,
+        goals: false,
+      }),
+    false,
+    workspace,
+    true,
+  );
+  expect((await run(() => alerts.list())).preferences).toEqual(ownerAlerts.preferences);
+  expect(
+    await db.forUser(
+      db.other,
+      () =>
+        db.service.query(
+          "UPDATE wallet.financial_accounts SET name='Reader cannot write' WHERE user_id=$1 RETURNING id",
+          [db.user],
+        ),
+      false,
+      workspace,
+      true,
+    ),
+  ).toEqual([]);
+  await expect(
+    db.forUser(
+      db.other,
+      () =>
+        accounts.create({
+          name: 'Reader RLS blocked',
+          type: 'checking',
+          institution: 'mercado_pago',
+        }),
+      false,
+      workspace,
+      true,
+    ),
+  ).rejects.toThrow();
+  await run(() => sharing.change(db.other, 'editor'));
+  const edited = await db.forUser(
+    db.other,
+    () =>
+      accounts.create({
+        name: 'Shared editor cycle',
+        type: 'checking',
+        institution: 'mercado_pago',
+      }),
+    false,
+    workspace,
+  );
+  await expect(
+    db.forUser(db.other, async () => db.service.requireOwner(), false, workspace),
+  ).rejects.toThrow('proprietário');
+  const audit = await run(() =>
+    db.service.query('SELECT actor_id FROM wallet.actor_audit WHERE record_id=$1', [edited.id]),
+  );
+  expect(audit[0].actor_id).toBe(db.other);
+  await run(() => sharing.change(db.other));
+  await expect(db.forUser(db.other, () => accounts.list(), true, workspace)).rejects.toThrow(
+    'Espaço não encontrado',
+  );
+  const expired = await run(() => sharing.invite({ email: 'reader@example.com', role: 'reader' }));
+  await db.engine.query(
+    "UPDATE wallet.workspace_invites SET expires_at=clock_timestamp()-interval '1 minute' WHERE id=$1",
+    [expired.id],
+  );
+  await expect(
+    db.forUser(db.other, () => sharing.accept(expired.token, 'reader@example.com'), false, null),
+  ).rejects.toThrow('Convite inválido');
+  const revoked = await run(() => sharing.invite({ email: 'reader@example.com', role: 'reader' }));
+  await run(() => sharing.revoke(revoked.id));
+  await expect(
+    db.forUser(db.other, () => sharing.accept(revoked.token, 'reader@example.com'), false, null),
+  ).rejects.toThrow('Convite inválido');
+});
+it('persists alert preferences, read/dismiss state and condition deduplication separately for each participant', async () => {
+  const first = await run(() => alerts.sync());
+  expect(first.items.length).toBeGreaterThan(0);
+  const item = first.items[0];
+  await run(() => alerts.action(item.id, 'dismiss'));
+  expect((await run(() => alerts.sync())).items.some((i) => i.id === item.id)).toBe(false);
+  const p = {
+    dueDays: 7,
+    budgetPercent: 90,
+    bills: false,
+    budgets: false,
+    negativeBalance: false,
+    goals: false,
+  };
+  await run(() => alerts.save(p));
+  expect((await run(() => alerts.list())).preferences).toEqual(p);
+  expect((await run(() => alerts.list())).items).toHaveLength(0);
+  await db.forUser(db.other, async () =>
+    expect((await alerts.list()).preferences.bills).toBe(true),
+  );
 });

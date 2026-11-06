@@ -1,6 +1,115 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/v1/alerts": {
+      "get": {
+        "operationId": "AlertsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertsSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Alerts"]
+      }
+    },
+    "/v1/alerts/sync": {
+      "post": {
+        "operationId": "AlertsController_sync",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertsSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Alerts"]
+      }
+    },
+    "/v1/alerts/preferences": {
+      "put": {
+        "operationId": "AlertsController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertPreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertsSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Alerts"]
+      }
+    },
+    "/v1/alerts/{id}": {
+      "patch": {
+        "operationId": "AlertsController_action",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Alerts"]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "HealthController_health",
@@ -23,6 +132,154 @@
           }
         },
         "tags": ["Health"]
+      }
+    },
+    "/v1/goals": {
+      "get": {
+        "operationId": "GoalsController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalsSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Goals"]
+      },
+      "post": {
+        "operationId": "GoalsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveGoalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Goals"]
+      }
+    },
+    "/v1/goals/{id}": {
+      "patch": {
+        "operationId": "GoalsController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveGoalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Goals"]
+      }
+    },
+    "/v1/goals/{id}/allocations": {
+      "post": {
+        "operationId": "GoalsController_allocate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AllocateGoalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Goals"]
+      }
+    },
+    "/v1/goals/{id}/allocations/{event}/undo": {
+      "post": {
+        "operationId": "GoalsController_undo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Goals"]
       }
     },
     "/v1/cards": {
@@ -102,6 +359,133 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreditCardDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/recurring": {
+      "get": {
+        "operationId": "CardsController_recurring",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CardRecurringResourceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      },
+      "post": {
+        "operationId": "CardsController_createRecurring",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardRecurringDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardRecurringResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/recurring/{rule}": {
+      "patch": {
+        "operationId": "CardsController_updateRecurring",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardRecurringDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardRecurringResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
+    "/v1/cards/{id}/recurring/{rule}/months/{month}/confirm": {
+      "post": {
+        "operationId": "CardsController_confirmRecurring",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmCardRecurringDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceActionDto"
                 }
               }
             }
@@ -1627,6 +2011,142 @@
         "tags": ["Transactions"]
       }
     },
+    "/v1/recognition": {
+      "get": {
+        "operationId": "RecognitionController_queue",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecognitionQueueDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Assisted review"]
+      }
+    },
+    "/v1/recognition/preview": {
+      "post": {
+        "operationId": "RecognitionController_preview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecognitionSelectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecognitionPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Assisted review"]
+      }
+    },
+    "/v1/recognition/reject": {
+      "post": {
+        "operationId": "RecognitionController_reject",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecognitionSelectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Assisted review"]
+      }
+    },
+    "/v1/recognition/{id}/confirm": {
+      "post": {
+        "operationId": "RecognitionController_confirm",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Assisted review"]
+      }
+    },
+    "/v1/recognition/changes": {
+      "get": {
+        "operationId": "RecognitionController_changes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Assisted review"]
+      }
+    },
+    "/v1/recognition/changes/{id}/undo": {
+      "post": {
+        "operationId": "RecognitionController_undo",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Assisted review"]
+      }
+    },
     "/v1/planning/{month}": {
       "get": {
         "operationId": "PlanningController_summary",
@@ -2571,6 +3091,168 @@
         ],
         "tags": ["Workspaces"]
       }
+    },
+    "/v1/workspaces/{id}/members": {
+      "get": {
+        "operationId": "SharingController_members",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspace sharing"]
+      }
+    },
+    "/v1/workspaces/{id}/invites": {
+      "get": {
+        "operationId": "SharingController_invites",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspace sharing"]
+      },
+      "post": {
+        "operationId": "SharingController_invite",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspace sharing"]
+      }
+    },
+    "/v1/workspaces/{id}/invites/{invite}": {
+      "delete": {
+        "operationId": "SharingController_revoke",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspace sharing"]
+      }
+    },
+    "/v1/workspaces/{id}/members/{actor}": {
+      "patch": {
+        "operationId": "SharingController_change",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspace sharing"]
+      },
+      "delete": {
+        "operationId": "SharingController_remove",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspace sharing"]
+      }
+    },
+    "/v1/workspaces/invitations/accept": {
+      "post": {
+        "operationId": "SharingController_accept",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInviteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Workspace sharing"]
+      }
     }
   },
   "info": {
@@ -2590,6 +3272,257 @@
       }
     },
     "schemas": {
+      "AlertPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "dueDays": {
+            "type": "number"
+          },
+          "budgetPercent": {
+            "type": "number"
+          },
+          "bills": {
+            "type": "boolean"
+          },
+          "budgets": {
+            "type": "boolean"
+          },
+          "negativeBalance": {
+            "type": "boolean"
+          },
+          "goals": {
+            "type": "boolean"
+          }
+        },
+        "required": ["dueDays", "budgetPercent", "bills", "budgets", "negativeBalance", "goals"]
+      },
+      "AlertDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "readAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["id", "kind", "title", "href", "createdAt", "readAt"]
+      },
+      "AlertsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "preferences": {
+            "$ref": "#/components/schemas/AlertPreferencesDto"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertDto"
+            }
+          }
+        },
+        "required": ["preferences", "items"]
+      },
+      "AlertActionDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["read", "dismiss"]
+          }
+        },
+        "required": ["action"]
+      },
+      "GoalAllocationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "goalId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "delta": {
+            "type": "number"
+          },
+          "reverseOfId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "actorId": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "goalId", "accountId", "delta", "reverseOfId", "createdAt", "actorId"]
+      },
+      "GoalResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "target": {
+            "type": "number"
+          },
+          "deadline": {
+            "type": "string",
+            "nullable": true
+          },
+          "priority": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "completed", "archived"]
+          },
+          "version": {
+            "type": "number"
+          },
+          "allocated": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number"
+          },
+          "progress": {
+            "type": "number"
+          },
+          "monthlyPace": {
+            "type": "number",
+            "nullable": true
+          },
+          "underfunded": {
+            "type": "boolean"
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalAllocationDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "target",
+          "deadline",
+          "priority",
+          "status",
+          "version",
+          "allocated",
+          "remaining",
+          "progress",
+          "monthlyPace",
+          "underfunded",
+          "allocations"
+        ]
+      },
+      "GoalAccountDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "balance": {
+            "type": "number"
+          },
+          "allocated": {
+            "type": "number"
+          },
+          "free": {
+            "type": "number"
+          },
+          "deficit": {
+            "type": "number"
+          }
+        },
+        "required": ["accountId", "name", "balance", "allocated", "free", "deficit"]
+      },
+      "GoalsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "goals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalResourceDto"
+            }
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalAccountDto"
+            }
+          },
+          "allocated": {
+            "type": "number"
+          }
+        },
+        "required": ["goals", "accounts", "allocated"]
+      },
+      "SaveGoalDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "target": {
+            "type": "number"
+          },
+          "deadline": {
+            "type": "string",
+            "nullable": true
+          },
+          "priority": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "completed", "archived"]
+          }
+        },
+        "required": ["name", "target", "priority"]
+      },
+      "AllocateGoalDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["allocate", "release"]
+          }
+        },
+        "required": ["accountId", "amount", "action"]
+      },
       "CardEntryResourceDto": {
         "type": "object",
         "properties": {
@@ -2991,6 +3924,113 @@
           "archived"
         ]
       },
+      "CardRecurringResourceDto": {
+        "type": "object",
+        "properties": {
+          "confirmedMonths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "chargeDay": {
+            "type": "number"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "startMonth": {
+            "type": "string"
+          },
+          "endMonth": {
+            "type": "string",
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "confirmedMonths",
+          "id",
+          "cardId",
+          "name",
+          "amount",
+          "chargeDay",
+          "categoryId",
+          "startMonth",
+          "endMonth",
+          "archived",
+          "version"
+        ]
+      },
+      "CardRecurringDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "chargeDay": {
+            "type": "number"
+          },
+          "startMonth": {
+            "type": "string"
+          },
+          "endMonth": {
+            "type": "string",
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "amount", "chargeDay", "startMonth"]
+      },
+      "ConfirmCardRecurringDto": {
+        "type": "object",
+        "properties": {
+          "purchaseId": {
+            "type": "string"
+          }
+        }
+      },
+      "FinanceActionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          }
+        }
+      },
       "CardTransactionPaymentDto": {
         "type": "object",
         "properties": {
@@ -3018,6 +4058,9 @@
       "CardPurchaseDto": {
         "type": "object",
         "properties": {
+          "recurringRuleId": {
+            "type": "string"
+          },
           "description": {
             "type": "string"
           },
@@ -3051,20 +4094,6 @@
           }
         },
         "required": ["billMonth", "amount"]
-      },
-      "FinanceActionDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "mode": {
-            "type": "string"
-          }
-        }
       },
       "ManagedEntryDto": {
         "type": "object",
@@ -3958,6 +4987,14 @@
       "AccountResourceDto": {
         "type": "object",
         "properties": {
+          "defaultIncomeCategoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultExpenseCategoryId": {
+            "type": "string",
+            "nullable": true
+          },
           "benefitCreditMonth": {
             "type": "string",
             "enum": ["received", "following"]
@@ -4016,6 +5053,14 @@
       "CreateAccountDto": {
         "type": "object",
         "properties": {
+          "defaultIncomeCategoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultExpenseCategoryId": {
+            "type": "string",
+            "nullable": true
+          },
           "benefitCreditMonth": {
             "type": "string",
             "enum": ["received", "following"]
@@ -4055,6 +5100,14 @@
       "UpdateAccountDto": {
         "type": "object",
         "properties": {
+          "defaultIncomeCategoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultExpenseCategoryId": {
+            "type": "string",
+            "nullable": true
+          },
           "benefitCreditMonth": {
             "type": "string",
             "enum": ["received", "following"]
@@ -4299,6 +5352,9 @@
       "TransactionResourceDto": {
         "type": "object",
         "properties": {
+          "categoryChoiceExplicit": {
+            "type": "boolean"
+          },
           "cardPayment": {
             "nullable": true,
             "type": "object",
@@ -4442,6 +5498,9 @@
       "TransactionDto": {
         "type": "object",
         "properties": {
+          "categoryChoiceExplicit": {
+            "type": "boolean"
+          },
           "counterpartyId": {
             "type": "string",
             "nullable": true
@@ -4516,6 +5575,103 @@
         },
         "required": ["fromAccountId", "toAccountId", "amount", "transactionDate", "description"]
       },
+      "RecognitionChoiceDto": {
+        "type": "object",
+        "properties": {
+          "signature": {
+            "type": "string"
+          },
+          "transactionId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "counterpartyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoryName": {
+            "type": "string",
+            "nullable": true
+          },
+          "cardName": {
+            "type": "string",
+            "nullable": true
+          },
+          "billMonth": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "signature",
+          "transactionId",
+          "description",
+          "amount",
+          "date",
+          "accountName",
+          "explanation",
+          "counterpartyName",
+          "categoryName",
+          "cardName",
+          "billMonth"
+        ]
+      },
+      "RecognitionQueueDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecognitionChoiceDto"
+            }
+          },
+          "scanned": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "scanned"]
+      },
+      "RecognitionSelectionDto": {
+        "type": "object",
+        "properties": {
+          "signatures": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["signatures"]
+      },
+      "RecognitionPreviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecognitionChoiceDto"
+            }
+          }
+        },
+        "required": ["id", "items"]
+      },
       "PlannedCardBillDto": {
         "type": "object",
         "properties": {
@@ -4538,6 +5694,9 @@
       "PlanningCardBillDto": {
         "type": "object",
         "properties": {
+          "pendingRecurring": {
+            "type": "number"
+          },
           "cardId": {
             "type": "string"
           },
@@ -6046,6 +7205,10 @@
       "WorkspaceResourceDto": {
         "type": "object",
         "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["owner", "editor", "reader"]
+          },
           "id": {
             "type": "string"
           },
@@ -6062,11 +7225,15 @@
             "type": "boolean"
           }
         },
-        "required": ["id", "name", "description", "color", "isDefault"]
+        "required": ["role", "id", "name", "description", "color", "isDefault"]
       },
       "TrashedWorkspaceResourceDto": {
         "type": "object",
         "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["owner", "editor", "reader"]
+          },
           "id": {
             "type": "string"
           },
@@ -6089,7 +7256,16 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "description", "color", "isDefault", "deletedAt", "deleteAfter"]
+        "required": [
+          "role",
+          "id",
+          "name",
+          "description",
+          "color",
+          "isDefault",
+          "deletedAt",
+          "deleteAfter"
+        ]
       },
       "CreateWorkspaceDto": {
         "type": "object",
@@ -6106,6 +7282,70 @@
           }
         },
         "required": ["name", "description", "color"]
+      },
+      "MemberDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "actorId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["owner", "editor", "reader"]
+          }
+        },
+        "required": ["email", "actorId", "role"]
+      },
+      "InviteDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["editor", "reader"]
+          }
+        },
+        "required": ["email", "role"]
+      },
+      "InviteResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "token", "expiresAt"]
+      },
+      "MemberRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["editor", "reader"]
+          }
+        },
+        "required": ["role"]
+      },
+      "AcceptInviteDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": ["token"]
       }
     }
   }

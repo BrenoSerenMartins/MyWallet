@@ -45,6 +45,12 @@ const CounterpartiesPage = lazy(() =>
 const CardsPage = lazy(() =>
   import('../features/cards/cards-page').then((m) => ({ default: m.CardsPage })),
 );
+const RecognitionPage = lazy(() =>
+  import('../features/recognition/recognition-page').then((m) => ({ default: m.RecognitionPage })),
+);
+const GoalsPage = lazy(() =>
+  import('../features/goals/goals-page').then((m) => ({ default: m.GoalsPage })),
+);
 const WealthPage = lazy(() =>
   import('../features/wealth/wealth-page').then((m) => ({ default: m.WealthPage })),
 );
@@ -90,6 +96,8 @@ export function Application() {
                     <Route path="planning" element={<PlanningPage />} />
                     <Route path="cards" element={<CardsPage />} />
                     <Route path="wealth" element={<WealthPage />} />
+                    <Route path="goals" element={<GoalsPage />} />
+                    <Route path="recognition" element={<RecognitionPage />} />
                     <Route path="imports" element={<ImportsPage key="upload" />} />
                     <Route path="imports/:importId" element={<ImportsPage key="review" />} />
                     <Route path="categories" element={<CategoriesPage />} />

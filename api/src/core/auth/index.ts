@@ -11,7 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Request } from 'express';
 import { Configuration } from '../config/index.js';
 export interface AuthenticatedRequest extends Request {
-  identity: { id: string; email?: string };
+  identity: { id: string; email?: string; verifiedEmail?: string };
 }
 @Injectable()
 export class AuthenticatedUserGuard implements CanActivate {
@@ -41,6 +41,17 @@ export class AuthenticatedUserGuard implements CanActivate {
       id: claims.sub,
       email: typeof claims.email === 'string' ? claims.email : undefined,
     };
+    if (request.method === 'POST' && /\/workspaces\/invitations\/accept\/?$/.test(request.path)) {
+      const user = await this.client.auth.getUser(match[1]);
+      if (
+        user.error ||
+        user.data.user?.id !== claims.sub ||
+        !user.data.user.email_confirmed_at ||
+        !user.data.user.email
+      )
+        throw new UnauthorizedException('Confirme seu e-mail antes de aceitar o convite.');
+      request.identity.verifiedEmail = user.data.user.email;
+    }
     return true;
   }
 }

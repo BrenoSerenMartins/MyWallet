@@ -1,6 +1,7 @@
 import { WorkspacesModule } from './modules/workspaces/index.js';
 import { ProfilesModule } from './modules/profiles/index.js';
 import { DataExportModule } from './modules/data-export/index.js';
+import { AlertsModule } from './modules/alerts/index.js';
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './core/database/index.js';
 import { AuthModule } from './core/auth/index.js';
@@ -10,6 +11,7 @@ import { ImportsModule } from './modules/imports/index.js';
 import { DashboardModule } from './modules/dashboard/index.js';
 @Module({
   imports: [
+    AlertsModule,
     DatabaseModule,
     AuthModule,
     HealthModule,

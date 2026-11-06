@@ -73,11 +73,13 @@ export class WorkspacesRepository {
     await this.promoteDefault();
     return (await this.list()).find((workspace) => workspace.id === id)!;
   }
-  list(): Promise<WorkspaceResourceDto[]> {
-    return this.db.query(
+  async list(): Promise<WorkspaceResourceDto[]> {
+    const owned = await this.db.query(
       'SELECT id,name,description,color,is_default AS "isDefault" FROM wallet.workspaces WHERE user_id=$1 AND deleted_at IS NULL ORDER BY is_default DESC,created_at,id',
       [this.db.userId],
     );
+    const shared = await this.db.query('SELECT * FROM wallet.shared_workspaces()');
+    return [...owned.map((w) => ({ ...w, role: 'owner' })), ...shared] as WorkspaceResourceDto[];
   }
   async create(input: CreateWorkspaceDto) {
     await this.lockOwner();

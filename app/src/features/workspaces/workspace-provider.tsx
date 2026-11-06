@@ -26,7 +26,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [restored, setRestored] = useState(false);
   const query = useQuery({ queryKey: key, queryFn: () => request<Workspace[]>('/workspaces') });
   const select = (id: string | null) => {
-    setRequestWorkspace(id);
+    setRequestWorkspace(id, query.data?.find((w) => w.id === id)?.role ?? 'owner');
     setSelectedId(id);
     try {
       if (id) localStorage.setItem(storageKey, id);

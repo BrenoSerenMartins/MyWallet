@@ -49,6 +49,7 @@ export interface SettlementMetadata {
 }
 
 export interface CounterpartyIntent {
+  categoryChoiceExplicit?: boolean;
   counterpartyId?: string | null;
   counterpartyName?: string | null;
   rememberCategory?: boolean;

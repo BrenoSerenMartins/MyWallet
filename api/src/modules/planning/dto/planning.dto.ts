@@ -30,6 +30,7 @@ export class PlannedCardBillDto {
   planned?: number | null;
 }
 export class PlanningCardBillDto {
+  @ApiPropertyOptional({ type: Number }) pendingRecurring?: number;
   @ApiProperty({ type: String }) cardId!: string;
   @ApiProperty({ type: String }) accountId!: string;
   @ApiProperty({ type: String }) name!: string;

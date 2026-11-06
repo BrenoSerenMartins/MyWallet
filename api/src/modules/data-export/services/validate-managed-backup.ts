@@ -440,6 +440,58 @@ export function validateManagedBackup(b: BackupPayload, unique: (id: string) => 
       itemShape(h.data.after as WealthItem);
     }
   }
+  if (
+    b.version < 13 &&
+    ((cards.recurringRules?.length ?? 0) > 0 || (cards.recurringCharges?.length ?? 0) > 0)
+  )
+    fail();
+  arr(cards.recurringRules ?? [], 1000);
+  arr(cards.recurringCharges ?? [], 20000);
+  if (
+    (cards.recurringRules ?? []).some((r) => !r || typeof r !== 'object') ||
+    (cards.recurringCharges ?? []).some((r) => !r || typeof r !== 'object')
+  )
+    fail();
+  const recurring = new Map((cards.recurringRules ?? []).map((r) => [r.id, r]));
+  for (const r of cards.recurringRules ?? []) {
+    unique(r.id);
+    text(r.name, 120);
+    num(r.amount, 1);
+    num(r.chargeDay, 1);
+    if (
+      r.chargeDay > 31 ||
+      !cards.cards.some((c) => c.id === r.cardId) ||
+      (r.categoryId && !b.categories.some((c) => c.id === r.categoryId && c.type === 'expense'))
+    )
+      fail();
+    month(r.startMonth);
+    if (r.endMonth !== null) {
+      month(r.endMonth);
+      if (r.endMonth < r.startMonth) fail();
+    }
+    bool(r.archived);
+    version(r.version);
+  }
+  const recurringMonths = new Set<string>(),
+    recurringPurchases = new Set<string>();
+  for (const e of cards.recurringCharges ?? []) {
+    unique(e.id);
+    month(e.chargeMonth);
+    const r = recurring.get(e.ruleId),
+      p = cards.purchases.find((p) => p.id === e.purchaseId);
+    if (
+      !r ||
+      !p ||
+      r.cardId !== p.cardId ||
+      p.installments !== 1 ||
+      p.purchaseDate.slice(0, 7) !== e.chargeMonth ||
+      recurringMonths.has(e.ruleId + e.chargeMonth) ||
+      recurringPurchases.has(e.purchaseId)
+    )
+      fail();
+    recurringMonths.add(e.ruleId + e.chargeMonth);
+    recurringPurchases.add(e.purchaseId);
+  }
   for (const a of b.accounts)
     if (['credit_card', 'investment'].includes(a.type) && !managedAccounts.has(a.id)) fail();
   for (const t of b.transactions) if (t.managedKind && !coverage.has(t.id)) fail();

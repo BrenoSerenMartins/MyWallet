@@ -30,7 +30,27 @@ export class CardsRepository {
         'card_payments',
       ].map(get),
     );
+    const recurringRules = await get('card_recurring_rules'),
+      recurringCharges = await get('card_recurring_charges');
     return {
+      recurringRules: recurringRules.map((r) => ({
+        id: r.id,
+        cardId: r.card_id,
+        name: r.name,
+        amount: Number(r.amount_minor),
+        categoryId: r.category_id,
+        chargeDay: r.charge_day,
+        startMonth: r.start_month,
+        endMonth: r.end_month,
+        archived: r.archived,
+        version: r.version,
+      })),
+      recurringCharges: recurringCharges.map((r) => ({
+        id: r.id,
+        ruleId: r.rule_id,
+        chargeMonth: r.charge_month,
+        purchaseId: r.purchase_id,
+      })),
       cards: cards.map((r) => ({
         id: r.id,
         accountId: r.account_id,
@@ -142,6 +162,46 @@ export class CardsRepository {
       amount_minor: r.amount,
       description: r.description,
     });
+  }
+  async saveRecurring(
+    rule: import('../../../core/integration/index.js').CardRecurringRule,
+    actor: string,
+  ) {
+    await this.db.query(
+      'INSERT INTO wallet.card_recurring_rules(id,user_id,card_id,name,amount_minor,category_id,charge_day,start_month,end_month,archived,version,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,amount_minor=EXCLUDED.amount_minor,category_id=EXCLUDED.category_id,charge_day=EXCLUDED.charge_day,start_month=EXCLUDED.start_month,end_month=EXCLUDED.end_month,archived=EXCLUDED.archived,version=wallet.card_recurring_rules.version+1',
+      [
+        rule.id,
+        this.db.userId,
+        rule.cardId,
+        rule.name,
+        rule.amount,
+        rule.categoryId,
+        rule.chargeDay,
+        rule.startMonth,
+        rule.endMonth,
+        rule.archived,
+        rule.version,
+        actor,
+      ],
+    );
+  }
+  async deleteRecurringCharge(id: string) {
+    await this.db.query('DELETE FROM wallet.card_recurring_charges WHERE user_id=$1 AND id=$2', [
+      this.db.userId,
+      id,
+    ]);
+  }
+  async saveRecurringCharge(
+    row: import('../../../core/integration/index.js').CardRecurringCharge,
+    actor: string,
+  ) {
+    await this.db.query(
+      'INSERT INTO wallet.card_recurring_charges(id,user_id,rule_id,charge_month,purchase_id,actor_id) VALUES($1,$2,$3,$4,$5,$6)',
+      [row.id, this.db.userId, row.ruleId, row.chargeMonth, row.purchaseId, actor],
+    );
+  }
+  get actorId() {
+    return this.db.actorId;
   }
   async savePaymentOrigin(
     id: string,

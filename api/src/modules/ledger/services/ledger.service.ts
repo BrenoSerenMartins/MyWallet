@@ -446,7 +446,32 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     if (input.balanceAdjustment)
       throw new UnprocessableEntityException('Use a correção de saldo base da conta.');
     await this.accounts.find(input.accountId, true);
+    const explicitCategory =
+      input.categoryChoiceExplicit || (input.categoryId != null && !imported);
+    const requestedCategory = input.categoryId;
     input = await this.counterparties.resolve(input, automatic);
+    if (explicitCategory && requestedCategory == null)
+      input = { ...input, categoryId: null, classificationRuleId: null };
+    if (
+      automatic &&
+      !explicitCategory &&
+      !input.categoryId &&
+      !input.refundOfId &&
+      ['income', 'expense'].includes(input.transactionType)
+    ) {
+      const account = await this.accounts.find(input.accountId);
+      const candidate =
+        input.transactionType === 'income'
+          ? account.defaultIncomeCategoryId
+          : account.defaultExpenseCategoryId;
+      if (
+        candidate &&
+        (await this.categories.list()).some(
+          (c) => c.id === candidate && !c.archived && c.type === input.transactionType,
+        )
+      )
+        input = { ...input, categoryId: candidate };
+    }
     await this.validate(input);
     if (!imported && !['income', 'expense'].includes(input.transactionType))
       throw new UnprocessableEntityException('Use o fluxo de transferência.');
@@ -513,7 +538,12 @@ export class LedgerService implements LedgerWrites, LedgerReads {
       false,
     );
     await this.validate(input);
-    const updated = await this.repository.update(id, input);
+    const updated = await this.repository.update(id, {
+      ...input,
+      categoryChoiceExplicit:
+        input.categoryChoiceExplicit ??
+        (input.categoryId !== current.categoryId || current.categoryChoiceExplicit),
+    });
     if (!updated) throw new NotFoundException('Lançamento não encontrado.');
     if ((input.rememberCategory || input.rememberCounterparty) && input.counterpartyId)
       for (const source of await this.repository.evidence(id))

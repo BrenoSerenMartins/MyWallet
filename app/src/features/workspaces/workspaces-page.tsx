@@ -4,6 +4,10 @@ import { NotificationCenter } from '../../shared/feedback/notification-center';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { PageHeader } from '../../shared/ui/page-header';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { request, jsonBody } from '../../shared/api/client';
+import { FinanceForm } from '../../shared/ui/finance-forms';
+import { WorkspaceSharing } from './components/workspace-sharing';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, LogOut, Plus } from 'lucide-react';
 import {
@@ -24,6 +28,9 @@ import { CreateWorkspaceForm } from './components/create-workspace-form';
 import './workspaces.css';
 export function WorkspacesPage() {
   const { workspaces, active, loading, error, reload, select, archive } = useWorkspace();
+  const [sharing, setSharing] = useState<Workspace | null>(null);
+  const [params, setParams] = useSearchParams();
+  const invite = params.get('invite');
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState<Workspace | null>(null);
   const [pending, setPending] = useState(false);
@@ -109,6 +116,32 @@ export function WorkspacesPage() {
             )}
           </div>
         )}
+        {workspaces
+          .filter((w) => !w.role || w.role === 'owner')
+          .map((w) => (
+            <button className="text-button" key={w.id} onClick={() => setSharing(w)}>
+              Compartilhar {w.name}
+            </button>
+          ))}
+        {invite && (
+          <section className="panel">
+            <h2>Convite para um espaço</h2>
+            <p>Aceite usando a conta com o e-mail que recebeu o convite.</p>
+            <FinanceForm
+              label="Aceitar convite"
+              children={null}
+              onSubmit={async () => {
+                await request('/workspaces/invitations/accept', {
+                  method: 'POST',
+                  body: jsonBody({ token: invite }),
+                });
+                setParams({}, { replace: true });
+                sessionStorage.removeItem('plannedwallet-pending-invite');
+                reload();
+              }}
+            />
+          </section>
+        )}
         <WorkspaceTrash />
         {!active && (
           <div className="spaces-appearance">
@@ -148,6 +181,13 @@ export function WorkspacesPage() {
             {pending ? 'Excluindo…' : 'Mover para a lixeira'}
           </Button>
         </div>
+      </Modal>
+      <Modal
+        open={sharing !== null}
+        onOpenChange={(o) => !o && setSharing(null)}
+        title={`Compartilhar ${sharing?.name ?? ''}`}
+      >
+        {sharing && <WorkspaceSharing workspace={sharing} />}
       </Modal>
       <Modal
         open={open}

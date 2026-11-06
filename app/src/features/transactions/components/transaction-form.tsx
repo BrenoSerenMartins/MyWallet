@@ -34,6 +34,7 @@ export function TransactionForm({
   );
   const [kind, setKind] = useState(entry?.transactionType ?? 'expense');
   const [account, setAccount] = useState(entry?.accountId ?? accounts[0]?.id ?? '');
+  const selectedAccount = accounts.find((a) => a.id === account);
   const [destination, setDestination] = useState('');
   const [description, setDescription] = useState(entry?.description ?? '');
   const [date, setDate] = useState(entry?.transactionDate ?? dateToday());
@@ -41,6 +42,7 @@ export function TransactionForm({
     entry ? String(Math.abs(entry.amount) / 100).replace('.', ',') : '',
   );
   const [category, setCategory] = useState(entry?.categoryId ?? '');
+  const [categoryTouched, setCategoryTouched] = useState(false);
   const [agent, setAgent] = useState(entry?.counterpartyId ?? '');
   const [agentName, setAgentName] = useState('');
   const [remember, setRemember] = useState(false);
@@ -99,7 +101,8 @@ export function TransactionForm({
             transactionDate: date,
             amount: kind === 'expense' ? -parsed : parsed,
             transactionType: kind,
-            categoryId: category || null,
+            categoryId: !entry && !categoryTouched && !category ? undefined : category || null,
+            categoryChoiceExplicit: categoryTouched || entry?.categoryChoiceExplicit,
           }),
         });
       onSaved();
@@ -143,6 +146,7 @@ export function TransactionForm({
             onClick={() => {
               setKind(type as typeof kind);
               setCategory('');
+              setCategoryTouched(false);
             }}
           >
             {type === 'expense' ? 'Despesa' : type === 'income' ? 'Receita' : 'Transferência'}
@@ -177,7 +181,13 @@ export function TransactionForm({
             required
             value={account}
             disabled={!!entry}
-            onChange={(e) => setAccount(e.target.value)}
+            onChange={(e) => {
+              setAccount(e.target.value);
+              if (!entry) {
+                setCategory('');
+                setCategoryTouched(false);
+              }
+            }}
           >
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
@@ -215,10 +225,23 @@ export function TransactionForm({
             }
             type={kind}
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setCategoryTouched(true);
+            }}
           />
         </label>
       )}
+      {!entry &&
+        !categoryTouched &&
+        !category &&
+        (kind === 'income'
+          ? selectedAccount?.defaultIncomeCategoryId
+          : selectedAccount?.defaultExpenseCategoryId) && (
+          <p className="field-help">
+            Sem escolha manual, será usada uma regra reconhecida ou a categoria padrão desta conta.
+          </p>
+        )}
       {selectedCard && (
         <div className="form-stack">
           <label>

@@ -1,6 +1,6 @@
 # Plano de ação — próximo ciclo do PlannedWallet
 
-Estado: plano para execução; não comprova implementação das etapas abaixo.
+Estado: plano de referência. A implementação local deste ciclo e seus limites estão registrados em [features-cycle-2026-11-06.md](features-cycle-2026-11-06.md); a publicação depende das migrations.
 Data: 2026-11-05.
 
 ## Objetivo e escopo

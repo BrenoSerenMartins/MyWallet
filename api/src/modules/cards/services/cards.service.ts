@@ -29,6 +29,7 @@ import type {
   CardPurchaseDto,
   CardPaymentDto,
   CardTransactionPaymentDto,
+  CardRecurringDto,
   CardRefundDto,
 } from '../dto/cards.dto.js';
 import {
@@ -37,6 +38,7 @@ import {
   financeToday,
   shiftCardMonth,
   splitInstallments,
+  cardDay,
   validCardMonth,
 } from './card-calendar.js';
 const sum = (values: number[]) => exactAmount(Number(values.reduce((a, b) => a + BigInt(b), 0n)));
@@ -160,6 +162,23 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
         version: 1,
       };
       await this.repo.savePurchase(purchase);
+      if (input.recurringRuleId) {
+        const rule = (await this.recurring(id)).find((r) => r.id === input.recurringRuleId);
+        const chargeMonth = input.purchaseDate.slice(0, 7);
+        if (
+          !rule ||
+          rule.archived ||
+          input.installments !== 1 ||
+          rule.amount !== input.amount ||
+          chargeMonth < rule.startMonth ||
+          (rule.endMonth && chargeMonth > rule.endMonth)
+        )
+          throw new ConflictException('A compra não corresponde à assinatura selecionada.');
+        await this.repo.saveRecurringCharge(
+          { id: randomUUID(), ruleId: rule.id, chargeMonth, purchaseId: purchase.id },
+          this.repo.actorId,
+        );
+      }
       for (let i = 0; i < amounts.length; i++) {
         const month = shiftCardMonth(first, i);
         const bill = await this.ensureBill(card, month);
@@ -311,6 +330,119 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
       })),
     };
   }
+  async recurring(cardId: string) {
+    await this.card(cardId);
+    const data = await this.repo.snapshot();
+    return data
+      .recurringRules!.filter((r) => r.cardId === cardId)
+      .map((r) => ({
+        ...r,
+        confirmedMonths: data
+          .recurringCharges!.filter(
+            (e) =>
+              e.ruleId === r.id && data.purchases.some((p) => p.id === e.purchaseId && !p.canceled),
+          )
+          .map((e) => e.chargeMonth),
+      }));
+  }
+  async saveRecurring(cardId: string, input: CardRecurringDto, id?: string, version?: string) {
+    await this.repo.lock();
+    const card = await this.card(cardId);
+    if (card.archived) throw new ConflictException('Reative o cartão para configurar cobranças.');
+    validCardMonth(input.startMonth);
+    if (input.endMonth) {
+      validCardMonth(input.endMonth);
+      if (input.endMonth < input.startMonth)
+        throw new UnprocessableEntityException('O término deve ser posterior ao início.');
+    }
+    if (input.categoryId) await this.categories.validate(input.categoryId, 'expense');
+    const existing = id ? (await this.recurring(cardId)).find((r) => r.id === id) : null;
+    if (id && !existing) throw new NotFoundException('Assinatura não encontrada.');
+    if (existing) requireVersion(existing.version, version);
+    const rule = {
+      id: id ?? randomUUID(),
+      cardId,
+      name: input.name.trim(),
+      amount: input.amount,
+      chargeDay: input.chargeDay,
+      categoryId: input.categoryId ?? null,
+      startMonth: input.startMonth,
+      endMonth: input.endMonth ?? null,
+      archived: input.archived ?? false,
+      version: existing?.version ?? 1,
+    };
+    await this.repo.saveRecurring(rule, this.repo.actorId);
+    return (await this.recurring(cardId)).find((r) => r.id === rule.id)!;
+  }
+  async confirmRecurring(
+    cardId: string,
+    ruleId: string,
+    month: string,
+    version: string,
+    key: string,
+    purchaseId?: string,
+  ) {
+    return this.receipts.execute(
+      'card.recurring.confirm',
+      key,
+      { cardId, ruleId, month, version, purchaseId },
+      async () => {
+        await this.lockedCard(cardId, version);
+        validCardMonth(month);
+        const rule = (await this.recurring(cardId)).find((r) => r.id === ruleId);
+        if (
+          !rule ||
+          rule.archived ||
+          month < rule.startMonth ||
+          (rule.endMonth && month > rule.endMonth)
+        )
+          throw new ConflictException('Esta cobrança não está ativa no mês.');
+        const data = await this.repo.snapshot();
+        const previous = data.recurringCharges!.find(
+          (r) => r.ruleId === ruleId && r.chargeMonth === month,
+        );
+        if (previous) {
+          if (data.purchases.some((p) => p.id === previous.purchaseId && !p.canceled))
+            return { id: previous.purchaseId };
+          await this.repo.deleteRecurringCharge(previous.id);
+        }
+        const date = cardDay(month, rule.chargeDay);
+        if (date > financeToday())
+          throw new ConflictException('Confirme apenas cobranças já realizadas.');
+        if (purchaseId) {
+          const purchase = data.purchases.find(
+            (p) => p.id === purchaseId && p.cardId === cardId && !p.canceled,
+          );
+          if (
+            !purchase ||
+            purchase.amount !== rule.amount ||
+            purchase.installments !== 1 ||
+            purchase.purchaseDate.slice(0, 7) !== month
+          )
+            throw new ConflictException('Escolha uma compra compatível deste cartão e mês.');
+        } else
+          purchaseId = (
+            await this.purchase(
+              cardId,
+              {
+                description: rule.name,
+                purchaseDate: date,
+                amount: rule.amount,
+                installments: 1,
+                categoryId: rule.categoryId,
+              },
+              version,
+              key,
+            )
+          ).id;
+        await this.repo.saveRecurringCharge(
+          { id: randomUUID(), ruleId, chargeMonth: month, purchaseId },
+          this.repo.actorId,
+        );
+        return { id: purchaseId };
+      },
+    );
+  }
   async validateImportedPayment(id: string, month: string, accountId: string, amount: number) {
     await this.ordinary(accountId);
     const { cards } = await this.calculated();
@@ -348,8 +480,8 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
   }
   async planningBills(month: string) {
     validCardMonth(month);
-    const { cards } = await this.calculated();
-    return cards.flatMap((card) =>
+    const { cards, data } = await this.calculated();
+    const result = cards.flatMap((card) =>
       card.bills
         .filter((b) => b.total > 0 || b.paid > 0 || b.remaining > 0)
         .map((b) => {
@@ -370,6 +502,7 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
             name: card.name,
             billMonth: b.month,
             dueDate: b.dueDate,
+            pendingRecurring: 0,
             amount: remaining + paid,
             paid,
             remaining,
@@ -378,6 +511,48 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
           };
         }),
     );
+    for (const rule of data.recurringRules ?? []) {
+      const card = cards.find((c) => c.id === rule.cardId);
+      if (!card || card.archived || rule.archived) continue;
+      for (const offset of [0, -1, -2]) {
+        if (Number(month.slice(0, 4)) * 12 + Number(month.slice(5, 7)) + offset < 1900 * 12 + 1)
+          continue;
+        const chargeMonth = shiftCardMonth(month, offset);
+        if (chargeMonth < rule.startMonth || (rule.endMonth && chargeMonth > rule.endMonth))
+          continue;
+        const charge = data.recurringCharges?.find(
+          (c) => c.ruleId === rule.id && c.chargeMonth === chargeMonth,
+        );
+        if (charge && data.purchases.some((p) => p.id === charge.purchaseId && !p.canceled))
+          continue;
+        const dueMonth = firstBillMonth(
+          cardDay(chargeMonth, rule.chargeDay),
+          card.closingDay,
+          card.dueDay,
+        );
+        if (dueMonth !== month) continue;
+        let row = result.find((r) => r.cardId === card.id && r.billMonth === month);
+        if (!row) {
+          row = {
+            cardId: card.id,
+            accountId: card.accountId,
+            name: card.name,
+            billMonth: month,
+            dueDate: billCalendar(month, card.closingDay, card.dueDay).dueDate,
+            pendingRecurring: 0,
+            amount: 0,
+            paid: 0,
+            remaining: 0,
+            version: card.version,
+            archived: card.archived,
+          };
+          result.push(row);
+        }
+        row.amount += rule.amount;
+        row.pendingRecurring += rule.amount;
+      }
+    }
+    return result;
   }
   async payTransaction(
     id: string,
@@ -726,6 +901,28 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
         purchaseId: e.purchaseId ? purchaseIds.get(e.purchaseId)! : null,
         transactionId: e.transactionId ? transactions.get(e.transactionId)! : null,
       });
+    const recurringIds = new Map((data.recurringRules ?? []).map((r) => [r.id, randomUUID()]));
+    for (const r of data.recurringRules ?? [])
+      await this.repo.saveRecurring(
+        {
+          ...r,
+          id: recurringIds.get(r.id)!,
+          cardId: cardIds.get(r.cardId)!,
+          categoryId: r.categoryId ? categories.get(r.categoryId)! : null,
+          version: 1,
+        },
+        this.repo.actorId,
+      );
+    for (const r of data.recurringCharges ?? [])
+      await this.repo.saveRecurringCharge(
+        {
+          ...r,
+          id: randomUUID(),
+          ruleId: recurringIds.get(r.ruleId)!,
+          purchaseId: purchaseIds.get(r.purchaseId)!,
+        },
+        this.repo.actorId,
+      );
     for (const p of data.payments) {
       const id = randomUUID();
       const debitId = p.debitId ? transactions.get(p.debitId)! : null;

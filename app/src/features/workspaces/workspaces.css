@@ -684,3 +684,12 @@ body .spaces-page .workspace-trash[open] > :not(summary) {
     grid-template-columns: 36px minmax(0, 1fr);
   }
 }
+
+.reader-banner {
+  margin: 0;
+  padding: 12px 24px;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}

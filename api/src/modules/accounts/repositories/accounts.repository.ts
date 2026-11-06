@@ -13,6 +13,8 @@ export class AccountsRepository {
       [this.db.userId],
     );
     return rows.map((r) => ({
+      defaultIncomeCategoryId: r.default_income_category_id ?? null,
+      defaultExpenseCategoryId: r.default_expense_category_id ?? null,
       balanceBasis: r.balance_basis,
       benefitCreditMonth: r.benefit_credit_month ?? 'received',
       id: r.id,
@@ -127,6 +129,22 @@ export class AccountsRepository {
         input.openingDate,
         input.benefitCreditMonth ?? 'received',
       ],
+    );
+  }
+  async defaultCategory(id: string, type: string) {
+    return (
+      (
+        await this.db.query(
+          'SELECT id FROM wallet.categories WHERE user_id=$1 AND id=$2 AND type=$3 AND archived_at IS NULL',
+          [this.db.userId, id, type],
+        )
+      ).length > 0
+    );
+  }
+  async setDefaults(id: string, income: string | null, expense: string | null) {
+    await this.db.query(
+      'UPDATE wallet.financial_accounts SET default_income_category_id=$3,default_expense_category_id=$4 WHERE user_id=$1 AND id=$2',
+      [this.db.userId, id, income, expense],
     );
   }
   async setBenefitMonth(id: string, month: 'received' | 'following') {

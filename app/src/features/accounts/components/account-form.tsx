@@ -2,9 +2,19 @@ import { Select } from '../../../shared/ui/controls/select';
 import { HelpTip } from '../../../shared/ui/tooltip';
 import type { Account } from '../../../shared/api/resources';
 import { useState, type FormEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import type { Category } from '../../../shared/api/resources';
+import { CategorySelect } from '../../../shared/ui/category-select';
+
 import { request, jsonBody } from '../../../shared/api/client';
 import { Button } from '../../../shared/ui/primitives';
 export function AccountForm({ onSaved, account }: { onSaved: () => void; account?: Account }) {
+  const categories = useQuery({
+    queryKey: ['categories', 'account-defaults'],
+    queryFn: () => request<Category[]>('/categories'),
+  });
+  const [incomeDefault, setIncomeDefault] = useState(account?.defaultIncomeCategoryId ?? '');
+  const [expenseDefault, setExpenseDefault] = useState(account?.defaultExpenseCategoryId ?? '');
   const [name, setName] = useState(account?.name ?? '');
   const [institution, setInstitution] = useState(account?.institution ?? 'mercado_pago');
   const [type, setType] = useState(account?.type ?? 'checking');
@@ -24,6 +34,8 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
         headers: account ? { 'If-Match': String(account.version) } : undefined,
         body: jsonBody({
           name,
+          defaultIncomeCategoryId: incomeDefault || null,
+          defaultExpenseCategoryId: expenseDefault || null,
           institution,
           type,
           ...(['benefit_food', 'benefit_meal'].includes(type) ? { benefitCreditMonth } : {}),
@@ -108,6 +120,33 @@ export function AccountForm({ onSaved, account }: { onSaved: () => void; account
           </div>
         </>
       )}
+      <details className="finance-disclosure">
+        <summary>Categorias padrão (opcional)</summary>
+        <p className="field-help">
+          Usadas apenas quando não houver escolha manual nem regra reconhecida. Não altera
+          lançamentos existentes.
+        </p>
+        <label>
+          Receita padrão
+          <CategorySelect
+            categories={categories.data ?? []}
+            type="income"
+            value={incomeDefault}
+            onChange={(e) => setIncomeDefault(e.target.value)}
+            emptyLabel="Sem padrão"
+          />
+        </label>
+        <label>
+          Despesa padrão
+          <CategorySelect
+            categories={categories.data ?? []}
+            type="expense"
+            value={expenseDefault}
+            onChange={(e) => setExpenseDefault(e.target.value)}
+            emptyLabel="Sem padrão"
+          />
+        </label>
+      </details>
       <p className="field-help">
         {legacyInstitution
           ? 'Esta conta anterior foi preservada com seu histórico. Novas contas estão disponíveis para Mercado Pago e Alelo.'

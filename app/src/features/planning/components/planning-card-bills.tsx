@@ -55,6 +55,12 @@ export function PlanningCardBills({ plan }: { plan: MonthlyPlan }) {
                     {bill.billMonth} · vence {shortDate(bill.dueDate)}
                     {bill.automatic ? ' · previsão automática' : ' · previsão manual'}
                   </small>
+                  {!!bill.pendingRecurring && (
+                    <small>
+                      {money(bill.pendingRecurring)} de assinaturas ainda não confirmadas; incluídas
+                      apenas no previsto.
+                    </small>
+                  )}
                   <Link
                     className="text-button"
                     to={`/cards?card=${bill.cardId}&month=${bill.billMonth}${bill.remaining > 0 ? '&action=pay' : ''}`}

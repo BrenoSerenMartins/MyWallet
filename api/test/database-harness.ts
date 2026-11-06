@@ -17,6 +17,12 @@ export class TestDatabase {
       .filter((f) => f.endsWith('.sql') && (!throughMigration || f <= throughMigration))
       .sort())
       await this.engine.exec(readFileSync('supabase/migrations/' + file, 'utf8'));
+    // Historical migration fixtures predate shared membership. Keep their original
+    // owner-only access contract while exercising them through today's transaction wrapper.
+    if (throughMigration && throughMigration < '202611060005_workspace_members.sql')
+      await this.engine.exec(
+        `CREATE FUNCTION wallet.resolve_workspace(w uuid,writing boolean) RETURNS TABLE(owner_id uuid,member_role text) LANGUAGE sql AS $$ SELECT user_id,'owner'::text FROM wallet.workspaces s WHERE id=w AND user_id=wallet.current_user_id() AND to_jsonb(s)->>'deleted_at' IS NULL $$; GRANT EXECUTE ON FUNCTION wallet.resolve_workspace(uuid,boolean) TO plannedwallet_runtime;`,
+      );
     const engine = this.engine;
     const pool = {
       connect: async () => ({
@@ -31,6 +37,7 @@ export class TestDatabase {
     action: () => Promise<T>,
     readOnly = false,
     workspaceId?: string | null,
+    personal = false,
   ) {
     if (workspaceId === undefined) {
       const r = await this.engine.query<{ id: string }>(
@@ -41,7 +48,7 @@ export class TestDatabase {
     }
     await this.engine.exec('SET ROLE plannedwallet_runtime');
     try {
-      return await this.service.forUser(user, action, readOnly, workspaceId);
+      return await this.service.forUser(user, action, readOnly, workspaceId, personal);
     } finally {
       await this.engine.exec('RESET ROLE');
     }

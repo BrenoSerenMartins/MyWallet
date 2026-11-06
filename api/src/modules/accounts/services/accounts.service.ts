@@ -17,7 +17,27 @@ export class AccountsService implements AccountReads {
     return this.repository.list();
   }
   async restoreRecord(record: import('../../../core/integration/index.js').BackupAccount) {
-    return (await this.create({ ...record })).id;
+    return (
+      await this.create({
+        ...record,
+        defaultIncomeCategoryId: null,
+        defaultExpenseCategoryId: null,
+      })
+    ).id;
+  }
+  async restoreDefaults(id: string, income: string | null, expense: string | null) {
+    await this.repository.setDefaults(id, income, expense);
+  }
+  private async validateDefaults(input: UpdateAccountDto) {
+    for (const [id, type] of [
+      [input.defaultIncomeCategoryId, 'income'],
+      [input.defaultExpenseCategoryId, 'expense'],
+    ] as const) {
+      if (id && !(await this.repository.defaultCategory(id, type)))
+        throw new UnprocessableEntityException(
+          'Escolha uma categoria ativa do tipo correspondente nesta conta.',
+        );
+    }
   }
   createManaged(name: string, type: 'credit_card' | 'investment', openingBalance = 0) {
     return this.create({ name, institution: type, type, openingBalance });
@@ -47,6 +67,7 @@ export class AccountsService implements AccountReads {
   }
   async create(input: UpdateAccountDto) {
     this.validateProduct(input);
+    await this.validateDefaults(input);
     const normalized = {
       ...input,
       openingBalance: input.openingBalance ?? 0,
@@ -54,6 +75,11 @@ export class AccountsService implements AccountReads {
     };
     dateOnly(normalized.openingDate);
     const id = await this.repository.create(normalized);
+    await this.repository.setDefaults(
+      id,
+      input.defaultIncomeCategoryId ?? null,
+      input.defaultExpenseCategoryId ?? null,
+    );
     return this.find(id);
   }
   async setBenefitMonth(id: string, month: 'received' | 'following', version: string) {
@@ -104,7 +130,27 @@ export class AccountsService implements AccountReads {
       throw new ConflictException(
         'A posição inicial de uma conta com movimentos exige reconciliação.',
       );
+    await this.validateDefaults({
+      ...input,
+      defaultIncomeCategoryId:
+        input.defaultIncomeCategoryId === account.defaultIncomeCategoryId
+          ? undefined
+          : input.defaultIncomeCategoryId,
+      defaultExpenseCategoryId:
+        input.defaultExpenseCategoryId === account.defaultExpenseCategoryId
+          ? undefined
+          : input.defaultExpenseCategoryId,
+    });
     await this.repository.update(id, input);
+    await this.repository.setDefaults(
+      id,
+      input.defaultIncomeCategoryId === undefined
+        ? (account.defaultIncomeCategoryId ?? null)
+        : input.defaultIncomeCategoryId,
+      input.defaultExpenseCategoryId === undefined
+        ? (account.defaultExpenseCategoryId ?? null)
+        : input.defaultExpenseCategoryId,
+    );
     return this.find(id);
   }
 }

@@ -438,3 +438,35 @@ body .card-directory-surface .cards-workspace {
   overflow-wrap: anywhere;
   min-width: 0;
 }
+
+.card-recurring-section {
+  padding-block: 24px;
+  background: var(--rule-horizontal) top/100% 1px no-repeat;
+}
+.card-recurring-section .section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.card-recurring-section h2 {
+  font-size: 20px;
+  font-weight: 500;
+}
+.card-recurring-section .goal-account {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-block: 16px;
+  background: var(--rule-horizontal) bottom/100% 1px no-repeat;
+}
+.card-recurring-section .inline-actions {
+  flex-wrap: wrap;
+}
+.card-recurring-section .goal-account > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

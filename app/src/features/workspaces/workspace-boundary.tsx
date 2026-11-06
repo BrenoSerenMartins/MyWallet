@@ -34,6 +34,12 @@ export function WorkspaceBoundary() {
   if (!active) return <Navigate to="/workspaces" replace />;
   return (
     <QueryClientProvider key={active.id} client={client}>
+      {active.role === 'reader' && (
+        <p className="reader-banner" role="status">
+          Você está consultando este espaço como leitor. Alterações e exportações estão disponíveis
+          apenas para editores e para o proprietário.
+        </p>
+      )}
       <Outlet key={active.id} />
     </QueryClientProvider>
   );

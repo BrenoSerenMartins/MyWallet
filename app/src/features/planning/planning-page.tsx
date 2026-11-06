@@ -18,7 +18,7 @@ import { PlanForm } from './components/plan-form';
 import { CopyPlanDialog } from './components/copy-plan-dialog';
 import './planning.css';
 export function PlanningPage() {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const view = params.get('view') === 'commitments' ? 'commitments' : 'budget';
   const navigation =
     view === 'commitments' ? (

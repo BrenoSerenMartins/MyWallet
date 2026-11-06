@@ -4,6 +4,70 @@
  */
 
 export interface paths {
+  '/v1/alerts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['AlertsController_list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/alerts/sync': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['AlertsController_sync'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/alerts/preferences': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: operations['AlertsController_save'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/alerts/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['AlertsController_action'];
+    trace?: never;
+  };
   '/health': {
     parameters: {
       query?: never;
@@ -30,6 +94,70 @@ export interface paths {
     get: operations['HealthController_ready'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/goals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['GoalsController_summary'];
+    put?: never;
+    post: operations['GoalsController_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/goals/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['GoalsController_update'];
+    trace?: never;
+  };
+  '/v1/goals/{id}/allocations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['GoalsController_allocate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/goals/{id}/allocations/{event}/undo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['GoalsController_undo'];
     delete?: never;
     options?: never;
     head?: never;
@@ -66,6 +194,54 @@ export interface paths {
     options?: never;
     head?: never;
     patch: operations['CardsController_update'];
+    trace?: never;
+  };
+  '/v1/cards/{id}/recurring': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['CardsController_recurring'];
+    put?: never;
+    post: operations['CardsController_createRecurring'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/cards/{id}/recurring/{rule}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['CardsController_updateRecurring'];
+    trace?: never;
+  };
+  '/v1/cards/{id}/recurring/{rule}/months/{month}/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_confirmRecurring'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   '/v1/cards/{id}/bills/{month}/transaction-payments': {
@@ -788,6 +964,102 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/recognition': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['RecognitionController_queue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/recognition/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['RecognitionController_preview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/recognition/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['RecognitionController_reject'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/recognition/{id}/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['RecognitionController_confirm'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/recognition/changes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['RecognitionController_changes'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/recognition/changes/{id}/undo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['RecognitionController_undo'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/planning/{month}': {
     parameters: {
       query?: never;
@@ -1284,10 +1556,166 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/workspaces/{id}/members': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['SharingController_members'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/workspaces/{id}/invites': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['SharingController_invites'];
+    put?: never;
+    post: operations['SharingController_invite'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/workspaces/{id}/invites/{invite}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations['SharingController_revoke'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/workspaces/{id}/members/{actor}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations['SharingController_remove'];
+    options?: never;
+    head?: never;
+    patch: operations['SharingController_change'];
+    trace?: never;
+  };
+  '/v1/workspaces/invitations/accept': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['SharingController_accept'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    AlertPreferencesDto: {
+      dueDays: number;
+      budgetPercent: number;
+      bills: boolean;
+      budgets: boolean;
+      negativeBalance: boolean;
+      goals: boolean;
+    };
+    AlertDto: {
+      id: string;
+      kind: string;
+      title: string;
+      href: string;
+      createdAt: string;
+      readAt: string | null;
+    };
+    AlertsSummaryDto: {
+      preferences: components['schemas']['AlertPreferencesDto'];
+      items: components['schemas']['AlertDto'][];
+    };
+    AlertActionDto: {
+      /** @enum {string} */
+      action: 'read' | 'dismiss';
+    };
+    GoalAllocationDto: {
+      id: string;
+      goalId: string;
+      accountId: string;
+      delta: number;
+      reverseOfId: string | null;
+      createdAt: string;
+      actorId: string;
+    };
+    GoalResourceDto: {
+      id: string;
+      name: string;
+      target: number;
+      deadline: string | null;
+      priority: number;
+      /** @enum {string} */
+      status: 'active' | 'completed' | 'archived';
+      version: number;
+      allocated: number;
+      remaining: number;
+      progress: number;
+      monthlyPace: number | null;
+      underfunded: boolean;
+      allocations: components['schemas']['GoalAllocationDto'][];
+    };
+    GoalAccountDto: {
+      accountId: string;
+      name: string;
+      balance: number;
+      allocated: number;
+      free: number;
+      deficit: number;
+    };
+    GoalsSummaryDto: {
+      goals: components['schemas']['GoalResourceDto'][];
+      accounts: components['schemas']['GoalAccountDto'][];
+      allocated: number;
+    };
+    SaveGoalDto: {
+      name: string;
+      target: number;
+      deadline?: string | null;
+      priority: number;
+      /** @enum {string} */
+      status?: 'active' | 'completed' | 'archived';
+    };
+    AllocateGoalDto: {
+      accountId: string;
+      amount: number;
+      /** @enum {string} */
+      action: 'allocate' | 'release';
+    };
     CardEntryResourceDto: {
       id: string;
       cardId: string;
@@ -1389,6 +1817,36 @@ export interface components {
       version: number;
       archived: boolean;
     };
+    CardRecurringResourceDto: {
+      confirmedMonths: string[];
+      id: string;
+      cardId: string;
+      name: string;
+      amount: number;
+      chargeDay: number;
+      categoryId: string | null;
+      startMonth: string;
+      endMonth: string | null;
+      archived: boolean;
+      version: number;
+    };
+    CardRecurringDto: {
+      name: string;
+      amount: number;
+      categoryId?: string | null;
+      chargeDay: number;
+      startMonth: string;
+      endMonth?: string | null;
+      archived?: boolean;
+    };
+    ConfirmCardRecurringDto: {
+      purchaseId?: string;
+    };
+    FinanceActionDto: {
+      id?: string;
+      status?: string;
+      mode?: string;
+    };
     CardTransactionPaymentDto: {
       accountId: string;
       date: string;
@@ -1398,6 +1856,7 @@ export interface components {
       transactionVersion?: number;
     };
     CardPurchaseDto: {
+      recurringRuleId?: string;
       description: string;
       categoryId?: string | null;
       purchaseDate: string;
@@ -1408,11 +1867,6 @@ export interface components {
     CardOpeningDto: {
       billMonth: string;
       amount: number;
-    };
-    FinanceActionDto: {
-      id?: string;
-      status?: string;
-      mode?: string;
     };
     ManagedEntryDto: {
       refundedAmount: number;
@@ -1685,6 +2139,8 @@ export interface components {
       reviewReason?: 'same_day' | 'statement_conflict';
     };
     AccountResourceDto: {
+      defaultIncomeCategoryId?: string | null;
+      defaultExpenseCategoryId?: string | null;
       /** @enum {string} */
       benefitCreditMonth?: 'received' | 'following';
       balanceBasis?: components['schemas']['BalanceBasisDto'];
@@ -1701,6 +2157,8 @@ export interface components {
       archived: boolean;
     };
     CreateAccountDto: {
+      defaultIncomeCategoryId?: string | null;
+      defaultExpenseCategoryId?: string | null;
       /** @enum {string} */
       benefitCreditMonth?: 'received' | 'following';
       name: string;
@@ -1718,6 +2176,8 @@ export interface components {
       benefitCreditMonth: 'received' | 'following';
     };
     UpdateAccountDto: {
+      defaultIncomeCategoryId?: string | null;
+      defaultExpenseCategoryId?: string | null;
       /** @enum {string} */
       benefitCreditMonth?: 'received' | 'following';
       name: string;
@@ -1797,6 +2257,7 @@ export interface components {
       reason: string;
     };
     TransactionResourceDto: {
+      categoryChoiceExplicit?: boolean;
       cardPayment?: components['schemas']['LinkedCardPaymentDto'] | null;
       /** @enum {string|null} */
       managedKind?: 'card' | 'investment' | null;
@@ -1831,6 +2292,7 @@ export interface components {
       nextCursor: string | null;
     };
     TransactionDto: {
+      categoryChoiceExplicit?: boolean;
       counterpartyId?: string | null;
       counterpartyName?: string;
       rememberCategory?: boolean;
@@ -1856,6 +2318,30 @@ export interface components {
       transactionDate: string;
       description: string;
     };
+    RecognitionChoiceDto: {
+      signature: string;
+      transactionId: string;
+      description: string;
+      amount: number;
+      date: string;
+      accountName: string;
+      explanation: string;
+      counterpartyName: string | null;
+      categoryName: string | null;
+      cardName: string | null;
+      billMonth: string | null;
+    };
+    RecognitionQueueDto: {
+      items: components['schemas']['RecognitionChoiceDto'][];
+      scanned: number;
+    };
+    RecognitionSelectionDto: {
+      signatures: string[];
+    };
+    RecognitionPreviewDto: {
+      id: string;
+      items: components['schemas']['RecognitionChoiceDto'][];
+    };
     PlannedCardBillDto: {
       accountId: string;
       billMonth: string;
@@ -1863,6 +2349,7 @@ export interface components {
       planned?: number | null;
     };
     PlanningCardBillDto: {
+      pendingRecurring?: number;
       cardId: string;
       accountId: string;
       name: string;
@@ -2262,6 +2749,8 @@ export interface components {
       coverage: string;
     };
     WorkspaceResourceDto: {
+      /** @enum {string} */
+      role: 'owner' | 'editor' | 'reader';
       id: string;
       name: string;
       description: string;
@@ -2269,6 +2758,8 @@ export interface components {
       isDefault: boolean;
     };
     TrashedWorkspaceResourceDto: {
+      /** @enum {string} */
+      role: 'owner' | 'editor' | 'reader';
       id: string;
       name: string;
       description: string;
@@ -2283,6 +2774,29 @@ export interface components {
       /** @enum {string} */
       color: 'emerald' | 'blue' | 'violet' | 'amber' | 'rose';
     };
+    MemberDto: {
+      email: string | null;
+      actorId: string;
+      /** @enum {string} */
+      role: 'owner' | 'editor' | 'reader';
+    };
+    InviteDto: {
+      email: string;
+      /** @enum {string} */
+      role: 'editor' | 'reader';
+    };
+    InviteResultDto: {
+      id: string;
+      token: string;
+      expiresAt: string;
+    };
+    MemberRoleDto: {
+      /** @enum {string} */
+      role: 'editor' | 'reader';
+    };
+    AcceptInviteDto: {
+      token: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -2292,6 +2806,88 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  AlertsController_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AlertsSummaryDto'];
+        };
+      };
+    };
+  };
+  AlertsController_sync: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AlertsSummaryDto'];
+        };
+      };
+    };
+  };
+  AlertsController_save: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AlertPreferencesDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AlertsSummaryDto'];
+        };
+      };
+    };
+  };
+  AlertsController_action: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AlertActionDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   HealthController_health: {
     parameters: {
       query?: never;
@@ -2323,6 +2919,113 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  GoalsController_summary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['GoalsSummaryDto'];
+        };
+      };
+    };
+  };
+  GoalsController_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveGoalDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['GoalResourceDto'];
+        };
+      };
+    };
+  };
+  GoalsController_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveGoalDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['GoalResourceDto'];
+        };
+      };
+    };
+  };
+  GoalsController_allocate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AllocateGoalDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['GoalResourceDto'];
+        };
+      };
+    };
+  };
+  GoalsController_undo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['GoalResourceDto'];
+        };
       };
     };
   };
@@ -2387,6 +3090,94 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['CreditCardDto'];
+        };
+      };
+    };
+  };
+  CardsController_recurring: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CardRecurringResourceDto'][];
+        };
+      };
+    };
+  };
+  CardsController_createRecurring: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CardRecurringDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CardRecurringResourceDto'];
+        };
+      };
+    };
+  };
+  CardsController_updateRecurring: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CardRecurringDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CardRecurringResourceDto'];
+        };
+      };
+    };
+  };
+  CardsController_confirmRecurring: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConfirmCardRecurringDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceActionDto'];
         };
       };
     };
@@ -3509,6 +4300,120 @@ export interface operations {
       };
     };
   };
+  RecognitionController_queue: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RecognitionQueueDto'];
+        };
+      };
+    };
+  };
+  RecognitionController_preview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RecognitionSelectionDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RecognitionPreviewDto'];
+        };
+      };
+    };
+  };
+  RecognitionController_reject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RecognitionSelectionDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  RecognitionController_confirm: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  RecognitionController_changes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  RecognitionController_undo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   PlanningController_summary: {
     parameters: {
       query?: never;
@@ -4216,6 +5121,141 @@ export interface operations {
         content: {
           'application/json': components['schemas']['WorkspaceResourceDto'];
         };
+      };
+    };
+  };
+  SharingController_members: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MemberDto'][];
+        };
+      };
+    };
+  };
+  SharingController_invites: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  SharingController_invite: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['InviteDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InviteResultDto'];
+        };
+      };
+    };
+  };
+  SharingController_revoke: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  SharingController_remove: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  SharingController_change: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MemberRoleDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  SharingController_accept: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AcceptInviteDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

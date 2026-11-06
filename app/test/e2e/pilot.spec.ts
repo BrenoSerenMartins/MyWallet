@@ -125,6 +125,18 @@ async function signedIn(page: Page, rememberSpace = true) {
     const path = new URL(route.request().url()).pathname;
     let data: unknown = [];
     if (path === '/v1/workspaces') data = [workspace];
+    else if (path === '/v1/alerts/sync' || path === '/v1/alerts')
+      data = {
+        preferences: {
+          dueDays: 3,
+          budgetPercent: 100,
+          bills: true,
+          budgets: true,
+          negativeBalance: true,
+          goals: true,
+        },
+        items: [],
+      };
     else if (path === '/v1/accounts') data = [account];
     else if (path.startsWith('/v1/planning/')) data = monthlyPlan(path.split('/').pop()!, 0);
     else if (path === '/v1/commitments')
@@ -4960,3 +4972,102 @@ for (const width of [390, 1440])
       description: 'Pagamento parcial',
     });
   });
+
+for (const width of [390, 1440]) {
+  test(`goals allocate existing money and keep navigation usable at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await signedIn(page);
+    const goal = {
+      id: '77777777-7777-4777-8777-777777777777',
+      name: 'Reserva de emergência',
+      target: 100000,
+      deadline: null,
+      priority: 1,
+      status: 'active',
+      version: 1,
+      allocated: 0,
+      remaining: 100000,
+      progress: 0,
+      monthlyPace: null,
+      underfunded: false,
+      allocations: [],
+    };
+    await page.route('**/v1/goals', (r) =>
+      r.fulfill({
+        json: {
+          goals: [goal],
+          allocated: 0,
+          accounts: [
+            {
+              accountId: account.id,
+              name: account.name,
+              balance: 100000,
+              allocated: 0,
+              free: 100000,
+              deficit: 0,
+            },
+          ],
+        },
+      }),
+    );
+    await page.route('**/v1/goals/*/allocations', async (r) => {
+      const body = r.request().postDataJSON();
+      expect(body).toMatchObject({ accountId: account.id, amount: 25000, action: 'allocate' });
+      await r.fulfill({ json: { ...goal, allocated: 25000, version: 2 } });
+    });
+    await page.goto('/goals');
+    await expect(
+      page.getByRole('heading', { name: 'Metas e reservas', exact: true }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Reservar ou liberar dinheiro', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Reservar ou liberar dinheiro' });
+    await chooseSelect(dialog.getByLabel('Conta', { exact: true }), account.id);
+    await dialog.getByLabel('Valor (R$)', { exact: true }).fill('250,00');
+    await dialog.getByRole('button', { name: 'Confirmar alocação' }).click();
+    await expect(dialog).toBeHidden();
+    await expectNoHorizontalOverflow(page);
+  });
+  test(`assisted review previews choices before applying a batch at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await signedIn(page);
+    const choice = {
+      signature: 'a'.repeat(64),
+      transactionId: transaction.id,
+      description: 'Supermercado',
+      amount: -2500,
+      date: '2026-11-01',
+      accountName: account.name,
+      explanation: 'Categoria padrão configurada nesta conta; aplicação opcional ao histórico.',
+      counterpartyName: null,
+      categoryName: 'Alimentação',
+      cardName: null,
+      billMonth: null,
+    };
+    let confirmed = false;
+    await page.route('**/v1/recognition', (r) =>
+      r.fulfill({ json: { items: confirmed ? [] : [choice], scanned: 1 } }),
+    );
+    await page.route('**/v1/recognition/changes', (r) => r.fulfill({ json: [] }));
+    await page.route('**/v1/recognition/preview', (r) => {
+      expect(r.request().postDataJSON()).toEqual({ signatures: [choice.signature] });
+      return r.fulfill({ json: { id: 'preview-cycle', items: [choice] } });
+    });
+    await page.route('**/v1/recognition/preview-cycle/confirm', (r) => {
+      confirmed = true;
+      return r.fulfill({ json: { status: 'confirmed', updated: 1 } });
+    });
+    await page.goto('/recognition');
+    await page.getByRole('checkbox').check();
+    await page.getByRole('button', { name: 'Revisar 1 escolha(s)', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Conferir alterações' });
+    await expect(dialog.getByText('Identificação mantida · categoria Alimentação')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Confirmar lote' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText('Nenhuma sugestão pendente neste momento.')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+}

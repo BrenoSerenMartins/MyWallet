@@ -1,3 +1,4 @@
+import { FinancialAlerts, useFinancialAlerts } from './financial-alerts';
 import { Tooltip } from '../ui/tooltip';
 import { useState } from 'react';
 import { Bell } from 'lucide-react';
@@ -7,7 +8,10 @@ import { noticeIcons, useNotifications } from './notification-provider';
 export function NotificationCenter() {
   const { items, readAll, clear } = useNotifications();
   const [open, setOpen] = useState(false);
-  const unread = items.filter((n) => !n.read).length;
+  const financial = useFinancialAlerts();
+  const unread =
+    items.filter((n) => !n.read).length +
+    (financial.data?.items?.filter((a) => !a.readAt).length ?? 0);
   return (
     <>
       <Tooltip text="Abrir notificações">
@@ -33,8 +37,9 @@ export function NotificationCenter() {
         open={open}
         onOpenChange={setOpen}
         title="Notificações"
-        description="Avisos desta sessão e deste espaço. Você pode consultá-los depois que o popup fechar."
+        description="Alertas financeiros salvos e avisos recentes deste espaço."
       >
+        <FinancialAlerts query={financial} onClose={() => setOpen(false)} />
         {!items.length ? (
           <p className="notification-empty">Nenhum aviso por aqui.</p>
         ) : (

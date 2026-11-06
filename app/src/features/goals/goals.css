@@ -1,0 +1,115 @@
+.goals-page {
+  display: grid;
+  gap: 28px;
+}
+.goals-overview {
+  padding-block: 24px;
+  text-align: center;
+  background: var(--rule-horizontal) bottom/100% 1px no-repeat;
+}
+.goals-overview > span,
+.goal-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+.goals-overview > strong {
+  display: block;
+  font-weight: 500;
+  font-size: 36px;
+  font-variant-numeric: tabular-nums;
+}
+.goals-overview p {
+  color: var(--muted);
+  font-size: 13px;
+}
+.goal-record {
+  padding-block: 24px;
+  background: var(--rule-horizontal) top/100% 1px no-repeat;
+}
+.goal-record-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.goal-record h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+}
+.goal-record p {
+  font-size: 13px;
+}
+.goal-record-head p {
+  color: var(--muted);
+  margin: 6px 0;
+}
+.goal-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-block: 24px;
+}
+.goal-metrics strong {
+  display: block;
+  font-size: 24px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.goal-record progress {
+  width: 100%;
+  height: 4px;
+  accent-color: var(--accent);
+  display: block;
+  margin-bottom: 20px;
+}
+.goal-account,
+.goal-event {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 0;
+  background: var(--rule-horizontal) bottom/100% 1px no-repeat;
+}
+.goal-account > span,
+.goal-event time {
+  font-size: 13px;
+  color: var(--muted);
+}
+.goal-event > span {
+  flex: 1;
+  min-width: 160px;
+}
+@media (max-width: 600px) {
+  .goal-metrics {
+    gap: 8px;
+  }
+  .goal-metrics strong {
+    font-size: 19px;
+  }
+  .goal-record-head {
+    flex-wrap: wrap;
+  }
+}
+.goal-record {
+  overflow-wrap: anywhere;
+}
+.goal-event > a {
+  min-width: 0;
+}
+.persistent-alerts {
+  padding-block: 12px 24px;
+  background: var(--rule-horizontal) bottom/100% 1px no-repeat;
+}
+.persistent-alerts details {
+  padding-block: 16px;
+}
+.persistent-alerts .inline-actions {
+  flex-wrap: wrap;
+}
+.persistent-alerts h3 {
+  margin-top: 0;
+}

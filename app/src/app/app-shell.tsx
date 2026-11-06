@@ -37,6 +37,8 @@ const navigation = [
     mobile: 'Patrimônio',
     Icon: ChartNoAxesCombined,
   },
+  { to: '/recognition', label: 'Revisão assistida', mobile: 'Revisão', Icon: Landmark },
+  { to: '/goals', label: 'Metas e reservas', mobile: 'Metas', Icon: Landmark },
   { to: '/imports', label: 'Importar extrato', mobile: 'Importar', Icon: Upload },
   { to: '/categories', label: 'Grupos e categorias', mobile: 'Categorias', Icon: FolderTree },
   {

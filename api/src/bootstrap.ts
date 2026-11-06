@@ -25,7 +25,7 @@ export function configureApp(app: INestApplication) {
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     res.setHeader('X-Request-Id', randomUUID());
     if (req.path.startsWith('/v1')) res.setHeader('Cache-Control', 'no-store');
-    app.get(DatabaseService).withWorkspace(req.get('X-Workspace-Id'), next);
+    app.get(DatabaseService).withWorkspace(req.get('X-Workspace-Id'), next, req.method === 'GET');
   });
   app.useGlobalFilters(new SafeErrorFilter());
   const staticPath = resolve(process.env.STATIC_DIRECTORY ?? '../app/dist');

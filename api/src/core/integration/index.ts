@@ -15,6 +15,8 @@ export const CATEGORY_READS = Symbol('CATEGORY_READS');
 export const LEDGER_WRITES = Symbol('LEDGER_WRITES');
 export const LEDGER_READS = Symbol('LEDGER_READS');
 export interface AccountResource {
+  defaultIncomeCategoryId?: string | null;
+  defaultExpenseCategoryId?: string | null;
   benefitCreditMonth?: 'received' | 'following';
   balanceBasis?: import('./balance-basis.js').BalanceBasis;
   canEditOpeningPosition?: boolean;
@@ -51,6 +53,7 @@ export interface BalanceAdjustment {
   reason: string;
 }
 export interface TransactionInput {
+  categoryChoiceExplicit?: boolean;
   /** Internal managed-module authorization, never exposed in public write DTOs. */
   managedKind?: import('./managed-finance.js').ManagedKind | null;
   /** Internal atomic import workflow: refresh after the entire batch, never from HTTP input. */
@@ -156,6 +159,8 @@ export const ACCOUNT_BACKUP = Symbol('ACCOUNT_BACKUP');
 export const CATEGORY_BACKUP = Symbol('CATEGORY_BACKUP');
 export const LEDGER_BACKUP = Symbol('LEDGER_BACKUP');
 export interface BackupAccount {
+  defaultIncomeCategoryId?: string | null;
+  defaultExpenseCategoryId?: string | null;
   benefitCreditMonth?: 'received' | 'following';
   balanceBasis?: import('./balance-basis.js').BalanceBasis;
   id: string;
@@ -173,6 +178,7 @@ export interface BackupCategory {
   color: string;
 }
 export interface BackupTransaction {
+  categoryChoiceExplicit?: boolean;
   managedKind?: import('./managed-finance.js').ManagedKind | null;
   balanceBasisIncluded?: boolean;
   counterpartyId?: string | null;
@@ -193,7 +199,8 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'plannedwallet';
-  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+  goals?: GoalBackup;
   cards?: import('./cards.js').CardsSnapshot;
   wealth?: import('./wealth.js').WealthSnapshot;
   commitments?: import('./commitments.js').CommitmentSnapshot;
@@ -208,6 +215,7 @@ export interface BackupPayload {
   transactions: BackupTransaction[];
 }
 export interface AccountBackup {
+  restoreDefaults(id: string, income: string | null, expense: string | null): Promise<void>;
   exportRecords(): Promise<BackupAccount[]>;
   restoreRecord(record: BackupAccount): Promise<string>;
 }
@@ -244,4 +252,66 @@ export interface PlanningBackup {
     categories: Map<string, string>,
     accounts?: Map<string, string>,
   ): Promise<void>;
+}
+
+export const GOALS_READS = Symbol('GOALS_READS');
+export interface GoalsReads {
+  summary(): Promise<{
+    goals: {
+      id: string;
+      name: string;
+      target: number;
+      allocated: number;
+      remaining: number;
+      deadline: string | null;
+      underfunded: boolean;
+      status: string;
+    }[];
+    accounts: { accountId: string; allocated: number; free: number; deficit: number }[];
+    allocated: number;
+  }>;
+}
+
+export interface GoalBackup {
+  goals: {
+    id: string;
+    name: string;
+    target: number;
+    deadline: string | null;
+    priority: number;
+    status: string;
+    allocations: {
+      id: string;
+      accountId: string;
+      delta: number;
+      reverseOfId: string | null;
+      createdAt: string;
+    }[];
+  }[];
+}
+export const GOALS_BACKUP = Symbol('GOALS_BACKUP');
+export interface GoalsBackup {
+  exportManaged(): Promise<GoalBackup>;
+  restoreManaged(data: GoalBackup, accounts: Map<string, string>): Promise<void>;
+}
+
+export const PLANNING_READS = Symbol('PLANNING_READS');
+export interface PlanningReads {
+  summary(
+    month: string,
+  ): Promise<{
+    lines: {
+      categoryId: string | null;
+      name: string;
+      type: string;
+      planned: number | null;
+      actual: number;
+    }[];
+  }>;
+}
+export const COMMITMENT_READS = Symbol('COMMITMENT_READS');
+export interface CommitmentReads {
+  summary(
+    month: string,
+  ): Promise<{ projection: { accountId: string; name: string; projected: number }[] }>;
 }

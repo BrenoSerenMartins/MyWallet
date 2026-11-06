@@ -13,6 +13,10 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class TransactionDto {
+  @ApiPropertyOptional({ type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  categoryChoiceExplicit?: boolean;
   @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() counterpartyId?:
     string | null;
   @ApiPropertyOptional({ type: String })

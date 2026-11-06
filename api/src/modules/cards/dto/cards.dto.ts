@@ -21,6 +21,7 @@ export class SaveCardDto {
   @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() archived?: boolean;
 }
 export class CardPurchaseDto {
+  @ApiPropertyOptional({ type: String }) @IsOptional() @IsUUID() recurringRuleId?: string;
   @ApiProperty({ type: String }) @IsString() @Length(1, 120) description!: string;
   @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() categoryId?:
     string | null;
@@ -62,4 +63,22 @@ export class CardTransactionPaymentDto {
   @ApiProperty({ type: String }) @IsString() @Length(1, 500) description!: string;
   @ApiPropertyOptional({ type: String }) @IsOptional() @IsUUID() transactionId?: string;
   @ApiPropertyOptional({ type: Number }) @IsOptional() @IsInt() @Min(1) transactionVersion?: number;
+}
+
+export class CardRecurringDto {
+  @ApiProperty({ type: String }) @IsString() @Length(1, 120) name!: string;
+  @ApiProperty({ type: Number }) @IsInt() @Min(1) @Max(1000000000000) amount!: number;
+  @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() categoryId?:
+    string | null;
+  @ApiProperty({ type: Number }) @IsInt() @Min(1) @Max(31) chargeDay!: number;
+  @ApiProperty({ type: String }) @IsString() @Length(7, 7) startMonth!: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
+  @IsString()
+  @Length(7, 7)
+  endMonth?: string | null;
+  @ApiPropertyOptional({ type: Boolean }) @IsOptional() @IsBoolean() archived?: boolean;
+}
+export class ConfirmCardRecurringDto {
+  @ApiPropertyOptional({ type: String }) @IsOptional() @IsUUID() purchaseId?: string;
 }

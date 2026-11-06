@@ -92,6 +92,7 @@ export interface ManagedBackup<T = unknown> {
 }
 
 export interface PlanningCardBill {
+  pendingRecurring?: number;
   cardId: string;
   accountId: string;
   name: string;

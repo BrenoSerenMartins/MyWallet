@@ -1,7 +1,7 @@
 import { Global, Inject, Injectable, Logger, Module, type OnModuleDestroy } from '@nestjs/common';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Pool, type QueryResultRow } from 'pg';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { requireUuid } from '../rest/index.js';
 import { Configuration } from '../config/index.js';
 import { databaseReadinessFailure } from './readiness-failure.js';
@@ -12,6 +12,8 @@ export interface SqlConnection {
   ): Promise<{ rows: T[]; rowCount?: number | null }>;
 }
 interface UserTransaction {
+  actorId: string;
+  role: string;
   userId: string;
   workspaceId: string | null;
   connection: SqlConnection;
@@ -23,8 +25,9 @@ export class DatabaseService implements OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
   private readinessState: string | undefined;
   private readonly requestedWorkspace = new AsyncLocalStorage<string | undefined>();
-  withWorkspace(id: string | undefined, next: () => void) {
-    this.requestedWorkspace.run(id, next);
+  private readonly requestedReadOnly = new AsyncLocalStorage<boolean>();
+  withWorkspace(id: string | undefined, next: () => void, readOnly = false) {
+    this.requestedReadOnly.run(readOnly, () => this.requestedWorkspace.run(id, next));
   }
   private readonly scope = new AsyncLocalStorage<UserTransaction>();
   constructor(@Inject(Configuration) configuration: Configuration) {
@@ -38,6 +41,19 @@ export class DatabaseService implements OnModuleDestroy {
         })
       : null;
     this.pool?.on('error', () => console.error('An idle database connection failed.'));
+  }
+  get actorId(): string {
+    const scope = this.scope.getStore();
+    if (!scope) throw new Error('A verified actor is required.');
+    return scope.actorId;
+  }
+  requireOwner() {
+    if (this.scope.getStore()?.role !== 'owner')
+      throw new ForbiddenException('Apenas o proprietário pode executar esta ação.');
+  }
+  requireExport() {
+    if (this.scope.getStore()?.role === 'reader')
+      throw new ForbiddenException('Seu acesso permite apenas consultar este espaço.');
   }
   get userId(): string {
     const scope = this.scope.getStore();
@@ -57,7 +73,9 @@ export class DatabaseService implements OnModuleDestroy {
     action: () => Promise<T>,
     readOnly = false,
     workspaceId?: string | null,
+    personal = false,
   ): Promise<T> {
+    if (workspaceId !== null && this.requestedReadOnly.getStore()) readOnly = true;
     const current = this.scope.getStore();
     const selected =
       workspaceId === undefined
@@ -66,7 +84,7 @@ export class DatabaseService implements OnModuleDestroy {
           : this.requestedWorkspace.getStore()
         : workspaceId;
     if (current) {
-      if (current.userId !== userId || current.workspaceId !== selected)
+      if (current.actorId !== userId || current.workspaceId !== selected)
         throw new Error('Cannot change transaction owner.');
       try {
         return await action();
@@ -91,18 +109,38 @@ export class DatabaseService implements OnModuleDestroy {
       await connection.query(
         readOnly ? 'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY' : 'BEGIN',
       );
+      await connection.query("SELECT set_config('wallet.actor_id',$1,true)", [userId]);
       await connection.query("SELECT set_config('wallet.user_id', $1, true)", [userId]);
+      let ownerId = userId,
+        role = 'owner';
       if (selected !== null) {
         if (!selected) throw new BadRequestException('Selecione um espaço para continuar.');
         requireUuid(selected);
-        const access = await connection.query(
-          `SELECT id FROM wallet.workspaces w WHERE user_id=$1 AND id=$2 AND to_jsonb(w)->>'deleted_at' IS NULL ${readOnly ? '' : 'FOR SHARE'}`,
-          [userId, selected],
-        );
-        if (!access.rows.length) throw new NotFoundException('Espaço não encontrado.');
+        const access = await connection.query('SELECT * FROM wallet.resolve_workspace($1,$2)', [
+          selected,
+          !readOnly && !personal,
+        ]);
+        if (!access.rows.length) {
+          const readable = await connection.query(
+            'SELECT * FROM wallet.resolve_workspace($1,false)',
+            [selected],
+          );
+          if (readable.rows.length)
+            throw new ForbiddenException('Seu acesso permite apenas consultar este espaço.');
+          throw new NotFoundException('Espaço não encontrado.');
+        }
+        ownerId = access.rows[0].owner_id;
+        role = access.rows[0].member_role;
+        await connection.query("SELECT set_config('wallet.user_id',$1,true)", [ownerId]);
         await connection.query("SELECT set_config('wallet.workspace_id',$1,true)", [selected]);
       }
-      const context: UserTransaction = { userId, connection, workspaceId: selected ?? null };
+      const context: UserTransaction = {
+        userId: ownerId,
+        actorId: userId,
+        role,
+        connection,
+        workspaceId: selected ?? null,
+      };
       const result = await this.scope.run(context, action);
       if (context.rollbackOnly) throw context.rollbackOnly;
       await connection.query('COMMIT');
