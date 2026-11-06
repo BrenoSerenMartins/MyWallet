@@ -1,11 +1,10 @@
 import { useNotifications } from '../../shared/feedback/notification-provider';
-import { NotificationCenter } from '../../shared/feedback/notification-center';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { authClient } from '../../shared/api/auth-client';
 import { Button, Logo, ThemeSwitcher } from '../../shared/ui/primitives';
-import { productName, productTagline } from '../../shared/brand';
+import { productName } from '../../shared/brand';
 import './auth.css';
 export function AuthPage() {
   const location = useLocation();
@@ -78,7 +77,9 @@ export function AuthPage() {
         <Link to="/" className="text-button">
           ← Voltar ao início
         </Link>
-        <NotificationCenter />
+        <div className="entry-tools">
+          <ThemeSwitcher />
+        </div>
       </header>
       <main className="entry-main" id="main-content">
         <Link to="/" className="entry-brand" aria-label={`${productName} — início`}>
@@ -86,23 +87,14 @@ export function AuthPage() {
         </Link>
         <section className="entry-access" aria-labelledby="entry-form-title">
           <div className="entry-form-wrap">
-            <span className="entry-eyebrow">
-              {mode === 'sign-in'
-                ? 'SEU ESPAÇO'
-                : mode === 'sign-up'
-                  ? 'COMECE POR AQUI'
-                  : 'CUIDANDO DO SEU ACESSO'}
-            </span>
             <h1 id="entry-form-title">{title}</h1>
-            <p className="entry-form-description">
-              {mode === 'sign-in'
-                ? 'Entre para continuar de onde você parou.'
-                : mode === 'sign-up'
-                  ? 'Crie sua conta e organize o que vem pela frente.'
-                  : mode === 'recover'
-                    ? 'Informe seu e-mail para receber as instruções de recuperação.'
-                    : 'Escolha uma senha com pelo menos 8 caracteres.'}
-            </p>
+            {(mode === 'recover' || mode === 'reset') && (
+              <p className="entry-form-description">
+                {mode === 'recover'
+                  ? 'Receba as instruções no seu e-mail.'
+                  : 'Use pelo menos 8 caracteres.'}
+              </p>
+            )}
             <form onSubmit={submit} className="form-stack entry-form">
               {mode !== 'reset' && (
                 <label>
@@ -192,21 +184,9 @@ export function AuthPage() {
                 {mode === 'sign-in' ? 'Começar agora' : 'Entrar'}
               </button>
             </p>
-            <div className="entry-assurance">
-              <ShieldCheck size={18} />
-              <span>Você no controle, um mês de cada vez.</span>
-            </div>
           </div>
         </section>
       </main>
-      <footer className="entry-footer">
-        <span>
-          {productName}
-          <span aria-hidden="true"> · </span>
-          <span className="entry-footer-tagline">{productTagline}</span>
-        </span>
-        <ThemeSwitcher />
-      </footer>
     </div>
   );
 }

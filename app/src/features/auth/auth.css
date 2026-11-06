@@ -1,24 +1,48 @@
 body .auth-entry {
   min-height: 100svh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: 0 clamp(20px, 4.5vw, 80px);
+  padding-inline: clamp(16px, 4vw, 64px);
   background: var(--bg);
   color: var(--text);
 }
-.auth-entry .entry-header,
-.auth-entry .entry-footer {
+.auth-entry .entry-header {
   width: 100%;
-  max-width: 1440px;
-  margin-inline: auto;
   display: flex;
   align-items: center;
-  gap: 24px;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  flex-shrink: 0;
 }
-.auth-entry .entry-header {
-  min-height: 80px;
-  padding-block: 20px;
-  border-bottom: 1px solid var(--border);
+.auth-entry .entry-header > a {
+  font-size: 12px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.auth-entry .entry-tools,
+.auth-entry .theme-switcher {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.auth-entry .theme-switcher button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+}
+.auth-entry .entry-main {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding-block: 16px 36px;
 }
 .auth-entry .entry-brand {
   display: inline-flex;
@@ -30,63 +54,37 @@ body .auth-entry {
 .auth-entry .entry-brand .logo-wordmark {
   font-size: 23px;
 }
-.auth-entry .entry-header > :last-child {
-  margin-left: auto;
-}
-.auth-entry .entry-main {
-  flex: 1;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 28px;
-  padding-block: 36px 48px;
-}
 .auth-entry .entry-access {
   width: 100%;
-  max-width: 440px;
-  padding: clamp(24px, 5vw, 36px);
+  max-width: 400px;
+  padding: 28px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
 }
-.auth-entry .entry-eyebrow {
-  color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 1.5px;
-}
-.auth-entry .entry-form-wrap {
-  max-width: 390px;
-  width: 100%;
-  margin-inline: auto;
-}
-.auth-entry .entry-form-wrap > .entry-eyebrow {
-  color: var(--accent);
-}
 .auth-entry .entry-form-wrap h1 {
-  font-size: clamp(28px, 2.8vw, 38px);
+  font-size: 25px;
   font-weight: 500;
-  line-height: 1.18;
-  letter-spacing: -1.4px;
-  margin: 18px 0 14px;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+  margin: 0 0 24px;
   overflow-wrap: anywhere;
 }
 .auth-entry .entry-form-description {
-  margin: 0 0 32px;
   color: var(--muted);
   font-size: 13px;
-  line-height: 1.75;
+  line-height: 1.5;
+  margin: -12px 0 20px;
 }
 .auth-entry .entry-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 .auth-entry .entry-form label {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 6px;
   color: var(--text);
   font-size: 12px;
   font-weight: 500;
@@ -95,10 +93,10 @@ body .auth-entry {
 .auth-entry .entry-form input {
   width: 100%;
   min-width: 0;
-  min-height: 54px;
-  padding: 14px 16px;
+  min-height: 48px;
+  padding: 11px 14px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text);
   font-size: 16px;
@@ -109,25 +107,21 @@ body .auth-entry {
   color: var(--faint);
   opacity: 1;
 }
-.auth-entry .entry-form input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
 .auth-entry .entry-password {
   position: relative;
   min-width: 0;
 }
 .auth-entry .entry-password input {
-  padding-right: 58px;
+  padding-right: 54px;
 }
 .auth-entry .entry-password > button {
   position: absolute;
-  right: 5px;
-  top: 5px;
+  right: 2px;
+  top: 2px;
   width: 44px;
   height: 44px;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
   display: grid;
@@ -140,9 +134,8 @@ body .auth-entry {
 }
 .auth-entry .entry-recover {
   align-self: flex-end;
-  margin-top: -12px;
+  margin-block: -10px;
   min-height: 44px;
-  padding-block: 8px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -150,11 +143,10 @@ body .auth-entry {
   width: 100%;
   justify-content: center;
   gap: 12px;
-  min-height: 54px;
-  border-radius: 12px;
+  min-height: 48px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 600;
-  margin-top: 2px;
 }
 .auth-entry .entry-form .form-error {
   margin: 0;
@@ -166,8 +158,8 @@ body .auth-entry {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 8px;
-  margin: 20px 0 0;
+  gap: 0 6px;
+  margin: 12px 0 0;
   font-size: 12px;
   color: var(--muted);
 }
@@ -177,63 +169,44 @@ body .auth-entry {
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-.auth-entry .entry-assurance {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--faint);
-  font-size: 11px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-}
-.auth-entry .entry-assurance svg {
-  flex: none;
-}
-.auth-entry .entry-footer {
-  justify-content: space-between;
-  padding-block: 16px;
-  border-top: 1px solid var(--border);
-  color: var(--faint);
-  font-size: 11px;
-  flex-wrap: wrap;
-}
-.auth-entry .theme-switcher {
-  display: flex;
-  gap: 2px;
-}
-.auth-entry .theme-switcher button {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  border-radius: 10px;
-}
-.auth-entry :is(a, button):focus-visible {
+.auth-entry :is(a, button, input):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
-@media (max-width: 600px) {
-  body .auth-entry {
-    padding-inline: 16px;
-  }
+@media (max-height: 640px), (max-width: 600px) {
   .auth-entry .entry-header {
-    min-height: 68px;
-    padding-block: 10px;
-    justify-content: space-between;
+    min-height: 48px;
   }
   .auth-entry .entry-main {
-    padding-block: 24px 36px;
-    gap: 24px;
+    gap: 12px;
+    padding-block: 8px 16px;
+  }
+  .auth-entry .entry-access {
+    padding: 20px;
   }
   .auth-entry .entry-form-wrap h1 {
-    font-size: 28px;
-    letter-spacing: -1px;
+    font-size: 23px;
+    margin-bottom: 18px;
   }
-  .auth-entry .entry-footer {
-    justify-content: center;
-    text-align: center;
-    gap: 8px 20px;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  .auth-entry .entry-switch {
+    margin-top: 8px;
+  }
+}
+@media (max-height: 540px) {
+  .auth-entry .entry-main {
+    padding-block: 4px 8px;
+    gap: 8px;
+  }
+  .auth-entry .entry-brand {
+    min-height: 36px;
+  }
+  .auth-entry .entry-access {
+    padding: 16px 20px;
+  }
+  .auth-entry .entry-form {
+    gap: 12px;
+  }
+  .auth-entry .entry-form-wrap h1 {
+    margin-bottom: 16px;
   }
 }
