@@ -203,7 +203,7 @@ async function chooseTheme(page: Page, theme: string) {
 }
 test('sign-in themes and accessible form', async ({ page }) => {
   await page.goto('/painel');
-  await expect(page.getByRole('heading', { name: 'Entrar na sua conta' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Entrar na sua conta' })).toBeAttached();
   await page.getByRole('button', { name: 'Tema escuro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await chooseTheme(page, 'claro');

@@ -87,7 +87,9 @@ export function AuthPage() {
         </Link>
         <section className="entry-access" aria-labelledby="entry-form-title">
           <div className="entry-form-wrap">
-            <h1 id="entry-form-title">{title}</h1>
+            <h1 id="entry-form-title" className={mode === 'sign-in' ? 'sr-only' : undefined}>
+              {title}
+            </h1>
             {(mode === 'recover' || mode === 'reset') && (
               <p className="entry-form-description">
                 {mode === 'recover'
