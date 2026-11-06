@@ -2,8 +2,8 @@ import { useNotifications } from '../../shared/feedback/notification-provider';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { authReturnError } from './auth-return';
-import { authClient } from '../../shared/api/auth-client';
+import { authReturnError, authInitializationError } from './auth-return';
+import { authClient, authStartup } from '../../shared/api/auth-client';
 import { Button, Logo, ThemeSwitcher } from '../../shared/ui/primitives';
 import { productName } from '../../shared/brand';
 import './public-entry.css';
@@ -35,15 +35,26 @@ export function AuthPage() {
   useEffect(() => {
     if (location.pathname !== '/reset-password' || returnError) return;
     let active = true;
-    void authClient.auth.getSession().then(({ data, error: sessionError }) => {
+    void (async () => {
+      // initialize() retains callback errors; getSession() alone can silently return null.
+      const initialization = await authStartup;
+      if (!active) return;
+      if (initialization.error) {
+        setMode('recover');
+        setError(authInitializationError(initialization.error));
+        return;
+      }
+      const { data, error: sessionError } = await authClient.auth.getSession();
       if (!active) return;
       if (sessionError || !data.session) {
         setMode('recover');
         setError(
-          'Não foi possível validar este link. Solicite outro e abra o e-mail mais recente no mesmo navegador em que fez o pedido.',
+          sessionError
+            ? authInitializationError(sessionError)
+            : 'Este endereço não contém uma sessão de recuperação válida. Abra o botão de recuperação do e-mail mais recente ou solicite outro link.',
         );
       } else setResetReady(true);
-    });
+    })();
     return () => {
       active = false;
     };

@@ -16,3 +16,13 @@ it('does not trust provider descriptions or mistake valid codes for errors', () 
   expect(message).not.toContain('untrusted-message');
   expect(message).toContain('Não foi possível validar');
 });
+
+it('distinguishes a missing verifier, an expired flow and a connectivity error without exposing provider text', async () => {
+  const { authInitializationError } = await import('../auth-return');
+  expect(authInitializationError({ name: 'AuthPKCECodeVerifierMissingError' })).toContain(
+    'não foi encontrado neste navegador',
+  );
+  expect(authInitializationError({ code: 'flow_state_expired' })).toContain('expirou');
+  expect(authInitializationError({ name: 'AuthRetryableFetchError' })).toContain('conexão');
+  expect(authInitializationError({ code: 'unknown' })).toContain('confirmação do e-mail');
+});

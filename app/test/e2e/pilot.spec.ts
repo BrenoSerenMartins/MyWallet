@@ -4777,7 +4777,9 @@ test('reset page without a verified session requests a fresh link instead of acc
   page,
 }) => {
   await page.goto('/reset-password');
-  await expect(page.getByRole('alert')).toContainText('Não foi possível validar este link');
+  await expect(page.getByRole('alert')).toContainText(
+    'Este endereço não contém uma sessão de recuperação válida',
+  );
   await expect(page.getByRole('button', { name: 'Enviar instruções', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Salvar nova senha', exact: true })).toHaveCount(0);
 });
