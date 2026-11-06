@@ -5,6 +5,7 @@ import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { authClient } from '../../shared/api/auth-client';
 import { Button, Logo, ThemeSwitcher } from '../../shared/ui/primitives';
 import { productName } from '../../shared/brand';
+import './public-entry.css';
 import './auth.css';
 export function AuthPage() {
   const location = useLocation();
@@ -72,7 +73,7 @@ export function AuthPage() {
     reset: 'Uma nova senha para você.',
   }[mode];
   return (
-    <div className="auth-entry">
+    <div className="auth-entry public-entry">
       <header className="entry-header">
         <Link to="/" className="text-button">
           ← Voltar ao início
@@ -85,7 +86,7 @@ export function AuthPage() {
         <Link to="/" className="entry-brand" aria-label={`${productName} — início`}>
           <Logo />
         </Link>
-        <section className="entry-access" aria-labelledby="entry-form-title">
+        <section className="entry-access public-surface" aria-labelledby="entry-form-title">
           <div className="entry-form-wrap">
             <h1 id="entry-form-title" className={mode === 'sign-in' ? 'sr-only' : undefined}>
               {title}

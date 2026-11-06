@@ -2,23 +2,23 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowLeftRight, CalendarDays, CreditCard, Wallet } from 'lucide-react';
 import { Logo, ThemeSwitcher } from '../../shared/ui/primitives';
 import { productName } from '../../shared/brand';
+import './public-entry.css';
 import './landing.css';
 
 export function LandingPage() {
   return (
-    <div className="landing-page">
+    <div className="landing-page public-entry">
       <header className="landing-header">
         <Link to="/" aria-label={`${productName} — início`}>
           <Logo />
         </Link>
-        <Link className="button" to="/painel">
+        <Link className="button secondary" to="/painel">
           Acessar painel <ArrowRight size={16} />
         </Link>
       </header>
       <main id="main-content">
         <section className="landing-hero">
           <div className="landing-copy">
-            <span className="landing-eyebrow">SEU DINHEIRO, COM DIREÇÃO</span>
             <h1>
               O seu mês.
               <br />
@@ -36,7 +36,7 @@ export function LandingPage() {
             <span className="landing-caption">Já tem uma conta? Entre pelo painel.</span>
           </div>
           <div
-            className="landing-preview"
+            className="landing-preview public-surface"
             aria-label="Exemplo ilustrativo do painel, com valores fictícios"
           >
             <div className="landing-preview-top">

@@ -3,7 +3,6 @@ body .auth-entry {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding-inline: clamp(16px, 4vw, 64px);
   background: var(--bg);
   color: var(--text);
 }
@@ -56,11 +55,9 @@ body .auth-entry {
 }
 .auth-entry .entry-access {
   width: 100%;
-  max-width: 400px;
+  max-width: 380px;
   padding: 28px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
+  background: transparent;
 }
 .auth-entry .entry-form-wrap h1 {
   font-size: 25px;
@@ -74,7 +71,7 @@ body .auth-entry {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
-  margin: -12px 0 20px;
+  margin: 0 0 20px;
 }
 .auth-entry .entry-form {
   display: flex;
@@ -86,7 +83,7 @@ body .auth-entry {
   flex-direction: column;
   gap: 6px;
   color: var(--text);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   min-width: 0;
 }
@@ -97,9 +94,9 @@ body .auth-entry {
   padding: 11px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--bg);
+  background: var(--surface-soft);
   color: var(--text);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.4;
 }
@@ -145,8 +142,8 @@ body .auth-entry {
   gap: 12px;
   min-height: 48px;
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 }
 .auth-entry .entry-form .form-error {
   margin: 0;
@@ -168,10 +165,6 @@ body .auth-entry {
   font-size: 12px;
   text-decoration: underline;
   text-underline-offset: 4px;
-}
-.auth-entry :is(a, button, input):focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
 }
 @media (max-height: 640px), (max-width: 600px) {
   .auth-entry .entry-header {
@@ -208,5 +201,22 @@ body .auth-entry {
   }
   .auth-entry .entry-form-wrap h1 {
     margin-bottom: 16px;
+  }
+}
+
+.auth-entry .entry-form input:focus {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+@media (max-width: 600px) {
+  .auth-entry .entry-form input {
+    font-size: 16px;
+  }
+  .auth-entry .entry-brand .logo-symbol {
+    width: 28px;
+    height: 28px;
+  }
+  .auth-entry .entry-brand .logo-wordmark {
+    font-size: 20px;
   }
 }

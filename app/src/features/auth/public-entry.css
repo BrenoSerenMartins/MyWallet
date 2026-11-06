@@ -1,0 +1,33 @@
+/* Public pages share the open surfaces and metallic rules of editorial-system.css. */
+body .public-entry {
+  padding-inline: var(--space-page);
+  background: var(--bg);
+  color: var(--text);
+}
+.public-entry .public-surface {
+  position: relative;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.public-entry .public-surface::before,
+.public-entry .public-surface::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--rule-horizontal);
+}
+.public-entry .public-surface::before {
+  top: 0;
+}
+.public-entry .public-surface::after {
+  bottom: 0;
+}
+.public-entry :is(a, button, input):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
