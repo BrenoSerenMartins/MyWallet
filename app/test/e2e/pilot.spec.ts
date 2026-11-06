@@ -4749,3 +4749,35 @@ for (const width of [390, 1440])
       page.getByRole('button', { name: 'Entrar na minha conta', exact: true }),
     ).toBeVisible();
   });
+
+for (const suffix of [
+  '?error=access_denied&error_code=otp_expired&error_description=Email+link+expired',
+  '#error=access_denied&error_code=otp_expired',
+])
+  test(`expired email callback offers a new recovery request from ${suffix[0]}`, async ({
+    page,
+  }) => {
+    let redirect = '';
+    await page.route('https://*.supabase.co/auth/v1/recover?*', (route) => {
+      redirect = new URL(route.request().url()).searchParams.get('redirect_to') ?? '';
+      return route.fulfill({ json: {} });
+    });
+    await page.goto('/' + suffix);
+    await expect(page.getByRole('alert')).toContainText('Este link expirou');
+    await expect(
+      page.getByRole('heading', { name: 'Vamos recuperar seu acesso.', exact: true }),
+    ).toBeVisible();
+    await page.getByRole('textbox', { name: 'E-mail', exact: true }).fill('preview@example.test');
+    await page.getByRole('button', { name: 'Enviar instruções', exact: true }).click();
+    await expect.poll(() => redirect).toBe('http://127.0.0.1:5173/reset-password');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  });
+
+test('reset page without a verified session requests a fresh link instead of accepting a password', async ({
+  page,
+}) => {
+  await page.goto('/reset-password');
+  await expect(page.getByRole('alert')).toContainText('Não foi possível validar este link');
+  await expect(page.getByRole('button', { name: 'Enviar instruções', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Salvar nova senha', exact: true })).toHaveCount(0);
+});

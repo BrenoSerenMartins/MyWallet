@@ -110,7 +110,11 @@ http://localhost:5173/auth/callback
 http://localhost:5173/reset-password
 ```
 
-Ajuste as URLs para a porta ou o domínio utilizados e configure o Site URL correspondente. O primeiro usuário é criado pela tela de cadastro.
+Em produção, configure **Site URL** com a origem HTTPS do serviço Render e adicione as URLs completas `/auth/callback` e `/reset-password` dessa mesma origem em **Redirect URLs**. O `supabase/config.toml` configura o ambiente local; editar esse arquivo não atualiza o projeto hospedado.
+
+Se o e-mail voltar para `localhost:3000`, confira o Site URL e a lista de redirects no painel. Se houver `otp_expired`, peça um novo e-mail após corrigir a configuração: links antigos, usados ou inválidos não são reativados. Abra o e-mail mais recente no mesmo navegador em que solicitou a recuperação (o fluxo PKCE depende desse navegador). Se o link mais recente já chegar inválido, confira também se o serviço de e-mail está pré-abrindo links, conforme a documentação de templates do Supabase.
+
+Ajuste as URLs para a porta ou o domínio utilizados. O primeiro usuário é criado pela tela de cadastro.
 
 ### 5. Iniciar o desenvolvimento
 

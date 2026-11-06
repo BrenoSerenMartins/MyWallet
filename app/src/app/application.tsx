@@ -3,9 +3,10 @@ import { WorkspaceProvider } from '../features/workspaces/workspace-provider';
 import { WorkspaceBoundary } from '../features/workspaces/workspace-boundary';
 import { WorkspacesPage } from '../features/workspaces/workspaces-page';
 import { lazy, Suspense, type ReactNode } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '../features/auth/auth-provider';
 import { LandingPage } from '../features/auth/landing-page';
+import { authReturnError } from '../features/auth/auth-return';
 import { AuthPage } from '../features/auth/auth-page';
 import { Loading } from '../shared/ui/primitives';
 import { AppShell } from './app-shell';
@@ -48,6 +49,7 @@ const WealthPage = lazy(() =>
   import('../features/wealth/wealth-page').then((m) => ({ default: m.WealthPage })),
 );
 export function Application() {
+  const location = useLocation();
   const { session, loading } = useAuth();
   if (loading)
     return (
@@ -66,7 +68,12 @@ export function Application() {
             <Route path="/reset-password" element={<AuthPage />} />
             {!session ? (
               <>
-                <Route index element={<LandingPage />} />
+                <Route
+                  index
+                  element={
+                    authReturnError(location.search, location.hash) ? <AuthPage /> : <LandingPage />
+                  }
+                />
                 <Route path="login" element={<AuthPage />} />
                 <Route path="painel" element={<AuthPage />} />
                 <Route path="*" element={<AuthPage />} />

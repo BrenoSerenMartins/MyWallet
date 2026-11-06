@@ -2,6 +2,7 @@ import { useNotifications } from '../../shared/feedback/notification-provider';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { authReturnError } from './auth-return';
 import { authClient } from '../../shared/api/auth-client';
 import { Button, Logo, ThemeSwitcher } from '../../shared/ui/primitives';
 import { productName } from '../../shared/brand';
@@ -10,12 +11,15 @@ import './auth.css';
 export function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const returnError = authReturnError(location.search, location.hash);
   const [mode, setMode] = useState<'sign-in' | 'sign-up' | 'recover' | 'reset'>(
-    location.pathname === '/reset-password'
-      ? 'reset'
-      : new URLSearchParams(location.search).get('cadastro') === '1'
-        ? 'sign-up'
-        : 'sign-in',
+    returnError
+      ? 'recover'
+      : location.pathname === '/reset-password'
+        ? 'reset'
+        : new URLSearchParams(location.search).get('cadastro') === '1'
+          ? 'sign-up'
+          : 'sign-in',
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +30,24 @@ export function AuthPage() {
     if (message) notices.info(message, { id: 'auth-feedback', duration: 0 });
     else notices.dismiss('auth-feedback');
   };
-  const [error, setError] = useState('');
+  const [error, setError] = useState(returnError ?? '');
+  const [resetReady, setResetReady] = useState(false);
+  useEffect(() => {
+    if (location.pathname !== '/reset-password' || returnError) return;
+    let active = true;
+    void authClient.auth.getSession().then(({ data, error: sessionError }) => {
+      if (!active) return;
+      if (sessionError || !data.session) {
+        setMode('recover');
+        setError(
+          'Não foi possível validar este link. Solicite outro e abra o e-mail mais recente no mesmo navegador em que fez o pedido.',
+        );
+      } else setResetReady(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, [location.pathname, returnError]);
   useEffect(() => {
     if (location.pathname === '/auth/callback') {
       void authClient.auth.getSession().then(({ data }) => {
@@ -53,10 +74,19 @@ export function AuthPage() {
         result = await authClient.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + '/reset-password',
         });
-      else result = await authClient.auth.updateUser({ password });
+      else {
+        const { data, error: sessionError } = await authClient.auth.getSession();
+        if (sessionError || !data.session) {
+          setMode('recover');
+          throw new Error('Seu acesso de recuperação expirou. Solicite um novo link.');
+        }
+        result = await authClient.auth.updateUser({ password });
+      }
       if (result.error) throw new Error(result.error.message);
       if (mode === 'recover')
-        setMessage('Se houver uma conta com este e-mail, você receberá as instruções.');
+        setMessage(
+          'Se houver uma conta com este e-mail, você receberá as instruções. Abra o e-mail mais recente no mesmo navegador em que fez o pedido.',
+        );
       else if (
         mode === 'sign-up' &&
         'data' in result &&
@@ -163,7 +193,7 @@ export function AuthPage() {
                 </p>
               )}
 
-              <Button disabled={busy}>
+              <Button disabled={busy || (mode === 'reset' && !resetReady)}>
                 {busy
                   ? 'Aguarde…'
                   : mode === 'sign-in'
