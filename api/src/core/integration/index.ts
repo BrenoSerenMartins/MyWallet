@@ -126,6 +126,7 @@ export interface LedgerReads {
     from: string,
     to: string,
     scope?: 'all' | 'cash' | 'benefits',
+    excludeCards?: boolean,
   ): Promise<PlanningActual[]>;
   balanceBefore(accountId: string, date: string): Promise<number>;
   summary(
@@ -192,7 +193,7 @@ export interface BackupTransaction {
 }
 export interface BackupPayload {
   format: 'plannedwallet';
-  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
   cards?: import('./cards.js').CardsSnapshot;
   wealth?: import('./wealth.js').WealthSnapshot;
   commitments?: import('./commitments.js').CommitmentSnapshot;
@@ -229,6 +230,7 @@ export interface LedgerBackup {
 export * from './resource-dto.js';
 
 export interface BackupMonthlyPlan {
+  cardPlans?: import('./managed-finance.js').PlannedCardBill[];
   month: string;
   contribution: number | null;
   notes: string;
@@ -237,5 +239,9 @@ export interface BackupMonthlyPlan {
 export const PLANNING_BACKUP = Symbol('PLANNING_BACKUP');
 export interface PlanningBackup {
   exportRecords(): Promise<BackupMonthlyPlan[]>;
-  restoreRecords(plans: BackupMonthlyPlan[], categories: Map<string, string>): Promise<void>;
+  restoreRecords(
+    plans: BackupMonthlyPlan[],
+    categories: Map<string, string>,
+    accounts?: Map<string, string>,
+  ): Promise<void>;
 }

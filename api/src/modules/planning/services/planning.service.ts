@@ -1,11 +1,15 @@
 import {
   ConflictException,
+  Optional,
   Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  CARD_FORECAST,
+  type CardForecast,
+  type PlannedCardBill,
   ACCOUNT_READS,
   periodBudget,
   type AccountReads,
@@ -28,15 +32,55 @@ export class PlanningService implements PlanningBackup {
     @Inject(CATEGORY_READS) private readonly categories: CategoryReads,
     @Inject(LEDGER_READS) private readonly ledger: LedgerReads,
     @Inject(ACCOUNT_READS) private readonly accounts: AccountReads,
+    @Optional() @Inject(CARD_FORECAST) private readonly cards?: CardForecast,
   ) {}
   async summary(month: string, scope: 'all' | 'cash' | 'benefits' = 'all') {
     const { from, to } = planningPeriod(month);
+    const saved = await this.repository.find(month);
     const summary = planningSummary(
       month,
-      await this.repository.find(month),
+      saved,
       await this.categories.list(true),
-      await this.ledger.planningActuals(from, to, scope),
+      await this.ledger.planningActuals(from, to, scope, true),
     );
+    const preferences = saved?.cardPlans ?? [];
+    const allBills = scope === 'benefits' ? [] : ((await this.cards?.planningBills(month)) ?? []);
+    const cardBills = allBills
+      .filter(
+        (b) =>
+          b.billMonth === month ||
+          (b.billMonth < month &&
+            (b.remaining > 0 ||
+              b.paid > 0 ||
+              preferences.some((p) => p.accountId === b.accountId && p.billMonth === b.billMonth))),
+      )
+      .map((b) => {
+        const preference = preferences.find(
+          (p) => p.accountId === b.accountId && p.billMonth === b.billMonth,
+        );
+        return {
+          ...b,
+          included: preference?.included ?? b.billMonth === month,
+          planned: preference?.planned ?? b.amount,
+          automatic: preference?.planned == null,
+        };
+      });
+    const selected = cardBills.filter((b) => b.included);
+    if (selected.length) {
+      const planned = selected.reduce((sum, b) => sum + b.planned, 0);
+      const paid = selected.reduce((sum, b) => sum + b.paid, 0);
+      const t = summary.totals;
+      t.plannedExpense = (t.plannedExpense ?? 0) + planned;
+      t.actualExpense += paid;
+      t.actualResult = t.actualIncome - t.actualExpense;
+      t.expenseDifference = t.plannedExpense - t.actualExpense;
+      t.plannedResult = t.plannedIncome === null ? null : t.plannedIncome - t.plannedExpense;
+      t.resultDifference = t.plannedResult === null ? null : t.actualResult - t.plannedResult;
+      t.afterContribution =
+        t.plannedResult === null || summary.contribution === null
+          ? null
+          : t.plannedResult - summary.contribution;
+    }
     const accounts = await this.accounts.list();
     const budget = periodBudget(
       from,
@@ -48,6 +92,8 @@ export class PlanningService implements PlanningBackup {
     );
     return {
       ...summary,
+      cardPlans: preferences,
+      cardBills,
       budget,
       benefitAccounts: (await this.accounts.list())
         .filter((a) => ['benefit_food', 'benefit_meal'].includes(a.type))
@@ -64,13 +110,33 @@ export class PlanningService implements PlanningBackup {
     await this.repository.lock(month);
     requireVersion((await this.repository.find(month))?.version ?? 0, input.version);
     await this.validateLines(input.lines);
+    const cardPlans = input.cardPlans ?? (await this.repository.find(month))?.cardPlans ?? [];
+    await this.validateCardPlans(month, cardPlans);
     await this.repository.save({
       month,
       notes: input.notes,
       contribution: input.contribution ?? null,
       lines: input.lines,
+      cardPlans,
     });
     return this.summary(month);
+  }
+  private async validateCardPlans(month: string, preferences: PlannedCardBill[]) {
+    const accounts = await this.accounts.list();
+    const seen = new Set<string>();
+    for (const p of preferences) {
+      planningPeriod(p.billMonth);
+      const key = `${p.accountId}:${p.billMonth}`;
+      if (
+        p.billMonth > month ||
+        seen.has(key) ||
+        accounts.find((a) => a.id === p.accountId)?.type !== 'credit_card'
+      )
+        throw new UnprocessableEntityException(
+          'Confira os cartões e faturas selecionados para o mês.',
+        );
+      seen.add(key);
+    }
   }
   private async validateLines(lines: { categoryId: string; amount: number }[]) {
     if (new Set(lines.map((l) => l.categoryId)).size !== lines.length)
@@ -95,13 +161,20 @@ export class PlanningService implements PlanningBackup {
       notes: target?.notes ?? '',
       contribution: source.contribution,
       lines: source.lines,
+      cardPlans: (source.cardPlans ?? [])
+        .filter((p) => p.billMonth === previous)
+        .map((p) => ({ ...p, billMonth: month, planned: null })),
     });
     return this.summary(month);
   }
   exportRecords() {
     return this.repository.exportRecords();
   }
-  async restoreRecords(plans: BackupMonthlyPlan[], categories: Map<string, string>) {
+  async restoreRecords(
+    plans: BackupMonthlyPlan[],
+    categories: Map<string, string>,
+    accounts = new Map<string, string>(),
+  ) {
     for (const plan of [...plans].sort((a, b) => a.month.localeCompare(b.month))) {
       await this.repository.lock(plan.month);
       if (await this.repository.find(plan.month))
@@ -110,6 +183,10 @@ export class PlanningService implements PlanningBackup {
         );
       await this.repository.save({
         ...plan,
+        cardPlans: (plan.cardPlans ?? []).map((p) => ({
+          ...p,
+          accountId: accounts.get(p.accountId)!,
+        })),
         lines: plan.lines.map((line) => ({
           ...line,
           categoryId: categories.get(line.categoryId)!,

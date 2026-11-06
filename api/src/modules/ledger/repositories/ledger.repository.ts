@@ -472,6 +472,7 @@ export class LedgerRepository {
     from: string,
     to: string,
     scope: 'all' | 'cash' | 'benefits' = 'all',
+    excludeCards = false,
   ): Promise<PlanningActual[]> {
     const planningDate = reportingDateSql('t');
     const rows = await this.db.query(
@@ -483,9 +484,10 @@ export class LedgerRepository {
         ON a.user_id=t.user_id AND a.workspace_id=t.workspace_id AND a.id=t.account_id
       WHERE t.user_id=$1 AND t.reversed_at IS NULL AND t.transaction_type <> 'transfer'
       AND (${planningDate}) >= $2::date AND (${planningDate}) < $3::date
+      AND (NOT $5::boolean OR a.type <> 'credit_card')
       AND ($4='all' OR CASE WHEN $4='benefits' THEN a.type IN ('benefit_food','benefit_meal') ELSE a.type NOT IN ('benefit_food','benefit_meal') END)
       GROUP BY t.category_id,t.transaction_type`,
-      [this.db.userId, from, to, scope],
+      [this.db.userId, from, to, scope, excludeCards],
     );
     return rows.map((r) => ({
       categoryId: r.category_id,

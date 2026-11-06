@@ -58,7 +58,9 @@ export function CopyPlanDialog({
       </ul>
       <p className="field-help">
         {plan.version ? 'Os valores previstos deste mês serão substituídos. ' : ''}Lançamentos e
-        notas atuais serão preservados. Nenhuma movimentação será criada.
+        notas atuais serão preservados. Nenhuma movimentação será criada. A seleção dos cartões será
+        copiada para as faturas do novo mês, usando seus valores atuais; previsões manuais de
+        faturas e pagamentos antigos não são copiados.
       </p>
       {error && (
         <p className="form-error" role="alert">

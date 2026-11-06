@@ -3294,13 +3294,12 @@ test('creates a credit card and sends an exact installment purchase without debi
   await page.getByRole('button', { name: 'Novo cartão', exact: true }).click();
   let dialog = page.getByRole('dialog');
   await fillControl(dialog.getByLabel('Nome do cartão', { exact: true }), 'Meu cartão');
-  await chooseSelect(dialog.getByLabel('Conta para pagar a fatura', { exact: true }), account.id);
   await fillControl(dialog.getByLabel('Limite informado (R$)', { exact: true }), '2.500,00');
   await dialog.getByRole('button', { name: 'Adicionar cartão', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(writes[0]).toMatchObject({
     name: 'Meu cartão',
-    paymentAccountId: account.id,
+    paymentAccountId: null,
     closingDay: 10,
     dueDay: 20,
     limit: 250000,
@@ -4667,32 +4666,55 @@ for (const width of [320, 390, 768, 1440]) {
 }
 
 for (const width of [390, 1440])
-  test(`optional card cash planning opens the invoice payment without creating a duplicate expense at ${width}px`, async ({
+  test(`monthly invoices are included by default and open payment from planning at ${width}px`, async ({
     page,
   }) => {
     await signedIn(page);
-    await financeFixtures(page);
+    const { cards } = await financeFixtures(page);
+    const card = cards.cards[0];
+    const bill = card.bills[0];
+    await page.route('**/v1/planning/**', (route) =>
+      route.fulfill({
+        json: {
+          ...monthlyPlan('2026-11'),
+          cardPlans: [],
+          cardBills: [
+            {
+              cardId: card.id,
+              accountId: card.accountId,
+              name: card.name,
+              billMonth: bill.month,
+              dueDate: bill.dueDate,
+              amount: bill.total,
+              paid: bill.paid,
+              remaining: bill.remaining,
+              version: card.version,
+              archived: false,
+              included: true,
+              planned: bill.total,
+              automatic: true,
+            },
+          ],
+        },
+      }),
+    );
     await page.setViewportSize({ width, height: 900 });
-    const writes: string[] = [];
-    page.on('request', (request) => {
-      if (request.url().includes('/v1/') && request.method() !== 'GET') writes.push(request.url());
-    });
     await page.goto('/planning?month=2026-11');
-    await page.getByText('Planejar pagamentos de cartões', { exact: true }).click();
-    const planning = page.locator('.planning-card-payments');
-    await expect(planning.getByRole('checkbox')).not.toBeChecked();
-    await planning.getByRole('checkbox').check();
-    await expect(planning).toContainText('Pagamentos selecionados:');
-    await expect(planning).toContainText('após os pagamentos.');
-    await planning.getByRole('link', { name: 'Registrar ou vincular pagamento' }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    const section = page.locator('.planning-invoice-section');
+    await expect(section).toContainText('Cartão pessoal');
+    await expect(section).toContainText('Falta pagar');
+    await page.getByRole('button', { name: 'Mais ações do planejamento', exact: true }).click();
+    await page.getByRole('button', { name: 'Editar planejamento', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('checkbox', { name: /Cartão pessoal/ })).toBeChecked();
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await section
+      .getByRole('link', { name: 'Registrar ou vincular pagamento', exact: true })
+      .click();
     await expect(
       page.getByRole('dialog').getByRole('group', { name: 'Modo de pagamento da fatura' }),
     ).toBeVisible();
-    expect(writes).toEqual([]);
-    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
-    await page.getByRole('button', { name: 'Dívida anterior', exact: true }).click();
-    await expect(page.getByRole('dialog')).toContainText('dívida');
+    await expectNoHorizontalOverflow(page);
   });
 
 for (const width of [320, 390, 768, 1440])
@@ -4907,4 +4929,34 @@ for (const width of [390, 1440])
       await expectNoHorizontalOverflow(page);
       await header.click();
     }
+  });
+
+for (const width of [390, 1440])
+  test(`transaction category can settle a card invoice without a preset funding account at ${width}px`, async ({
+    page,
+  }) => {
+    await signedIn(page);
+    await financeFixtures(page);
+    const writes: Record<string, unknown>[] = [];
+    await page.route('**/v1/cards/*/bills/*/transaction-payments', (route) => {
+      writes.push(route.request().postDataJSON());
+      return route.fulfill({ json: { id: 'payment' } });
+    });
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/transactions?new=1');
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Valor (R$)', { exact: true }).fill('20,00');
+    await dialog.getByLabel('Descrição', { exact: true }).fill('Pagamento parcial');
+    await chooseSelect(dialog.getByLabel('Categoria', { exact: true }), 'card:' + financeCardId);
+    await expect(dialog.getByLabel('Fatura de vencimento', { exact: true })).toBeVisible();
+    await fillControl(dialog.getByLabel('Fatura de vencimento', { exact: true }), '2026-11');
+    await expectNoHorizontalOverflow(page);
+    await dialog.getByRole('button', { name: 'Registrar movimento', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toMatchObject({
+      accountId: account.id,
+      amount: 2000,
+      description: 'Pagamento parcial',
+    });
   });

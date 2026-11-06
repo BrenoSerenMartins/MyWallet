@@ -1,3 +1,7 @@
+import { ImportsService } from '../../imports/services/imports.service.js';
+import { ImportsRepository } from '../../imports/repositories/imports.repository.js';
+import { ImportReconciliationService } from '../../imports/services/import-reconciliation.service.js';
+import { ImportReconciliationRepository } from '../../imports/repositories/import-reconciliation.repository.js';
 import { CardsService } from '../services/cards.service.js';
 import { CardsRepository } from '../repositories/cards.repository.js';
 import { WealthService } from '../../wealth/services/wealth.service.js';
@@ -175,11 +179,18 @@ it('posts installments once and keeps credit debt out of cash while planning cou
   expect(c.bills.map((b) => b.total)).toEqual([3334, 3333, 3333]);
   expect((await run(() => accounts.find(bank.id))).balance).toBe(100000);
   const plan = await run(() =>
-    new PlanningService(new PlanningRepository(db.service), categories, ledger, accounts).summary(
-      '2026-11',
-    ),
+    new PlanningService(
+      new PlanningRepository(db.service),
+      categories,
+      ledger,
+      accounts,
+      cards,
+    ).summary('2026-11'),
   );
-  expect(plan.lines.find((l) => l.categoryId === cat.id)?.actual).toBe(3334);
+  expect(plan.lines.find((l) => l.categoryId === cat.id)?.actual).toBe(0);
+  expect(
+    plan.cardBills?.find((b) => b.cardId === card.id && b.billMonth === '2026-11'),
+  ).toMatchObject({ planned: 3334, paid: 0, included: true });
   const projection = await run(() => commitments.summary('2026-11'));
   expect(projection.projection.find((a) => a.accountId === bank.id)).toMatchObject({
     expense: 3334,
@@ -645,7 +656,7 @@ it('consolidates assets and debt once, excludes benefits, and saves reproducible
 });
 it('round-trips cards, positions, liabilities, claims and historical undo pointers in v11 without duplicating money', async () => {
   const source = await run(() => backup.backup());
-  expect(source.version).toBe(11);
+  expect(source.version).toBe(12);
   const financialState = async () => {
     const worth = await wealth.summary();
     const cardsState = await cards.summary('2026-11');
@@ -1009,4 +1020,290 @@ it('keeps multiple prior debts and links an unclassified debit without charging 
     amount: -5000,
   });
   expect((await run(() => accounts.find(bank.id))).balance).toBe(bankBalance);
+});
+
+it('plans invoices by default, accepts payments from different accounts and preserves monthly selections in backups', async () => {
+  const planService = new PlanningService(
+    new PlanningRepository(db.service),
+    categories,
+    ledger,
+    accounts,
+    cards,
+  );
+  const bankA = await account('Invoice payment A');
+  const bankB = await account('Invoice payment B');
+  const card = await run(() =>
+    cards.create(
+      { name: 'Free funding invoice', closingDay: 10, dueDay: 20, limit: 100000 },
+      randomUUID(),
+    ),
+  );
+  expect(card.paymentAccountId).toBeNull();
+  const cat = (await run(() => categories.list())).find((c) => c.type === 'expense')!;
+  await purchase(card.id, 1, 12000, 1, cat.id);
+  const initial = await run(() => planService.summary('2026-11'));
+  const initialRow = initial.cardBills!.find((b) => b.cardId === card.id)!;
+  expect(initialRow).toMatchObject({ included: true, planned: 12000, paid: 0, remaining: 12000 });
+  expect(
+    (await run(() => ledger.planningActuals('2026-11-01', '2026-12-01'))).find(
+      (r) => r.categoryId === cat.id,
+    )?.amount,
+  ).toBeLessThan(0);
+  const bankBefore = (await run(() => accounts.find(bankA.id))).balance;
+  let c = await currentCard(card.id);
+  const key = randomUUID();
+  const command = {
+    accountId: bankA.id,
+    date: '2026-11-15',
+    amount: 4000,
+    description: 'Pagamento parcial na transação',
+  };
+  const first = await run(() =>
+    cards.payTransaction(card.id, '2026-11', command, String(c.version), key),
+  );
+  expect(first.debitId).toBeTruthy();
+  expect(
+    await run(() => cards.payTransaction(card.id, '2026-11', command, String(c.version), key)),
+  ).toEqual(first);
+  expect((await run(() => accounts.find(bankA.id))).balance).toBe(bankBefore - 4000);
+  const debit = await run(() =>
+    ledger.create({
+      accountId: bankB.id,
+      amount: -3000,
+      transactionDate: '2026-11-15',
+      description: 'Outro pagamento',
+      transactionType: 'expense',
+      categoryId: cat.id,
+    }),
+  );
+  const bankBBefore = (await run(() => accounts.find(bankB.id))).balance;
+  c = await currentCard(card.id);
+  const second = await run(() =>
+    cards.payTransaction(
+      card.id,
+      '2026-11',
+      {
+        accountId: bankB.id,
+        date: '2026-11-15',
+        amount: 3000,
+        description: 'Outro pagamento',
+        transactionId: debit.id,
+        transactionVersion: debit.version,
+      },
+      String(c.version),
+      randomUUID(),
+    ),
+  );
+  expect((await run(() => accounts.find(bankB.id))).balance).toBe(bankBBefore);
+  const paid = await run(() => planService.summary('2026-11'));
+  expect(paid.cardBills!.find((b) => b.cardId === card.id)).toMatchObject({
+    paid: 7000,
+    remaining: 5000,
+  });
+  expect(paid.totals.actualExpense - initial.totals.actualExpense).toBe(7000);
+  const disabled = await run(() =>
+    planService.save('2026-11', {
+      version: paid.version,
+      notes: '',
+      contribution: null,
+      lines: [],
+      cardPlans: [{ accountId: card.accountId, billMonth: '2026-11', included: false }],
+    }),
+  );
+  expect(disabled.cardBills!.find((b) => b.cardId === card.id)?.included).toBe(false);
+  const enabled = await run(() =>
+    planService.save('2026-11', {
+      version: disabled.version,
+      notes: '',
+      contribution: null,
+      lines: [],
+      cardPlans: [
+        { accountId: card.accountId, billMonth: '2026-11', included: true, planned: 15000 },
+      ],
+    }),
+  );
+  expect(enabled.cardBills!.find((b) => b.cardId === card.id)).toMatchObject({
+    planned: 15000,
+    automatic: false,
+  });
+  const copied = await run(() =>
+    planService.copyPrevious('2026-12', { version: 0, sourceVersion: enabled.version }),
+  );
+  expect(copied.cardPlans).toContainEqual({
+    accountId: card.accountId,
+    billMonth: '2026-12',
+    included: true,
+    planned: null,
+  });
+  c = await currentCard(card.id);
+  await run(() => cards.undoPayment(card.id, second.id, String(c.version), randomUUID()));
+  expect(await run(() => ledger.find(debit.id))).toMatchObject({
+    categoryId: cat.id,
+    transactionType: 'expense',
+    cardPayment: null,
+  });
+  const beforeReject = await run(() => accounts.find(bankA.id));
+  c = await currentCard(card.id);
+  await expect(
+    run(() =>
+      cards.payTransaction(
+        card.id,
+        '2026-11',
+        { ...command, amount: 999999 },
+        String(c.version),
+        randomUUID(),
+      ),
+    ),
+  ).rejects.toThrow('pendente');
+  expect((await run(() => accounts.find(bankA.id))).balance).toBe(beforeReject.balance);
+  const exported = await run(() => backup.backup());
+  expect(exported.version).toBe(12);
+  await db.forUser(db.other, async () => {
+    const preview = await backup.preview(exported);
+    await backup.confirm(preview.id);
+    const restored = (await cards.summary('2026-11')).cards.find((r) => r.name === card.name)!;
+    expect(restored.paymentAccountId).toBeNull();
+    const restoredPlan = await planService.summary('2026-11');
+    expect(restoredPlan.cardBills!.find((b) => b.cardId === restored.id)).toMatchObject({
+      included: true,
+      planned: 15000,
+      paid: 4000,
+    });
+    expect(restoredPlan.cardPlans![0].accountId).not.toBe(card.accountId);
+  });
+});
+
+it('confirms an imported invoice payment atomically and never duplicates its bank debit', async () => {
+  const imports = new ImportsService(
+    new ImportsRepository(db.service),
+    accounts,
+    ledger,
+    receipts,
+    categories,
+    ledger,
+    new ImportReconciliationService(new ImportReconciliationRepository(db.service)),
+    parties,
+    basis,
+    cards,
+  );
+  const bank = await account('Invoice import bank');
+  const card = await run(() =>
+    cards.create(
+      { name: 'Invoice from statement', closingDay: 10, dueDay: 20, limit: 30000 },
+      randomUUID(),
+    ),
+  );
+  await purchase(card.id, 1, 6000, 1);
+  const preview = await run(() =>
+    imports.upload(bank.id, Buffer.from('invoice-bank-statement'), 'invoice.csv', {
+      openingBalance: 100000,
+      closingBalance: 97000,
+      items: [
+        {
+          sourceRow: 1,
+          sourcePage: 1,
+          transactionDate: '2026-11-15',
+          description: 'Pagamento fatura importado',
+          sourceOperationId: 'invoice-payment-import',
+          amount: -3000,
+          balanceAfter: 97000,
+        },
+      ],
+    }),
+  );
+  const item = preview.items[0];
+  const reviewed = await run(() =>
+    imports.review(
+      preview.id,
+      item.id,
+      {
+        selected: true,
+        transactionType: 'expense',
+        categoryId: null,
+        cardId: card.id,
+        cardBillMonth: '2026-11',
+      },
+      String(preview.version),
+    ),
+  );
+  expect(reviewed.items[0]).toMatchObject({ cardId: card.id, cardBillMonth: '2026-11' });
+  const balance = (await run(() => accounts.find(bank.id))).balance;
+  expect((await currentCard(card.id)).bills.find((b) => b.month === '2026-11')?.paid).toBe(0);
+  const key = randomUUID();
+  const confirmed = await run(() => imports.confirm(preview.id, reviewed.version, key));
+  expect(await run(() => imports.confirm(preview.id, reviewed.version, key))).toEqual(confirmed);
+  const paid = (await currentCard(card.id)).bills.find((b) => b.month === '2026-11')!;
+  expect(paid).toMatchObject({ paid: 3000, remaining: 3000 });
+  expect((await run(() => accounts.find(bank.id))).balance).toBe(balance - 3000);
+  const transactions = await run(() => ledger.exportRecords());
+  const debit = transactions.find((t) => t.sourceOperationId === 'invoice-payment-import')!;
+  expect(await run(() => ledger.find(debit.id))).toMatchObject({
+    cardPayment: { cardId: card.id, billMonth: '2026-11' },
+    transactionType: 'transfer',
+  });
+});
+
+it('counts only payments made in the selected month and can explicitly include an older invoice', async () => {
+  const planner = new PlanningService(
+    new PlanningRepository(db.service),
+    categories,
+    ledger,
+    accounts,
+    cards,
+  );
+  const bank = await account('Across month payments');
+  const card = await run(() =>
+    cards.create(
+      { name: 'Across month invoice', closingDay: 10, dueDay: 20, limit: 30000 },
+      randomUUID(),
+    ),
+  );
+  await purchase(card.id, 1, 10000, 1);
+  let current = await currentCard(card.id);
+  await run(() =>
+    cards.payTransaction(
+      card.id,
+      '2026-11',
+      { accountId: bank.id, date: '2026-11-15', amount: 4000, description: 'Primeira parte' },
+      String(current.version),
+      randomUUID(),
+    ),
+  );
+  try {
+    vi.setSystemTime(new Date('2026-12-05T12:00:00Z'));
+    current = await currentCard(card.id);
+    await run(() =>
+      cards.payTransaction(
+        card.id,
+        '2026-11',
+        { accountId: bank.id, date: '2026-12-05', amount: 3000, description: 'Segunda parte' },
+        String(current.version),
+        randomUUID(),
+      ),
+    );
+    const november = await run(() => planner.summary('2026-11'));
+    expect(november.cardBills!.find((b) => b.cardId === card.id)).toMatchObject({
+      paid: 4000,
+      remaining: 6000,
+      planned: 10000,
+    });
+    const december = await run(() => planner.summary('2026-12'));
+    expect(
+      december.cardBills!.find((b) => b.cardId === card.id && b.billMonth === '2026-11'),
+    ).toMatchObject({ included: false, paid: 3000, remaining: 3000, planned: 6000 });
+    const saved = await run(() =>
+      planner.save('2026-12', {
+        version: december.version,
+        notes: '',
+        contribution: null,
+        lines: [],
+        cardPlans: [{ accountId: card.accountId, billMonth: '2026-11', included: true }],
+      }),
+    );
+    expect(
+      saved.cardBills!.find((b) => b.cardId === card.id && b.billMonth === '2026-11'),
+    ).toMatchObject({ included: true, paid: 3000 });
+  } finally {
+    vi.setSystemTime(new Date('2026-11-15T15:00:00Z'));
+  }
 });

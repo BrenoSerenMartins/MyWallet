@@ -103,6 +103,8 @@ export class ReconciliationCandidateResourceDto {
   @ApiProperty({ type: String }) description!: string;
 }
 export class ImportItemResourceDto {
+  @ApiPropertyOptional({ type: String, nullable: true }) cardId?: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) cardBillMonth?: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) counterpartyName?: string | null;
   @ApiPropertyOptional({ type: Boolean }) rememberCategory?: boolean;
   @ApiPropertyOptional({ type: Boolean }) rememberCounterparty?: boolean;

@@ -4,6 +4,8 @@ import { dateOnly, exactAmount, requireUuid } from '../../../core/rest/index.js'
 export function validatePlanningBackup(
   raw: unknown,
   categoryIds: Set<string>,
+  cardAccounts = new Set<string>(),
+  version = 11,
 ): BackupMonthlyPlan[] {
   const fail = () => {
     throw new UnprocessableEntityException('Os planejamentos do backup são inválidos.');
@@ -36,6 +38,36 @@ export function validatePlanningBackup(
         plan.contribution > 1000000000000)
     )
       return fail();
+    if (plan.cardPlans !== undefined) {
+      if (
+        (version < 12 && (!Array.isArray(plan.cardPlans) || plan.cardPlans.length > 0)) ||
+        !Array.isArray(plan.cardPlans) ||
+        plan.cardPlans.length > 500
+      )
+        return fail();
+      const selected = new Set<string>();
+      for (const choice of plan.cardPlans) {
+        if (
+          !choice ||
+          !cardAccounts.has(choice.accountId) ||
+          typeof choice.included !== 'boolean' ||
+          typeof choice.billMonth !== 'string' ||
+          !/^(?:19\d{2}|[2-9]\d{3})-(0[1-9]|1[0-2])$/.test(choice.billMonth) ||
+          choice.billMonth > plan.month
+        )
+          return fail();
+        const key = `${choice.accountId}:${choice.billMonth}`;
+        if (selected.has(key)) return fail();
+        selected.add(key);
+        if (
+          choice.planned != null &&
+          (!Number.isSafeInteger(choice.planned) ||
+            choice.planned < 0 ||
+            choice.planned > 1000000000000)
+        )
+          return fail();
+      }
+    }
     const seen = new Set<string>();
     for (const line of plan.lines) {
       if (!line || typeof line !== 'object') return fail();

@@ -1,11 +1,10 @@
-import { CardPaymentPlanning } from './components/card-payment-planning';
+import { PlanningCardBills } from './components/planning-card-bills';
 import { MonthPicker } from '../../shared/ui/controls/month-picker';
 import { ActionMenu } from '../../shared/ui/action-menu';
 import type { ReactNode } from 'react';
 import { useNotifications } from '../../shared/feedback/notification-provider';
 import { BenefitPlanningNotice } from './components/benefit-planning-notice';
 import { CommitmentsPage } from './commitments-page';
-import { ViewSwitcher } from '../../shared/ui/view-switcher';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { validMonth } from '../../shared/formatting/month';
@@ -21,23 +20,15 @@ import './planning.css';
 export function PlanningPage() {
   const [params, setParams] = useSearchParams();
   const view = params.get('view') === 'commitments' ? 'commitments' : 'budget';
-  const navigation = (
-    <ViewSwitcher
-      variant="tabs"
-      label="Área do planejamento"
-      value={view}
-      onChange={(value) => {
-        const next = new URLSearchParams(params);
-        if (value === 'budget') next.delete('view');
-        else next.set('view', value);
-        setParams(next);
-      }}
-      options={[
-        { value: 'budget', label: 'Orçamento' },
-        { value: 'commitments', label: 'Vencimentos' },
-      ]}
-    />
-  );
+  const navigation =
+    view === 'commitments' ? (
+      <Link
+        className="text-button"
+        to={`/planning${params.get('month') ? '?month=' + params.get('month') : ''}`}
+      >
+        ← Voltar ao planejamento
+      </Link>
+    ) : undefined;
   return (
     <div className="planning-workspace">
       {view === 'commitments' ? (
@@ -48,7 +39,7 @@ export function PlanningPage() {
     </div>
   );
 }
-function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
+function MonthlyBudgetPage({ navigation }: { navigation?: ReactNode }) {
   const [params, setParams] = useSearchParams();
   const requestedMonth = params.get('month');
   const month = validMonth(requestedMonth) ? requestedMonth : dateToday().slice(0, 7);
@@ -94,9 +85,11 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
                         }
                       }}
                     />
-                    <CardPaymentPlanning key={month} month={month} />
                   </label>
                   <ActionMenu label="Mais ações do planejamento">
+                    <Link to={`/planning?view=commitments&month=${month}`}>
+                      Agenda de compromissos
+                    </Link>
                     <button
                       type="button"
                       disabled={!navigator.onLine}
@@ -120,6 +113,7 @@ function MonthlyBudgetPage({ navigation }: { navigation: ReactNode }) {
               }
             />
 
+            <PlanningCardBills plan={plan} />
             {plan.totals.missingCategoryCount > 0 && (
               <div className="review-banner planning-included">
                 <div>

@@ -115,6 +115,40 @@
         "tags": ["Cards"]
       }
     },
+    "/v1/cards/{id}/bills/{month}/transaction-payments": {
+      "post": {
+        "operationId": "CardsController_transactionPayment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardTransactionPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardPaymentResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["Cards"]
+      }
+    },
     "/v1/cards/{id}/purchases": {
       "post": {
         "operationId": "CardsController_purchase",
@@ -2801,7 +2835,8 @@
             "type": "string"
           },
           "paymentAccountId": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "name": {
             "type": "string"
@@ -2894,7 +2929,8 @@
             "type": "string"
           },
           "paymentAccountId": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "closingDay": {
             "type": "number"
@@ -2909,7 +2945,7 @@
             "type": "boolean"
           }
         },
-        "required": ["name", "paymentAccountId", "closingDay", "dueDay", "limit"]
+        "required": ["name", "closingDay", "dueDay", "limit"]
       },
       "CreditCardDto": {
         "type": "object",
@@ -2921,7 +2957,8 @@
             "type": "string"
           },
           "paymentAccountId": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "name": {
             "type": "string"
@@ -2953,6 +2990,30 @@
           "version",
           "archived"
         ]
+      },
+      "CardTransactionPaymentDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "transactionId": {
+            "type": "string"
+          },
+          "transactionVersion": {
+            "type": "number"
+          }
+        },
+        "required": ["accountId", "date", "amount", "description"]
       },
       "CardPurchaseDto": {
         "type": "object",
@@ -4455,6 +4516,84 @@
         },
         "required": ["fromAccountId", "toAccountId", "amount", "transactionDate", "description"]
       },
+      "PlannedCardBillDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "billMonth": {
+            "type": "string"
+          },
+          "included": {
+            "type": "boolean"
+          },
+          "planned": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": ["accountId", "billMonth", "included"]
+      },
+      "PlanningCardBillDto": {
+        "type": "object",
+        "properties": {
+          "cardId": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "billMonth": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "paid": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "included": {
+            "type": "boolean"
+          },
+          "planned": {
+            "type": "number"
+          },
+          "automatic": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cardId",
+          "accountId",
+          "name",
+          "billMonth",
+          "dueDate",
+          "amount",
+          "paid",
+          "remaining",
+          "version",
+          "archived",
+          "included",
+          "planned",
+          "automatic"
+        ]
+      },
       "BudgetAccountDto": {
         "type": "object",
         "properties": {
@@ -4748,6 +4887,18 @@
       "MonthlyPlanResourceDto": {
         "type": "object",
         "properties": {
+          "cardPlans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlannedCardBillDto"
+            }
+          },
+          "cardBills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanningCardBillDto"
+            }
+          },
           "budget": {
             "$ref": "#/components/schemas/PeriodBudgetDto"
           },
@@ -4797,6 +4948,12 @@
       "SaveMonthlyPlanDto": {
         "type": "object",
         "properties": {
+          "cardPlans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlannedCardBillDto"
+            }
+          },
           "version": {
             "type": "number"
           },
@@ -4838,7 +4995,8 @@
             "type": "string"
           },
           "accountId": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "description": {
             "type": "string"
@@ -5314,6 +5472,14 @@
       "ImportItemResourceDto": {
         "type": "object",
         "properties": {
+          "cardId": {
+            "type": "string",
+            "nullable": true
+          },
+          "cardBillMonth": {
+            "type": "string",
+            "nullable": true
+          },
           "counterpartyName": {
             "type": "string",
             "nullable": true
@@ -5598,6 +5764,14 @@
       "ReviewItemDto": {
         "type": "object",
         "properties": {
+          "cardId": {
+            "type": "string",
+            "nullable": true
+          },
+          "cardBillMonth": {
+            "type": "string",
+            "nullable": true
+          },
           "counterpartyId": {
             "type": "string",
             "nullable": true

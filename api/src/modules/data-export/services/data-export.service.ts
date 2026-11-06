@@ -44,7 +44,7 @@ export class DataExportService {
   async backup(): Promise<BackupPayload> {
     return {
       format: 'plannedwallet',
-      version: 11,
+      version: 12,
       cards: (await this.cards?.exportManaged()) ?? {
         cards: [],
         bills: [],
@@ -175,7 +175,7 @@ export class DataExportService {
         accounts,
         transactionIds,
       );
-      await this.planning.restoreRecords(payload.monthlyPlans ?? [], categories);
+      await this.planning.restoreRecords(payload.monthlyPlans ?? [], categories, accounts);
       if (payload.commitments?.schedules.length && !this.commitments)
         throw new Error('Commitment restore is unavailable.');
       await this.commitments?.restoreCommitments(

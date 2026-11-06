@@ -171,7 +171,8 @@ export class CommitmentsService implements CommitmentsBackup {
     const { schedules, items } = await this.occurrences(through);
     const outstanding = items.filter((r) => ['pending', 'overdue', 'review'].includes(r.status));
     const bills = (await this.cards?.pendingBills(through)) ?? [];
-    for (const bill of bills)
+    for (const bill of bills) {
+      if (!bill.accountId) continue;
       outstanding.push({
         scheduleId: bill.cardId,
         accountId: bill.accountId,
@@ -185,6 +186,7 @@ export class CommitmentsService implements CommitmentsBackup {
         version: 0,
         actualAmount: null,
       });
+    }
     const accounts = await this.accounts.list();
     const projection = accounts
       .filter((a) => !a.archived && !['credit_card', 'investment'].includes(a.type))

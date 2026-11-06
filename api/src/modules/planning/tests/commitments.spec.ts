@@ -317,7 +317,7 @@ it('reopens invalid linked entries for review and round-trips commitment snapsho
     (await run(() => commitments.summary('2026-11'))).items.find((r) => r.scheduleId === rule.id),
   ).toMatchObject({ status: 'review' });
   const data = await run(() => backup.backup());
-  expect(data.version).toBe(11);
+  expect(data.version).toBe(12);
   expect(data.commitments!.occurrences.find((r) => r.scheduleId === rule.id)).toMatchObject({
     status: 'review',
     transactionId: null,

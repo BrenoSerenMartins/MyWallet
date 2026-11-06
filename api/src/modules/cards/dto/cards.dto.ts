@@ -13,7 +13,8 @@ import {
 } from 'class-validator';
 export class SaveCardDto {
   @ApiProperty({ type: String }) @IsString() @Length(1, 100) name!: string;
-  @ApiProperty({ type: String }) @IsUUID() paymentAccountId!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() paymentAccountId?:
+    string | null;
   @ApiProperty({ type: Number }) @IsInt() @Min(1) @Max(31) closingDay!: number;
   @ApiProperty({ type: Number }) @IsInt() @Min(1) @Max(31) dueDay!: number;
   @ApiProperty({ type: Number }) @IsInt() @Min(0) @Max(1000000000000) limit!: number;
@@ -52,4 +53,13 @@ export class CardRefundDto {
 export class CardCategoryDto {
   @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() categoryId?:
     string | null;
+}
+
+export class CardTransactionPaymentDto {
+  @ApiProperty({ type: String }) @IsUUID() accountId!: string;
+  @ApiProperty({ type: String }) @IsISO8601({ strict: true }) date!: string;
+  @ApiProperty({ type: Number }) @IsInt() @Min(1) @Max(1000000000000) amount!: number;
+  @ApiProperty({ type: String }) @IsString() @Length(1, 500) description!: string;
+  @ApiPropertyOptional({ type: String }) @IsOptional() @IsUUID() transactionId?: string;
+  @ApiPropertyOptional({ type: Number }) @IsOptional() @IsInt() @Min(1) transactionVersion?: number;
 }

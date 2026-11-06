@@ -28,6 +28,7 @@ import {
   SaveCardDto,
   CardPurchaseDto,
   CardPaymentDto,
+  CardTransactionPaymentDto,
   CardOpeningDto,
   CardRefundDto,
   CardCategoryDto,
@@ -73,6 +74,22 @@ export class CardsController {
   ) {
     const dto = await validateInput(SaveCardDto, body);
     return this.db.forUser(r.identity.id, () => this.cards.update(requireUuid(id), dto, version));
+  }
+  @Post(':id/bills/:month/transaction-payments')
+  @ApiBody({ type: CardTransactionPaymentDto })
+  @ApiCreatedResponse({ type: CardPaymentResourceDto })
+  async transactionPayment(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Param('month') month: string,
+    @Body() body: unknown,
+    @Headers('if-match') version: string,
+    @Headers('idempotency-key') key: string,
+  ) {
+    const input = await validateInput(CardTransactionPaymentDto, body);
+    return this.db.forUser(r.identity.id, () =>
+      this.cards.payTransaction(requireUuid(id), month, input, version, key),
+    );
   }
   @Post(':id/purchases')
   @ApiBody({ type: CardPurchaseDto })

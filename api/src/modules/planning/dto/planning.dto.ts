@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsInt,
   IsOptional,
   IsString,
@@ -17,7 +18,40 @@ export class BudgetLineDto {
   @ApiProperty({ type: String }) @IsUUID() categoryId!: string;
   @ApiProperty({ type: Number }) @IsInt() @Min(0) @Max(1000000000000) amount!: number;
 }
+export class PlannedCardBillDto {
+  @ApiProperty({ type: String }) @IsUUID() accountId!: string;
+  @ApiProperty({ type: String }) @IsString() @MaxLength(7) billMonth!: string;
+  @ApiProperty({ type: Boolean }) @IsBoolean() included!: boolean;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1000000000000)
+  planned?: number | null;
+}
+export class PlanningCardBillDto {
+  @ApiProperty({ type: String }) cardId!: string;
+  @ApiProperty({ type: String }) accountId!: string;
+  @ApiProperty({ type: String }) name!: string;
+  @ApiProperty({ type: String }) billMonth!: string;
+  @ApiProperty({ type: String }) dueDate!: string;
+  @ApiProperty({ type: Number }) amount!: number;
+  @ApiProperty({ type: Number }) paid!: number;
+  @ApiProperty({ type: Number }) remaining!: number;
+  @ApiProperty({ type: Number }) version!: number;
+  @ApiProperty({ type: Boolean }) archived!: boolean;
+  @ApiProperty({ type: Boolean }) included!: boolean;
+  @ApiProperty({ type: Number }) planned!: number;
+  @ApiProperty({ type: Boolean }) automatic!: boolean;
+}
 export class SaveMonthlyPlanDto {
+  @ApiPropertyOptional({ type: [PlannedCardBillDto] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => PlannedCardBillDto)
+  cardPlans?: PlannedCardBillDto[];
   @ApiProperty({ type: Number }) @IsInt() @Min(0) version!: number;
   @ApiProperty({ type: Number, nullable: true })
   @IsOptional()
@@ -73,6 +107,8 @@ export class PlanningBenefitAccountDto {
   @ApiProperty({ enum: ['received', 'following'] }) benefitCreditMonth!: 'received' | 'following';
 }
 export class MonthlyPlanResourceDto {
+  @ApiPropertyOptional({ type: [PlannedCardBillDto] }) cardPlans?: PlannedCardBillDto[];
+  @ApiPropertyOptional({ type: [PlanningCardBillDto] }) cardBills?: PlanningCardBillDto[];
   @ApiPropertyOptional({ type: PeriodBudgetDto }) budget?: PeriodBudgetDto;
   @ApiPropertyOptional({ type: [PlanningBenefitAccountDto] })
   benefitAccounts?: PlanningBenefitAccountDto[];

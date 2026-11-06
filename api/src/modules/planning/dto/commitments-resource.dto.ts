@@ -39,7 +39,7 @@ export class CommitmentProjectionDto {
 export class CardForecastBillDto {
   @ApiProperty({ type: String }) cardId!: string;
   @ApiProperty({ type: String }) billMonth!: string;
-  @ApiProperty({ type: String }) accountId!: string;
+  @ApiProperty({ type: String, nullable: true }) accountId!: string | null;
   @ApiProperty({ type: String }) description!: string;
   @ApiProperty({ type: String }) dueDate!: string;
   @ApiProperty({ type: Number }) amount!: number;

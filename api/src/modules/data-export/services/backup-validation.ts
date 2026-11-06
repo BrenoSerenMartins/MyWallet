@@ -22,7 +22,7 @@ export function validateBackup(raw: unknown): BackupPayload {
   ) as BackupPayload;
   if (
     b.format !== 'plannedwallet' ||
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(b.version) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(b.version) ||
     b.currency !== 'BRL' ||
     !Array.isArray(b.accounts) ||
     !Array.isArray(b.categories) ||
@@ -251,6 +251,13 @@ export function validateBackup(raw: unknown): BackupPayload {
     categoryGroups,
     commitments: b.version >= 8 ? commitments : undefined,
     monthlyPlans:
-      b.version >= 2 ? validatePlanningBackup(b.monthlyPlans, new Set(categories.keys())) : [],
+      b.version >= 2
+        ? validatePlanningBackup(
+            b.monthlyPlans,
+            new Set(categories.keys()),
+            new Set(b.cards?.cards.map((c) => c.accountId) ?? []),
+            b.version,
+          )
+        : [],
   };
 }

@@ -4,9 +4,11 @@ import type { Category } from '../api/resources';
 export function CategorySelect({
   categories,
   type,
+  cardOptions = [],
   emptyLabel = 'Sem categoria',
   ...props
 }: SelectProps & {
+  cardOptions?: { id: string; name: string }[];
   categories: Category[];
   type?: string;
   emptyLabel?: string;
@@ -16,6 +18,15 @@ export function CategorySelect({
   return (
     <Select {...props}>
       <option value="">{emptyLabel}</option>
+      {!!cardOptions.length && (
+        <optgroup label="Cartões e faturas">
+          {cardOptions.map((card) => (
+            <option key={card.id} value={`card:${card.id}`}>
+              {card.name}
+            </option>
+          ))}
+        </optgroup>
+      )}
       {groups.map((id) => (
         <optgroup
           key={id}

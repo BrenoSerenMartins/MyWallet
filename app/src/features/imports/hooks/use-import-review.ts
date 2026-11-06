@@ -31,6 +31,8 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
     change: Partial<
       Pick<
         ImportItem,
+        | 'cardId'
+        | 'cardBillMonth'
         | 'counterpartyId'
         | 'counterpartyName'
         | 'rememberCategory'
@@ -51,6 +53,8 @@ export function useImportReview(batch: ImportBatch, refresh: () => Promise<unkno
         method: 'PATCH',
         headers: { 'If-Match': String(batch.version) },
         body: jsonBody({
+          cardId: item.cardId,
+          cardBillMonth: item.cardBillMonth,
           counterpartyId: item.counterpartyId,
           counterpartyName: item.counterpartyName,
           rememberCategory: item.rememberCategory,

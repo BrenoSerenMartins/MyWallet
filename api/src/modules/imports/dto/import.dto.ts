@@ -14,6 +14,13 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class ReviewItemDto {
+  @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() cardId?:
+    string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
+  @IsString()
+  @Length(7, 7)
+  cardBillMonth?: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) @IsOptional() @IsUUID() counterpartyId?:
     string | null;
   @ApiPropertyOptional({ type: String, nullable: true })

@@ -16,7 +16,7 @@ export class PlanningRepository {
   }
   async find(month: string): Promise<SavedMonthlyPlan | null> {
     const [row] = await this.db.query(
-      'SELECT id,month::text,contribution_minor,notes,version FROM wallet.monthly_plans WHERE user_id=$1 AND month=$2',
+      'SELECT id,month::text,contribution_minor,notes,card_plans,version FROM wallet.monthly_plans WHERE user_id=$1 AND month=$2',
       [this.db.userId, `${month}-01`],
     );
     if (!row) return null;
@@ -29,15 +29,22 @@ export class PlanningRepository {
       month,
       version: row.version,
       notes: row.notes,
+      cardPlans: row.card_plans ?? [],
       contribution: row.contribution_minor === null ? null : Number(row.contribution_minor),
       lines: lines.map((l) => ({ categoryId: l.category_id, amount: Number(l.amount_minor) })),
     };
   }
   async save(plan: BackupMonthlyPlan) {
     const [row] = await this.db.query(
-      `INSERT INTO wallet.monthly_plans(user_id,month,contribution_minor,notes) VALUES($1,$2,$3,$4)
-      ON CONFLICT(user_id,workspace_id,month) DO UPDATE SET contribution_minor=EXCLUDED.contribution_minor,notes=EXCLUDED.notes,version=monthly_plans.version+1,updated_at=now() RETURNING id`,
-      [this.db.userId, `${plan.month}-01`, plan.contribution, plan.notes],
+      `INSERT INTO wallet.monthly_plans(user_id,month,contribution_minor,notes,card_plans) VALUES($1,$2,$3,$4,$5)
+      ON CONFLICT(user_id,workspace_id,month) DO UPDATE SET contribution_minor=EXCLUDED.contribution_minor,notes=EXCLUDED.notes,card_plans=EXCLUDED.card_plans,version=monthly_plans.version+1,updated_at=now() RETURNING id`,
+      [
+        this.db.userId,
+        `${plan.month}-01`,
+        plan.contribution,
+        plan.notes,
+        JSON.stringify(plan.cardPlans ?? []),
+      ],
     );
     await this.db.query('DELETE FROM wallet.monthly_plan_lines WHERE user_id=$1 AND plan_id=$2', [
       this.db.userId,
@@ -62,6 +69,7 @@ export class PlanningRepository {
         notes: plan.notes,
         contribution: plan.contribution,
         lines: plan.lines,
+        cardPlans: plan.cardPlans,
       });
     }
     return plans;

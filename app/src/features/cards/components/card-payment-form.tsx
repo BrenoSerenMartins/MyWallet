@@ -27,7 +27,7 @@ export function CardPaymentForm({
 }) {
   const choices = useFinanceChoices();
   const [mode, setMode] = useState('link');
-  const [account, setAccount] = useState(card.paymentAccountId);
+  const [account, setAccount] = useState(card.paymentAccountId ?? '');
   const [amount, setAmount] = useState(moneyInput(bill.remaining));
   const [date, setDate] = useState(dateToday());
   const [transaction, setTransaction] = useState('');

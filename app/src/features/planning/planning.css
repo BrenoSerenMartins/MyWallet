@@ -737,25 +737,6 @@ body .planning-page .planning-metrics {
   }
 }
 
-.planning-card-payments {
-  min-width: 0;
-  padding-block: 8px;
-}
-.planning-card-payments .finance-checkbox {
-  min-width: 0;
-  max-width: 100%;
-  align-items: flex-start;
-}
-.planning-card-payments .finance-checkbox span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.planning-card-payments small {
-  display: block;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
 /* Group totals remain in the disclosure header in either state. */
 body .planning-page .budget-group > summary {
   display: grid;
@@ -827,4 +808,32 @@ body .planning-page .budget-group-metric strong.negative-text {
   body .planning-page .budget-group-metric strong {
     font-size: 14px;
   }
+}
+.plan-card-choice {
+  display: grid;
+  gap: 12px;
+  padding-block: 16px;
+  background: var(--rule-horizontal) top / 100% 1px no-repeat;
+}
+.plan-card-choice .finance-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+}
+.plan-card-choice .finance-checkbox input {
+  width: 20px;
+  min-height: 20px;
+  margin-top: 3px;
+  flex: none;
+}
+.plan-card-choice .finance-checkbox span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.planning-invoice-section .budget-line .text-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
 }

@@ -24,6 +24,11 @@ export interface ManagedAccounts {
 }
 export const MANAGED_LEDGER = Symbol('MANAGED_LEDGER');
 export interface ManagedLedger {
+  saveCardPaymentSource(
+    input: TransactionInput,
+    id?: string,
+    version?: number,
+  ): Promise<ManagedEntry>;
   managedEntries(ids: string[]): Promise<ManagedEntry[]>;
   managedCandidates(
     accountId: string,
@@ -62,11 +67,12 @@ export interface ManagedLedger {
 }
 export const CARD_FORECAST = Symbol('CARD_FORECAST');
 export interface CardForecast {
+  planningBills(month: string): Promise<PlanningCardBill[]>;
   pendingBills(through: string): Promise<
     {
       cardId: string;
       billMonth: string;
-      accountId: string;
+      accountId: string | null;
       description: string;
       dueDate: string;
       amount: number;
@@ -82,5 +88,39 @@ export interface ManagedBackup<T = unknown> {
     accounts: Map<string, string>,
     categories: Map<string, string>,
     transactions: Map<string, string>,
+  ): Promise<void>;
+}
+
+export interface PlanningCardBill {
+  cardId: string;
+  accountId: string;
+  name: string;
+  billMonth: string;
+  dueDate: string;
+  amount: number;
+  paid: number;
+  remaining: number;
+  version: number;
+  archived: boolean;
+}
+export interface PlannedCardBill {
+  accountId: string;
+  billMonth: string;
+  included: boolean;
+  planned?: number | null;
+}
+export const CARD_IMPORT_PAYMENTS = Symbol('CARD_IMPORT_PAYMENTS');
+export interface CardImportPayments {
+  validateImportedPayment(
+    cardId: string,
+    month: string,
+    accountId: string,
+    amount: number,
+  ): Promise<void>;
+  linkImportedPayment(
+    cardId: string,
+    month: string,
+    transactionId: string,
+    key: string,
   ): Promise<void>;
 }

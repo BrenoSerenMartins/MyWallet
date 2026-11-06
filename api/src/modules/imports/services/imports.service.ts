@@ -6,6 +6,7 @@ import {
 import { ImportReconciliationService } from './import-reconciliation.service.js';
 import {
   ConflictException,
+  Optional,
   GoneException,
   Inject,
   Injectable,
@@ -14,6 +15,8 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import {
+  CARD_IMPORT_PAYMENTS,
+  type CardImportPayments,
   ACCOUNT_BALANCE_BASIS,
   type AccountBalanceBasis,
   COUNTERPARTY_RULES,
@@ -68,6 +71,7 @@ export class ImportsService {
     private readonly reconciliation: ImportReconciliationService,
     @Inject(COUNTERPARTY_RULES) private readonly counterparties: CounterpartyRules,
     @Inject(ACCOUNT_BALANCE_BASIS) private readonly balanceBasis: AccountBalanceBasis,
+    @Optional() @Inject(CARD_IMPORT_PAYMENTS) private readonly cardPayments?: CardImportPayments,
   ) {}
   private assertConsumerStatement(reportType: string | undefined) {
     if (reportType === 'settlement')
@@ -122,7 +126,7 @@ export class ImportsService {
       counterpartyId: null,
       classificationRuleId: null,
       ...item,
-      ...(item.refundOfId ? {} : suggestions[index]),
+      ...(item.refundOfId || item.cardId ? {} : suggestions[index]),
     }));
   }
 
@@ -252,6 +256,27 @@ export class ImportsService {
       throw new UnprocessableEntityException(
         'Edite a relação no lançamento existente depois de conciliar.',
       );
+    if (input.cardId) {
+      if (
+        !this.cardPayments ||
+        !input.cardBillMonth ||
+        input.refundOfId ||
+        input.transactionType !== 'expense' ||
+        input.categoryId ||
+        !['create', 'reconcile'].includes(item.action)
+      )
+        throw new UnprocessableEntityException(
+          'Escolha um débito novo ou conciliável e uma fatura para o pagamento.',
+        );
+      await this.cardPayments.validateImportedPayment(
+        input.cardId,
+        input.cardBillMonth,
+        batch.account_id,
+        item.amount,
+      );
+      input.rememberCategory = false;
+    } else if (input.cardBillMonth)
+      throw new UnprocessableEntityException('Escolha o cartão da fatura.');
     await this.repository.updateItem(id, itemId, input);
     return this.preview(id);
   }
@@ -302,7 +327,9 @@ export class ImportsService {
       await this.repository.updateItem(id, item!.id, {
         ...item!,
         selected: input.action === 'selection' ? input.selected! : item!.selected,
-        ...(category ? { categoryId: category.id, rememberCategory: false } : {}),
+        ...(category
+          ? { categoryId: category.id, cardId: null, cardBillMonth: null, rememberCategory: false }
+          : {}),
       });
     return this.preview(id);
   }
@@ -345,6 +372,16 @@ export class ImportsService {
               batch.account_id,
               item.sourceEvidence,
             );
+          if (item.cardId && item.cardBillMonth) {
+            if (!this.cardPayments)
+              throw new ConflictException('O vínculo de fatura está indisponível.');
+            await this.cardPayments.linkImportedPayment(
+              item.cardId,
+              item.cardBillMonth,
+              item.linkedTransactionId,
+              item.id,
+            );
+          }
           await this.reconciliation.link(
             id,
             item.id,
@@ -360,11 +397,11 @@ export class ImportsService {
             sourceKind: batch.report_type,
             sourceStoreId: item.metadata?.storeId,
             counterpartyName: item.counterpartyName ?? undefined,
-            rememberCategory: item.rememberCategory,
+            rememberCategory: item.cardId ? false : item.rememberCategory,
             rememberCounterparty: item.rememberCounterparty,
             counterpartyId: item.counterpartyId ?? undefined,
             classificationRuleId: item.classificationRuleId,
-            categoryId: item.categoryId,
+            categoryId: item.cardId ? null : item.categoryId,
             refundOfId: item.refundOfId,
             transactionDate: item.transactionDate,
             description: item.description,
@@ -378,6 +415,16 @@ export class ImportsService {
         );
         if (item.sourceEvidence)
           await this.ledger.recordEvidence(created.id, batch.account_id, item.sourceEvidence);
+        if (item.cardId && item.cardBillMonth) {
+          if (!this.cardPayments)
+            throw new ConflictException('O vínculo de fatura está indisponível.');
+          await this.cardPayments.linkImportedPayment(
+            item.cardId,
+            item.cardBillMonth,
+            created.id,
+            item.id,
+          );
+        }
         await this.reconciliation.link(id, item.id, created.id, item.sourceEvidence);
       }
       // Rebase once after all rows/evidence are written, under the existing account lock.

@@ -17,7 +17,6 @@ import {
 import { request } from '../../shared/api/client';
 import { useFinanceWrite } from '../../shared/api/use-finance-write';
 import type {
-  Account,
   CardsSummary,
   CardEntry,
   CardPayment,
@@ -48,10 +47,6 @@ export function CardsPage() {
   const query = useQuery({
     queryKey: ['cards', month],
     queryFn: () => request<CardsSummary>(`/cards?month=${month}`),
-  });
-  const accounts = useQuery({
-    queryKey: ['accounts'],
-    queryFn: () => request<Account[]>('/accounts'),
   });
   const write = useFinanceWrite();
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -193,11 +188,7 @@ export function CardsPage() {
                         <p>
                           Fecha dia {card.closingDay} · vence dia {card.dueDay}
                           {' · '}
-                          <Link to={`/accounts/${card.paymentAccountId}`}>
-                            Conta de pagamento:{' '}
-                            {accounts.data?.find((a) => a.id === card.paymentAccountId)?.name ??
-                              'Conferir conta'}
-                          </Link>
+                          <Link to="/transactions?new=1">Pagar pela transação da conta</Link>
                         </p>
                       </div>
                       <Tooltip text="Editar cartão">

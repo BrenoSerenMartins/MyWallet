@@ -17,8 +17,12 @@ export function ForecastDetails({
 }) {
   const value = (amount: number) => (visible ? money(amount) : '••••••');
   const cash = data.projection.filter((a) => a.kind === 'cash');
+  const unassigned = (data.cardBills ?? [])
+    .filter((b) => !b.accountId)
+    .reduce((sum, b) => sum + b.amount, 0);
   const total = (field: 'balance' | 'income' | 'expense' | 'projected') =>
-    cash.reduce((sum, row) => sum + row[field], 0);
+    cash.reduce((sum, row) => sum + row[field], 0) +
+    (field === 'expense' ? unassigned : field === 'projected' ? -unassigned : 0);
   return (
     <>
       <div className="forecast-heading">
@@ -59,6 +63,12 @@ export function ForecastDetails({
               Inclui {data.overdueCount} vencimento(s) anterior(es) a hoje ainda pendente(s):{' '}
               {value(data.overdueExpense)} a pagar e {value(data.overdueIncome)} a receber,
               considerando todas as contas. Confirme o que já aconteceu para melhorar a previsão.
+            </p>
+          )}
+          {unassigned > 0 && (
+            <p className="field-help">
+              Inclui {value(unassigned)} em faturas cuja conta será escolhida no pagamento. Esse
+              valor entra no total, sem ser atribuído a uma conta específica.
             </p>
           )}
           <details className="forecast-accounts">

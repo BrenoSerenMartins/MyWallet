@@ -190,7 +190,7 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     await this.repository.setManagedKind(id, 'investment');
   }
   async untagManagedIncome(id: string, ownerKey: string) {
-    const entry = (await this.managedEntries([id]))[0];
+    const entry = (await this.managedEntries([id!]))[0];
     if (entry) {
       await this.accounts.find(entry.accountId, true);
       if (entry.managedKind !== 'investment')
@@ -346,8 +346,13 @@ export class LedgerService implements LedgerWrites, LedgerReads {
   balanceBefore(accountId: string, date: string) {
     return this.repository.balanceBefore(accountId, date);
   }
-  planningActuals(from: string, to: string, scope: 'all' | 'cash' | 'benefits' = 'all') {
-    return this.repository.planningActuals(from, to, scope);
+  planningActuals(
+    from: string,
+    to: string,
+    scope: 'all' | 'cash' | 'benefits' = 'all',
+    excludeCards = false,
+  ) {
+    return this.repository.planningActuals(from, to, scope, excludeCards);
   }
   budgetActivities(periods: { from: string; to: string }[]) {
     return this.repository.budgetActivities(periods);
@@ -431,6 +436,11 @@ export class LedgerService implements LedgerWrites, LedgerReads {
     const refunded = await this.repository.refundedAmount(original.id);
     if (refunded + Math.abs(input.amount) > Math.abs(original.amount))
       throw new ConflictException('O total devolvido excede o valor da operação original.');
+  }
+  async saveCardPaymentSource(input: TransactionInput, id?: string, version?: number) {
+    if (id) await this.update(id, input, String(version));
+    else id = (await this.create(input, false, false)).id;
+    return (await this.managedEntries([id!]))[0]!;
   }
   async create(input: TransactionInput, imported = false, automatic = true) {
     if (input.balanceAdjustment)

@@ -65,6 +65,8 @@ export interface SavedImportItem
   linkedTransactionId?: string | null;
   confirmNew?: boolean;
   refundOfId?: string | null;
+  cardId?: string | null;
+  cardBillMonth?: string | null;
 }
 export interface ReprocessedImportEntry extends CounterpartyIntent, ImportEntry {
   id: string;
@@ -74,4 +76,6 @@ export interface ReprocessedImportEntry extends CounterpartyIntent, ImportEntry 
   linkedTransactionId?: string | null;
   confirmNew?: boolean;
   refundOfId?: string | null;
+  cardId?: string | null;
+  cardBillMonth?: string | null;
 }

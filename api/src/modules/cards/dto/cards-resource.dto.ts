@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class CreditCardDto {
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) accountId!: string;
-  @ApiProperty({ type: String }) paymentAccountId!: string;
+  @ApiProperty({ type: String, nullable: true }) paymentAccountId!: string | null;
   @ApiProperty({ type: String }) name!: string;
   @ApiProperty({ type: Number }) closingDay!: number;
   @ApiProperty({ type: Number }) dueDay!: number;

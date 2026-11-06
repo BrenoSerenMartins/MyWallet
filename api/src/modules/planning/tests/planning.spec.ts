@@ -259,7 +259,7 @@ describe('Monthly planning financial invariants', () => {
       return created;
     });
     const backup = await db.forUser(db.user, () => backups.backup(), true);
-    expect(backup.version).toBe(11);
+    expect(backup.version).toBe(12);
     expect(backup.categoryGroups?.[0].id).toBe(group.id);
     expect(backup.monthlyPlans).toHaveLength(2);
     await db.forUser(db.other, async () => {
@@ -811,7 +811,7 @@ it('preserves the configured benefit month on name edits and backup/restore with
     );
     expect((await accounts.find(a.id)).benefitCreditMonth).toBe('following');
     const payload = await backups.backup();
-    expect(payload.version).toBe(11);
+    expect(payload.version).toBe(12);
     expect(() => validateBackup({ ...payload, version: 9 })).toThrow('backup');
     return payload;
   });

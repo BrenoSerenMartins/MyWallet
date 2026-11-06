@@ -1,3 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
+import { request } from '../../../shared/api/client';
+import type { CardsSummary } from '../../../shared/api/resources';
+import { MonthPicker } from '../../../shared/ui/controls/month-picker';
 import { Select } from '../../../shared/ui/controls/select';
 import { ImportCounterpartyEditor } from './import-counterparty-editor';
 import type { ImportItem, Category } from '../../../shared/api/resources';
@@ -22,6 +26,8 @@ export function ImportReviewRow({
     change: Partial<
       Pick<
         ImportItem,
+        | 'cardId'
+        | 'cardBillMonth'
         | 'counterpartyId'
         | 'counterpartyName'
         | 'rememberCategory'
@@ -36,6 +42,11 @@ export function ImportReviewRow({
     >,
   ) => Promise<void>;
 }) {
+  const cards = useQuery({
+    queryKey: ['cards', 'import-picker'],
+    queryFn: () => request<CardsSummary>('/cards'),
+    enabled: !disabled && item.amount < 0,
+  });
   const locked = disabled || item.duplicateLocked;
   return (
     <tr className={item.duplicateLocked ? 'duplicate-row' : !item.selected ? 'excluded' : ''}>
@@ -160,6 +171,8 @@ export function ImportReviewRow({
           onChange={(e) =>
             void onReview(item, {
               transactionType: e.target.value as ImportItem['transactionType'],
+              cardId: null,
+              cardBillMonth: null,
               categoryId: null,
               selected: true,
             })
@@ -185,10 +198,47 @@ export function ImportReviewRow({
             aria-label={`Categoria do movimento ${item.sourceRow}`}
             categories={categories}
             type={item.transactionType}
-            value={item.categoryId ?? ''}
+            cardOptions={
+              item.amount < 0 && ['create', 'reconcile'].includes(item.action)
+                ? cards.data?.cards.filter((c) => !c.archived)
+                : []
+            }
+            value={item.cardId ? `card:${item.cardId}` : (item.categoryId ?? '')}
             disabled={locked || !!item.refundOfId}
-            onChange={(e) => void onReview(item, { categoryId: e.target.value || null })}
+            onChange={(e) =>
+              void onReview(
+                item,
+                e.target.value.startsWith('card:')
+                  ? {
+                      cardId: e.target.value.slice(5),
+                      cardBillMonth:
+                        cards.data?.cards
+                          .find((c) => c.id === e.target.value.slice(5))
+                          ?.bills.filter((b) => b.remaining >= Math.abs(item.amount))
+                          .sort(
+                            (a, b) =>
+                              Number(b.month === item.transactionDate.slice(0, 7)) -
+                                Number(a.month === item.transactionDate.slice(0, 7)) ||
+                              a.month.localeCompare(b.month),
+                          )[0]?.month ?? item.transactionDate.slice(0, 7),
+                      categoryId: null,
+                      rememberCategory: false,
+                    }
+                  : { categoryId: e.target.value || null, cardId: null, cardBillMonth: null },
+              )
+            }
           />
+        )}
+        {!!item.cardId && (
+          <label>
+            Fatura de vencimento
+            <MonthPicker
+              clearable={false}
+              value={item.cardBillMonth ?? item.transactionDate.slice(0, 7)}
+              disabled={locked}
+              onChange={(e) => void onReview(item, { cardBillMonth: e.target.value })}
+            />
+          </label>
         )}
       </td>
       <td data-label="Valor" className="numeric">

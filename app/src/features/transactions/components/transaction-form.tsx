@@ -3,6 +3,12 @@ import { Select } from '../../../shared/ui/controls/select';
 import { CounterpartyFields } from '../../counterparties/components/counterparty-fields';
 import { CategorySelect } from '../../../shared/ui/category-select';
 import { useState, type FormEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useFinanceWrite } from '../../../shared/api/use-finance-write';
+import type { CardsSummary } from '../../../shared/api/resources';
+import { money } from '../../../shared/formatting/money';
+import { MonthPicker } from '../../../shared/ui/controls/month-picker';
+
 import type { Account, Category, Transaction } from '../../../shared/api/resources';
 import { jsonBody, request } from '../../../shared/api/client';
 import { dateToday, parseMoney } from '../../../shared/formatting/money';
@@ -18,6 +24,14 @@ export function TransactionForm({
   entry?: Transaction;
   onSaved: () => void;
 }) {
+  const write = useFinanceWrite();
+  const cardsQuery = useQuery({
+    queryKey: ['cards', 'transaction-picker'],
+    queryFn: () => request<CardsSummary>('/cards'),
+  });
+  const [billMonth, setBillMonth] = useState(
+    entry?.transactionDate.slice(0, 7) ?? dateToday().slice(0, 7),
+  );
   const [kind, setKind] = useState(entry?.transactionType ?? 'expense');
   const [account, setAccount] = useState(entry?.accountId ?? accounts[0]?.id ?? '');
   const [destination, setDestination] = useState('');
@@ -34,6 +48,10 @@ export function TransactionForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [key] = useState(() => crypto.randomUUID());
+  const selectedCard = category.startsWith('card:')
+    ? cardsQuery.data?.cards.find((c) => c.id === category.slice(5))
+    : undefined;
+  const selectedBill = selectedCard?.bills.find((b) => b.month === billMonth);
   async function save(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -41,7 +59,21 @@ export function TransactionForm({
     try {
       const parsed = parseMoney(value);
       if (parsed <= 0) throw new Error('Informe um valor maior que zero.');
-      if (kind === 'transfer')
+      if (selectedCard) {
+        if (!selectedBill || parsed > selectedBill.remaining)
+          throw new Error('Escolha uma fatura com saldo pendente suficiente para este pagamento.');
+        await write(
+          `/cards/${selectedCard.id}/bills/${billMonth}/transaction-payments`,
+          {
+            accountId: account,
+            amount: parsed,
+            date,
+            description,
+            ...(entry ? { transactionId: entry.id, transactionVersion: entry.version } : {}),
+          },
+          selectedCard.version,
+        );
+      } else if (kind === 'transfer')
         await request('/transfers', {
           method: 'POST',
           headers: { 'Idempotency-Key': key },
@@ -178,13 +210,37 @@ export function TransactionForm({
           Categoria
           <CategorySelect
             categories={categories}
+            cardOptions={
+              kind === 'expense' ? cardsQuery.data?.cards.filter((c) => !c.archived) : []
+            }
             type={kind}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           />
         </label>
       )}
-      {kind !== 'transfer' && !entry?.balanceAdjustment && !entry?.refundOfId && (
+      {selectedCard && (
+        <div className="form-stack">
+          <label>
+            Fatura de vencimento
+            <MonthPicker
+              required
+              clearable={false}
+              value={billMonth}
+              onChange={(e) => setBillMonth(e.target.value)}
+            />
+          </label>
+          <p className="field-help">
+            {selectedBill
+              ? `Falta pagar: ${money(selectedBill.remaining)}. O pagamento usa a conta deste lançamento e não cria uma segunda despesa.`
+              : 'Nenhuma fatura encontrada neste mês. Escolha o mês da cobrança.'}
+          </p>
+        </div>
+      )}
+      {category.startsWith('card:') && cardsQuery.isError && (
+        <p role="alert">Não foi possível carregar os cartões. Tente novamente.</p>
+      )}
+      {!selectedCard && kind !== 'transfer' && !entry?.balanceAdjustment && !entry?.refundOfId && (
         <CounterpartyFields
           accountId={account}
           description={description}
@@ -212,6 +268,7 @@ export function TransactionForm({
           disabled={
             busy ||
             !navigator.onLine ||
+            (category.startsWith('card:') && (!selectedCard || !selectedBill)) ||
             !!entry?.transferGroupId ||
             !!entry?.balanceAdjustment ||
             !!entry?.refundOfId

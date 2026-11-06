@@ -24,7 +24,6 @@ export function CardForm({
 }) {
   const choices = useFinanceChoices();
   const [name, setName] = useState(card?.name ?? '');
-  const [bank, setBank] = useState(card?.paymentAccountId ?? '');
   const [closing, setClosing] = useState(String(card?.closingDay ?? 10));
   const [due, setDue] = useState(String(card?.dueDay ?? 20));
   const [limit, setLimit] = useState(card ? moneyInput(card.limit) : '');
@@ -38,7 +37,7 @@ export function CardForm({
             card ? `/cards/${card.id}` : '/cards',
             {
               name,
-              paymentAccountId: bank,
+              paymentAccountId: null,
               closingDay: Number(closing),
               dueDay: Number(due),
               limit: limit.trim() ? parseMoney(limit) : 0,
@@ -60,28 +59,9 @@ export function CardForm({
             placeholder="Meu cartão"
           />
         </label>
-        <label>
-          Conta para pagar a fatura
-          <Select
-            aria-label="Conta para pagar a fatura"
-            required
-            value={bank}
-            onChange={(e) => setBank(e.target.value)}
-          >
-            <option value="">Selecione a conta</option>
-            {choices.accounts.data
-              ?.filter(
-                (a) =>
-                  !a.archived &&
-                  !['benefit_food', 'benefit_meal', 'credit_card', 'investment'].includes(a.type),
-              )
-              .map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-          </Select>
-        </label>
+        <p className="field-help">
+          A conta de origem é escolhida em cada pagamento ou identificada pela transação vinculada.
+        </p>
         <div className="form-grid">
           <label>
             Dia de fechamento

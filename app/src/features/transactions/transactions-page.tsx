@@ -558,7 +558,13 @@ export function TransactionsPage() {
             </p>
             <Link
               className="button secondary"
-              to={selected.managedKind === 'card' ? '/cards' : '/wealth'}
+              to={
+                selected.cardPayment
+                  ? `/cards?card=${selected.cardPayment.cardId}&month=${selected.cardPayment.billMonth}`
+                  : selected.managedKind === 'card'
+                    ? '/cards'
+                    : '/wealth'
+              }
             >
               Abrir {selected.managedKind === 'card' ? 'cartões e faturas' : 'investimentos'}
             </Link>

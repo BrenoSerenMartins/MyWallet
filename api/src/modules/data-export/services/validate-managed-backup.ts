@@ -111,7 +111,7 @@ export function validateManagedBackup(b: BackupPayload, unique: (id: string) => 
       c.dueDay > 31 ||
       accounts.get(c.accountId)?.type !== 'credit_card' ||
       accounts.get(c.accountId)?.openingBalance !== 0 ||
-      !ordinary(c.paymentAccountId) ||
+      (c.paymentAccountId === null ? b.version < 12 : !ordinary(c.paymentAccountId)) ||
       managedAccounts.has(c.accountId)
     )
       fail();

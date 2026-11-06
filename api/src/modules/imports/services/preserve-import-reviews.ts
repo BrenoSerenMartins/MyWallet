@@ -43,6 +43,8 @@ export function preserveImportReviews(
         : item.transactionType;
     return {
       ...item,
+      cardId: resetClassification ? null : old?.cardId,
+      cardBillMonth: resetClassification ? null : old?.cardBillMonth,
       counterpartyId: old?.counterpartyId,
       counterpartyName: old?.counterpartyName,
       rememberCounterparty: old?.rememberCounterparty,

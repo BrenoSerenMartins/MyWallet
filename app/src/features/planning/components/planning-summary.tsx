@@ -71,9 +71,9 @@ export function PlanningSummary({
                 label={label}
                 text={
                   kind === 'result'
-                    ? 'Receitas menos despesas do mês. Esse resultado não é o saldo atual das contas e não inclui transferências.'
+                    ? 'Receitas menos despesas das contas e pagamentos das faturas selecionadas. Esse resultado não é o saldo atual das contas.'
                     : kind === 'expense'
-                      ? 'Compara o orçamento com as despesas registradas, incluindo gastos sem categoria em Outros.'
+                      ? 'Inclui despesas das contas e pagamentos das faturas selecionadas. As compras detalhadas do cartão não são somadas novamente.'
                       : 'Compara as receitas previstas com as registradas. O VA/VR segue a configuração de mês de cada conta.'
                 }
               />

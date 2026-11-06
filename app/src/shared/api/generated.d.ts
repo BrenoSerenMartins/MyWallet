@@ -68,6 +68,22 @@ export interface paths {
     patch: operations['CardsController_update'];
     trace?: never;
   };
+  '/v1/cards/{id}/bills/{month}/transaction-payments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['CardsController_transactionPayment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/cards/{id}/purchases': {
     parameters: {
       query?: never;
@@ -1334,7 +1350,7 @@ export interface components {
     CardViewDto: {
       id: string;
       accountId: string;
-      paymentAccountId: string;
+      paymentAccountId: string | null;
       name: string;
       closingDay: number;
       dueDay: number;
@@ -1356,7 +1372,7 @@ export interface components {
     };
     SaveCardDto: {
       name: string;
-      paymentAccountId: string;
+      paymentAccountId?: string | null;
       closingDay: number;
       dueDay: number;
       limit: number;
@@ -1365,13 +1381,21 @@ export interface components {
     CreditCardDto: {
       id: string;
       accountId: string;
-      paymentAccountId: string;
+      paymentAccountId: string | null;
       name: string;
       closingDay: number;
       dueDay: number;
       limit: number;
       version: number;
       archived: boolean;
+    };
+    CardTransactionPaymentDto: {
+      accountId: string;
+      date: string;
+      amount: number;
+      description: string;
+      transactionId?: string;
+      transactionVersion?: number;
     };
     CardPurchaseDto: {
       description: string;
@@ -1832,6 +1856,27 @@ export interface components {
       transactionDate: string;
       description: string;
     };
+    PlannedCardBillDto: {
+      accountId: string;
+      billMonth: string;
+      included: boolean;
+      planned?: number | null;
+    };
+    PlanningCardBillDto: {
+      cardId: string;
+      accountId: string;
+      name: string;
+      billMonth: string;
+      dueDate: string;
+      amount: number;
+      paid: number;
+      remaining: number;
+      version: number;
+      archived: boolean;
+      included: boolean;
+      planned: number;
+      automatic: boolean;
+    };
     BudgetAccountDto: {
       accountId: string;
       name: string;
@@ -1904,6 +1949,8 @@ export interface components {
       unclassifiedOutflow: number;
     };
     MonthlyPlanResourceDto: {
+      cardPlans?: components['schemas']['PlannedCardBillDto'][];
+      cardBills?: components['schemas']['PlanningCardBillDto'][];
       budget?: components['schemas']['PeriodBudgetDto'];
       benefitAccounts?: components['schemas']['PlanningBenefitAccountDto'][];
       month: string;
@@ -1918,6 +1965,7 @@ export interface components {
       amount: number;
     };
     SaveMonthlyPlanDto: {
+      cardPlans?: components['schemas']['PlannedCardBillDto'][];
       version: number;
       contribution: number | null;
       notes: string;
@@ -1930,7 +1978,7 @@ export interface components {
     CardForecastBillDto: {
       cardId: string;
       billMonth: string;
-      accountId: string;
+      accountId: string | null;
       description: string;
       dueDate: string;
       amount: number;
@@ -2059,6 +2107,8 @@ export interface components {
       lastFourDigits: string | null;
     };
     ImportItemResourceDto: {
+      cardId?: string | null;
+      cardBillMonth?: string | null;
       counterpartyName?: string | null;
       rememberCategory?: boolean;
       rememberCounterparty?: boolean;
@@ -2130,6 +2180,8 @@ export interface components {
       metadata: components['schemas']['SettlementMetadataResourceDto'];
     };
     ReviewItemDto: {
+      cardId?: string | null;
+      cardBillMonth?: string | null;
       counterpartyId?: string | null;
       counterpartyName?: string | null;
       rememberCategory?: boolean;
@@ -2335,6 +2387,29 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['CreditCardDto'];
+        };
+      };
+    };
+  };
+  CardsController_transactionPayment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CardTransactionPaymentDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CardPaymentResourceDto'];
         };
       };
     };

@@ -19,6 +19,36 @@ export function PlanForm({
       plan.lines.filter((l) => l.categoryId).map((l) => [l.categoryId!, inputAmount(l.planned)]),
     ),
   );
+  const [billAmounts, setBillAmounts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      (plan.cardPlans ?? []).map((p) => [
+        `${p.accountId}:${p.billMonth}`,
+        inputAmount(p.planned ?? null),
+      ]),
+    ),
+  );
+  const [cardPlans, setCardPlans] = useState(() => plan.cardPlans ?? []);
+  const billPreference = (bill: NonNullable<MonthlyPlan['cardBills']>[number]) =>
+    cardPlans.find((p) => p.accountId === bill.accountId && p.billMonth === bill.billMonth);
+  const updateBill = (
+    bill: NonNullable<MonthlyPlan['cardBills']>[number],
+    change: { included?: boolean; planned?: number | null },
+  ) =>
+    setCardPlans((previous) => {
+      const existing = previous.find(
+        (p) => p.accountId === bill.accountId && p.billMonth === bill.billMonth,
+      );
+      return [
+        ...previous.filter((p) => p.accountId !== bill.accountId || p.billMonth !== bill.billMonth),
+        {
+          accountId: bill.accountId,
+          billMonth: bill.billMonth,
+          included: existing?.included ?? bill.included,
+          planned: existing?.planned ?? null,
+          ...change,
+        },
+      ];
+    });
   const [contribution, setContribution] = useState(inputAmount(plan.contribution));
   const [notes, setNotes] = useState(plan.notes);
   const [busy, setBusy] = useState(false);
@@ -33,6 +63,10 @@ export function PlanForm({
         .map(([categoryId, value]) => ({ categoryId, amount: parseMoney(value) }));
       await onSave({
         version: plan.version,
+        cardPlans: cardPlans.map((p) => {
+          const value = billAmounts[`${p.accountId}:${p.billMonth}`] ?? '';
+          return { ...p, planned: value.trim() ? parseMoney(value) : null };
+        }),
         notes,
         contribution: contribution.trim() ? parseMoney(contribution) : null,
         lines,
@@ -74,6 +108,54 @@ export function PlanForm({
             .map(categoryField)}
         </fieldset>
       ))}
+      {!!plan.cardBills?.length && (
+        <fieldset className="plan-fields plan-card-choices">
+          <legend>Faturas que vou pagar neste mês</legend>
+          <p className="field-help">
+            As faturas do mês entram por padrão. Desmarcar retira apenas deste planejamento; a
+            dívida continua no cartão. Deixe a previsão em branco para acompanhar o valor da fatura.
+            Se você já previa esse pagamento em uma categoria comum, retire aquela previsão para não
+            somar duas vezes.
+          </p>
+          {plan.cardBills.map((bill) => {
+            const preference = billPreference(bill);
+            const included = preference?.included ?? bill.included;
+            return (
+              <div className="plan-card-choice" key={`${bill.accountId}:${bill.billMonth}`}>
+                <label className="finance-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={included}
+                    onChange={(e) => updateBill(bill, { included: e.target.checked })}
+                  />
+                  <span>
+                    {bill.name} · {bill.billMonth}
+                    {bill.billMonth < plan.month ? ' · fatura anterior' : ''}
+                  </span>
+                </label>
+                {included && (
+                  <label>
+                    Previsão · {bill.name} · {bill.billMonth}
+                    <input
+                      inputMode="decimal"
+                      maxLength={20}
+                      placeholder={`Automático: ${inputAmount(bill.amount)}`}
+                      value={billAmounts[`${bill.accountId}:${bill.billMonth}`] ?? ''}
+                      onChange={(e) => {
+                        setBillAmounts((previous) => ({
+                          ...previous,
+                          [`${bill.accountId}:${bill.billMonth}`]: e.target.value,
+                        }));
+                        updateBill(bill, {});
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            );
+          })}
+        </fieldset>
+      )}
       {archivedPlans.length > 0 && (
         <details className="finance-disclosure">
           <summary>Valores anteriores em categorias arquivadas ({archivedPlans.length})</summary>

@@ -8,7 +8,7 @@ export interface CreditCardBill {
 export interface CreditCard {
   id: string;
   accountId: string;
-  paymentAccountId: string;
+  paymentAccountId: string | null;
   name: string;
   closingDay: number;
   dueDay: number;

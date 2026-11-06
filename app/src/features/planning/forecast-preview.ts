@@ -23,22 +23,28 @@ export function forecastPreview(data: CommitmentsSummary) {
         href: undefined as string | undefined,
       })),
     ...(data.cardBills ?? [])
-      .filter((bill) => accounts.has(bill.accountId) && bill.dueDate <= data.through)
+      .filter(
+        (bill) => (!bill.accountId || accounts.has(bill.accountId)) && bill.dueDate <= data.through,
+      )
       .map((bill) => ({
         id: `card:${bill.cardId}:${bill.billMonth}`,
         description: bill.description,
         dueDate: bill.dueDate,
         amount: bill.amount,
         type: 'expense' as const,
-        account: accounts.get(bill.accountId)!,
+        account: bill.accountId ? accounts.get(bill.accountId)! : 'Conta escolhida no pagamento',
         href: `/cards?card=${bill.cardId}&month=${bill.billMonth}`,
       })),
   ].sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.id.localeCompare(b.id));
   return {
     items,
     income: total('income'),
-    expense: total('expense'),
-    projected: total('projected'),
+    expense:
+      total('expense') +
+      (data.cardBills ?? []).filter((b) => !b.accountId).reduce((n, b) => n + b.amount, 0),
+    projected:
+      total('projected') -
+      (data.cardBills ?? []).filter((b) => !b.accountId).reduce((n, b) => n + b.amount, 0),
     hasPending: items.length > 0 || total('income') > 0 || total('expense') > 0,
   };
 }

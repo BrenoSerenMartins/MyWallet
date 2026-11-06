@@ -28,6 +28,7 @@ import type {
   SaveCardDto,
   CardPurchaseDto,
   CardPaymentDto,
+  CardTransactionPaymentDto,
   CardRefundDto,
 } from '../dto/cards.dto.js';
 import {
@@ -67,7 +68,7 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
   }
   async create(input: SaveCardDto, key: string) {
     return this.receipts.execute('card.create', key, input, async () => {
-      await this.ordinary(input.paymentAccountId);
+      if (input.paymentAccountId) await this.ordinary(input.paymentAccountId);
       if (!input.name.trim()) throw new UnprocessableEntityException('Informe um nome.');
       await this.repo.lock();
       if ((await this.repo.snapshot()).cards.length >= 100)
@@ -77,6 +78,7 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
         id: randomUUID(),
         accountId: account.id,
         ...input,
+        paymentAccountId: input.paymentAccountId ?? null,
         name: input.name.trim(),
         archived: false,
         version: 1,
@@ -91,11 +93,16 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
     await this.repo.lock();
     const card = await this.card(id);
     requireVersion(card.version, version);
-    await this.ordinary(input.paymentAccountId);
+    if (input.paymentAccountId) await this.ordinary(input.paymentAccountId);
     if (!input.name.trim()) throw new UnprocessableEntityException('Informe um nome.');
     if (input.archived && (await this.accounts.find(card.accountId)).balance !== 0)
       throw new ConflictException('Quite a dívida ou utilize o crédito antes de arquivar.');
-    await this.repo.update({ ...card, ...input, name: input.name.trim() });
+    await this.repo.update({
+      ...card,
+      ...input,
+      paymentAccountId: input.paymentAccountId ?? null,
+      name: input.name.trim(),
+    });
     return this.card(id);
   }
   private async ensureBill(card: CreditCard, month: string) {
@@ -303,6 +310,132 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
         purchases: data.purchases.filter((p) => p.cardId === card.id),
       })),
     };
+  }
+  async validateImportedPayment(id: string, month: string, accountId: string, amount: number) {
+    await this.ordinary(accountId);
+    const { cards } = await this.calculated();
+    const card = cards.find((c) => c.id === id);
+    const bill = card?.bills.find((b) => b.month === validCardMonth(month));
+    if (!card || card.archived || !bill || amount >= 0 || -amount > bill.remaining)
+      throw new UnprocessableEntityException(
+        'Escolha uma fatura pendente compatível com este débito.',
+      );
+  }
+  async linkImportedPayment(id: string, month: string, transactionId: string, key: string) {
+    const source = (await this.ledger.managedEntries([transactionId]))[0];
+    if (!source) throw new NotFoundException('Pagamento não encontrado.');
+    const data = await this.repo.snapshot();
+    const previous = data.payments.find((p) => p.debitId === transactionId && !p.voided);
+    if (previous) {
+      if (previous.cardId === id && previous.billMonth === month) return;
+      throw new ConflictException('Este lançamento já está vinculado a outra fatura.');
+    }
+    const card = await this.card(id);
+    await this.pay(
+      id,
+      month,
+      {
+        mode: 'link',
+        accountId: source.accountId,
+        date: source.transactionDate,
+        amount: -source.amount,
+        transactionId,
+        transactionVersion: source.version,
+      },
+      String(card.version),
+      key,
+    );
+  }
+  async planningBills(month: string) {
+    validCardMonth(month);
+    const { cards } = await this.calculated();
+    return cards.flatMap((card) =>
+      card.bills
+        .filter((b) => b.total > 0 || b.paid > 0 || b.remaining > 0)
+        .map((b) => {
+          const throughPaid = sum(
+            b.payments
+              .filter((p) => p.active && p.paymentDate.slice(0, 7) <= month)
+              .map((p) => p.amount),
+          );
+          const paid = sum(
+            b.payments
+              .filter((p) => p.active && p.paymentDate.startsWith(month))
+              .map((p) => p.amount),
+          );
+          const remaining = Math.max(0, b.total - b.creditApplied - throughPaid);
+          return {
+            cardId: card.id,
+            accountId: card.accountId,
+            name: card.name,
+            billMonth: b.month,
+            dueDate: b.dueDate,
+            amount: remaining + paid,
+            paid,
+            remaining,
+            version: card.version,
+            archived: card.archived,
+          };
+        }),
+    );
+  }
+  async payTransaction(
+    id: string,
+    month: string,
+    input: CardTransactionPaymentDto,
+    version: string,
+    key: string,
+  ) {
+    return this.receipts.execute(
+      'card.transaction-payment',
+      key,
+      { id, month, input, version },
+      async () => {
+        const card = await this.card(id);
+        for (const accountId of [card.accountId, input.accountId].sort())
+          await this.accounts.find(accountId, true);
+        await this.ordinary(input.accountId);
+        if (input.transactionId && !input.transactionVersion)
+          throw new UnprocessableEntityException('Confira a versão do lançamento.');
+        const original = input.transactionId
+          ? (await this.ledger.managedEntries([input.transactionId]))[0]
+          : undefined;
+        const source = await this.ledger.saveCardPaymentSource(
+          {
+            accountId: input.accountId,
+            amount: -input.amount,
+            transactionDate: input.date,
+            description: input.description,
+            transactionType: 'expense',
+            categoryId: null,
+          },
+          input.transactionId,
+          input.transactionVersion,
+        );
+        const payment = await this.pay(
+          id,
+          month,
+          {
+            mode: 'link',
+            accountId: input.accountId,
+            date: input.date,
+            amount: input.amount,
+            transactionId: source.id,
+            transactionVersion: source.version,
+          },
+          version,
+          key,
+        );
+        if (original) {
+          payment.originalDebit = {
+            transactionType: original.transactionType,
+            categoryId: original.categoryId,
+          };
+          await this.repo.savePaymentOrigin(payment.id, payment.originalDebit);
+        }
+        return payment;
+      },
+    );
   }
   async pendingBills(through: string) {
     const { cards } = await this.calculated();
@@ -572,7 +705,7 @@ export class CardsService implements CardForecast, ManagedBackup<CardsSnapshot> 
         ...card,
         id: cardIds.get(card.id)!,
         accountId: accounts.get(card.accountId)!,
-        paymentAccountId: accounts.get(card.paymentAccountId)!,
+        paymentAccountId: card.paymentAccountId ? accounts.get(card.paymentAccountId)! : null,
         version: 1,
       });
     for (const bill of data.bills)

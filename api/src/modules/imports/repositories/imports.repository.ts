@@ -160,6 +160,8 @@ export class ImportsRepository {
       confirm_new: item.confirmNew ?? false,
       refund_of_id: item.refundOfId ?? null,
       classification_intent: {
+        cardId: item.cardId,
+        cardBillMonth: item.cardBillMonth,
         counterpartyId: item.counterpartyId,
         counterpartyName: item.counterpartyName,
         rememberCategory: item.rememberCategory,
@@ -213,6 +215,8 @@ export class ImportsRepository {
       selected: boolean;
       transactionType: string;
       categoryId?: string | null;
+      cardId?: string | null;
+      cardBillMonth?: string | null;
       linkedTransactionId?: string | null;
       confirmNew?: boolean;
       refundOfId?: string | null;
@@ -231,6 +235,8 @@ export class ImportsRepository {
         input.confirmNew ?? false,
         input.refundOfId ?? null,
         JSON.stringify({
+          cardId: input.cardId ?? null,
+          cardBillMonth: input.cardBillMonth ?? null,
           counterpartyId: input.counterpartyId,
           counterpartyName: input.counterpartyName,
           rememberCategory: input.rememberCategory,

@@ -143,6 +143,15 @@ export class CardsRepository {
       description: r.description,
     });
   }
+  async savePaymentOrigin(
+    id: string,
+    original: { transactionType: string; categoryId: string | null },
+  ) {
+    await this.db.query(
+      'UPDATE wallet.card_payments SET original_debit=$3::jsonb WHERE user_id=$1 AND id=$2',
+      [this.db.userId, id, JSON.stringify(original)],
+    );
+  }
   savePayment(r: CardPayment) {
     return this.insert('card_payments', {
       original_debit: r.originalDebit ? JSON.stringify(r.originalDebit) : null,
