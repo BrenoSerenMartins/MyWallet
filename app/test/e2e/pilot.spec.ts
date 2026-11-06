@@ -4578,10 +4578,12 @@ for (const width of [390, 1440]) {
 
 test('filtered CSV exports every page with original and reporting dates', async ({ page }) => {
   await signedIn(page);
+  const cursors: (string | null)[] = [];
   await page.route('**/v1/transactions?*', (route) => {
     const query = new URL(route.request().url()).searchParams;
     if (query.get('limit') !== '100')
       return route.fulfill({ json: { items: [transaction], nextCursor: null } });
+    cursors.push(query.get('cursor'));
     expect(query.get('from')).toBe('2026-11-01');
     expect(query.get('to')).toBe('2026-12-01');
     return route.fulfill({
@@ -4607,7 +4609,10 @@ test('filtered CSV exports every page with original and reporting dates', async 
   await page.getByRole('button', { name: 'Filtros avançados', exact: true }).click();
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Exportar consulta CSV', exact: true }).click();
+  await expect.poll(() => cursors).toEqual([null, 'next-export-page']);
+  await expect(page.getByRole('dialog').getByRole('alert')).toHaveCount(0);
   const file = await download;
+  expect(file.suggestedFilename()).toBe('plannedwallet-movimentacoes.csv');
   const path = await file.path();
   const { readFile } = await import('node:fs/promises');
   const csv = await readFile(path!, 'utf8');

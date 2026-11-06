@@ -17,6 +17,7 @@ export function ExportMovements({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const controller = useRef<AbortController | null>(null);
+  const downloadLink = useRef<HTMLAnchorElement | null>(null);
   useEffect(() => {
     const stop = () => controller.current?.abort();
     window.addEventListener('plannedwallet:workspace-changed', stop);
@@ -55,20 +56,29 @@ export function ExportMovements({
         type: 'text/csv;charset=utf-8',
       });
       const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
+      const anchor = downloadLink.current;
+      if (!anchor) {
+        URL.revokeObjectURL(url);
+        return;
+      }
+      // Keep the download inside the active dialog's DOM and focus boundary.
       anchor.href = url;
-      anchor.download = 'plannedwallet-movimentacoes.csv';
       anchor.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      anchor.removeAttribute('href');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) {
       if (!abort.signal.aborted)
         setError(e instanceof Error ? e.message : 'Não foi possível exportar.');
     } finally {
-      if (!abort.signal.aborted) setBusy(false);
+      if (controller.current === abort) {
+        controller.current = null;
+        setBusy(false);
+      }
     }
   }
   return (
     <div>
+      <a ref={downloadLink} hidden download="plannedwallet-movimentacoes.csv" aria-hidden="true" />
       <button
         type="button"
         className="text-button"

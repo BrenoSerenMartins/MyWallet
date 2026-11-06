@@ -1,4 +1,4 @@
-const CACHE='plannedwallet-shell-v89';const SHELL=['/','/theme.js','/icon.svg?v=2','/icon-192.png?v=2','/icon-512.png?v=2','/manifest.webmanifest?v=2'];
+const CACHE='plannedwallet-shell-v90';const SHELL=['/','/theme.js','/icon.svg?v=2','/icon-192.png?v=2','/icon-512.png?v=2','/manifest.webmanifest?v=2'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL))));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('message',event=>{if(event.data==='ACTIVATE_UPDATE')self.skipWaiting();});

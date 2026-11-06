@@ -91,3 +91,9 @@ Validação: `npm run verify` passou com 37 arquivos/239 testes, incluindo múlt
 A home de visitantes apresenta a plataforma em uma landing com prévia ilustrativa do painel e acesso explícito ao painel. `/painel` e `/login` exibem uma tela própria de autenticação: logo acima do card centralizado, identidade visual e temas compartilhados com o sistema. A home autenticada continua sendo a visão geral financeira. Cadastro, recuperação e redefinição mantêm seus fluxos existentes.
 
 Lint e build passaram. A suíte lista 147 cenários, incluindo quatro novos para navegar da landing ao card centralizado em 320/390/768/1440px. A tentativa de executar esses cenários falhou ao iniciar `webServer`, antes de abrir o navegador; screenshots e validação visual continuam pendentes no CI.
+
+## Download da consulta CSV — ajuste após CI
+
+CI informado pelo usuário: 46 cenários passaram e a exportação CSV expirou esperando download. O exportador agora usa um link conectado ao DOM dentro do diálogo e mantém a URL do arquivo por 60 segundos; o estado de exportação também é liberado após cancelamento por troca de espaço. O teste verifica os cursores das duas páginas, ausência de erro no diálogo e nome do arquivo antes de validar seu conteúdo. A causa exata do timeout anterior não foi confirmada por trace.
+
+Lint, build do app e teste unitário de serialização passaram. A execução local do cenário de navegador falhou ao iniciar webServer; confirmação da alteração permanece pendente no CI. A migração dos cartões continua necessária antes da publicação conjunta da API.
